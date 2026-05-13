@@ -1,0 +1,327 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* IMP branded investigation theme */
+
+@layer base {
+  :root {
+    --imp-red: 356 69% 38%;
+    --imp-red-soft: 356 62% 46%;
+    --imp-black: 0 0% 0%;
+    --imp-charcoal: 225 11% 7%;
+    --imp-paper: 42 38% 95%;
+    --imp-line: 32 18% 78%;
+
+    /* Light mode - keeping for compatibility but game uses dark */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Main backgrounds - IMP black / charcoal */
+    --background: 225 11% 7%;
+    --foreground: 210 40% 98%;
+
+    /* Cards with dark investigation glass */
+    --card: 225 13% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 225 13% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary - IMP deep red for brand actions and progress */
+    --primary: var(--imp-red);
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - neutral charcoal */
+    --secondary: 225 13% 15%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted elements */
+    --muted: 225 10% 18%;
+    --muted-foreground: 220 10% 62%;
+
+    /* Accent - warm paper/gold support, not the main brand signal */
+    --accent: 42 78% 62%;
+    --accent-foreground: 225 11% 7%;
+
+    /* Destructive - Red for errors/danger */
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Borders and inputs */
+    --border: 225 10% 22%;
+    --input: 225 10% 15%;
+    --ring: var(--imp-red);
+
+    /* Success color */
+    --success: 145 58% 42%;
+    --success-foreground: 225 11% 7%;
+
+    /* Warning color */
+    --warning: 35 90% 55%;
+    --warning-foreground: 225 11% 7%;
+  }
+
+  /* Custom game-specific colors */
+  :root {
+    --neon-cyan: 188 74% 56%;
+    --neon-blue: 214 82% 62%;
+    --neon-purple: 270 72% 62%;
+    --neon-green: 145 70% 45%;
+    --neon-red: var(--imp-red-soft);
+    --neon-gold: 42 78% 62%;
+    
+    /* Glassmorphism */
+    --glass-bg: 225 13% 12%;
+    --glass-border: 225 10% 25%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground dark;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+  }
+}
+
+@layer utilities {
+  .imp-panel {
+    background: linear-gradient(180deg, hsl(var(--imp-paper)) 0%, #fff 100%);
+    color: #171717;
+    border: 1px solid rgb(17 17 17 / 0.16);
+    box-shadow: 0 22px 55px rgb(0 0 0 / 0.26), 0 0 0 1px hsl(var(--primary) / 0.08);
+  }
+
+  .imp-panel-header {
+    background: hsl(var(--primary));
+    color: #fff;
+    border-bottom: 1px solid rgb(17 17 17 / 0.12);
+  }
+
+  .imp-action {
+    background: hsl(var(--primary));
+    color: #fff;
+    box-shadow: 0 12px 26px hsl(var(--primary) / 0.26);
+  }
+
+  .imp-action:hover {
+    background: #8f1820;
+  }
+
+  .imp-outline {
+    background: #fff;
+    color: #171717;
+    border: 1px solid rgb(17 17 17 / 0.18);
+  }
+
+  .imp-choice-card {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.9), rgb(250 247 242 / 0.86)),
+      linear-gradient(90deg, hsl(var(--primary) / 0.12), transparent 42%);
+    color: #171717;
+    border: 1px solid rgb(255 255 255 / 0.7);
+    box-shadow: 0 18px 42px rgb(0 0 0 / 0.24), inset 0 0 0 1px rgb(17 17 17 / 0.08);
+  }
+
+  .imp-choice-card:hover,
+  .imp-choice-card-selected {
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: 0 20px 48px rgb(0 0 0 / 0.28), 0 0 0 1px hsl(var(--primary) / 0.22);
+  }
+
+  .imp-choice-card-selected {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.96), rgb(255 248 248 / 0.94)),
+      linear-gradient(90deg, hsl(var(--primary) / 0.16), transparent 48%);
+  }
+
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50;
+  }
+
+  /* Neon glow effects */
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3),
+                0 0 40px hsl(var(--primary) / 0.1);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.3),
+                0 0 40px hsl(var(--accent) / 0.1);
+  }
+
+  .glow-success {
+    box-shadow: 0 0 20px hsl(var(--success) / 0.3),
+                0 0 40px hsl(var(--success) / 0.1);
+  }
+
+  /* Text glow */
+  .text-glow {
+    text-shadow: 0 0 10px currentColor,
+                 0 0 20px currentColor;
+  }
+
+  /* Animations */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.4s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  .animate-typing {
+    animation: typing 1.5s steps(20) forwards;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+/* Character idle breathing */
+@keyframes idle-breath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.018); }
+}
+
+/* Character blink overlay */
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(0); opacity: 0; }
+  94%, 98% { transform: scaleY(1); opacity: 0.85; }
+}
+
+/* Ken Burns slow camera move */
+@keyframes ken-burns {
+  0% { transform: scale(1.05) translate(0%, 0%); }
+  50% { transform: scale(1.12) translate(-1.5%, -1%); }
+  100% { transform: scale(1.05) translate(0%, 0%); }
+}
+
+/* Breathing glow for primary buttons */
+@keyframes breathing-glow {
+  0%, 100% { box-shadow: 0 0 14px hsl(var(--primary) / 0.25), 0 0 30px hsl(var(--primary) / 0.08); }
+  50% { box-shadow: 0 0 26px hsl(var(--primary) / 0.45), 0 0 55px hsl(var(--primary) / 0.18); }
+}
+
+/* Subtle screen shake (for trust drop) */
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-3px, 1px); }
+  40% { transform: translate(3px, -1px); }
+  60% { transform: translate(-2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+}
+
+/* Sparkle pop */
+@keyframes sparkle-pop {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+  100% { transform: scale(0) rotate(360deg); opacity: 0; }
+}
+
+.animate-idle-breath { animation: idle-breath 4s ease-in-out infinite; }
+.animate-ken-burns { animation: ken-burns 22s ease-in-out infinite; }
+.animate-breathing-glow { animation: breathing-glow 3.2s ease-in-out infinite; }
+.animate-screen-shake { animation: screen-shake 0.45s ease-in-out; }
+.animate-sparkle-pop { animation: sparkle-pop 0.9s ease-out forwards; }
+.animate-blink {
+  animation: blink 6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* Custom hotspot cursor */
+.cursor-hotspot {
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+.cursor-hotspot:hover {
+  filter: drop-shadow(0 0 8px hsl(var(--primary) / 0.6));
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.7);
+}
