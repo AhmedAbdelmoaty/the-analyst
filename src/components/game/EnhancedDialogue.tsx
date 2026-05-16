@@ -693,7 +693,9 @@ export const EnhancedDialogue = ({
           <AnimatePresence>
             {!isTyping && (
               <motion.div
-                className="flex items-center justify-between mt-4 pt-3 border-t border-border/30 gap-3"
+                className={`flex items-center justify-between mt-4 pt-3 border-t gap-3 ${
+                  isAnalyst ? "border-[hsl(var(--imp-red)/0.2)]" : "border-white/25"
+                }`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
@@ -716,7 +718,7 @@ export const EnhancedDialogue = ({
                       </motion.button>
                     )}
                   </AnimatePresence>
-                  <span className="text-xs text-muted-foreground">
+                  <span className={`text-xs ${isAnalyst ? "text-[hsl(var(--imp-ink)/0.55)]" : "text-white/75"}`}>
                     {currentIndex + 1} / {dialogues.length}
                   </span>
                 </div>
