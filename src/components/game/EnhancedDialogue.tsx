@@ -622,7 +622,7 @@ export const EnhancedDialogue = ({
         <motion.div
           className={`mx-4 mb-4 overflow-hidden rounded-[18px] border-2 p-6 relative shadow-[0_22px_60px_rgba(0,0,0,0.42)] ${
             isAnalyst
-              ? "bg-[hsl(var(--imp-paper))] border-[hsl(var(--imp-red)/0.35)]"
+              ? "bg-black border-white/15"
               : "bg-[hsl(var(--imp-red))] border-[hsl(var(--imp-paper)/0.45)]"
           }`}
           whileHover={{ scale: 1.01 }}
@@ -635,24 +635,24 @@ export const EnhancedDialogue = ({
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
           >
-            <h4 className={`font-bold text-lg ${isAnalyst ? "text-[hsl(var(--imp-red))]" : "text-white"}`}>
+            <h4 className={`font-bold text-lg ${isAnalyst ? "text-white" : "text-white"}`}>
               {resolvedNames.ar}
             </h4>
             {!isDetective && (
-              <span className={`text-sm ${isAnalyst ? "text-[hsl(var(--imp-ink)/0.6)]" : "text-white/75"}`}>
+              <span className={`text-sm ${isAnalyst ? "text-white/60" : "text-white/75"}`}>
                 ({resolvedNames.en})
               </span>
             )}
           </motion.div>
 
           <p
-            className={`text-lg leading-relaxed ${isAnalyst ? "text-[hsl(var(--imp-ink))]" : "text-white"}`}
+            className={`text-lg leading-relaxed text-white`}
             dir="rtl"
           >
             {displayedText}
             {isTyping && (
               <motion.span
-                className={`inline-block w-3 h-5 ml-1 align-middle ${isAnalyst ? "bg-[hsl(var(--imp-red))]" : "bg-white"}`}
+                className="inline-block w-3 h-5 ml-1 align-middle bg-white"
                 animate={{ opacity: [1, 0] }}
                 transition={{ duration: 0.5, repeat: Infinity }}
               />
@@ -694,7 +694,7 @@ export const EnhancedDialogue = ({
             {!isTyping && (
               <motion.div
                 className={`flex items-center justify-between mt-4 pt-3 border-t gap-3 ${
-                  isAnalyst ? "border-[hsl(var(--imp-red)/0.2)]" : "border-white/25"
+                  isAnalyst ? "border-white/15" : "border-white/25"
                 }`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -718,7 +718,7 @@ export const EnhancedDialogue = ({
                       </motion.button>
                     )}
                   </AnimatePresence>
-                  <span className={`text-xs ${isAnalyst ? "text-[hsl(var(--imp-ink)/0.55)]" : "text-white/75"}`}>
+                  <span className={`text-xs ${isAnalyst ? "text-white/60" : "text-white/75"}`}>
                     {currentIndex + 1} / {dialogues.length}
                   </span>
                 </div>
