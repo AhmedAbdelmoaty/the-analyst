@@ -620,7 +620,11 @@ export const EnhancedDialogue = ({
         </motion.div>
 
         <motion.div
-          className={`mx-4 mb-4 overflow-hidden rounded-[18px] border-2 border-white/45 backdrop-blur-md bg-gradient-to-r ${colors.bg} ${colors.border} p-6 relative shadow-[0_22px_60px_rgba(0,0,0,0.42)]`}
+          className={`mx-4 mb-4 overflow-hidden rounded-[18px] border-2 p-6 relative shadow-[0_22px_60px_rgba(0,0,0,0.42)] ${
+            isAnalyst
+              ? "bg-[hsl(var(--imp-paper))] border-[hsl(var(--imp-red)/0.35)]"
+              : "bg-[hsl(var(--imp-red))] border-[hsl(var(--imp-paper)/0.45)]"
+          }`}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
           layoutId="dialogue-box"
@@ -631,21 +635,24 @@ export const EnhancedDialogue = ({
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
           >
-            <h4 className={`font-bold text-lg ${colors.name}`}>
+            <h4 className={`font-bold text-lg ${isAnalyst ? "text-[hsl(var(--imp-red))]" : "text-white"}`}>
               {resolvedNames.ar}
             </h4>
             {!isDetective && (
-              <span className="text-muted-foreground text-sm">
+              <span className={`text-sm ${isAnalyst ? "text-[hsl(var(--imp-ink)/0.6)]" : "text-white/75"}`}>
                 ({resolvedNames.en})
               </span>
             )}
           </motion.div>
 
-          <p className="text-foreground text-lg leading-relaxed" dir="rtl">
+          <p
+            className={`text-lg leading-relaxed ${isAnalyst ? "text-[hsl(var(--imp-ink))]" : "text-white"}`}
+            dir="rtl"
+          >
             {displayedText}
             {isTyping && (
               <motion.span
-                className="inline-block w-3 h-5 bg-primary ml-1 align-middle"
+                className={`inline-block w-3 h-5 ml-1 align-middle ${isAnalyst ? "bg-[hsl(var(--imp-red))]" : "bg-white"}`}
                 animate={{ opacity: [1, 0] }}
                 transition={{ duration: 0.5, repeat: Infinity }}
               />
