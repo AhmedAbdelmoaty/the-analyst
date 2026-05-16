@@ -694,7 +694,7 @@ export const EnhancedDialogue = ({
             {!isTyping && (
               <motion.div
                 className={`flex items-center justify-between mt-4 pt-3 border-t gap-3 ${
-                  isAnalyst ? "border-[hsl(var(--imp-red)/0.2)]" : "border-white/25"
+                  isAnalyst ? "border-white/15" : "border-white/25"
                 }`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
