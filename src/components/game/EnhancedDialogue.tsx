@@ -48,17 +48,7 @@ type FlyingCollectible = {
   evidenceId?: string;
 };
 
-const characterColors: Record<string, { bg: string; border: string; name: string }> = {
-  ahmed: { bg: "from-[#212D31]/95 to-[#000000]/95", border: "border-white/35", name: "text-white" },
-  sara: { bg: "from-[#212D31]/95 to-[#000000]/95", border: "border-[#AD3639]/55", name: "text-[#f4d7d8]" },
-  karim: { bg: "from-[#181616]/95 to-[#000000]/95", border: "border-[#A61E25]/60", name: "text-[#f0c7c9]" },
-  detective: { bg: "from-[#181616]/95 to-[#000000]/95", border: "border-[#A61E25]/65", name: "text-[#ffffff]" },
-  hisham: { bg: "from-[#212D31]/95 to-[#000000]/95", border: "border-[#A52025]/55", name: "text-[#f4d7d8]" },
-  khaled: { bg: "from-[#181616]/95 to-[#000000]/95", border: "border-[#A61E25]/60", name: "text-[#f0c7c9]" },
-  noura: { bg: "from-[#212D31]/95 to-[#000000]/95", border: "border-[#AD3639]/55", name: "text-[#f4d7d8]" },
-  umFahd: { bg: "from-[#212D31]/95 to-[#000000]/95", border: "border-white/35", name: "text-white" },
-  mansour: { bg: "from-[#161616]/95 to-[#000000]/95", border: "border-[#A61E25]/70", name: "text-[#ffffff]" },
-};
+const isAnalystSpeaker = (id: string) => id === "detective";
 
 const characterNames: Record<string, { ar: string; en: string }> = {
   ahmed: { ar: "أحمد", en: "Ahmed" },
@@ -138,8 +128,8 @@ export const EnhancedDialogue = ({
   const setCurrentIndex = onIndexChange ?? setInternalIndex;
   
   const currentDialogue = dialogues[currentIndex];
-  const colors = characterColors[currentDialogue?.characterId || "detective"];
   const isDetective = currentDialogue?.characterId === "detective";
+  const isAnalyst = isAnalystSpeaker(currentDialogue?.characterId || "detective");
   const resolvedNames = isDetective && playerName
     ? { ar: playerName, en: playerName }
     : characterNames[currentDialogue?.characterId || "detective"];
@@ -630,7 +620,11 @@ export const EnhancedDialogue = ({
         </motion.div>
 
         <motion.div
-          className={`mx-4 mb-4 overflow-hidden rounded-[18px] border-2 border-white/45 backdrop-blur-md bg-gradient-to-r ${colors.bg} ${colors.border} p-6 relative shadow-[0_22px_60px_rgba(0,0,0,0.42)]`}
+          className={`mx-4 mb-4 overflow-hidden rounded-[18px] border-2 p-6 relative shadow-[0_22px_60px_rgba(0,0,0,0.42)] ${
+            isAnalyst
+              ? "bg-[hsl(var(--imp-paper))] border-[hsl(var(--imp-red)/0.35)]"
+              : "bg-[hsl(var(--imp-red))] border-[hsl(var(--imp-paper)/0.45)]"
+          }`}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
           layoutId="dialogue-box"
@@ -641,21 +635,24 @@ export const EnhancedDialogue = ({
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
           >
-            <h4 className={`font-bold text-lg ${colors.name}`}>
+            <h4 className={`font-bold text-lg ${isAnalyst ? "text-[hsl(var(--imp-red))]" : "text-white"}`}>
               {resolvedNames.ar}
             </h4>
             {!isDetective && (
-              <span className="text-muted-foreground text-sm">
+              <span className={`text-sm ${isAnalyst ? "text-[hsl(var(--imp-ink)/0.6)]" : "text-white/75"}`}>
                 ({resolvedNames.en})
               </span>
             )}
           </motion.div>
 
-          <p className="text-foreground text-lg leading-relaxed" dir="rtl">
+          <p
+            className={`text-lg leading-relaxed ${isAnalyst ? "text-[hsl(var(--imp-ink))]" : "text-white"}`}
+            dir="rtl"
+          >
             {displayedText}
             {isTyping && (
               <motion.span
-                className="inline-block w-3 h-5 bg-primary ml-1 align-middle"
+                className={`inline-block w-3 h-5 ml-1 align-middle ${isAnalyst ? "bg-[hsl(var(--imp-red))]" : "bg-white"}`}
                 animate={{ opacity: [1, 0] }}
                 transition={{ duration: 0.5, repeat: Infinity }}
               />
@@ -696,7 +693,9 @@ export const EnhancedDialogue = ({
           <AnimatePresence>
             {!isTyping && (
               <motion.div
-                className="flex items-center justify-between mt-4 pt-3 border-t border-border/30 gap-3"
+                className={`flex items-center justify-between mt-4 pt-3 border-t gap-3 ${
+                  isAnalyst ? "border-[hsl(var(--imp-red)/0.2)]" : "border-white/25"
+                }`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
@@ -719,7 +718,7 @@ export const EnhancedDialogue = ({
                       </motion.button>
                     )}
                   </AnimatePresence>
-                  <span className="text-xs text-muted-foreground">
+                  <span className={`text-xs ${isAnalyst ? "text-[hsl(var(--imp-ink)/0.55)]" : "text-white/75"}`}>
                     {currentIndex + 1} / {dialogues.length}
                   </span>
                 </div>
