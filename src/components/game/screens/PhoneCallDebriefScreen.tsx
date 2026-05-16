@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSceneAmbience } from "@/hooks/useSceneAudio";
 
 import { EnhancedDialogue } from "../EnhancedDialogue";
-import { ImpLogoReveal } from "../ImpLogoReveal";
 import {
   MANSOUR_CALL_STRONG,
   MANSOUR_CALL_WEAK,
@@ -129,18 +128,18 @@ export const PhoneCallDebriefScreen = ({ onComplete }: PhoneCallDebriefScreenPro
 
       {/* Call indicator */}
       <motion.div
-        className="absolute top-12 right-4 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/50 backdrop-blur-md"
+        className="absolute top-12 right-4 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#A61E25]/20 border border-[#A61E25]/50 backdrop-blur-md"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.4 }}
       >
         <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.2, repeat: Infinity }}>
-          <Phone className="w-3.5 h-3.5 text-emerald-400" />
+          <Phone className="w-3.5 h-3.5 text-white" />
         </motion.div>
-        <span className="text-emerald-400 text-xs font-bold" dir="rtl">
+        <span className="text-white text-xs font-bold" dir="rtl">
           مكالمة مع أ. منصور
         </span>
-        <span className="text-emerald-300/80 text-xs font-mono">{formatTime(seconds)}</span>
+        <span className="text-white/70 text-xs font-mono">{formatTime(seconds)}</span>
       </motion.div>
 
       <EnhancedDialogue
@@ -151,15 +150,6 @@ export const PhoneCallDebriefScreen = ({ onComplete }: PhoneCallDebriefScreenPro
         onIndexChange={setDialogueIndex}
         playerName={playerName}
         playerGender={g}
-        renderOverlay={({ currentIndex, currentDialogue }) => {
-          const isFinalStrongImpLine =
-            tier === "strong" &&
-            currentIndex === dialogues.length - 1 &&
-            currentDialogue?.characterId === "detective" &&
-            currentDialogue.text.includes("IMP");
-
-          return isFinalStrongImpLine ? <ImpLogoReveal key="imp-logo-reveal" /> : null;
-        }}
       />
     </div>
   );

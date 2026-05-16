@@ -2,13 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* IMP branded investigation theme */
+/* The Analyst investigation theme, powered by IMP's color system */
 
 @layer base {
   :root {
     --imp-red: 356 69% 38%;
     --imp-red-soft: 356 62% 46%;
+    --imp-red-hover: 356 70% 33%;
+    --imp-red-alt: 357 67% 40%;
+    --imp-red-muted: 357 51% 45%;
     --imp-black: 0 0% 0%;
+    --imp-ink: 0 0% 9%;
+    --imp-ink-soft: 180 8% 16%;
     --imp-charcoal: 225 11% 7%;
     --imp-paper: 42 38% 95%;
     --imp-line: 32 18% 78%;
@@ -37,7 +42,7 @@
   }
 
   .dark {
-    /* Main backgrounds - IMP black / charcoal */
+    /* Main backgrounds - The Analyst black / charcoal */
     --background: 225 11% 7%;
     --foreground: 210 40% 98%;
 
@@ -48,7 +53,7 @@
     --popover: 225 13% 12%;
     --popover-foreground: 210 40% 98%;
 
-    /* Primary - IMP deep red for brand actions and progress */
+    /* Primary - IMP deep red for The Analyst actions and progress */
     --primary: var(--imp-red);
     --primary-foreground: 0 0% 100%;
 
@@ -84,10 +89,10 @@
 
   /* Custom game-specific colors */
   :root {
-    --neon-cyan: 188 74% 56%;
-    --neon-blue: 214 82% 62%;
-    --neon-purple: 270 72% 62%;
-    --neon-green: 145 70% 45%;
+    --neon-cyan: var(--imp-ink-soft);
+    --neon-blue: var(--imp-ink-soft);
+    --neon-purple: var(--imp-red-muted);
+    --neon-green: var(--imp-red-alt);
     --neon-red: var(--imp-red-soft);
     --neon-gold: 42 78% 62%;
     
@@ -129,7 +134,7 @@
   }
 
   .imp-action:hover {
-    background: #8f1820;
+    background: hsl(var(--imp-red-hover));
   }
 
   .imp-outline {

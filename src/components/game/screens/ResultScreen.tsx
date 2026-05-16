@@ -11,7 +11,6 @@ import femaleStrongMascot from "@/assets/results/result-mascot-female-strong.web
 import femaleWeakMascot from "@/assets/results/result-mascot-female-weak.webp";
 import maleStrongMascot from "@/assets/results/result-mascot-male-strong.webp";
 import maleWeakMascot from "@/assets/results/result-mascot-male-weak.webp";
-import impLogo from "@/assets/brand/imp-logo.webp";
 
 interface ResultScreenProps {
   onNavigate: (screen: string) => void;
@@ -190,11 +189,12 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
           )}
           style={{ borderRadius: "28px" }}
         >
-          <img
-            src={impLogo}
-            alt="IMP"
-            className="absolute left-3 top-3 z-10 h-9 w-auto rounded-md bg-white/90 px-2 py-1 shadow-md sm:left-5 sm:top-5 sm:h-11"
-          />
+          <div className="absolute left-3 top-3 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-2 text-[10px] font-black tracking-[0.22em] text-[#161616] shadow-md sm:left-5 sm:top-5 sm:text-xs">
+            THE ANALYST
+            <span className="block text-[8px] font-bold tracking-[0.18em] text-[#A61E25] sm:text-[9px]">
+              CASE FILE
+            </span>
+          </div>
           <motion.div
             className={cn(
               "mx-auto inline-flex h-11 items-center gap-2 rounded-2xl border px-5 text-sm font-bold shadow-lg backdrop-blur-sm sm:h-12 sm:text-base",

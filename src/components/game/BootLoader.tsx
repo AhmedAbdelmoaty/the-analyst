@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { preloadAudio, preloadImage, runWithConcurrency, warmAudioUnlock } from "@/lib/assetPreloader";
 import { SCREEN_ASSETS } from "@/lib/pf-case/asset-manifest";
-import impLogo from "@/assets/brand/imp-logo.webp";
 
 interface BootLoaderProps {
   children: React.ReactNode;
@@ -99,7 +98,7 @@ export const BootLoader = ({ children }: BootLoaderProps) => {
           animate={{ opacity: 1, y: 0 }}
           className="imp-panel-header px-6 py-5 text-center"
         >
-          <img src={impLogo} alt="IMP" className="mx-auto mb-3 h-12 w-auto rounded-md bg-white px-2 py-1" />
+          <h1 className="mb-2 text-2xl font-black tracking-[0.16em] text-white">THE ANALYST</h1>
           <p className="text-white/80 text-xs tracking-[0.35em] uppercase">Loading</p>
         </motion.div>
 

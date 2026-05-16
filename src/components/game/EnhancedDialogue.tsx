@@ -49,15 +49,15 @@ type FlyingCollectible = {
 };
 
 const characterColors: Record<string, { bg: string; border: string; name: string }> = {
-  ahmed: { bg: "from-cyan-900/90 to-cyan-950/90", border: "border-cyan-500/50", name: "text-cyan-400" },
-  sara: { bg: "from-purple-900/90 to-purple-950/90", border: "border-purple-500/50", name: "text-purple-400" },
-  karim: { bg: "from-red-900/90 to-red-950/90", border: "border-red-500/50", name: "text-red-400" },
-  detective: { bg: "from-amber-900/90 to-amber-950/90", border: "border-amber-500/50", name: "text-amber-400" },
-  hisham: { bg: "from-teal-900/90 to-teal-950/90", border: "border-teal-500/50", name: "text-teal-400" },
-  khaled: { bg: "from-red-900/90 to-red-950/90", border: "border-red-500/50", name: "text-red-400" },
-  noura: { bg: "from-purple-900/90 to-purple-950/90", border: "border-purple-500/50", name: "text-purple-400" },
-  umFahd: { bg: "from-cyan-900/90 to-cyan-950/90", border: "border-cyan-500/50", name: "text-cyan-400" },
-  mansour: { bg: "from-emerald-900/90 to-emerald-950/90", border: "border-emerald-500/50", name: "text-emerald-400" },
+  ahmed: { bg: "from-[#212D31]/95 to-[#000000]/95", border: "border-white/35", name: "text-white" },
+  sara: { bg: "from-[#212D31]/95 to-[#000000]/95", border: "border-[#AD3639]/55", name: "text-[#f4d7d8]" },
+  karim: { bg: "from-[#181616]/95 to-[#000000]/95", border: "border-[#A61E25]/60", name: "text-[#f0c7c9]" },
+  detective: { bg: "from-[#181616]/95 to-[#000000]/95", border: "border-[#A61E25]/65", name: "text-[#ffffff]" },
+  hisham: { bg: "from-[#212D31]/95 to-[#000000]/95", border: "border-[#A52025]/55", name: "text-[#f4d7d8]" },
+  khaled: { bg: "from-[#181616]/95 to-[#000000]/95", border: "border-[#A61E25]/60", name: "text-[#f0c7c9]" },
+  noura: { bg: "from-[#212D31]/95 to-[#000000]/95", border: "border-[#AD3639]/55", name: "text-[#f4d7d8]" },
+  umFahd: { bg: "from-[#212D31]/95 to-[#000000]/95", border: "border-white/35", name: "text-white" },
+  mansour: { bg: "from-[#161616]/95 to-[#000000]/95", border: "border-[#A61E25]/70", name: "text-[#ffffff]" },
 };
 
 const characterNames: Record<string, { ar: string; en: string }> = {

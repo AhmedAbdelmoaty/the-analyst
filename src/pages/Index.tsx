@@ -14,6 +14,7 @@ import { PhoneCallDebriefScreen } from "@/components/game/screens/PhoneCallDebri
 import { ResultScreen } from "@/components/game/screens/ResultScreen";
 
 
+import { AnalystBrandIntroScreen } from "@/components/game/AnalystBrandIntroScreen";
 import { PlayerSettingsPanel } from "@/components/game/PlayerSettingsPanel";
 import { PFGameProvider, usePFGame } from "@/contexts/PFGameContext";
 import { ScreenTransition } from "@/components/game/ScreenTransition";
@@ -40,6 +41,7 @@ const GameContent = () => {
   const { resetGame, state: pfState, consumeRestartFlag } = usePFGame();
 
   const storageKey = `pf-game-screen-guest`;
+  const introStorageKey = `the-analyst-brand-intro-seen-guest`;
 
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
     const saved = localStorage.getItem(storageKey) as Screen | null;
@@ -47,14 +49,20 @@ const GameContent = () => {
     return saved || "company-briefing";
   });
 
+  const [showBrandIntro, setShowBrandIntro] = useState(() => {
+    const saved = localStorage.getItem(storageKey) as Screen | null;
+    return !saved && !localStorage.getItem(introStorageKey);
+  });
+
   const [transitioning, setTransitioning] = useState(false);
   const [resetVersion, setResetVersion] = useState(0);
 
   useEffect(() => {
+    if (showBrandIntro) return;
     if (currentScreen !== "replay-briefing") {
       localStorage.setItem(storageKey, currentScreen);
     }
-  }, [currentScreen, storageKey]);
+  }, [currentScreen, showBrandIntro, storageKey]);
 
   // Just-in-time prefetch: while the player is on the current screen,
   // start downloading the next screen's images and audio so transitions
@@ -97,17 +105,26 @@ const GameContent = () => {
         if (options?.clearStorage) {
           localStorage.removeItem(storageKey);
           localStorage.removeItem("pf-game-submitted");
+          localStorage.removeItem(introStorageKey);
         }
 
         setCurrentScreen(screen);
+        if (screen === "company-briefing" && options?.clearStorage) {
+          setShowBrandIntro(true);
+        }
 
         setTimeout(() => {
           setTransitioning(false);
         }, 100);
       }, 400);
     },
-    [resetGame, storageKey]
+    [introStorageKey, resetGame, storageKey]
   );
+
+  const handleBrandIntroComplete = useCallback(() => {
+    localStorage.setItem(introStorageKey, "1");
+    setShowBrandIntro(false);
+  }, [introStorageKey]);
 
   const handleNavigate = useCallback(
     (screen: string) => {
@@ -135,8 +152,8 @@ const GameContent = () => {
     });
   }, [navigateWithTransition]);
 
-  const showSettings = currentScreen !== "replay-briefing";
-  const showTimeline = !["company-briefing", "replay-briefing", "result"].includes(currentScreen);
+  const showSettings = currentScreen !== "replay-briefing" && !showBrandIntro;
+  const showTimeline = !showBrandIntro && !["company-briefing", "replay-briefing", "result"].includes(currentScreen);
 
   return (
     <div className="min-h-screen bg-background">
@@ -152,7 +169,11 @@ const GameContent = () => {
       )}
 
       <div key={`${currentScreen}-${resetVersion}`}>
-        {currentScreen === "company-briefing" && (
+        {showBrandIntro && currentScreen === "company-briefing" && (
+          <AnalystBrandIntroScreen onComplete={handleBrandIntroComplete} />
+        )}
+
+        {!showBrandIntro && currentScreen === "company-briefing" && (
           <CompanyBriefingScreen onComplete={() => handleNavigate("travel")} />
         )}
 
