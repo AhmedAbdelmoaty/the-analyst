@@ -718,7 +718,7 @@ export const EnhancedDialogue = ({
                       </motion.button>
                     )}
                   </AnimatePresence>
-                  <span className={`text-xs ${isAnalyst ? "text-[hsl(var(--imp-ink)/0.55)]" : "text-white/75"}`}>
+                  <span className={`text-xs ${isAnalyst ? "text-white/60" : "text-white/75"}`}>
                     {currentIndex + 1} / {dialogues.length}
                   </span>
                 </div>
