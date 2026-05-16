@@ -128,8 +128,8 @@ export const EnhancedDialogue = ({
   const setCurrentIndex = onIndexChange ?? setInternalIndex;
   
   const currentDialogue = dialogues[currentIndex];
-  const colors = characterColors[currentDialogue?.characterId || "detective"];
   const isDetective = currentDialogue?.characterId === "detective";
+  const isAnalyst = isAnalystSpeaker(currentDialogue?.characterId || "detective");
   const resolvedNames = isDetective && playerName
     ? { ar: playerName, en: playerName }
     : characterNames[currentDialogue?.characterId || "detective"];
