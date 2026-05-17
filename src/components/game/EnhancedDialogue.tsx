@@ -623,7 +623,7 @@ export const EnhancedDialogue = ({
           className={`mx-4 mb-4 overflow-hidden rounded-[18px] border-2 p-6 relative shadow-[0_22px_60px_rgba(0,0,0,0.42)] ${
             isAnalyst
               ? "bg-black border-white/15"
-              : "bg-[hsl(var(--imp-red))] border-[hsl(var(--imp-paper)/0.45)]"
+              : "bg-[#A61E25] border-white/35"
           }`}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
@@ -694,7 +694,7 @@ export const EnhancedDialogue = ({
             {!isTyping && (
               <motion.div
                 className={`flex items-center justify-between mt-4 pt-3 border-t gap-3 ${
-                  isAnalyst ? "border-white/15" : "border-white/25"
+                  isAnalyst ? "border-white/15" : "border-white/22"
                 }`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
