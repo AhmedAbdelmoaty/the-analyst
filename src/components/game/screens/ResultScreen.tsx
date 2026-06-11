@@ -109,20 +109,17 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
     recordedRef.current = true;
     localStorage.setItem(key, "1");
 
-    const fullSpine =
-      !state.trackEntered &&
-      state.history.length >= 5 &&
-      state.history.every((h) => h.choice === "correct");
-    const qualified = fullSpine && (state.framingCorrectCount ?? 0) === 2;
     const startedAt = state.gameStartedAt ?? Date.now();
     const duration_ms = Date.now() - startedAt;
 
+    // Note: `qualified` is intentionally NOT sent from the client. RLS forces
+    // qualified=false on insert; admins can mark a player as qualified after
+    // server-side review.
     supabase
       .from("completed_players")
       .insert({
         first_name: profile.first_name,
         last_name: profile.last_name,
-        qualified,
         outcome: state.outcome,
         framing_correct: state.framingCorrectCount,
         duration_ms,
