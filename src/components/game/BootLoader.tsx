@@ -97,10 +97,15 @@ export const BootLoader = ({ children }: BootLoaderProps) => {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="imp-panel-header px-6 py-5 text-center"
+          className="imp-panel-header flex flex-col items-center px-6 py-6 text-center"
         >
-          <h1 className="mb-2 text-2xl font-black tracking-[0.16em] text-white">THE ANALYST</h1>
-          <p className="text-white/80 text-xs tracking-[0.35em] uppercase">Loading</p>
+          <img
+            src={analystLockup}
+            alt="The Analyst"
+            className="mb-2 h-16 w-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.25)] [filter:brightness(0)_invert(1)]"
+            draggable={false}
+          />
+          <p className="text-white/75 text-[10px] tracking-[0.42em] uppercase">Loading</p>
         </motion.div>
 
         <div className="m-6 h-2 overflow-hidden rounded-full border border-black/15 bg-black/10">
