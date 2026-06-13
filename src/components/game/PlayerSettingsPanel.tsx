@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSound } from "@/hooks/useSoundEffects";
 import analystImg from "@/assets/characters/analyst.webp";
 import saraImg from "@/assets/characters/sara.webp";
+import analystLockup from "@/assets/brand/the-analyst-lockup.png";
 
 interface PlayerSettingsPanelProps {
   onReplayBriefing: () => void;
@@ -85,8 +86,16 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
             >
               {/* Header */}
-              <div className="imp-panel-header flex items-center justify-between p-4">
-                <h2 className="text-white font-bold text-lg">⚙️ الإعدادات</h2>
+              <div className="imp-panel-header flex items-center justify-between gap-3 p-4">
+                <div className="flex items-center gap-2.5">
+                  <img
+                    src={analystLockup}
+                    alt="The Analyst"
+                    className="h-8 w-auto [filter:brightness(0)_invert(1)]"
+                    draggable={false}
+                  />
+                  <span className="border-l border-white/25 pl-2.5 text-white/85 text-sm font-bold">الإعدادات</span>
+                </div>
                 <button
                   onClick={() => { setIsOpen(false); setIsEditingProfile(false); setConfirmReset(false); }}
                   className="rounded-lg border border-white/20 bg-white/10 p-1.5 text-white/80 transition-colors hover:bg-white hover:text-primary"
