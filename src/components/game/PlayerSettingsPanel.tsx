@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSound } from "@/hooks/useSoundEffects";
 import analystImg from "@/assets/characters/analyst.webp";
 import saraImg from "@/assets/characters/sara.webp";
+import analystLockup from "@/assets/brand/the-analyst-lockup.png";
 
 interface PlayerSettingsPanelProps {
   onReplayBriefing: () => void;
