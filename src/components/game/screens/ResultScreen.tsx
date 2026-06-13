@@ -11,6 +11,7 @@ import femaleStrongMascot from "@/assets/results/result-mascot-female-strong.web
 import femaleWeakMascot from "@/assets/results/result-mascot-female-weak.webp";
 import maleStrongMascot from "@/assets/results/result-mascot-male-strong.webp";
 import maleWeakMascot from "@/assets/results/result-mascot-male-weak.webp";
+import analystMark from "@/assets/brand/the-analyst-mark.png";
 
 interface ResultScreenProps {
   onNavigate: (screen: string) => void;
