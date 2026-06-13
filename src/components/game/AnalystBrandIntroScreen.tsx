@@ -73,6 +73,18 @@ export const AnalystBrandIntroScreen = ({ onComplete }: AnalystBrandIntroScreenP
         transition={{ duration: 0.5, ease: "easeOut" }}
       />
 
+      {/* Brand mark — subtle top-left corner badge */}
+      <motion.img
+        src={analystMark}
+        alt="The Analyst"
+        className="pointer-events-none absolute left-5 top-5 z-10 h-10 w-auto opacity-90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] sm:left-7 sm:top-7 sm:h-12"
+        draggable={false}
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: exiting ? 0 : 0.9, y: 0 }}
+        transition={{ delay: 0.35, duration: 0.45, ease: "easeOut" }}
+      />
+
+
       <div className="relative z-10 flex h-full items-end justify-center px-5 pb-[clamp(2rem,8vh,5rem)]">
         <motion.button
           type="button"
