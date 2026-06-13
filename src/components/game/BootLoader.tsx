@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { preloadAudio, preloadImage, runWithConcurrency, warmAudioUnlock } from "@/lib/assetPreloader";
 import { SCREEN_ASSETS } from "@/lib/pf-case/asset-manifest";
+import analystLockup from "@/assets/brand/the-analyst-lockup.png";
 
 interface BootLoaderProps {
   children: React.ReactNode;
