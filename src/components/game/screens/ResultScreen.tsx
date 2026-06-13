@@ -187,9 +187,9 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
           )}
           style={{ borderRadius: "28px" }}
         >
-          <div className="absolute left-3 top-3 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-2 text-[10px] font-black tracking-[0.22em] text-[#161616] shadow-md sm:left-5 sm:top-5 sm:text-xs">
-            THE ANALYST
-            <span className="block text-[8px] font-bold tracking-[0.18em] text-[#A61E25] sm:text-[9px]">
+          <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-md border border-black/10 bg-white/95 px-3 py-1.5 shadow-md sm:left-5 sm:top-5">
+            <img src={analystMark} alt="The Analyst" className="h-6 w-auto sm:h-7" draggable={false} />
+            <span className="border-l border-black/15 pl-2 text-[9px] font-black tracking-[0.22em] text-[#161616] sm:text-[10px]">
               CASE FILE
             </span>
           </div>
