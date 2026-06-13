@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import promoImage from "@/assets/brand/the-analyst-game.webp";
+import analystMark from "@/assets/brand/the-analyst-mark.png";
 
 interface AnalystBrandIntroScreenProps {
   onComplete: () => void;
