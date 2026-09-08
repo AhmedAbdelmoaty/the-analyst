@@ -350,11 +350,6 @@ const PlayerRow = ({
           >
             {fullName}
           </p>
-          {formatDuration(player.duration_ms) && (
-            <p className="text-left text-xs font-semibold tabular-nums text-foreground/60">
-              {formatDuration(player.duration_ms)}
-            </p>
-          )}
         </div>
 
         {/* Success mark */}
