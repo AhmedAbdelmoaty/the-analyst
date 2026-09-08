@@ -19,23 +19,8 @@ const completedAtTime = (player: CompletedPlayer) => {
   return Number.isFinite(time) ? time : Infinity;
 };
 
-const durationOf = (player: CompletedPlayer) =>
-  typeof player.duration_ms === "number" && Number.isFinite(player.duration_ms)
-    ? player.duration_ms
-    : Infinity;
-
-const formatDuration = (ms: number | null) => {
-  if (typeof ms !== "number" || !Number.isFinite(ms) || ms <= 0) return null;
-  const total = Math.round(ms / 1000);
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
-};
-
-// Fastest correct finisher first
+// First correct finisher first (by completion timestamp), not fastest time
 const sortByCompletedAt = (a: CompletedPlayer, b: CompletedPlayer) => {
-  const delta = durationOf(a) - durationOf(b);
-  if (Number.isFinite(delta) && delta !== 0) return delta;
   const timeDelta = completedAtTime(a) - completedAtTime(b);
   return Number.isFinite(timeDelta) && timeDelta !== 0 ? timeDelta : a.id.localeCompare(b.id);
 };
@@ -69,7 +54,7 @@ const AdminBoard = () => {
       .from("completed_players")
       .select("id, first_name, last_name, completed_at, qualified, duration_ms")
       .eq("qualified", true)
-      .order("duration_ms", { ascending: true, nullsFirst: false })
+      .order("completed_at", { ascending: true, nullsFirst: false })
       .limit(100);
     if (!error && data) setPlayers((data as CompletedPlayer[]).slice().sort(sortByCompletedAt));
     setLoading(false);
@@ -365,11 +350,6 @@ const PlayerRow = ({
           >
             {fullName}
           </p>
-          {formatDuration(player.duration_ms) && (
-            <p className="text-left text-xs font-semibold tabular-nums text-foreground/60">
-              {formatDuration(player.duration_ms)}
-            </p>
-          )}
         </div>
 
         {/* Success mark */}
