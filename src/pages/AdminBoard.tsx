@@ -67,11 +67,11 @@ const AdminBoard = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("completed_players")
-      .select("id, first_name, last_name, completed_at, qualified")
+      .select("id, first_name, last_name, completed_at, qualified, duration_ms")
       .eq("qualified", true)
-      .order("completed_at", { ascending: true })
+      .order("duration_ms", { ascending: true, nullsFirst: false })
       .limit(100);
-    if (!error && data) setPlayers(data as CompletedPlayer[]);
+    if (!error && data) setPlayers((data as CompletedPlayer[]).slice().sort(sortByCompletedAt));
     setLoading(false);
   };
 
