@@ -54,7 +54,7 @@ const AdminBoard = () => {
       .from("completed_players")
       .select("id, first_name, last_name, completed_at, qualified, duration_ms")
       .eq("qualified", true)
-      .order("duration_ms", { ascending: true, nullsFirst: false })
+      .order("completed_at", { ascending: true, nullsFirst: false })
       .limit(100);
     if (!error && data) setPlayers((data as CompletedPlayer[]).slice().sort(sortByCompletedAt));
     setLoading(false);
