@@ -11,6 +11,7 @@ interface CompletedPlayer {
   last_name: string;
   completed_at: string;
   qualified: boolean;
+  duration_ms: number | null;
 }
 
 const completedAtTime = (player: CompletedPlayer) => {
@@ -18,9 +19,25 @@ const completedAtTime = (player: CompletedPlayer) => {
   return Number.isFinite(time) ? time : Infinity;
 };
 
+const durationOf = (player: CompletedPlayer) =>
+  typeof player.duration_ms === "number" && Number.isFinite(player.duration_ms)
+    ? player.duration_ms
+    : Infinity;
+
+const formatDuration = (ms: number | null) => {
+  if (typeof ms !== "number" || !Number.isFinite(ms) || ms <= 0) return null;
+  const total = Math.round(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+};
+
+// Fastest correct finisher first
 const sortByCompletedAt = (a: CompletedPlayer, b: CompletedPlayer) => {
-  const delta = completedAtTime(a) - completedAtTime(b);
-  return Number.isFinite(delta) && delta !== 0 ? delta : a.id.localeCompare(b.id);
+  const delta = durationOf(a) - durationOf(b);
+  if (Number.isFinite(delta) && delta !== 0) return delta;
+  const timeDelta = completedAtTime(a) - completedAtTime(b);
+  return Number.isFinite(timeDelta) && timeDelta !== 0 ? timeDelta : a.id.localeCompare(b.id);
 };
 
 const PODIUM_MEDALS = ["🥇", "🥈", "🥉"];
