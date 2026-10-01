@@ -8,9 +8,19 @@ import saraImg from "@/assets/characters/sara.webp";
 const Setup = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [gender, setGender] = useState<"male" | "female" | null>(null);
+  const [error, setError] = useState("");
+  const phoneOk = /^01[0125][0-9]{8}$/.test(phone);
   const [loading, setLoading] = useState(false);
-  const { updateProfile, isProfileComplete } = useAuth();
+  const { updateProfile, isProfileComplete, profile } = useAuth();
+
+  useEffect(() => {
+    if (profile?.first_name) setFirstName((v) => v || profile.first_name || "");
+    if (profile?.last_name) setLastName((v) => v || profile.last_name || "");
+    if (profile?.phone) setPhone((v) => v || profile.phone || "");
+    if (profile?.gender) setGender((v) => v || profile.gender);
+  }, [profile]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,16 +30,19 @@ const Setup = () => {
   }, [isProfileComplete, navigate]);
 
   const handleSubmit = async () => {
-    if (!firstName.trim() || !lastName.trim() || !gender) return;
+    if (!firstName.trim() || !lastName.trim() || !gender || !phoneOk) return;
     setLoading(true);
-    await updateProfile({
+    setError("");
+    const { error } = await updateProfile({
+      phone,
       first_name: firstName.trim(),
       last_name: lastName.trim(),
       gender,
       avatar_choice: gender === "male" ? "analyst" : "sara",
     });
-    navigate("/");
     setLoading(false);
+    if (error) { setError("حصلت مشكلة في الحفظ، جرّب تاني"); return; }
+    navigate("/");
   };
 
   const characters = [
@@ -76,6 +89,24 @@ const Setup = () => {
         </div>
 
         <div>
+          <label className="text-foreground text-sm font-bold mb-2 block">رقم الموبايل</label>
+          <input
+            type="tel"
+            inputMode="numeric"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+            placeholder="01xxxxxxxxx"
+            dir="ltr"
+            className="w-full px-4 py-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          {phone.length > 0 && !phoneOk ? (
+            <p className="text-destructive text-xs mt-1">اكتب رقم موبايل مصري صحيح (11 رقم يبدأ بـ 01)</p>
+          ) : (
+            <p className="text-muted-foreground text-xs mt-1">هنستخدمه للتواصل بخصوص فعاليات The Analyst</p>
+          )}
+        </div>
+
+        <div>
           <label className="text-foreground text-sm font-bold mb-3 block">اختر شخصيتك</label>
           <div className="flex gap-4 justify-center">
             {characters.map((char) => (
@@ -107,7 +138,7 @@ const Setup = () => {
 
         <motion.button
           onClick={handleSubmit}
-          disabled={!firstName.trim() || !lastName.trim() || !gender || loading}
+          disabled={!firstName.trim() || !lastName.trim() || !gender || !phoneOk || loading}
           className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm disabled:opacity-30 flex items-center justify-center gap-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
