@@ -138,7 +138,7 @@ const Setup = () => {
 
         <motion.button
           onClick={handleSubmit}
-          disabled={!firstName.trim() || !lastName.trim() || !gender || loading}
+          disabled={!firstName.trim() || !lastName.trim() || !gender || !phoneOk || loading}
           className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm disabled:opacity-30 flex items-center justify-center gap-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
