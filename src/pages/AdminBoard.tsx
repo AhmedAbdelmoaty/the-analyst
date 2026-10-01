@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, LogOut, RotateCcw, Sparkles } from "lucide-react";
+import { Trophy, LogOut, RotateCcw, Sparkles, Download } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -156,6 +156,28 @@ const AdminBoard = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                const { data, error } = await supabase
+                  .from("profiles")
+                  .select("first_name,last_name,email,phone,created_at")
+                  .not("phone", "is", null)
+                  .order("created_at", { ascending: true });
+                if (error || !data) return;
+                const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+                const rows = [["First name", "Last name", "Email", "Phone", "Joined"], ...data.map((p) => [p.first_name, p.last_name, p.email, p.phone, p.created_at])];
+                const csv = "\uFEFF" + rows.map((r) => r.map(esc).join(",")).join("\n");
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+                a.download = `the-analyst-players-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-muted-foreground hover:text-foreground transition font-bold text-sm"
+              title="تحميل بيانات اللاعبين"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">PLAYERS</span>
+            </button>
             <button
               onClick={() => setShowResetConfirm(true)}
               className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-300 hover:text-red-200 transition-all font-bold text-sm"
