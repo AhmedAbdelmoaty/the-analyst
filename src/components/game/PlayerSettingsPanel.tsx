@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, X, User, RotateCcw, Building2, Volume2, VolumeX, LogOut } from "lucide-react";
+import { Settings, X, User, RotateCcw, Building2, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSound } from "@/hooks/useSoundEffects";
 import analystImg from "@/assets/characters/analyst.webp";
@@ -13,7 +13,7 @@ interface PlayerSettingsPanelProps {
 }
 
 export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: PlayerSettingsPanelProps) => {
-  const { profile, updateProfile, signOut } = useAuth();
+  const { profile, updateProfile } = useAuth();
   const { isSoundEnabled, setIsSoundEnabled, playSound } = useSound();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -116,13 +116,6 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                       {profile?.gender === "female" ? "محللة بيانات" : "محلل بيانات"}
                     </p>
                   </div>
-                  <button
-                    onClick={() => { setIsOpen(false); signOut(); }}
-                    className="mr-auto flex items-center gap-1 rounded-lg border border-primary/30 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    خروج
-                  </button>
                 </div>
 
                 {isEditingProfile ? (

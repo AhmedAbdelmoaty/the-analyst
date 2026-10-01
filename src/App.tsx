@@ -8,9 +8,6 @@ import { SoundProvider } from "@/hooks/useSoundEffects";
 import { BootLoader } from "@/components/game/BootLoader";
 import Index from "./pages/Index";
 import Setup from "./pages/Setup";
-import Auth from "./pages/Auth";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
 import AdminLogin from "./pages/AdminLogin";
 import AdminBoard from "./pages/AdminBoard";
 import NotFound from "./pages/NotFound";
@@ -18,7 +15,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const RequireProfile = ({ children }: { children: React.ReactNode }) => {
-  const { isProfileComplete, loading, user } = useAuth();
+  const { isProfileComplete, loading } = useAuth();
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -26,15 +23,7 @@ const RequireProfile = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
-  if (!user) return <Navigate to="/auth" replace />;
   if (!isProfileComplete) return <Navigate to="/setup" replace />;
-  return <>{children}</>;
-};
-
-const RequireUser = ({ children }: { children: React.ReactNode }) => {
-  const { loading, user } = useAuth();
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 };
 
@@ -48,11 +37,8 @@ const App = () => (
           <SoundProvider>
             <BootLoader>
               <Routes>
-                {/* Player routes — login required */}
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/setup" element={<RequireUser><Setup /></RequireUser>} />
+                {/* Player routes — no login required */}
+                <Route path="/setup" element={<Setup />} />
                 <Route path="/" element={
                   <RequireProfile>
                     <Index />
