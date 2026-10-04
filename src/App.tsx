@@ -8,6 +8,7 @@ import { SoundProvider } from "@/hooks/useSoundEffects";
 import { BootLoader } from "@/components/game/BootLoader";
 import Index from "./pages/Index";
 import Setup from "./pages/Setup";
+import PlayerAuth from "./pages/PlayerAuth";
 import AdminLogin from "./pages/AdminLogin";
 import AdminBoard from "./pages/AdminBoard";
 import NotFound from "./pages/NotFound";
@@ -15,7 +16,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const RequireProfile = ({ children }: { children: React.ReactNode }) => {
-  const { isProfileComplete, loading } = useAuth();
+  const { user, isProfileComplete, loading } = useAuth();
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -23,6 +24,7 @@ const RequireProfile = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
+  if (!user) return <Navigate to="/login" replace />;
   if (!isProfileComplete) return <Navigate to="/setup" replace />;
   return <>{children}</>;
 };
@@ -37,7 +39,10 @@ const App = () => (
           <SoundProvider>
             <BootLoader>
               <Routes>
-                {/* Player routes — no login required */}
+                {/* Player routes — phone/password account required */}
+                <Route path="/login" element={<PlayerAuth />} />
+                <Route path="/signup" element={<PlayerAuth />} />
+                <Route path="/forgot-password" element={<PlayerAuth />} />
                 <Route path="/setup" element={<Setup />} />
                 <Route path="/" element={
                   <RequireProfile>
