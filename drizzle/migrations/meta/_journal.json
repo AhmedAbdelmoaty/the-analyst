@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791109226233,
+      "tag": "0000_phone_otp_auth",
+      "breakpoints": true
+    }
+  ]
+}
