@@ -36,7 +36,7 @@ export const ProgressTimeline = ({ currentScreen }: ProgressTimelineProps) => {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 right-0 z-40 px-2 py-1.5 bg-white/90 border-b border-black/10 text-[#171717] shadow-md shadow-black/10 backdrop-blur-md"
+      className="fixed top-0 left-0 right-0 z-40 border-b border-game-line bg-game-paper/95 px-2 py-1.5 text-game-ink shadow-sm shadow-game-charcoal/10 backdrop-blur-md"
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.5 }}
@@ -61,7 +61,7 @@ export const ProgressTimeline = ({ currentScreen }: ProgressTimelineProps) => {
               {i < STAGES.length - 1 && (
                 <div
                   className={`w-3 h-px mx-0.5 ${
-                    isPast ? "bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.35)]" : "bg-black/15"
+                    isPast ? "bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.35)]" : "bg-game-line"
                   }`}
                 />
               )}

@@ -28,6 +28,16 @@ const COLORS = {
   muted: "hsl(var(--muted-foreground))",
 };
 
+const REPORT_INK = "hsl(var(--game-ink))";
+const REPORT_GRID = "hsl(var(--game-line))";
+const REPORT_TOOLTIP = {
+  background: "hsl(var(--game-paper))",
+  border: `1px solid ${REPORT_GRID}`,
+  borderRadius: 6,
+  fontSize: 12,
+  color: REPORT_INK,
+};
+
 /**
  * ReportDocument — renders a chart/table as a printed paper report,
  * with a header (title + issuer + date), the chart body, and a
@@ -49,15 +59,14 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
 
   return (
     <motion.div
-      className="relative rounded-lg overflow-hidden border-2 border-border/70 shadow-lg"
+      className="relative overflow-hidden rounded-md border border-game-line shadow-lg shadow-game-charcoal/10"
       initial={{ opacity: 0, scale: 0.9, y: 36, rotate: -2.5 }}
       animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       dir="rtl"
       style={{
-        background:
-          "linear-gradient(180deg, hsl(var(--imp-paper)) 0%, hsl(42 32% 91%) 100%)",
-        color: "hsl(20 14% 18%)",
+        background: "linear-gradient(180deg, hsl(var(--game-paper)) 0%, hsl(var(--game-ivory)) 100%)",
+        color: REPORT_INK,
         fontFamily: "inherit",
       }}
     >
@@ -66,7 +75,7 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
         className="absolute inset-0 pointer-events-none opacity-[0.06]"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(0deg, transparent 0, transparent 23px, hsl(20 14% 18%) 23px, hsl(20 14% 18%) 24px)",
+            `repeating-linear-gradient(0deg, transparent 0, transparent 23px, ${REPORT_INK} 23px, ${REPORT_INK} 24px)`,
         }}
       />
 
@@ -78,7 +87,7 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
       />
 
       {/* Header */}
-      <div className="relative px-4 pt-4 pb-3 border-b-2 border-dashed border-border/60">
+      <div className="relative border-b border-dashed border-game-line px-4 pb-3 pt-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
