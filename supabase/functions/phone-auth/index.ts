@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
           phone, password, phone_confirm: false, user_metadata: { first_name, last_name },
         });
         if (error || !created.user) {
-          console.warn("create_user_failed", error?.status, error?.message?.slice(0, 120));
+          console.warn("create_user_failed", error?.status);
           if (/already|exists|registered/i.test(error?.message ?? "")) return fail("account_exists");
           if (/password/i.test(error?.message ?? "")) return fail("weak_password");
           return fail("server_error");
@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
       }
 
       case "send_signup_code": {
-        const p = z.object({ phone: phoneSchema, password: z.string().min(1).max(72) }).safeParse(body);
+        const p = z.object({ phone: phoneSchema, password: z.string().min(1) }).safeParse(body);
         if (!p.success) return fail("invalid_input");
         const user = await findUser(p.data.phone);
         if (!user) return fail("invalid_credentials");
@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
       }
 
       case "change_phone": {
-        const p = z.object({ phone: phoneSchema, password: z.string().min(1).max(72), new_phone: phoneSchema }).safeParse(body);
+        const p = z.object({ phone: phoneSchema, password: z.string().min(1), new_phone: phoneSchema }).safeParse(body);
         if (!p.success) return fail("invalid_input");
         if (p.data.phone === p.data.new_phone) return fail("same_phone");
         const user = await findUser(p.data.phone);
@@ -274,7 +274,7 @@ Deno.serve(async (req) => {
         return fail("invalid_input");
     }
   } catch (e) {
-    console.warn("phone_auth_unhandled", e instanceof Error ? e.message.slice(0, 120) : "unknown");
+    console.warn("phone_auth_unhandled");
     return fail("server_error");
   }
 });
