@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateProfile = async (data: Partial<PlayerProfile>) => {
     if (!user) return { error: new Error("not_signed_in") };
-    const patch: Record<string, string | null> = {};
+    const patch: { first_name?: string | null; display_name?: string | null; last_name?: string | null; gender?: string | null; avatar_choice?: string | null } = {};
     if (data.first_name !== undefined) { patch.first_name = data.first_name; patch.display_name = data.first_name; }
     if (data.last_name !== undefined) patch.last_name = data.last_name;
     if (data.gender !== undefined) patch.gender = data.gender;
