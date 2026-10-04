@@ -97,7 +97,7 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
       <AnimatePresence>
         {flash && (
           <motion.div
-            className="fixed inset-0 z-[90] bg-primary-foreground/40 pointer-events-none"
+            className="fixed inset-0 z-[90] bg-game-paper/40 pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.55 }}
             exit={{ opacity: 0 }}

@@ -492,14 +492,14 @@ export const InquiryScreen = ({ onComplete }: InquiryScreenProps) => {
         {phase === "choosing" && choices.length > 0 && !state.isComplete && (
           <motion.div
             key={`choices-${state.currentNodeId}-${state.questionsUsed}`}
-            className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-4 pt-24 sm:pb-6"
+            className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex max-h-[75dvh] justify-center overflow-y-auto px-3 pb-4 pt-24 sm:pb-6"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="pointer-events-auto w-full max-w-3xl">
-              <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="grid gap-2.5 min-[640px]:grid-cols-2">
                 {choices.map((option, i) => {
                   const isSelected = selectedChoiceId === option.id;
                   const isDeferred = !!selectedChoiceId && selectedChoiceId !== option.id;
@@ -574,7 +574,7 @@ export const InquiryScreen = ({ onComplete }: InquiryScreenProps) => {
               exit={{ scale: 0.98, opacity: 0 }}
               transition={{ type: "spring", damping: 20, stiffness: 220 }}
             >
-              <div className="flex items-end gap-3 sm:gap-4">
+              <div className="flex items-start gap-3 sm:gap-4">
                 <motion.div
                   className="relative shrink-0"
                   initial={{ opacity: 0, scale: 0.84, y: 18 }}
@@ -591,12 +591,13 @@ export const InquiryScreen = ({ onComplete }: InquiryScreenProps) => {
                     showName={false}
                     entrance="zoom"
                     imageOverride={g === "female" ? saraImg : analystImg}
+                    portrait
                   />
                 </motion.div>
 
                 <motion.div
                   layoutId={`question-choice-${activeQuestion.option.id}`}
-                  className="relative flex-1 overflow-hidden rounded-md border border-primary/50 bg-game-ivory/95 p-4 pl-12 shadow-[0_18px_46px_rgba(0,0,0,0.28),inset_0_0_0_1px_rgba(17,17,17,0.08)] backdrop-blur-md sm:p-5 sm:pl-14"
+                  className="relative flex-1 overflow-hidden rounded-md border border-primary bg-game-ivory p-4 pl-12 text-game-ink shadow-lg sm:p-5 sm:pl-14"
                 >
                   <span className="absolute -right-2 bottom-7 hidden h-4 w-4 rotate-45 border-b border-r border-primary/50 bg-game-ivory sm:block" />
                   <span className="absolute inset-x-5 top-0 h-px bg-gradient-to-l from-transparent via-primary/60 to-transparent" />

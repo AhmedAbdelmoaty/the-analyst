@@ -93,7 +93,7 @@ export const BootLoader = ({ children }: BootLoaderProps) => {
   return (
     <div className="relative min-h-screen bg-[#f7f2e8] flex items-center justify-center overflow-hidden px-6">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,hsl(var(--primary)/0.18),transparent_42%)]" />
-      <div className="imp-panel w-full max-w-sm overflow-hidden rounded-3xl">
+      <div className="imp-panel w-full max-w-sm overflow-hidden rounded-md">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -102,10 +102,10 @@ export const BootLoader = ({ children }: BootLoaderProps) => {
           <img
             src={analystLockup}
             alt="The Analyst"
-            className="mb-2 h-16 w-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.25)] [filter:brightness(0)_invert(1)]"
+            className="mb-2 h-16 w-auto drop-shadow-sm"
             draggable={false}
           />
-          <p className="text-white/75 text-[10px] tracking-[0.42em] uppercase">Loading</p>
+          <p className="text-game-muted text-[10px] tracking-[0.42em] uppercase">Loading</p>
         </motion.div>
 
         <div className="m-6 h-2 overflow-hidden rounded-full border border-black/15 bg-black/10">

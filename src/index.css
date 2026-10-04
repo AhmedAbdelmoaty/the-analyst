@@ -1,6 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import '@fontsource/cairo/400.css';
+@import '@fontsource/cairo/600.css';
+@import '@fontsource/cairo/700.css';
 
 /* The Analyst investigation theme, powered by IMP's color system */
 
@@ -24,7 +27,7 @@
     --game-muted: 220 7% 39%;
     --game-line: 32 14% 78%;
 
-    /* Light mode - keeping for compatibility but game uses dark */
+    /* Shared light defaults; photographic scenes retain their original treatment. */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
