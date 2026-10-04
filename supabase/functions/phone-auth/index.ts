@@ -29,7 +29,7 @@ const json = (body: unknown) =>
 const fail = (error: string, extra: Record<string, unknown> = {}) => json({ ok: false, error, ...extra });
 
 const phoneSchema = z.string().trim().regex(/^\+[1-9]\d{7,14}$/);
-const passwordSchema = z.string().min(8).max(72);
+const passwordSchema = z.string().min(8);
 const codeSchema = z.string().regex(/^\d{6}$/);
 const nameSchema = z.string().trim().min(1).max(50);
 
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
     switch (body?.action) {
       case "signup": {
         const p = z.object({ first_name: nameSchema, last_name: nameSchema, phone: phoneSchema, password: passwordSchema }).safeParse(body);
-        if (!p.success) return fail("invalid_input");
+        if (!p.success) return fail(p.error.issues.some((issue) => issue.path[0] === "password") ? "weak_password" : "invalid_input");
         const { first_name, last_name, phone, password } = p.data;
         const existing = await findUser(phone);
         if (existing) return fail(existing.phone_confirmed ? "account_exists" : "account_pending");
@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
           phone, password, phone_confirm: false, user_metadata: { first_name, last_name },
         });
         if (error || !created.user) {
-          console.warn("create_user_failed", error?.status, error?.message?.slice(0, 120));
+          console.warn("create_user_failed", error?.status);
           if (/already|exists|registered/i.test(error?.message ?? "")) return fail("account_exists");
           if (/password/i.test(error?.message ?? "")) return fail("weak_password");
           return fail("server_error");
@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
       }
 
       case "send_signup_code": {
-        const p = z.object({ phone: phoneSchema, password: z.string().min(1).max(72) }).safeParse(body);
+        const p = z.object({ phone: phoneSchema, password: z.string().min(1) }).safeParse(body);
         if (!p.success) return fail("invalid_input");
         const user = await findUser(p.data.phone);
         if (!user) return fail("invalid_credentials");
@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
       }
 
       case "change_phone": {
-        const p = z.object({ phone: phoneSchema, password: z.string().min(1).max(72), new_phone: phoneSchema }).safeParse(body);
+        const p = z.object({ phone: phoneSchema, password: z.string().min(1), new_phone: phoneSchema }).safeParse(body);
         if (!p.success) return fail("invalid_input");
         if (p.data.phone === p.data.new_phone) return fail("same_phone");
         const user = await findUser(p.data.phone);
@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
 
       case "recovery_reset": {
         const p = z.object({ phone: phoneSchema, reset_token: z.string().max(200), password: passwordSchema }).safeParse(body);
-        if (!p.success) return fail("invalid_input");
+        if (!p.success) return fail(p.error.issues.some((issue) => issue.path[0] === "password") ? "weak_password" : "invalid_input");
         const [cid, token] = p.data.reset_token.split(".");
         if (!cid || !token || !/^[0-9a-f-]{36}$/.test(cid)) return fail("reset_expired");
         // Atomic single-use consume
@@ -274,7 +274,7 @@ Deno.serve(async (req) => {
         return fail("invalid_input");
     }
   } catch (e) {
-    console.warn("phone_auth_unhandled", e instanceof Error ? e.message.slice(0, 120) : "unknown");
+    console.warn("phone_auth_unhandled");
     return fail("server_error");
   }
 });

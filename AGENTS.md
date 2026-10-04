@@ -6,3 +6,4 @@
 - `profiles.phone` is written only by the server (users can update just name/gender/avatar columns) — phone is verified identity used for admin leads.
 - `completed_players` inserts require an authenticated user with `user_id = auth.uid()`; admins alone read results.
 - Admins sign in with email at `/admin/login`; roles live in `user_roles`.
+- Account screens use scoped auth-theme tokens and local Cairo fonts so the light account surface never changes the dark game theme.

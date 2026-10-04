@@ -1,0 +1,21 @@
+@import '@fontsource/cairo/400.css';
+@import '@fontsource/cairo/600.css';
+@import '@fontsource/cairo/700.css';
+.auth-theme {
+  --background: 220 18% 16%;
+  --foreground: 222 24% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 24% 15%;
+  --primary: 357 69% 38%;
+  --primary-foreground: 0 0% 100%;
+  --muted: 215 22% 96%;
+  --muted-foreground: 218 13% 40%;
+  --border: 216 23% 83%;
+  --input: 0 0% 100%;
+  --ring: 357 69% 38%;
+  --destructive: 0 70% 40%;
+  font-family: 'Cairo', sans-serif;
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-theme *, .auth-theme *::before, .auth-theme *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
