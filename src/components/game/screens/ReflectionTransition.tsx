@@ -270,7 +270,7 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
             >
               <button
                 onClick={() => setOpenReportId(null)}
-                className="absolute -left-2 -top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg transition-colors hover:bg-muted"
+                className="absolute -left-2 -top-2 z-10 flex h-9 w-9 items-center justify-center rounded-md border border-game-line bg-game-paper text-game-ink shadow-lg transition-colors hover:border-primary hover:text-primary"
                 aria-label="إغلاق"
               >
                 <X className="h-4 w-4" />
