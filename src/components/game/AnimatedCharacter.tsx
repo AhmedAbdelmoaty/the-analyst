@@ -109,7 +109,7 @@ export const AnimatedCharacter = ({
         animate={moodAnimations[mood]}
       >
         {isActive && (
-          <motion.div className={`absolute inset-0 ${colors.bg}`} animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 2, repeat: Infinity }} />
+          <motion.div className={`absolute inset-0 ${portrait ? "bg-primary/10" : colors.bg}`} animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 2, repeat: Infinity }} />
         )}
         <motion.img
           src={displayImage}
@@ -126,7 +126,7 @@ export const AnimatedCharacter = ({
           {isSpeaking && (
             <motion.div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-1" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}>
               {[0, 1, 2].map((i) => (
-                <motion.div key={i} className={`w-2 h-2 rounded-full ${colors.bg} ${colors.border} border`} animate={{ y: [-3, 3, -3], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }} />
+                <motion.div key={i} className={`w-2 h-2 rounded-full ${portrait ? "border-primary bg-primary/20" : `${colors.bg} ${colors.border}`} border`} animate={{ y: [-3, 3, -3], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }} />
               ))}
             </motion.div>
           )}
