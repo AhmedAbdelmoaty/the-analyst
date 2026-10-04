@@ -84,7 +84,7 @@ const PlayerAuth = () => {
         setMode("verify");
         if (!r.ok && r.error !== "cooldown") return setError(errText(r.error));
         applySend(r, "أُرسل رمز التحقق عبر واتساب.");
-        if (r.error === "cooldown") setNotice("استخدم رمز التحقق السابق أو أعد الإرسال بعد انتهاء المهلة.");
+        if (r.error === "cooldown") { setCooldown(r.retry_after ?? 60); setNotice("استخدم رمز التحقق السابق أو أعد الإرسال بعد انتهاء المهلة."); }
         return;
       }
       setError(errText(error));
@@ -95,16 +95,16 @@ const PlayerAuth = () => {
   const onSignup = (e: FormEvent) => {
     e.preventDefault();
     run(async () => {
-      if (!firstName.trim() || !lastName.trim()) return setError("أدخل الاسم الأول والأخير.");
       if (!phone) return setError(errText("invalid_phone"));
-      if (password.length < 8) return setError(errText("weak_password"));
-      if (password !== confirm) return setError(errText("password_mismatch"));
       if (editingFrom) {
         const r = await phoneAuth("change_phone", { phone: editingFrom, password, new_phone: phone });
         if (!r.ok) return setError(errText(r.error));
         setEditingFrom(null); setActivePhone(phone); setMode("verify");
         return applySend(r, "أُرسل رمز التحقق إلى الرقم الجديد عبر واتساب.");
       }
+      if (!firstName.trim() || !lastName.trim()) return setError("أدخل الاسم الأول والأخير.");
+      if (password.length < 8) return setError(errText("weak_password"));
+      if (password !== confirm) return setError(errText("password_mismatch"));
       const r = await phoneAuth("signup", { first_name: firstName.trim(), last_name: lastName.trim(), phone, password });
       if (!r.ok) return setError(errText(r.error));
       setActivePhone(phone); setMode("verify");
@@ -147,7 +147,7 @@ const PlayerAuth = () => {
       if (!r.ok && r.error !== "cooldown") return setError(errText(r.error));
       setActivePhone(phone); setMode("forgot_code");
       applySend(r, "إذا كان الرقم مسجلًا، فستصلك رسالة عبر واتساب.");
-      if (r.error === "cooldown") setNotice("استخدم الرمز السابق أو أعد الإرسال بعد انتهاء المهلة.");
+      if (r.error === "cooldown") { setCooldown(r.retry_after ?? 60); setNotice("استخدم الرمز السابق أو أعد الإرسال بعد انتهاء المهلة."); }
     });
   };
 
