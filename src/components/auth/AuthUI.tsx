@@ -2,7 +2,7 @@ import "@/styles/auth.css";
 import { ReactNode, useEffect, useRef, useState, ClipboardEvent, KeyboardEvent } from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, ChevronDown, Eye, EyeOff, Search } from "lucide-react";
-import { FlagIcon } from "country-flag-icons/react/3x2";
+import * as Flags from "country-flag-icons/react/3x2";
 import storeFrontImg from "@/assets/scenes/prism-building-exterior.webp";
 import analystLockup from "@/assets/brand/the-analyst-lockup.png";
 import { COUNTRIES } from "@/lib/phoneAuth";
@@ -59,6 +59,7 @@ export const PhoneInput = ({ id, dial, onDial, value, onChange, invalid }: {
   const wrap = useRef<HTMLDivElement>(null);
   const selected = COUNTRIES.find((c) => c.dial === dial) ?? COUNTRIES[0];
   const matches = COUNTRIES.filter((c) => `${c.name} ${c.dial} ${c.code}`.toLowerCase().includes(search.trim().toLowerCase()));
+  const SelectedFlag = Flags[selected.code as keyof typeof Flags];
   useEffect(() => {
     const close = (e: PointerEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("pointerdown", close);
@@ -68,7 +69,7 @@ export const PhoneInput = ({ id, dial, onDial, value, onChange, invalid }: {
     <div ref={wrap} dir="ltr" className="relative flex h-11 rounded-md border border-border bg-input focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30">
       <button type="button" aria-label="اختيار الدولة" aria-expanded={open} aria-haspopup="listbox" onClick={() => { setOpen(!open); setSearch(""); }}
         className="flex w-[103px] shrink-0 items-center justify-center gap-1 border-r border-border text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <FlagIcon country={selected.code} className="h-4 w-6 shrink-0" title={selected.name} /><span>+{dial}</span><ChevronDown className="h-3.5 w-3.5" />
+        <SelectedFlag className="h-4 w-6 shrink-0" title={selected.name} /><span>+{dial}</span><ChevronDown className="h-3.5 w-3.5" />
       </button>
       <input id={id} type="tel" inputMode="tel" autoComplete="tel-national" dir="ltr" value={value} aria-invalid={invalid}
         onChange={(e) => onChange(e.target.value)} placeholder="10 1234 5678"
@@ -80,11 +81,11 @@ export const PhoneInput = ({ id, dial, onDial, value, onChange, invalid }: {
             className={`${inputCls} h-10 pr-8 text-sm`} />
         </div>
         <div role="listbox" aria-label="الدول" className="mt-1 max-h-44 overflow-y-auto">
-          {matches.map((c) => <button key={c.code} type="button" role="option" aria-selected={c.dial === dial}
+          {matches.map((c) => { const Flag = Flags[c.code as keyof typeof Flags]; return <button key={c.code} type="button" role="option" aria-selected={c.dial === dial}
             onClick={() => { onDial(c.dial); setOpen(false); }}
             className="flex min-h-10 w-full items-center gap-2 rounded-sm px-2 text-right text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-none">
-            <FlagIcon country={c.code} className="h-4 w-6 shrink-0" title={c.name} /><span className="flex-1">{c.name}</span><span dir="ltr" className="text-muted-foreground">+{c.dial}</span>
-          </button>)}
+            <Flag className="h-4 w-6 shrink-0" title={c.name} /><span className="flex-1">{c.name}</span><span dir="ltr" className="text-muted-foreground">+{c.dial}</span>
+          </button>; })}
           {matches.length === 0 && <p className="p-3 text-sm text-muted-foreground">لا توجد نتائج.</p>}
         </div>
       </div>}
