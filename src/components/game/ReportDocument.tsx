@@ -123,7 +123,7 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
           <div className={`${chartHeight} w-full`}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={evidence.rows} margin={{ top: 22, right: 8, left: 8, bottom: 0 }} barCategoryGap="40%">
-                <CartesianGrid strokeDasharray="3 3" stroke=REPORT_GRID />
+                <CartesianGrid strokeDasharray="3 3" stroke={REPORT_GRID} />
                 <XAxis dataKey="label" tick={{ fontSize: 10, fill: REPORT_INK }} />
                 <YAxis tick={{ fontSize: 10, fill: REPORT_INK }} {...yAxisProps} />
                 <Tooltip
@@ -145,7 +145,7 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
           <div className={`${chartHeight} w-full`}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={evidence.rows} margin={{ top: 8, right: 8, left: 8, bottom: 0 }} barCategoryGap="35%">
-                <CartesianGrid strokeDasharray="3 3" stroke=REPORT_GRID />
+                <CartesianGrid strokeDasharray="3 3" stroke={REPORT_GRID} />
                 <XAxis dataKey="label" tick={{ fontSize: 10, fill: REPORT_INK }} />
                 <YAxis tick={{ fontSize: 10, fill: REPORT_INK }} {...yAxisProps} />
                 <Tooltip
@@ -164,7 +164,7 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
           <div className={`${chartHeight} w-full`}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={evidence.rows} margin={{ top: 22, right: 8, left: 8, bottom: 0 }} barCategoryGap="25%" barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke=REPORT_GRID />
+                <CartesianGrid strokeDasharray="3 3" stroke={REPORT_GRID} />
                 <XAxis dataKey="label" tick={{ fontSize: 10, fill: REPORT_INK }} />
                 <YAxis tick={{ fontSize: 10, fill: REPORT_INK }} {...yAxisProps} />
                 <Tooltip
@@ -187,7 +187,7 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
           <div className={`${chartHeight} w-full`}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={evidence.rows} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke=REPORT_GRID />
+                <CartesianGrid strokeDasharray="3 3" stroke={REPORT_GRID} />
                 <XAxis dataKey="label" tick={{ fontSize: 10, fill: REPORT_INK }} />
                 <YAxis tick={{ fontSize: 10, fill: REPORT_INK }} {...yAxisProps} />
                 <Tooltip
