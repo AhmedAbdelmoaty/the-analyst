@@ -284,7 +284,7 @@ export const PFNotebook = () => {
               >
                 <button
                   onClick={() => setOpenReportId(null)}
-                  className="absolute -top-2 -left-2 z-10 w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors shadow-lg"
+                  className="absolute -top-2 -left-2 z-10 flex h-9 w-9 items-center justify-center rounded-md border border-game-line bg-game-paper text-game-ink shadow-lg transition-colors hover:border-primary hover:text-primary"
                   aria-label="إغلاق"
                 >
                   <X className="w-4 h-4" />

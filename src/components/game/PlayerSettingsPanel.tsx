@@ -20,7 +20,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editFirstName, setEditFirstName] = useState(profile?.first_name || "");
   const [editLastName, setEditLastName] = useState(profile?.last_name || "");
-  const [editGender, setEditGender] = useState<"male" | "female">(profile?.gender as any || "male");
+  const [editGender, setEditGender] = useState<"male" | "female">(profile?.gender === "female" ? "female" : "male");
   const [saving, setSaving] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -183,7 +183,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                     onClick={() => {
                       setEditFirstName(profile?.first_name || "");
                       setEditLastName(profile?.last_name || "");
-                      setEditGender(profile?.gender as any || "male");
+                      setEditGender(profile?.gender === "female" ? "female" : "male");
                       setIsEditingProfile(true);
                     }}
                     className="flex items-center gap-2 text-primary text-sm hover:underline"

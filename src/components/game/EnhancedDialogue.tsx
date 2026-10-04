@@ -509,13 +509,13 @@ export const EnhancedDialogue = ({
         const label = item.kind === "report" ? "تقرير جديد" : "ملاحظة جديدة";
         const tone =
           item.kind === "report"
-            ? "border-[#d9bf78]/55 bg-[#191714]/95 text-[#f7edd4] shadow-[#d9bf78]/25"
-            : "border-[#dec890]/70 bg-[#f3e8c7] text-[#332714] shadow-[#e8d39b]/30";
+            ? "border-primary/50 bg-game-paper text-game-ink shadow-primary/20"
+            : "border-game-line bg-game-ivory text-game-ink shadow-game-charcoal/20";
 
         return (
           <motion.div
             key={item.id}
-            className={`fixed z-[95] flex min-w-[132px] items-center gap-2 overflow-hidden rounded-[14px] border px-3.5 py-2.5 text-xs font-bold shadow-2xl backdrop-blur-md ${tone}`}
+            className={`fixed z-[95] flex min-w-[132px] items-center gap-2 overflow-hidden rounded-md border px-3.5 py-2.5 text-xs font-bold shadow-xl ${tone}`}
             style={{ left: "50vw", top: "72vh" }}
             dir="rtl"
             initial={{ opacity: 0, scale: 0.62, x: "-50%", y: 18, rotate: item.kind === "report" ? 5 : -5 }}
@@ -544,9 +544,9 @@ export const EnhancedDialogue = ({
               setCollectibles((prev) => prev.filter((drop) => drop.id !== item.id));
             }}
           >
-            <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-l from-transparent via-white/60 to-transparent" />
-            <span className="absolute -left-5 top-1/2 h-12 w-12 -translate-y-1/2 rounded-full bg-white/15 blur-xl" />
-            <Icon className={`h-4 w-4 ${item.kind === "report" ? "text-[#d9bf78]" : "text-[#7b5c1d]"}`} />
+            <span className="absolute inset-x-3 top-0 h-px bg-game-line" />
+            <span className="absolute -left-5 top-1/2 h-12 w-12 -translate-y-1/2 rounded-full bg-primary/10 blur-xl" />
+            <Icon className="h-4 w-4 text-primary" />
             <span>{label}</span>
           </motion.div>
         );
@@ -574,7 +574,7 @@ export const EnhancedDialogue = ({
             >
               <button
                 onClick={() => setReportOpen(false)}
-                className="absolute -top-2 -left-2 z-10 w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors shadow-lg"
+                className="absolute -top-2 -left-2 z-10 flex h-9 w-9 items-center justify-center rounded-md border border-game-line bg-game-paper text-game-ink shadow-lg transition-colors hover:border-primary hover:text-primary"
                 aria-label="إغلاق"
               >
                 <X className="w-4 h-4" />
