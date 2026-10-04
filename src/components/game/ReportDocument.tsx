@@ -28,6 +28,16 @@ const COLORS = {
   muted: "hsl(var(--muted-foreground))",
 };
 
+const REPORT_INK = "hsl(var(--game-ink))";
+const REPORT_GRID = "hsl(var(--game-line))";
+const REPORT_TOOLTIP = {
+  background: "hsl(var(--game-paper))",
+  border: `1px solid ${REPORT_GRID}`,
+  borderRadius: 6,
+  fontSize: 12,
+  color: REPORT_INK,
+};
+
 /**
  * ReportDocument — renders a chart/table as a printed paper report,
  * with a header (title + issuer + date), the chart body, and a
@@ -49,15 +59,14 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
 
   return (
     <motion.div
-      className="relative rounded-lg overflow-hidden border-2 border-border/70 shadow-lg"
+      className="relative overflow-hidden rounded-md border border-game-line shadow-lg shadow-game-charcoal/10"
       initial={{ opacity: 0, scale: 0.9, y: 36, rotate: -2.5 }}
       animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       dir="rtl"
       style={{
-        background:
-          "linear-gradient(180deg, hsl(var(--imp-paper)) 0%, hsl(42 32% 91%) 100%)",
-        color: "hsl(20 14% 18%)",
+        background: "linear-gradient(180deg, hsl(var(--game-paper)) 0%, hsl(var(--game-ivory)) 100%)",
+        color: REPORT_INK,
         fontFamily: "inherit",
       }}
     >
@@ -66,7 +75,7 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
         className="absolute inset-0 pointer-events-none opacity-[0.06]"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(0deg, transparent 0, transparent 23px, hsl(20 14% 18%) 23px, hsl(20 14% 18%) 24px)",
+            `repeating-linear-gradient(0deg, transparent 0, transparent 23px, ${REPORT_INK} 23px, ${REPORT_INK} 24px)`,
         }}
       />
 
@@ -78,7 +87,7 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
       />
 
       {/* Header */}
-      <div className="relative px-4 pt-4 pb-3 border-b-2 border-dashed border-border/60">
+      <div className="relative border-b border-dashed border-game-line px-4 pb-3 pt-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
@@ -114,23 +123,18 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
           <div className={`${chartHeight} w-full`}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={evidence.rows} margin={{ top: 22, right: 8, left: 8, bottom: 0 }} barCategoryGap="40%">
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(20 14% 18% / 0.15)" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(20 14% 18%)" }} />
-                <YAxis tick={{ fontSize: 10, fill: "hsl(20 14% 18%)" }} {...yAxisProps} />
+                <CartesianGrid strokeDasharray="3 3" stroke={REPORT_GRID} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: REPORT_INK }} />
+                <YAxis tick={{ fontSize: 10, fill: REPORT_INK }} {...yAxisProps} />
                 <Tooltip
-                  contentStyle={{
-                    background: "hsl(var(--imp-paper))",
-                    border: "1px solid hsl(20 14% 18% / 0.3)",
-                    fontSize: 12,
-                    color: "hsl(20 14% 18%)",
-                  }}
+                  contentStyle={REPORT_TOOLTIP}
                   formatter={tooltipFormatter}
                 />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]} isAnimationActive animationBegin={180} animationDuration={900} animationEasing="ease-out">
                   {evidence.rows.map((_, i) => (
                     <Cell key={i} fill={COLORS.primary} />
                   ))}
-                  <LabelList dataKey="value" position="top" formatter={fmt} style={{ fontSize: 11, fontWeight: 700, fill: "hsl(20 14% 18%)" }} />
+                  <LabelList dataKey="value" position="top" formatter={fmt} style={{ fontSize: 11, fontWeight: 700, fill: REPORT_INK }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -141,19 +145,14 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
           <div className={`${chartHeight} w-full`}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={evidence.rows} margin={{ top: 8, right: 8, left: 8, bottom: 0 }} barCategoryGap="35%">
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(20 14% 18% / 0.15)" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(20 14% 18%)" }} />
-                <YAxis tick={{ fontSize: 10, fill: "hsl(20 14% 18%)" }} {...yAxisProps} />
+                <CartesianGrid strokeDasharray="3 3" stroke={REPORT_GRID} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: REPORT_INK }} />
+                <YAxis tick={{ fontSize: 10, fill: REPORT_INK }} {...yAxisProps} />
                 <Tooltip
-                  contentStyle={{
-                    background: "hsl(var(--imp-paper))",
-                    border: "1px solid hsl(20 14% 18% / 0.3)",
-                    fontSize: 12,
-                    color: "hsl(20 14% 18%)",
-                  }}
+                  contentStyle={REPORT_TOOLTIP}
                   formatter={tooltipFormatter}
                 />
-                <Legend wrapperStyle={{ fontSize: 11, color: "hsl(20 14% 18%)" }} />
+                <Legend wrapperStyle={{ fontSize: 11, color: REPORT_INK }} />
                 <Bar dataKey="individuals" name="أفراد" stackId="a" fill={COLORS.primary} isAnimationActive animationBegin={180} animationDuration={900} animationEasing="ease-out" />
                 <Bar dataKey="corporate" name="تحويلات من فروع أخرى" stackId="a" fill={COLORS.accent} radius={[6, 6, 0, 0]} isAnimationActive animationBegin={280} animationDuration={900} animationEasing="ease-out" />
               </BarChart>
@@ -165,24 +164,19 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
           <div className={`${chartHeight} w-full`}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={evidence.rows} margin={{ top: 22, right: 8, left: 8, bottom: 0 }} barCategoryGap="25%" barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(20 14% 18% / 0.15)" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(20 14% 18%)" }} />
-                <YAxis tick={{ fontSize: 10, fill: "hsl(20 14% 18%)" }} {...yAxisProps} />
+                <CartesianGrid strokeDasharray="3 3" stroke={REPORT_GRID} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: REPORT_INK }} />
+                <YAxis tick={{ fontSize: 10, fill: REPORT_INK }} {...yAxisProps} />
                 <Tooltip
-                  contentStyle={{
-                    background: "hsl(var(--imp-paper))",
-                    border: "1px solid hsl(20 14% 18% / 0.3)",
-                    fontSize: 12,
-                    color: "hsl(20 14% 18%)",
-                  }}
+                  contentStyle={REPORT_TOOLTIP}
                   formatter={tooltipFormatter}
                 />
-                <Legend wrapperStyle={{ fontSize: 11, color: "hsl(20 14% 18%)" }} />
+                <Legend wrapperStyle={{ fontSize: 11, color: REPORT_INK }} />
                 <Bar dataKey="individuals" name="أفراد" fill={COLORS.primary} radius={[6, 6, 0, 0]} isAnimationActive animationBegin={180} animationDuration={900} animationEasing="ease-out">
-                  <LabelList dataKey="individuals" position="top" formatter={fmt} style={{ fontSize: 10, fontWeight: 700, fill: "hsl(20 14% 18%)" }} />
+                  <LabelList dataKey="individuals" position="top" formatter={fmt} style={{ fontSize: 10, fontWeight: 700, fill: REPORT_INK }} />
                 </Bar>
                 <Bar dataKey="corporate" name="تحويلات من فروع أخرى" fill={COLORS.accent} radius={[6, 6, 0, 0]} isAnimationActive animationBegin={280} animationDuration={900} animationEasing="ease-out">
-                  <LabelList dataKey="corporate" position="top" formatter={fmt} style={{ fontSize: 10, fontWeight: 700, fill: "hsl(20 14% 18%)" }} />
+                  <LabelList dataKey="corporate" position="top" formatter={fmt} style={{ fontSize: 10, fontWeight: 700, fill: REPORT_INK }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -193,16 +187,11 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
           <div className={`${chartHeight} w-full`}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={evidence.rows} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(20 14% 18% / 0.15)" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(20 14% 18%)" }} />
-                <YAxis tick={{ fontSize: 10, fill: "hsl(20 14% 18%)" }} {...yAxisProps} />
+                <CartesianGrid strokeDasharray="3 3" stroke={REPORT_GRID} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: REPORT_INK }} />
+                <YAxis tick={{ fontSize: 10, fill: REPORT_INK }} {...yAxisProps} />
                 <Tooltip
-                  contentStyle={{
-                    background: "hsl(var(--imp-paper))",
-                    border: "1px solid hsl(20 14% 18% / 0.3)",
-                    fontSize: 12,
-                    color: "hsl(20 14% 18%)",
-                  }}
+                  contentStyle={REPORT_TOOLTIP}
                   formatter={tooltipFormatter}
                 />
                 <Line type="monotone" dataKey="value" stroke={COLORS.primary} strokeWidth={2} dot={{ r: 3 }} isAnimationActive animationBegin={180} animationDuration={1000} animationEasing="ease-out" />
@@ -215,7 +204,7 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b-2 border-border/60">
+                <tr className="border-b border-game-line">
                   {evidence.headers?.map((h) => (
                     <th key={h} className="text-right py-2 px-2 font-bold opacity-80">
                       {h}
@@ -225,7 +214,7 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
               </thead>
               <tbody>
                 {evidence.rows.map((row, i) => (
-                  <tr key={i} className="border-b border-border/30">
+                  <tr key={i} className="border-b border-game-line/50">
                     {row.cells?.map((c, j) => (
                       <td key={j} className={`py-2 px-2 ${j === 0 ? "font-bold" : ""}`}>
                         {c}
@@ -257,7 +246,7 @@ export const ReportDocument = ({ evidence, compact = false }: ReportDocumentProp
       </div>
 
       {/* Footer with stamp + footnote(s) */}
-      <div className="relative px-4 pt-2 pb-3 border-t-2 border-dashed border-border/60 flex items-end justify-between gap-3">
+      <div className="relative px-4 pt-2 pb-3 border-t border-dashed border-game-line flex items-end justify-between gap-3">
         <div className="text-[10px] opacity-70 leading-snug flex-1 space-y-1">
           {evidence.footnotes && evidence.footnotes.length > 0 ? (
             evidence.footnotes.map((line, i) => <p key={i}>{line}</p>)

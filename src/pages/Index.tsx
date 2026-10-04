@@ -156,7 +156,7 @@ const GameContent = () => {
   const showTimeline = !showBrandIntro && !["company-briefing", "replay-briefing", "result"].includes(currentScreen);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="game-surface min-h-screen bg-background">
       <ScreenTransition isActive={transitioning} />
 
       {showTimeline && <ProgressTimeline currentScreen={currentScreen} />}

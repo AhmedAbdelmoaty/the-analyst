@@ -110,21 +110,21 @@ export const ArrivalScreen = ({ onComplete }: ArrivalScreenProps) => {
       {phase === "storefront" && (
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
           <motion.div
-            className="flex flex-col items-center px-8 py-5 rounded-2xl bg-card/65 backdrop-blur-sm border border-border mb-6"
+            className="imp-panel mb-6 flex flex-col items-center rounded-md px-8 py-5 backdrop-blur-sm"
             initial={{ y: -30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8 }}
           >
             <div className="flex items-center gap-2 mb-2">
-              <MapPin className="w-4 h-4 text-accent" />
-              <span className="text-accent text-sm font-bold">وصلت متجر VELARO</span>
+              <MapPin className="w-4 h-4 text-primary" />
+              <span className="text-primary text-sm font-bold">وصلت متجر VELARO</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1 tracking-[0.3em]">VELARO</h1>
-            <p className="text-muted-foreground text-xs" dir="rtl">أ. هشام مستنيك جوه</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-game-ink mb-1 tracking-[0.3em]">VELARO</h1>
+            <p className="text-game-muted text-xs" dir="rtl">أ. هشام مستنيك جوه</p>
           </motion.div>
 
           <motion.button
-            className="imp-action relative px-8 py-3 rounded-xl text-base font-bold overflow-hidden group"
+            className="imp-action relative px-8 py-3 rounded-md text-base font-bold overflow-hidden group"
             onClick={() => setPhase("entering")}
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -137,7 +137,7 @@ export const ArrivalScreen = ({ onComplete }: ArrivalScreenProps) => {
               animate={{ x: ["-200%", "200%"] }}
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
             />
-            <span className="relative z-10 flex items-center gap-2 text-white">
+            <span className="relative z-10 flex items-center gap-2 text-primary-foreground">
               <DoorOpen className="w-5 h-5" />
               ادخل المتجر
             </span>
@@ -154,12 +154,12 @@ export const ArrivalScreen = ({ onComplete }: ArrivalScreenProps) => {
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="px-6 py-3 rounded-xl bg-card/65 backdrop-blur-sm border border-border"
+            className="imp-panel rounded-md px-6 py-3 backdrop-blur-sm"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <p className="text-foreground text-sm font-bold tracking-widest" dir="rtl">صالة VELARO الرئيسية</p>
+            <p className="text-game-ink text-sm font-bold tracking-widest" dir="rtl">صالة VELARO الرئيسية</p>
           </motion.div>
         </motion.div>
       )}

@@ -7,3 +7,4 @@
 - `completed_players` inserts require an authenticated user with `user_id = auth.uid()`; admins alone read results.
 - Admins sign in with email at `/admin/login`; roles live in `user_roles`.
 - Account screens use scoped auth-theme tokens and local Cairo fonts so the light account surface never changes the dark game theme.
+- Gameplay surfaces use scoped game-paper/ink/charcoal tokens while photographic scenes retain their original dark overlays; this keeps text readable without altering scene media or dialogue timing.

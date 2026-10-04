@@ -143,9 +143,9 @@ export const CompanyBriefingScreen = ({
           <motion.button
             onClick={() => {
               setPhase("door-knock");
-              setTimeout(() => { try { playSceneOneShot("door_knock"); } catch {} }, 150);
+              setTimeout(() => { try { playSceneOneShot("door_knock"); } catch { /* optional audio */ } }, 150);
             }}
-            className="mt-10 px-8 py-3 rounded-xl bg-card/65 border border-border text-foreground font-bold hover:bg-card/80 transition-all flex items-center gap-2"
+            className="imp-outline mt-10 flex items-center gap-2 rounded-md px-8 py-3 font-bold transition-all"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.1 }}
@@ -174,10 +174,10 @@ export const CompanyBriefingScreen = ({
               onClick={() => {
                 try {
                   playSound("door");
-                } catch {}
+                } catch { /* optional audio */ }
                 setPhase("dialogue");
               }}
-              className="mt-4 px-8 py-3 rounded-xl bg-card/65 border border-border text-foreground font-bold hover:bg-card/80 transition-all"
+              className="imp-action mt-4 rounded-md px-8 py-3 font-bold transition-all"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.2 }}
@@ -206,16 +206,16 @@ export const CompanyBriefingScreen = ({
               <img src={avatarImg} alt={name} className="w-full h-full object-cover" />
             </motion.div>
 
-            <motion.div className="imp-panel p-6 rounded-xl space-y-4" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
+            <motion.div className="imp-panel p-6 rounded-md space-y-4" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
               <ChartNoAxesColumnIncreasing className="w-8 h-8 text-primary mx-auto" />
-              <p className="text-[#171717] text-lg font-bold leading-relaxed" dir="rtl">
+              <p className="text-game-ink text-lg font-bold leading-relaxed" dir="rtl">
                 دورك كمحلل بيانات تساعد العميل على اتخاذ القرار الصحيح
               </p>
             </motion.div>
 
             <motion.button
               onClick={onComplete}
-              className="imp-action relative px-8 py-4 rounded-xl text-lg font-bold overflow-hidden group w-full"
+              className="imp-action relative px-8 py-4 rounded-md text-lg font-bold overflow-hidden group w-full"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.7 }}
@@ -223,7 +223,7 @@ export const CompanyBriefingScreen = ({
               whileTap={{ scale: 0.97 }}
             >
               <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent" animate={{ x: ["-200%", "200%"] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }} />
-              <span className="relative z-10 flex items-center justify-center gap-2 text-white">
+              <span className="relative z-10 flex items-center justify-center gap-2 text-primary-foreground">
                 يلا نروح للعميل
               </span>
             </motion.button>

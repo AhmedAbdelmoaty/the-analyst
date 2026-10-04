@@ -509,13 +509,13 @@ export const EnhancedDialogue = ({
         const label = item.kind === "report" ? "تقرير جديد" : "ملاحظة جديدة";
         const tone =
           item.kind === "report"
-            ? "border-[#d9bf78]/55 bg-[#191714]/95 text-[#f7edd4] shadow-[#d9bf78]/25"
-            : "border-[#dec890]/70 bg-[#f3e8c7] text-[#332714] shadow-[#e8d39b]/30";
+            ? "border-primary/50 bg-game-paper text-game-ink shadow-primary/20"
+            : "border-game-line bg-game-ivory text-game-ink shadow-game-charcoal/20";
 
         return (
           <motion.div
             key={item.id}
-            className={`fixed z-[95] flex min-w-[132px] items-center gap-2 overflow-hidden rounded-[14px] border px-3.5 py-2.5 text-xs font-bold shadow-2xl backdrop-blur-md ${tone}`}
+            className={`fixed z-[95] flex min-w-[132px] items-center gap-2 overflow-hidden rounded-md border px-3.5 py-2.5 text-xs font-bold shadow-xl ${tone}`}
             style={{ left: "50vw", top: "72vh" }}
             dir="rtl"
             initial={{ opacity: 0, scale: 0.62, x: "-50%", y: 18, rotate: item.kind === "report" ? 5 : -5 }}
@@ -544,9 +544,9 @@ export const EnhancedDialogue = ({
               setCollectibles((prev) => prev.filter((drop) => drop.id !== item.id));
             }}
           >
-            <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-l from-transparent via-white/60 to-transparent" />
-            <span className="absolute -left-5 top-1/2 h-12 w-12 -translate-y-1/2 rounded-full bg-white/15 blur-xl" />
-            <Icon className={`h-4 w-4 ${item.kind === "report" ? "text-[#d9bf78]" : "text-[#7b5c1d]"}`} />
+            <span className="absolute inset-x-3 top-0 h-px bg-game-line" />
+            <span className="absolute -left-5 top-1/2 h-12 w-12 -translate-y-1/2 rounded-full bg-primary/10 blur-xl" />
+            <Icon className="h-4 w-4 text-primary" />
             <span>{label}</span>
           </motion.div>
         );
@@ -574,7 +574,7 @@ export const EnhancedDialogue = ({
             >
               <button
                 onClick={() => setReportOpen(false)}
-                className="absolute -top-2 -left-2 z-10 w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors shadow-lg"
+                className="absolute -top-2 -left-2 z-10 flex h-9 w-9 items-center justify-center rounded-md border border-game-line bg-game-paper text-game-ink shadow-lg transition-colors hover:border-primary hover:text-primary"
                 aria-label="إغلاق"
               >
                 <X className="w-4 h-4" />
@@ -594,70 +594,64 @@ export const EnhancedDialogue = ({
     {typeof document !== "undefined" ? createPortal(reportModalLayer, document.body) : reportModalLayer}
     <AnimatePresence>
       <motion.div
-        className="fixed bottom-0 left-0 right-0 z-50"
+        className="fixed bottom-0 left-0 right-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pb-5"
         initial={{ y: 200, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 200, opacity: 0 }}
         transition={{ type: "spring", damping: 20 }}
       >
         <motion.div
-          className="flex justify-center mb-4"
-          key={currentDialogue.characterId}
-          initial={{ scale: 0, y: 50 }}
-          animate={{ scale: 1, y: 0 }}
-          transition={{ type: "spring", damping: 15 }}
-        >
-          <AnimatedCharacter
-            characterId={animCharId}
-            size="lg"
-            isActive
-            isSpeaking={isTyping}
-            mood={currentDialogue.mood || "neutral"}
-            showName={false}
-            entrance="bounce"
-            imageOverride={detectiveImageOverride}
-          />
-        </motion.div>
-
-        <motion.div
-          className={`mx-4 mb-4 overflow-hidden rounded-[18px] border-2 p-6 relative shadow-[0_22px_60px_rgba(0,0,0,0.42)] ${
+          className={`relative mx-auto w-full max-w-4xl overflow-hidden rounded-md border p-3 shadow-xl sm:p-4 ${
             isAnalyst
-              ? "bg-black border-white/15"
-              : "bg-[#A61E25] border-white/35"
+              ? "border-primary bg-game-ivory text-game-ink"
+              : "border-primary/60 bg-game-charcoal text-primary-foreground"
           }`}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
           layoutId="dialogue-box"
         >
-          <motion.div
-            className="flex items-center gap-3 mb-3"
-            key={currentDialogue.characterId}
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-          >
-            <h4 className={`font-bold text-lg ${isAnalyst ? "text-white" : "text-white"}`}>
-              {resolvedNames.ar}
-            </h4>
-            {!isDetective && (
-              <span className={`text-sm ${isAnalyst ? "text-white/60" : "text-white/75"}`}>
-                ({resolvedNames.en})
-              </span>
-            )}
-          </motion.div>
-
-          <p
-            className={`text-lg leading-relaxed text-white`}
-            dir="rtl"
-          >
-            {displayedText}
-            {isTyping && (
-              <motion.span
-                className="inline-block w-3 h-5 ml-1 align-middle bg-white"
-                animate={{ opacity: [1, 0] }}
-                transition={{ duration: 0.5, repeat: Infinity }}
+          <div className="flex items-start gap-3 sm:gap-4" dir="rtl">
+            <motion.div
+              className="shrink-0"
+              key={currentDialogue.characterId}
+              initial={{ scale: 0, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: "spring", damping: 15 }}
+            >
+              <AnimatedCharacter
+                characterId={animCharId}
+                size="lg"
+                isActive
+                isSpeaking={isTyping}
+                mood={currentDialogue.mood || "neutral"}
+                showName={false}
+                entrance="bounce"
+                imageOverride={detectiveImageOverride}
+                portrait
               />
-            )}
-          </p>
+            </motion.div>
+            <div className="min-w-0 flex-1 text-right">
+              <motion.div
+                className="mb-1.5 flex flex-wrap items-baseline gap-x-2 border-r-2 border-primary pr-2"
+                key={currentDialogue.characterId}
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+              >
+                <h4 className="text-sm font-bold sm:text-base">{resolvedNames.ar}</h4>
+                {!isDetective && <span className={`text-xs ${isAnalyst ? "text-game-muted" : "text-primary-foreground/70"}`}>({resolvedNames.en})</span>}
+              </motion.div>
+              <p className="max-h-[35vh] overflow-y-auto break-words text-sm leading-7 sm:text-base sm:leading-8" dir="rtl">
+                {displayedText}
+                {isTyping && (
+                  <motion.span
+                    className={`mr-1 inline-block h-4 w-0.5 align-middle ${isAnalyst ? "bg-primary" : "bg-primary-foreground"}`}
+                    animate={{ opacity: [1, 0] }}
+                    transition={{ duration: 0.5, repeat: Infinity }}
+                  />
+                )}
+              </p>
+            </div>
+          </div>
 
           {!isTyping && currentDialogue.inlineEvidence && (
             <motion.button
@@ -666,7 +660,7 @@ export const EnhancedDialogue = ({
                 e.stopPropagation();
                 setReportOpen(true);
               }}
-              className="mt-3 w-full rounded-xl border border-white/70 bg-white p-3 flex items-center justify-between gap-3 text-right text-[#171717] shadow-lg shadow-black/20 transition-all hover:border-primary hover:bg-[#fff7f7] group"
+              className="group mt-3 flex w-full items-center justify-between gap-3 rounded-md border border-game-line bg-game-paper p-3 text-right text-game-ink transition-all hover:border-primary hover:bg-game-ivory"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -678,10 +672,10 @@ export const EnhancedDialogue = ({
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <FileText className="w-5 h-5 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0 text-right">
-                  <span className="text-[11px] text-[#666]">
+                  <span className="text-[11px] text-game-muted">
                     أ. هشام سلّمك تقرير — اضغط للفتح
                   </span>
-                  <span className="text-sm font-bold text-[#171717] truncate">
+                  <span className="truncate text-sm font-bold text-game-ink">
                     {currentDialogue.inlineEvidence.title}
                   </span>
                 </div>
@@ -694,7 +688,7 @@ export const EnhancedDialogue = ({
             {!isTyping && (
               <motion.div
                 className={`flex items-center justify-between mt-4 pt-3 border-t gap-3 ${
-                  isAnalyst ? "border-white/15" : "border-white/22"
+                  isAnalyst ? "border-game-line" : "border-primary-foreground/20"
                 }`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -711,14 +705,14 @@ export const EnhancedDialogue = ({
                         whileHover={{ scale: 1.08 }}
                         whileTap={{ scale: 0.92 }}
                         title="رجوع للجملة السابقة (←)"
-                        className="flex items-center gap-1.5 rounded-lg border border-white/70 bg-white px-3 py-1.5 text-xs font-bold text-[#171717] transition-all hover:border-primary hover:text-primary"
+                        className="flex items-center gap-1.5 rounded-md border border-game-line bg-game-paper px-3 py-1.5 text-xs font-bold text-game-ink transition-all hover:border-primary hover:text-primary"
                       >
                         <ChevronRight className="w-3.5 h-3.5" />
                         <span>رجوع</span>
                       </motion.button>
                     )}
                   </AnimatePresence>
-                  <span className={`text-xs ${isAnalyst ? "text-white/60" : "text-white/75"}`}>
+                  <span className={`text-xs ${isAnalyst ? "text-game-muted" : "text-primary-foreground/75"}`}>
                     {currentIndex + 1} / {dialogues.length}
                   </span>
                 </div>

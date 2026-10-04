@@ -25,6 +25,7 @@ interface AnimatedCharacterProps {
   className?: string;
   imageOverride?: string;
   nameOverride?: string;
+  portrait?: boolean;
 }
 
 const characterData: Record<CharacterId, { name: string; nameEn: string; role: string; roleEn: string; image: string; color: string }> = {
@@ -82,6 +83,7 @@ export const AnimatedCharacter = ({
   className = "",
   imageOverride,
   nameOverride,
+  portrait = false,
 }: AnimatedCharacterProps) => {
   const character = characterData[characterId];
   const sizeClass = sizeClasses[size];
@@ -103,16 +105,16 @@ export const AnimatedCharacter = ({
       whileTap={onClick ? { scale: 0.95 } : {}}
     >
       <motion.div
-        className={`relative rounded-full overflow-hidden border-4 ${colors.border} ${isActive ? colors.glow : ""} ${sizeClass.container} transition-all duration-300`}
+        className={`relative overflow-hidden border-2 ${portrait ? "h-[76px] w-[62px] rounded-md sm:h-[88px] sm:w-[72px] border-primary/50" : `rounded-full ${colors.border} ${sizeClass.container}`} ${isActive && !portrait ? colors.glow : ""} transition-all duration-300`}
         animate={moodAnimations[mood]}
       >
         {isActive && (
-          <motion.div className={`absolute inset-0 ${colors.bg}`} animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 2, repeat: Infinity }} />
+          <motion.div className={`absolute inset-0 ${portrait ? "bg-primary/10" : colors.bg}`} animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 2, repeat: Infinity }} />
         )}
         <motion.img
           src={displayImage}
           alt={character.nameEn}
-          className={`${sizeClass.image} object-cover rounded-full ${!isSpeaking ? "animate-idle-breath" : ""}`}
+          className={`${portrait ? "h-full w-full object-cover object-top" : `${sizeClass.image} rounded-full object-cover`} ${!isSpeaking ? "animate-idle-breath" : ""}`}
           animate={isSpeaking ? { scale: [1, 1.025, 1], transition: { duration: 0.28, repeat: Infinity } } : {}}
         />
         {/* Blink overlay — subtle dark bar across the eyes */}
@@ -124,13 +126,13 @@ export const AnimatedCharacter = ({
           {isSpeaking && (
             <motion.div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-1" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}>
               {[0, 1, 2].map((i) => (
-                <motion.div key={i} className={`w-2 h-2 rounded-full ${colors.bg} ${colors.border} border`} animate={{ y: [-3, 3, -3], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }} />
+                <motion.div key={i} className={`w-2 h-2 rounded-full ${portrait ? "border-primary bg-primary/20" : `${colors.bg} ${colors.border}`} border`} animate={{ y: [-3, 3, -3], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }} />
               ))}
             </motion.div>
           )}
         </AnimatePresence>
         {isActive && (
-          <motion.div className={`absolute inset-0 rounded-full border-2 ${colors.border}`} animate={{ scale: [1, 1.2, 1], opacity: [0.8, 0, 0.8] }} transition={{ duration: 2, repeat: Infinity }} />
+          <motion.div className={`absolute inset-0 border-2 ${portrait ? "rounded-md border-primary" : `rounded-full ${colors.border}`}`} animate={{ scale: [1, 1.2, 1], opacity: [0.8, 0, 0.8] }} transition={{ duration: 2, repeat: Infinity }} />
         )}
       </motion.div>
       {showName && (

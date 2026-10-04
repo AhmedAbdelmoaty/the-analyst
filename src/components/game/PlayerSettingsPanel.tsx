@@ -20,7 +20,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editFirstName, setEditFirstName] = useState(profile?.first_name || "");
   const [editLastName, setEditLastName] = useState(profile?.last_name || "");
-  const [editGender, setEditGender] = useState<"male" | "female">(profile?.gender as any || "male");
+  const [editGender, setEditGender] = useState<"male" | "female">(profile?.gender === "female" ? "female" : "male");
   const [saving, setSaving] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -60,7 +60,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
       {/* Settings button */}
       <motion.button
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 left-4 z-50 rounded-xl border border-black/15 bg-white p-2.5 text-[#171717] shadow-lg shadow-black/15 backdrop-blur-md transition-all hover:border-primary hover:text-primary"
+        className="fixed top-4 left-4 z-50 rounded-md border border-game-line bg-game-paper p-2.5 text-game-ink shadow-lg shadow-black/15 backdrop-blur-md transition-all hover:border-primary hover:text-primary"
         whileHover={{ scale: 1.1, rotate: 90 }}
         whileTap={{ scale: 0.9 }}
         title="الإعدادات"
@@ -73,7 +73,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
         {isOpen && (
           <>
             <motion.div
-              className="fixed inset-0 bg-black/45 backdrop-blur-sm z-[60]"
+              className="fixed inset-0 bg-game-charcoal/45 backdrop-blur-sm z-[60]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -92,28 +92,28 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                   <img
                     src={analystLockup}
                     alt="The Analyst"
-                    className="h-8 w-auto [filter:brightness(0)_invert(1)]"
+                    className="h-8 w-auto"
                     draggable={false}
                   />
-                  <span className="border-l border-white/25 pl-2.5 text-white/85 text-sm font-bold">الإعدادات</span>
+                  <span className="border-l border-game-line pl-2.5 text-game-muted text-sm font-bold">الإعدادات</span>
                 </div>
                 <button
                   onClick={() => { setIsOpen(false); setIsEditingProfile(false); setConfirmReset(false); }}
-                  className="rounded-lg border border-white/20 bg-white/10 p-1.5 text-white/80 transition-colors hover:bg-white hover:text-primary"
+                  className="rounded-lg border border-game-line bg-game-paper p-1.5 text-game-muted transition-colors hover:bg-game-paper hover:text-primary"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Player profile section */}
-              <div className="p-4 border-b border-black/10 bg-white">
+              <div className="p-4 border-b border-game-line bg-game-paper">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary">
                     <img src={avatarImg} alt="avatar" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-[#171717] font-bold">{profile?.display_name}</p>
-                    <p className="text-[#666] text-xs">
+                    <p className="text-game-ink font-bold">{profile?.display_name}</p>
+                    <p className="text-game-muted text-xs">
                       {profile?.gender === "female" ? "محللة بيانات" : "محلل بيانات"}
                     </p>
                   </div>
@@ -131,7 +131,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                       onChange={(e) => setEditFirstName(e.target.value)}
                       placeholder="الاسم الأول"
                       dir="auto"
-                      className="w-full px-3 py-2 rounded-lg bg-white border border-black/15 text-[#171717] text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full px-3 py-2 rounded-lg bg-game-paper border border-game-line text-game-ink text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <input
                       type="text"
@@ -139,7 +139,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                       onChange={(e) => setEditLastName(e.target.value)}
                       placeholder="الاسم الأخير"
                       dir="auto"
-                      className="w-full px-3 py-2 rounded-lg bg-white border border-black/15 text-[#171717] text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full px-3 py-2 rounded-lg bg-game-paper border border-game-line text-game-ink text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <div className="flex gap-2">
                       {[
@@ -151,12 +151,12 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                           onClick={() => setEditGender(opt.id)}
                           className={`flex-1 flex items-center gap-2 p-2 rounded-lg border transition-all ${
                             editGender === opt.id
-                              ? "border-primary bg-[#fff4f4]"
-                              : "border-black/15 bg-white hover:border-primary"
+                              ? "border-primary bg-primary/10"
+                              : "border-game-line bg-game-paper hover:border-primary"
                           }`}
                         >
                           <img src={opt.img} alt="" className="w-8 h-8 rounded-full object-cover" />
-                          <span className={`text-xs font-bold ${editGender === opt.id ? "text-primary" : "text-[#666]"}`}>
+                          <span className={`text-xs font-bold ${editGender === opt.id ? "text-primary" : "text-game-muted"}`}>
                             {opt.label}
                           </span>
                         </button>
@@ -183,7 +183,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                     onClick={() => {
                       setEditFirstName(profile?.first_name || "");
                       setEditLastName(profile?.last_name || "");
-                      setEditGender(profile?.gender as any || "male");
+                      setEditGender(profile?.gender === "female" ? "female" : "male");
                       setIsEditingProfile(true);
                     }}
                     className="flex items-center gap-2 text-primary text-sm hover:underline"
@@ -195,14 +195,14 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
               </div>
 
               {/* Audio controls */}
-              <div className="p-4 border-b border-black/10 bg-[#f7f2e8] space-y-4">
-                <h3 className="text-sm font-bold text-[#171717] flex items-center gap-2">
+              <div className="p-4 border-b border-game-line bg-game-ivory space-y-4">
+                <h3 className="text-sm font-bold text-game-ink flex items-center gap-2">
                   <Volume2 className="w-4 h-4 text-primary" />
                   الصوت
                 </h3>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[#555] flex items-center gap-2">
+                  <span className="text-sm text-game-muted flex items-center gap-2">
                     {isSoundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                     المؤثرات الصوتية
                   </span>
@@ -211,7 +211,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                     onClick={handleSoundToggle}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <motion.div className="w-4 h-4 rounded-full bg-white shadow"
+                    <motion.div className="w-4 h-4 rounded-full bg-game-paper shadow"
                       animate={{ x: isSoundEnabled ? 24 : 0 }}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
@@ -220,19 +220,19 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
               </div>
 
               {/* Actions */}
-              <div className="p-4 space-y-2 bg-white">
+              <div className="p-4 space-y-2 bg-game-paper">
                 {/* Replay briefing */}
                 <button
                   onClick={() => {
                     onReplayBriefing();
                     setIsOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg border border-black/10 bg-white hover:border-primary hover:bg-[#fff7f7] text-[#171717] transition-colors text-right"
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border border-game-line bg-game-paper hover:border-primary hover:bg-game-ivory text-game-ink transition-colors text-right"
                 >
                   <Building2 className="w-5 h-5 text-primary" />
                   <div>
                     <p className="text-sm font-bold">مكتب الشركة</p>
-                    <p className="text-xs text-[#666]">إعادة مشاهدة اجتماع Prism Consulting</p>
+                    <p className="text-xs text-game-muted">إعادة مشاهدة اجتماع Prism Consulting</p>
                   </div>
                 </button>
 
@@ -245,12 +245,12 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                     window.location.assign("/login");
                   }}
                   disabled={signingOut}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg border border-black/10 bg-white hover:border-primary hover:bg-[#fff7f7] text-[#171717] transition-colors text-right disabled:opacity-50"
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border border-game-line bg-game-paper hover:border-primary hover:bg-game-ivory text-game-ink transition-colors text-right disabled:opacity-50"
                 >
                   <LogOut className="w-5 h-5 text-primary" />
                   <div>
                     <p className="text-sm font-bold">{signingOut ? "جاري الخروج..." : "تسجيل الخروج"}</p>
-                    <p className="text-xs text-[#666]">هترجع لشاشة الدخول</p>
+                    <p className="text-xs text-game-muted">هترجع لشاشة الدخول</p>
                   </div>
                 </button>
 
@@ -260,7 +260,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                   className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-right ${
                     confirmReset
                       ? "bg-destructive/15 hover:bg-destructive/25 text-destructive"
-                      : "border border-black/10 bg-white hover:border-primary hover:bg-[#fff7f7] text-[#171717]"
+                      : "border border-game-line bg-game-paper hover:border-primary hover:bg-game-ivory text-game-ink"
                   }`}
                 >
                   <RotateCcw className={`w-5 h-5 ${confirmReset ? "text-destructive" : "text-primary"}`} />
@@ -268,7 +268,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                     <p className="text-sm font-bold">
                       {confirmReset ? "اضغط مرة تانية للتأكيد" : "إعادة اللعبة من البداية"}
                     </p>
-                    <p className="text-xs text-[#666]">
+                    <p className="text-xs text-game-muted">
                       {confirmReset ? "هتفقد كل تقدمك الحالي" : "ابدأ القضية من أول وجديد"}
                     </p>
                   </div>

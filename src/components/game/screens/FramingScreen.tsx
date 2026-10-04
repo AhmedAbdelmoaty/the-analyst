@@ -36,7 +36,7 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
   useEffect(() => {
     const t = setTimeout(() => {
       setStage("sections");
-      try { playSound("reveal"); } catch {}
+      try { playSound("reveal"); } catch { /* optional audio */ }
     }, 1800);
     return () => clearTimeout(t);
   }, [playSound]);
@@ -65,7 +65,7 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
     setConfirmed(true);
     setShowStamp(true);
     setFlash(true);
-    try { playSound("stamp"); } catch {}
+    try { playSound("stamp"); } catch { /* optional audio */ }
     setTimeout(() => setFlash(false), 120);
     setTimeout(() => {
       setShowStamp(false);
@@ -97,7 +97,7 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
       <AnimatePresence>
         {flash && (
           <motion.div
-            className="fixed inset-0 z-[90] bg-foreground/40 pointer-events-none"
+            className="fixed inset-0 z-[90] bg-game-paper/40 pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.55 }}
             exit={{ opacity: 0 }}
@@ -119,7 +119,7 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
             exit={{ opacity: 0 }}
           >
             <motion.p
-              className="text-foreground/85 text-sm italic"
+              className="text-game-paper/85 text-sm italic"
               dir="rtl"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -136,7 +136,7 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
         {stage === "sections" && currentSection && (
           <motion.div
             key={currentSection.id}
-            className="absolute inset-0 z-10 flex flex-col items-center justify-center px-4"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center overflow-y-auto px-4 py-12"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -158,7 +158,7 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
             </div>
 
             <motion.div
-              className="imp-panel w-full max-w-xl overflow-hidden rounded-2xl"
+              className="imp-panel w-full max-w-xl overflow-hidden rounded-md"
               initial={{ scale: 0.92, y: 20, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.96, y: -10, opacity: 0 }}
@@ -175,10 +175,10 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
                     <motion.button
                       key={option.id}
                       onClick={() => handleSelect(currentSection.id, option.id)}
-                      className={`w-full p-3 rounded-xl border text-right transition-all ${
+                      className={`w-full p-3 rounded-md border text-right transition-all ${
                         selected
-                          ? "bg-[#fff4f4] border-primary ring-2 ring-primary/20"
-                          : "bg-white border-black/15 hover:border-primary hover:bg-[#fff7f7]"
+                          ? "bg-primary/10 border-primary ring-2 ring-primary/20"
+                          : "bg-game-paper border-game-line hover:border-primary hover:bg-game-ivory"
                       }`}
                       dir="rtl"
                       initial={{ opacity: 0, x: 24 }}
@@ -190,12 +190,12 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
                       <div className="flex items-start gap-3">
                         <div
                           className={`w-5 h-5 rounded-full border mt-0.5 shrink-0 flex items-center justify-center ${
-                            selected ? "border-primary bg-primary text-white" : "border-black/30 bg-white"
+                            selected ? "border-primary bg-primary text-primary-foreground" : "border-game-line bg-game-paper"
                           }`}
                         >
-                          {selected && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                          {selected && <CheckCircle2 className="w-3.5 h-3.5 text-primary-foreground" />}
                         </div>
-                        <p className="text-[#171717] text-sm font-bold leading-relaxed flex-1">{option.text}</p>
+                        <p className="text-game-ink text-sm font-bold leading-relaxed flex-1">{option.text}</p>
                       </div>
                     </motion.button>
                   );
@@ -221,13 +221,13 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
       <AnimatePresence>
         {stage === "summary" && (
           <motion.div
-            className="absolute inset-0 z-10 flex items-center justify-center px-4"
+            className="absolute inset-0 z-10 flex items-center justify-center overflow-y-auto px-4 py-12"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="imp-panel w-full max-w-xl overflow-hidden rounded-2xl"
+              className="imp-panel w-full max-w-xl overflow-hidden rounded-md"
               initial={{ scale: 0.9, y: 30, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               transition={{ type: "spring", damping: 20 }}
@@ -235,8 +235,8 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
             >
               <div className="imp-panel-header text-center px-5 py-4">
                 <div className="text-3xl mb-2">📋</div>
-                <h3 className="font-bold text-base text-white">ملخّص التقرير</h3>
-                <p className="text-white/75 text-xs mt-1">راجع الاختيارات قبل ما تعتمدها</p>
+                <h3 className="font-bold text-base text-game-ink">ملخّص التقرير</h3>
+                <p className="text-game-muted text-xs mt-1">راجع الاختيارات قبل ما تعتمدها</p>
               </div>
 
               <div className="space-y-2.5 p-5 pb-0">
@@ -247,10 +247,10 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
                   return (
                     <div
                       key={section.id}
-                      className="p-3 rounded-xl bg-white border border-black/15"
+                      className="p-3 rounded-md bg-game-paper border border-game-line"
                     >
                       <p className="text-xs text-primary font-bold mb-1">{section.title}</p>
-                      <p className="text-sm text-[#171717] font-bold leading-relaxed">
+                      <p className="text-sm text-game-ink font-bold leading-relaxed">
                         {selectedOption?.text}
                       </p>
                     </div>
@@ -264,14 +264,14 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
                     setStage("sections");
                     setActiveSectionIdx(0);
                   }}
-                  className="imp-outline px-4 py-2.5 rounded-xl text-sm font-bold hover:border-primary hover:text-primary"
+                  className="imp-outline px-4 py-2.5 rounded-md text-sm font-bold hover:border-primary hover:text-primary"
                   disabled={confirmed}
                 >
                   مراجعة
                 </button>
                 <motion.button
                   onClick={handleConfirm}
-                  className="imp-action flex-1 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+                  className="imp-action flex-1 py-2.5 rounded-md font-bold text-sm flex items-center justify-center gap-2"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   disabled={confirmed}

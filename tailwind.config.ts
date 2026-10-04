@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -59,6 +60,14 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        game: {
+          paper: "hsl(var(--game-paper))",
+          ivory: "hsl(var(--game-ivory))",
+          ink: "hsl(var(--game-ink))",
+          charcoal: "hsl(var(--game-charcoal))",
+          muted: "hsl(var(--game-muted))",
+          line: "hsl(var(--game-line))",
+        },
         neon: {
           cyan: "hsl(var(--neon-cyan))",
           blue: "hsl(var(--neon-blue))",
@@ -107,5 +116,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

@@ -28,15 +28,15 @@ const RESULT_VIEW = {
     mascot: { male: maleStrongMascot, female: femaleStrongMascot },
     stars: 3,
     sound: "fanfare",
-    page: "bg-[radial-gradient(circle_at_50%_30%,rgba(166,30,37,.18),transparent_42%),linear-gradient(135deg,#f7f2e8_0%,#fff_54%,#f4e2e3_100%)]",
-    stage: "border-[#A61E25]/80 bg-white/95 shadow-[#A61E25]/25",
-    titleColor: "text-[#151515]",
-    badgeStyle: "border-[#A61E25]/35 bg-white/80 text-[#A61E25]",
-    starOn: "bg-[#A61E25] text-white shadow-[#A61E25]/35",
-    starOff: "bg-white/60 text-[#b8aa9c]",
-    button: "bg-[#A61E25] text-white shadow-[#A61E25]/35 hover:bg-[#8f1820]",
-    chipOn: "bg-[#A61E25]/10 text-[#A61E25] border-[#A61E25]/35",
-    chipOff: "bg-white/60 text-[#6f635c] border-white/70",
+    page: "bg-game-ivory",
+    stage: "border-primary/50 bg-game-paper shadow-primary/15",
+    titleColor: "text-game-ink",
+    badgeStyle: "border-primary/35 bg-game-ivory text-primary",
+    starOn: "bg-primary text-primary-foreground shadow-primary/25",
+    starOff: "bg-game-ivory text-game-muted",
+    button: "bg-primary text-primary-foreground shadow-primary/25 hover:bg-primary/90",
+    chipOn: "bg-primary/10 text-primary border-primary/35",
+    chipOff: "bg-game-ivory text-game-muted border-game-line",
     confetti: ["#A61E25", "#ffffff", "#111111", "#d7c28a", "#7d141a"],
   },
   weak: {
@@ -49,15 +49,15 @@ const RESULT_VIEW = {
     mascot: { male: maleWeakMascot, female: femaleWeakMascot },
     stars: 1,
     sound: "sparkle",
-    page: "bg-[radial-gradient(circle_at_50%_30%,rgba(166,30,37,.13),transparent_42%),linear-gradient(135deg,#f7f2e8_0%,#fff_58%,#eadedf_100%)]",
-    stage: "border-[#111111]/80 bg-white/95 shadow-[#A61E25]/20",
-    titleColor: "text-[#A61E25]",
-    badgeStyle: "border-[#111111]/15 bg-[#111111]/90 text-white",
-    starOn: "bg-[#A61E25] text-white shadow-[#A61E25]/25",
-    starOff: "bg-[#f1eadf] text-[#b9ada1]",
-    button: "bg-[#111111] text-white shadow-[#111111]/25 hover:bg-[#A61E25]",
-    chipOn: "bg-[#A61E25]/10 text-[#A61E25] border-[#A61E25]/35",
-    chipOff: "bg-[#f5efe7] text-[#786b64] border-[#dfd2c6]",
+    page: "bg-game-ivory",
+    stage: "border-game-line bg-game-paper shadow-game-charcoal/15",
+    titleColor: "text-primary",
+    badgeStyle: "border-game-line bg-game-charcoal text-primary-foreground",
+    starOn: "bg-primary text-primary-foreground shadow-primary/25",
+    starOff: "bg-game-ivory text-game-muted",
+    button: "bg-primary text-primary-foreground shadow-primary/25 hover:bg-primary/90",
+    chipOn: "bg-primary/10 text-primary border-primary/35",
+    chipOff: "bg-game-ivory text-game-muted border-game-line",
     confetti: ["#A61E25", "#111111", "#d7c28a", "#ffffff"],
   },
 } as const;
@@ -152,9 +152,7 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
   }, [outcome]);
 
   return (
-    <div className={cn("relative h-[100dvh] overflow-hidden text-[#172033]", view.page)} dir="rtl">
-      <div className="pointer-events-none absolute inset-0 opacity-25 [background-image:linear-gradient(90deg,rgba(166,30,37,.28)_1px,transparent_1px),linear-gradient(rgba(17,17,17,.22)_1px,transparent_1px)] [background-size:42px_42px]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(255,255,255,.72),rgba(255,255,255,.18)_40%,transparent_68%)]" />
+    <div className={cn("relative min-h-[100dvh] overflow-y-auto text-game-ink", view.page)} dir="rtl">
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {outcome !== "weak" &&
@@ -180,17 +178,16 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
           ))}
       </div>
 
-      <main className="relative z-10 flex h-full items-center justify-center px-3 py-3 sm:px-5 sm:py-4">
+      <main className="relative z-10 flex min-h-[100dvh] items-center justify-center px-3 py-3 sm:px-5 sm:py-4">
         <section
           className={cn(
-            "relative grid h-full max-h-[820px] w-full max-w-6xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border-4 p-3 shadow-2xl sm:p-5",
+            "relative grid min-h-[min(760px,96dvh)] w-full max-w-6xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-md border p-3 shadow-xl sm:p-5",
             view.stage
           )}
-          style={{ borderRadius: "28px" }}
         >
-          <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-md border border-black/10 bg-white/95 px-3 py-1.5 shadow-md sm:left-5 sm:top-5">
+          <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-md border border-game-line bg-game-paper px-3 py-1.5 shadow-sm sm:left-5 sm:top-5">
             <img src={analystMark} alt="The Analyst" className="h-6 w-auto sm:h-7" draggable={false} />
-            <span className="border-l border-black/15 pl-2 text-[9px] font-black tracking-[0.22em] text-[#161616] sm:text-[10px]">
+            <span className="border-l border-game-line pl-2 text-[9px] font-black text-game-ink sm:text-[10px]">
               CASE FILE
             </span>
           </div>
@@ -286,7 +283,7 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
               </motion.h1>
 
               <motion.p
-                className="mt-2 max-w-[520px] text-balance text-[clamp(.95rem,1.8vw,1.25rem)] font-bold leading-7 text-[#4b5563] sm:mt-3"
+                className="mt-2 max-w-[520px] text-balance text-[clamp(.95rem,1.8vw,1.25rem)] font-bold leading-7 text-game-muted sm:mt-3"
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.88, duration: 0.38 }}
@@ -315,7 +312,7 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
 
               {outcome === "weak" && (
                 <motion.div
-                  className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#A61E25]/10 px-4 py-2 text-sm font-bold text-[#A61E25] shadow-md sm:mt-4"
+                  className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-bold text-primary shadow-md sm:mt-4"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: [1, 1.04, 1] }}
                   transition={{
@@ -339,7 +336,7 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
             <motion.button
               onClick={() => onNavigate("company-briefing")}
               className={cn(
-                "flex h-12 w-full items-center justify-center gap-2 rounded-full px-6 text-base font-bold shadow-xl outline-none ring-offset-2 transition-transform focus-visible:ring-2 focus-visible:ring-slate-900 sm:h-14",
+                "flex h-12 w-full items-center justify-center gap-2 rounded-md px-6 text-base font-bold shadow-lg outline-none ring-offset-2 transition-transform focus-visible:ring-2 focus-visible:ring-primary sm:h-14",
                 view.button
               )}
               whileHover={{ scale: 1.04 }}
