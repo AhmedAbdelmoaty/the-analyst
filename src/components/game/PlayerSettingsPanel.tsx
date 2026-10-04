@@ -211,7 +211,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                     onClick={handleSoundToggle}
                     whileTap={{ scale: 0.95 }}
                   >
-                    className="w-4 h-4 rounded-full bg-game-paper shadow"
+                    <motion.div className="w-4 h-4 rounded-full bg-game-paper shadow"
                       animate={{ x: isSoundEnabled ? 24 : 0 }}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
