@@ -17,8 +17,8 @@ const RESEND_COOLDOWN_S = 60;
 const RESET_TTL_MS = 10 * 60 * 1000;
 const LIMITS = {
   sendPerPhoneHour: 5,
-  sendPerIpHour: 20,
-  verifyPerIpHour: 40,
+  sendPerIpHour: 60,
+  verifyPerIpHour: 150,
   verifyPerPhoneHour: 15,
 };
 
@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
         const { first_name, last_name, phone, password } = p.data;
         const existing = await findUser(phone);
         if (existing) return fail(existing.phone_confirmed ? "account_exists" : "account_pending");
-        if ((await countEvents("signup", "ip", ip, 3600_000)) >= 10) return fail("rate_limited");
+        if ((await countEvents("signup", "ip", ip, 3600_000)) >= 50) return fail("rate_limited");
         await logEvent("signup", phone, ip);
         const { data: created, error } = await admin.auth.admin.createUser({
           phone, password, phone_confirm: false, user_metadata: { first_name, last_name },

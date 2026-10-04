@@ -13,7 +13,8 @@ Deno.serve(async (req) => {
     await admin.from("otp_challenges").update({ code_hmac: await hmac(`otp:${b.purpose}:${ch!.user_id}:${b.phone}:${b.code}`), ...(b.expire ? { expires_at: new Date(Date.now() - 1000).toISOString() } : {}) }).eq("id", ch!.id);
     return Response.json({ ok: true });
   }
-  if (b.op === "age") { // bypass cooldown for testing
+  if (b.op === "age") {
+    await admin.from("otp_rate_events").delete().like("phone", "+999%"); // bypass cooldown for testing
     await admin.from("otp_challenges").update({ created_at: new Date(Date.now() - 120000).toISOString() }).eq("phone", b.phone);
     return Response.json({ ok: true });
   }
