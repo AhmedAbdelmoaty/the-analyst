@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CheckCircle2, MessageCircle } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   AuthShell, ErrorBox, Field, InfoBox, LinkButton, OtpInput, PasswordInput, PhoneInput, PrimaryButton, TextInput,
@@ -37,6 +37,7 @@ const PlayerAuth = () => {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [sendFailed, setSendFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const [cooldown, setCooldown] = useCountdown();
@@ -64,8 +65,8 @@ const PlayerAuth = () => {
 
   const applySend = (r: PhoneAuthResult, okNotice: string) => {
     setCooldown(r.retry_after ?? r.cooldown ?? 60);
-    if (r.ok && r.sent === false) setNotice(null), setError("ماقدرناش نبعت رسالة الواتساب دلوقتي. استنى العداد وجرّب «ابعت كود جديد»، أو تأكد من الرقم.");
-    else if (r.ok) setNotice(okNotice);
+    if (r.ok && r.sent === false) { setSendFailed(true); setNotice(null); setError("تعذر إرسال رمز التحقق عبر واتساب. تحقق من الرقم وأعد المحاولة بعد انتهاء المهلة."); }
+    else if (r.ok) { setSendFailed(false); setNotice(okNotice); }
   };
 
   const phone = toE164(dial, local);
@@ -82,8 +83,8 @@ const PlayerAuth = () => {
         setActivePhone(phone);
         setMode("verify");
         if (!r.ok && r.error !== "cooldown") return setError(errText(r.error));
-        applySend(r, "حسابك لسه محتاج تأكيد. بعتنالك كود على واتساب.");
-        if (r.error === "cooldown") setNotice("حسابك لسه محتاج تأكيد. استخدم آخر كود وصلك أو استنى وتطلب كود جديد.");
+        applySend(r, "أُرسل رمز التحقق عبر واتساب.");
+        if (r.error === "cooldown") setNotice("استخدم رمز التحقق السابق أو أعد الإرسال بعد انتهاء المهلة.");
         return;
       }
       setError(errText(error));
@@ -94,7 +95,7 @@ const PlayerAuth = () => {
   const onSignup = (e: FormEvent) => {
     e.preventDefault();
     run(async () => {
-      if (!firstName.trim() || !lastName.trim()) return setError("اكتب اسمك الأول والأخير.");
+      if (!firstName.trim() || !lastName.trim()) return setError("أدخل الاسم الأول والأخير.");
       if (!phone) return setError(errText("invalid_phone"));
       if (password.length < 8) return setError(errText("weak_password"));
       if (password !== confirm) return setError(errText("password_mismatch"));
@@ -102,39 +103,39 @@ const PlayerAuth = () => {
         const r = await phoneAuth("change_phone", { phone: editingFrom, password, new_phone: phone });
         if (!r.ok) return setError(errText(r.error));
         setEditingFrom(null); setActivePhone(phone); setMode("verify");
-        return applySend(r, "بعتنا كود على الرقم الجديد.");
+        return applySend(r, "أُرسل رمز التحقق إلى الرقم الجديد عبر واتساب.");
       }
       const r = await phoneAuth("signup", { first_name: firstName.trim(), last_name: lastName.trim(), phone, password });
       if (!r.ok) return setError(errText(r.error));
       setActivePhone(phone); setMode("verify");
-      applySend(r, "بعتنالك كود على واتساب.");
+      applySend(r, "أُرسل رمز التحقق عبر واتساب.");
     });
   };
 
   const verifyCode = (value: string) => run(async () => {
-    if (value.length !== 6) return setError("اكتب الكود كامل (6 أرقام).");
+    if (value.length !== 6) return setError("أدخل رمز التحقق المكوّن من 6 أرقام.");
     const r = await phoneAuth("verify_signup", { phone: activePhone, code: value });
     if (!r.ok) {
       setCode("");
-      const extra = r.error === "invalid_code" && r.remaining ? ` باقي ${r.remaining} محاولات.` : "";
+      const extra = r.error === "invalid_code" && r.remaining ? ` المحاولات المتبقية: ${r.remaining}.` : "";
       return setError(errText(r.error) + extra);
     }
-    setNotice("تم تأكيد رقمك ✓ بنسجّل دخولك…");
+    setNotice("تم تأكيد الرقم. جارٍ تسجيل الدخول...");
     const { error } = await signInWithPhone(activePhone, password);
-    if (error) { setMode("login", "/login"); setNotice("تم تأكيد رقمك. سجّل دخول بكلمة السر."); }
+    if (error) { setMode("login", "/login"); setNotice("تم تأكيد الرقم. سجّل الدخول بكلمة المرور."); }
   });
 
   const resendSignup = () => run(async () => {
     const r = await phoneAuth("send_signup_code", { phone: activePhone, password });
     if (!r.ok) { if (r.retry_after) setCooldown(r.retry_after); return setError(errText(r.error)); }
-    setCode(""); applySend(r, "بعتنا كود جديد. الكود القديم مبقاش شغال.");
+    setCode(""); applySend(r, "أُرسل رمز جديد عبر واتساب. انتهت صلاحية الرمز السابق.");
   });
 
   const editNumber = () => {
     setEditingFrom(activePhone);
     setConfirm(password);
     setMode("signup", "/signup");
-    setNotice("عدّل الرقم ودوس «ابعت الكود». مش هنغيّر كلمة السر.");
+    setNotice("غيّر الرقم لإرسال رمز تحقق جديد. لن تتغير كلمة المرور.");
   };
 
   // ---------- Recovery ----------
@@ -145,17 +146,17 @@ const PlayerAuth = () => {
       const r = await phoneAuth("recovery_start", { phone });
       if (!r.ok && r.error !== "cooldown") return setError(errText(r.error));
       setActivePhone(phone); setMode("forgot_code");
-      applySend(r, "لو الرقم ده عليه حساب، هيوصله كود على واتساب.");
-      if (r.error === "cooldown") setNotice("لسه باعتين كود من شوية. استخدمه أو استنى العداد.");
+      applySend(r, "إذا كان الرقم مسجلًا، فستصلك رسالة عبر واتساب.");
+      if (r.error === "cooldown") setNotice("استخدم الرمز السابق أو أعد الإرسال بعد انتهاء المهلة.");
     });
   };
 
   const verifyRecovery = (value: string) => run(async () => {
-    if (value.length !== 6) return setError("اكتب الكود كامل (6 أرقام).");
+    if (value.length !== 6) return setError("أدخل رمز التحقق المكوّن من 6 أرقام.");
     const r = await phoneAuth("recovery_verify", { phone: activePhone, code: value });
     if (!r.ok || !r.reset_token) {
       setCode("");
-      const extra = r.error === "invalid_code" && r.remaining ? ` باقي ${r.remaining} محاولات.` : "";
+      const extra = r.error === "invalid_code" && r.remaining ? ` المحاولات المتبقية: ${r.remaining}.` : "";
       return setError(errText(r.error) + extra);
     }
     setResetToken(r.reset_token); setPassword(""); setConfirm("");
@@ -165,7 +166,7 @@ const PlayerAuth = () => {
   const resendRecovery = () => run(async () => {
     const r = await phoneAuth("recovery_start", { phone: activePhone });
     if (!r.ok) { if (r.retry_after) setCooldown(r.retry_after); return setError(errText(r.error)); }
-    setCode(""); applySend(r, "بعتنا كود جديد. الكود القديم مبقاش شغال.");
+    setCode(""); applySend(r, "أُرسل رمز جديد عبر واتساب. انتهت صلاحية الرمز السابق.");
   });
 
   const onNewPassword = (e: FormEvent) => {
@@ -183,70 +184,44 @@ const PlayerAuth = () => {
     });
   };
 
-  const resendLabel = cooldown > 0 ? `ابعت كود جديد بعد ${cooldown} ث` : "ابعت كود جديد";
+  const resendLabel = cooldown > 0 ? `إعادة الإرسال خلال ${Math.floor(cooldown / 60).toString().padStart(2, "0")}:${(cooldown % 60).toString().padStart(2, "0")}` : "إعادة إرسال رمز التحقق";
   const messages = (
-    <div className="space-y-3" aria-live="polite">
+    <div className="space-y-2" aria-live="polite">
       {notice && <InfoBox>{notice}</InfoBox>}
       {error && <ErrorBox>{error}</ErrorBox>}
     </div>
   );
 
   if (mode === "login") return (
-    <AuthShell title="تسجيل الدخول" subtitle="ادخل برقم الواتساب وكلمة السر عشان تكمّل القضية.">
-      <form onSubmit={onLogin} className="space-y-4" noValidate>
-        <Field id="phone" label="رقم الواتساب">
-          <PhoneInput id="phone" dial={dial} onDial={setDial} value={local} onChange={setLocal} />
-        </Field>
-        <Field id="password" label="كلمة السر">
-          <PasswordInput id="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </Field>
-        <div className="-mt-1 text-left">
-          <LinkButton onClick={() => { setPassword(""); setMode("forgot", "/forgot-password"); }}>نسيت كلمة السر؟</LinkButton>
-        </div>
+    <AuthShell title="تسجيل الدخول">
+      <form onSubmit={onLogin} className="space-y-3.5" noValidate>
+        <Field id="phone" label="رقم واتساب"><PhoneInput id="phone" dial={dial} onDial={setDial} value={local} onChange={setLocal} /></Field>
+        <Field id="password" label="كلمة المرور"><PasswordInput id="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></Field>
+        <div className="text-left"><LinkButton onClick={() => { setPassword(""); setMode("forgot", "/forgot-password"); }}>نسيت كلمة المرور؟</LinkButton></div>
         {messages}
-        <PrimaryButton type="submit" loading={busy}>دخول</PrimaryButton>
-        <p className="text-center text-sm text-muted-foreground">
-          أول مرة هنا؟ <LinkButton onClick={() => { setPassword(""); setMode("signup", "/signup"); }}>اعمل حساب</LinkButton>
-        </p>
+        <PrimaryButton type="submit" loading={busy}>تسجيل الدخول</PrimaryButton>
+        <p className="text-center text-sm text-muted-foreground">ليس لديك حساب؟ <LinkButton onClick={() => { setPassword(""); setMode("signup", "/signup"); }}>إنشاء حساب</LinkButton></p>
       </form>
     </AuthShell>
   );
 
   if (mode === "signup") return (
-    <AuthShell title={editingFrom ? "تعديل الرقم" : "حساب جديد"} subtitle="هنبعتلك كود تأكيد على واتساب للرقم اللي هتكتبه.">
-      <form onSubmit={onSignup} className="space-y-4" noValidate>
-        {!editingFrom && (
-          <div className="grid grid-cols-2 gap-3">
-            <Field id="first" label="الاسم الأول">
-              <TextInput id="first" autoComplete="given-name" dir="auto" maxLength={50} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-            </Field>
-            <Field id="last" label="الاسم الأخير">
-              <TextInput id="last" autoComplete="family-name" dir="auto" maxLength={50} value={lastName} onChange={(e) => setLastName(e.target.value)} />
-            </Field>
-          </div>
-        )}
-        <Field id="phone" label="رقم الواتساب" hint="الكود ده للتأكيد بس، ومش هنستخدم رقمك في رسايل دعاية.">
-          <PhoneInput id="phone" dial={dial} onDial={setDial} value={local} onChange={setLocal} />
-        </Field>
-        {!editingFrom && (
-          <>
-            <Field id="password" label="كلمة السر" hint="8 حروف أو أرقام على الأقل.">
-              <PasswordInput id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </Field>
-            <Field id="confirm" label="تأكيد كلمة السر">
-              <PasswordInput id="confirm" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
-            </Field>
-          </>
-        )}
+    <AuthShell title={editingFrom ? "تغيير الرقم" : "إنشاء حساب"}>
+      <form onSubmit={onSignup} className="space-y-3" noValidate>
+        {!editingFrom && <div className="grid grid-cols-2 gap-2.5">
+          <Field id="first" label="الاسم الأول"><TextInput id="first" autoComplete="given-name" dir="auto" placeholder="الاسم الأول" maxLength={50} value={firstName} onChange={(e) => setFirstName(e.target.value)} /></Field>
+          <Field id="last" label="الاسم الأخير"><TextInput id="last" autoComplete="family-name" dir="auto" placeholder="الاسم الأخير" maxLength={50} value={lastName} onChange={(e) => setLastName(e.target.value)} /></Field>
+        </div>}
+        <Field id="phone" label="رقم واتساب"><PhoneInput id="phone" dial={dial} onDial={setDial} value={local} onChange={setLocal} /></Field>
+        {!editingFrom && <>
+          <Field id="password" label="كلمة المرور"><PasswordInput id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
+          <Field id="confirm" label="تأكيد كلمة المرور"><PasswordInput id="confirm" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} /></Field>
+        </>}
         {messages}
-        <PrimaryButton type="submit" loading={busy}>
-          <MessageCircle className="h-5 w-5" /> ابعت الكود على واتساب
-        </PrimaryButton>
-        <p className="text-center text-sm text-muted-foreground">
-          {editingFrom ? (
-            <LinkButton onClick={() => { setLocal(""); setActivePhone(editingFrom); setEditingFrom(null); setMode("verify"); }}>رجوع لشاشة الكود</LinkButton>
-          ) : (<>عندك حساب؟ <LinkButton onClick={() => { setPassword(""); setConfirm(""); setMode("login", "/login"); }}>سجّل دخول</LinkButton></>)}
-        </p>
+        <PrimaryButton type="submit" loading={busy}>{editingFrom ? "إرسال رمز التحقق" : "إنشاء حساب"}</PrimaryButton>
+        <p className="text-center text-sm text-muted-foreground">{editingFrom ? (
+          <LinkButton onClick={() => { setLocal(""); setActivePhone(editingFrom); setEditingFrom(null); setMode("verify"); }}>العودة إلى التحقق</LinkButton>
+        ) : (<>لديك حساب بالفعل؟ <LinkButton onClick={() => { setPassword(""); setConfirm(""); setMode("login", "/login"); }}>تسجيل الدخول</LinkButton></>)}</p>
       </form>
     </AuthShell>
   );
@@ -254,24 +229,19 @@ const PlayerAuth = () => {
   if (mode === "verify" || mode === "forgot_code") {
     const isSignup = mode === "verify";
     return (
-      <AuthShell
-        title={isSignup ? "أكّد رقمك" : "كود استرجاع الحساب"}
-        subtitle={<>بعتنا كود من 6 أرقام على واتساب للرقم <bdi dir="ltr" className="font-bold text-foreground">{maskPhone(activePhone)}</bdi>. الكود صالح لمدة 5 دقايق.</>}
-      >
-        <form onSubmit={(e) => { e.preventDefault(); (isSignup ? verifyCode : verifyRecovery)(code); }} className="space-y-4">
+      <AuthShell title={isSignup ? "تأكيد رقم واتساب" : "التحقق من الحساب"} subtitle={<>
+        {sendFailed ? "تعذر إرسال رمز التحقق إلى" : isSignup ? "أرسلنا رمز التحقق عبر واتساب إلى" : "إذا كان الرقم مسجلًا، يُرسل رمز التحقق عبر واتساب إلى"}<br />
+        <bdi dir="ltr" className="font-semibold text-foreground">{maskPhone(activePhone)}</bdi>
+        {!sendFailed && <span className="block text-xs">الرمز صالح لمدة 5 دقائق.</span>}
+      </>}>
+        <form onSubmit={(e) => { e.preventDefault(); (isSignup ? verifyCode : verifyRecovery)(code); }} className="space-y-3.5">
           <OtpInput value={code} onChange={setCode} disabled={busy} onComplete={(v) => (isSignup ? verifyCode : verifyRecovery)(v)} />
-          {messages}
+          {error && <ErrorBox>{error}</ErrorBox>}
           <PrimaryButton type="submit" loading={busy} disabled={code.length !== 6}>تأكيد</PrimaryButton>
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-col items-center">
             <LinkButton onClick={isSignup ? resendSignup : resendRecovery} disabled={cooldown > 0 || busy}>{resendLabel}</LinkButton>
-            {isSignup ? (
-              <LinkButton onClick={editNumber} disabled={busy}>تعديل الرقم</LinkButton>
-            ) : (
-              <LinkButton onClick={() => setMode("forgot")} disabled={busy}>تغيير الرقم</LinkButton>
-            )}
-          </div>
-          <div className="text-center">
-            <LinkButton className="text-muted-foreground" onClick={() => { setPassword(""); setMode("login", "/login"); }}>رجوع لتسجيل الدخول</LinkButton>
+            <LinkButton onClick={isSignup ? editNumber : () => setMode("forgot")} disabled={busy}>تغيير الرقم</LinkButton>
+            <LinkButton className="text-muted-foreground" onClick={() => { setPassword(""); setMode("login", "/login"); }}>العودة إلى تسجيل الدخول</LinkButton>
           </div>
         </form>
       </AuthShell>
@@ -279,40 +249,31 @@ const PlayerAuth = () => {
   }
 
   if (mode === "forgot") return (
-    <AuthShell title="نسيت كلمة السر" subtitle="اكتب رقم الواتساب المسجّل وهنبعتلك كود عشان تعمل كلمة سر جديدة.">
+    <AuthShell title="استعادة كلمة المرور">
       <form onSubmit={onForgot} className="space-y-4" noValidate>
-        <Field id="phone" label="رقم الواتساب">
-          <PhoneInput id="phone" dial={dial} onDial={setDial} value={local} onChange={setLocal} />
-        </Field>
+        <Field id="phone" label="رقم واتساب المسجل"><PhoneInput id="phone" dial={dial} onDial={setDial} value={local} onChange={setLocal} /></Field>
         {messages}
-        <PrimaryButton type="submit" loading={busy}><MessageCircle className="h-5 w-5" /> ابعت الكود</PrimaryButton>
-        <div className="text-center">
-          <LinkButton className="text-muted-foreground" onClick={() => setMode("login", "/login")}>رجوع لتسجيل الدخول</LinkButton>
-        </div>
+        <PrimaryButton type="submit" loading={busy}>إرسال رمز التحقق</PrimaryButton>
+        <div className="text-center"><LinkButton onClick={() => setMode("login", "/login")}>العودة إلى تسجيل الدخول</LinkButton></div>
       </form>
     </AuthShell>
   );
 
   if (mode === "forgot_new") return (
-    <AuthShell title="كلمة سر جديدة" subtitle="تم التأكد من الكود. اختار كلمة سر جديدة.">
+    <AuthShell title="كلمة مرور جديدة">
       <form onSubmit={onNewPassword} className="space-y-4" noValidate>
-        <Field id="password" label="كلمة السر الجديدة" hint="8 حروف أو أرقام على الأقل.">
-          <PasswordInput id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        </Field>
-        <Field id="confirm" label="تأكيد كلمة السر">
-          <PasswordInput id="confirm" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
-        </Field>
+        <Field id="password" label="كلمة المرور الجديدة"><PasswordInput id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
+        <Field id="confirm" label="تأكيد كلمة المرور"><PasswordInput id="confirm" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} /></Field>
         {messages}
-        <PrimaryButton type="submit" loading={busy}>حفظ كلمة السر</PrimaryButton>
+        <PrimaryButton type="submit" loading={busy}>حفظ كلمة المرور</PrimaryButton>
       </form>
     </AuthShell>
   );
 
   return (
-    <AuthShell title="تم تغيير كلمة السر">
-      <div className="space-y-5 text-center">
-        <CheckCircle2 className="mx-auto h-14 w-14 text-success" />
-        <p className="text-sm text-muted-foreground">تقدر دلوقتي تدخل بكلمة السر الجديدة.</p>
+    <AuthShell title="تم تحديث كلمة المرور">
+      <div className="space-y-7 text-center">
+        <CheckCircle2 className="mx-auto h-16 w-16 text-primary" strokeWidth={1.5} />
         <PrimaryButton type="button" onClick={() => setMode("login", "/login")}>تسجيل الدخول</PrimaryButton>
       </div>
     </AuthShell>
