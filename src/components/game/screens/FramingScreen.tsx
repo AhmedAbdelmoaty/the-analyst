@@ -119,7 +119,7 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
             exit={{ opacity: 0 }}
           >
             <motion.p
-              className="text-foreground/85 text-sm italic"
+              className="text-game-paper/85 text-sm italic"
               dir="rtl"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

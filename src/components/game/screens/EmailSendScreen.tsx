@@ -68,7 +68,7 @@ export const EmailSendScreen = ({ onComplete }: EmailSendScreenProps) => {
           className="text-center mb-6"
         >
           <p className="text-muted-foreground text-xs tracking-widest">📧 إرسال التقرير</p>
-          <h2 className="text-foreground text-lg font-bold mt-2" dir="rtl">
+          <h2 className="text-game-paper text-lg font-bold mt-2" dir="rtl">
             ابعت التقرير لمديرك المباشر قبل ما تخلص يومك
           </h2>
         </motion.div>

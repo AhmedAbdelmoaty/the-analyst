@@ -145,7 +145,7 @@ export const CompanyBriefingScreen = ({
               setPhase("door-knock");
               setTimeout(() => { try { playSceneOneShot("door_knock"); } catch { /* optional audio */ } }, 150);
             }}
-            className="mt-10 px-8 py-3 rounded-md bg-card/65 border border-border text-foreground font-bold hover:bg-card/80 transition-all flex items-center gap-2"
+            className="imp-outline mt-10 flex items-center gap-2 rounded-md px-8 py-3 font-bold transition-all"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.1 }}
