@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, X, User, RotateCcw, Building2, Volume2, VolumeX } from "lucide-react";
+import { Settings, X, User, RotateCcw, Building2, Volume2, VolumeX, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSound } from "@/hooks/useSoundEffects";
 import analystImg from "@/assets/characters/analyst.webp";
@@ -13,7 +13,8 @@ interface PlayerSettingsPanelProps {
 }
 
 export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: PlayerSettingsPanelProps) => {
-  const { profile, updateProfile } = useAuth();
+  const { profile, updateProfile, signOut } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
   const { isSoundEnabled, setIsSoundEnabled, playSound } = useSound();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -232,6 +233,24 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                   <div>
                     <p className="text-sm font-bold">مكتب الشركة</p>
                     <p className="text-xs text-[#666]">إعادة مشاهدة اجتماع Prism Consulting</p>
+                  </div>
+                </button>
+
+                {/* Sign out */}
+                <button
+                  onClick={async () => {
+                    if (signingOut) return;
+                    setSigningOut(true);
+                    await signOut();
+                    window.location.assign("/login");
+                  }}
+                  disabled={signingOut}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border border-black/10 bg-white hover:border-primary hover:bg-[#fff7f7] text-[#171717] transition-colors text-right disabled:opacity-50"
+                >
+                  <LogOut className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-bold">{signingOut ? "جاري الخروج..." : "تسجيل الخروج"}</p>
+                    <p className="text-xs text-[#666]">هترجع لشاشة الدخول</p>
                   </div>
                 </button>
 

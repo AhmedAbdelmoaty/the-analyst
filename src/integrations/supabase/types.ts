@@ -25,6 +25,7 @@ export type Database = {
           outcome: string | null
           qualified: boolean
           started_at: string | null
+          user_id: string | null
         }
         Insert: {
           completed_at?: string
@@ -36,6 +37,7 @@ export type Database = {
           outcome?: string | null
           qualified?: boolean
           started_at?: string | null
+          user_id?: string | null
         }
         Update: {
           completed_at?: string
@@ -47,6 +49,82 @@ export type Database = {
           outcome?: string | null
           qualified?: boolean
           started_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      otp_challenges: {
+        Row: {
+          attempts: number
+          code_hmac: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          invalidated_at: string | null
+          max_attempts: number
+          phone: string
+          purpose: string
+          reset_expires_at: string | null
+          reset_token_hmac: string | null
+          reset_used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hmac: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          invalidated_at?: string | null
+          max_attempts?: number
+          phone: string
+          purpose: string
+          reset_expires_at?: string | null
+          reset_token_hmac?: string | null
+          reset_used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hmac?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invalidated_at?: string | null
+          max_attempts?: number
+          phone?: string
+          purpose?: string
+          reset_expires_at?: string | null
+          reset_token_hmac?: string | null
+          reset_used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      otp_rate_events: {
+        Row: {
+          created_at: string
+          id: number
+          ip: string | null
+          kind: string
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          ip?: string | null
+          kind: string
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          ip?: string | null
+          kind?: string
+          phone?: string | null
         }
         Relationships: []
       }
@@ -118,12 +196,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auth_user_by_phone: {
+        Args: { _phone: string }
+        Returns: {
+          id: string
+          phone_confirmed: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      otp_attempt: {
+        Args: { _challenge_id: string; _code_hmac: string }
+        Returns: {
+          remaining: number
+          status: string
+          user_id: string
+        }[]
       }
     }
     Enums: {

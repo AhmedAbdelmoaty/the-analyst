@@ -88,7 +88,7 @@ const confettiPieces = Array.from({ length: 34 }, (_, index) => ({
 
 export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
   const { state } = usePFGame();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { playSound } = useSound();
 
   const playerName = profile?.first_name || profile?.display_name || "محلل";
@@ -104,8 +104,8 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
   const recordedRef = useRef(false);
   useEffect(() => {
     if (recordedRef.current) return;
-    if (!profile?.first_name || !profile?.last_name) return;
-    const key = "pf-game-submitted";
+    if (!user || !profile?.first_name || !profile?.last_name) return;
+    const key = `pf-game-submitted:${user.id}`;
     if (localStorage.getItem(key)) return;
     recordedRef.current = true;
     localStorage.setItem(key, "1");
@@ -119,6 +119,7 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
     supabase
       .from("completed_players")
       .insert({
+        user_id: user.id,
         first_name: profile.first_name,
         last_name: profile.last_name,
         outcome: state.outcome,
@@ -132,7 +133,7 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
           console.warn("Failed to record completion:", error.message);
         }
       });
-  }, [profile?.first_name, profile?.last_name, state]);
+  }, [user, profile?.first_name, profile?.last_name, state]);
 
   const soundPlayedRef = useRef(false);
   useEffect(() => {
