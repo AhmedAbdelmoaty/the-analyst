@@ -206,7 +206,7 @@ const PlayerAuth = () => {
   );
 
   if (mode === "signup") return (
-    <AuthShell title={editingFrom ? "تغيير الرقم" : "إنشاء حساب"}>
+    <AuthShell title={editingFrom ? "تغيير الرقم" : "إنشاء حساب"} subtitle={editingFrom ? undefined : "سنرسل رمز التحقق إلى رقم واتساب."}>
       <form onSubmit={onSignup} className="space-y-3" noValidate>
         {!editingFrom && <div className="grid grid-cols-2 gap-2.5">
           <Field id="first" label="الاسم الأول"><TextInput id="first" autoComplete="given-name" dir="auto" placeholder="الاسم الأول" maxLength={50} value={firstName} onChange={(e) => setFirstName(e.target.value)} /></Field>
