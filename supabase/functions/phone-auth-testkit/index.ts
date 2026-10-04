@@ -15,7 +15,8 @@ Deno.serve(async (req) => {
   }
   if (b.op === "age") {
     await admin.from("otp_rate_events").delete().like("phone", "+999%"); // bypass cooldown for testing
-    await admin.from("otp_challenges").update({ created_at: new Date(Date.now() - 120000).toISOString() }).eq("phone", b.phone);
+    const { data: rows } = await admin.from("otp_challenges").select("id,created_at").eq("phone", b.phone);
+    for (const r of rows ?? []) await admin.from("otp_challenges").update({ created_at: new Date(new Date(r.created_at).getTime() - 120000).toISOString() }).eq("id", r.id);
     return Response.json({ ok: true });
   }
   if (b.op === "cleanup") {
