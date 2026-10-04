@@ -177,7 +177,7 @@ export const CompanyBriefingScreen = ({
                 } catch {}
                 setPhase("dialogue");
               }}
-              className="mt-4 px-8 py-3 rounded-md bg-card/65 border border-border text-foreground font-bold hover:bg-card/80 transition-all"
+              className="imp-action mt-4 rounded-md px-8 py-3 font-bold transition-all"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.2 }}

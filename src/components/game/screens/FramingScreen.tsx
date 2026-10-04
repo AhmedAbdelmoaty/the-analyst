@@ -136,7 +136,7 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
         {stage === "sections" && currentSection && (
           <motion.div
             key={currentSection.id}
-            className="absolute inset-0 z-10 flex flex-col items-center justify-center px-4"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center overflow-y-auto px-4 py-12"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -221,7 +221,7 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
       <AnimatePresence>
         {stage === "summary" && (
           <motion.div
-            className="absolute inset-0 z-10 flex items-center justify-center px-4"
+            className="absolute inset-0 z-10 flex items-center justify-center overflow-y-auto px-4 py-12"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

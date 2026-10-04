@@ -463,7 +463,7 @@ export const InquiryScreen = ({ onComplete }: InquiryScreenProps) => {
               transition={{ duration: 0.35 }}
             >
               <div className="imp-panel-header px-6 py-4">
-              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary-foreground/15 border border-primary-foreground/35">
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full border border-primary/25 bg-primary/10">
                 <Sparkles className="h-5 w-5 text-primary" />
               </div>
       
