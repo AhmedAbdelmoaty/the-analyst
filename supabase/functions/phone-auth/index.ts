@@ -172,6 +172,7 @@ Deno.serve(async (req) => {
           phone, password, phone_confirm: false, user_metadata: { first_name, last_name },
         });
         if (error || !created.user) {
+          console.warn("create_user_failed", error?.status, error?.message?.slice(0, 120));
           if (/already|exists|registered/i.test(error?.message ?? "")) return fail("account_exists");
           if (/password/i.test(error?.message ?? "")) return fail("weak_password");
           return fail("server_error");
@@ -272,8 +273,8 @@ Deno.serve(async (req) => {
       default:
         return fail("invalid_input");
     }
-  } catch {
-    console.warn("phone_auth_unhandled");
+  } catch (e) {
+    console.warn("phone_auth_unhandled", e instanceof Error ? e.message.slice(0, 120) : "unknown");
     return fail("server_error");
   }
 });
