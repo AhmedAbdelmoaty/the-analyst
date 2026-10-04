@@ -1,4 +1,4 @@
-// TEMPORARY test helper — deleted after testing. Only works for test numbers +2010000000xx.
+// TEMPORARY test helper — deleted after testing. Only works for test numbers +99900000xx (unassigned code, no real recipient).
 import { createClient } from "npm:@supabase/supabase-js@2";
 const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 async function hmac(d: string) {
@@ -7,7 +7,7 @@ async function hmac(d: string) {
 }
 Deno.serve(async (req) => {
   const b = await req.json();
-  if (!/^\+2010000000\d\d$/.test(b.phone ?? "")) return new Response("no", { status: 403 });
+  if (!/^\+99900000\d\d$/.test(b.phone ?? "")) return new Response("no", { status: 403 });
   if (b.op === "plant") {
     const { data: ch } = await admin.from("otp_challenges").select("id,user_id").eq("phone", b.phone).eq("purpose", b.purpose).order("created_at", { ascending: false }).limit(1).single();
     await admin.from("otp_challenges").update({ code_hmac: await hmac(`otp:${b.purpose}:${ch!.user_id}:${b.phone}:${b.code}`), ...(b.expire ? { expires_at: new Date(Date.now() - 1000).toISOString() } : {}) }).eq("id", ch!.id);
