@@ -53,13 +53,13 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
       </motion.div>
 
       {/* Static ambient glow (no animation = no repaint) */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[60vh] w-[60vh] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl" />
+      <div className="hidden" />
 
       {/* Main panel */}
       <div className="relative z-10 flex h-full items-center justify-center px-3 py-3">
         <motion.div
           dir="rtl"
-          className="imp-panel flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl"
+          className="imp-panel flex w-full max-w-2xl flex-col overflow-hidden rounded-md"
           style={{ maxHeight: "calc(100vh - 1.5rem)", willChange: "transform, opacity" }}
           initial={{ opacity: 0, y: 16, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -82,17 +82,17 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
               animate={{ width: 56 }}
               transition={{ delay: CARD_DELAY + 0.1, duration: 0.35 }}
             />
-            <h2 className="text-xl font-bold text-white md:text-2xl">
+            <h2 className="text-xl font-bold text-game-ink md:text-2xl">
               راجع ما جمعته
             </h2>
-            <p className="mt-1 text-xs leading-6 text-white/75 md:text-sm">
+            <p className="mt-1 text-xs leading-6 text-game-muted md:text-sm">
               راجع ملاحظاتك وتقاريرك قبل ما تكتب التقرير.
             </p>
           </motion.div>
 
           {/* Tabs */}
           <motion.div
-            className="mx-4 mb-3 flex gap-2 rounded-xl border border-black/10 bg-white p-1"
+            className="mx-4 mb-3 flex gap-2 rounded-md border border-game-line bg-game-paper p-1"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: CARD_DELAY + 0.1, duration: 0.25 }}
@@ -102,7 +102,7 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
               className={`relative flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-colors md:text-sm ${
                 activeTab === "notes"
                   ? "text-primary-foreground"
-                  : "text-[#555] hover:text-primary"
+                  : "text-game-muted hover:text-primary"
               }`}
             >
               {activeTab === "notes" && (
@@ -123,7 +123,7 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
               className={`relative flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-colors md:text-sm ${
                 activeTab === "reports"
                   ? "text-primary-foreground"
-                  : "text-[#555] hover:text-primary"
+                  : "text-game-muted hover:text-primary"
               }`}
             >
               {activeTab === "reports" && (
@@ -154,14 +154,14 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
                   transition={{ duration: 0.15 }}
                 >
                   {notes.length === 0 ? (
-                    <div className="col-span-full rounded-xl border border-black/15 bg-white p-3 text-center text-xs text-[#666]">
+                    <div className="col-span-full rounded-md border border-game-line bg-game-paper p-3 text-center text-xs text-game-muted">
                       مفيش ملاحظات محفوظة.
                     </div>
                   ) : (
                     notes.map((note, index) => (
                       <motion.div
                         key={`${note.id}-${index}`}
-                        className="group rounded-xl border border-black/15 bg-white p-2.5 text-right shadow-sm transition-colors hover:border-primary hover:bg-[#fff7f7]"
+                        className="group rounded-md border border-game-line bg-game-paper p-2.5 text-right shadow-sm transition-colors hover:border-primary hover:bg-game-ivory"
                         style={{ willChange: "transform, opacity" }}
                         initial={{ opacity: 0, y: 12, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -173,7 +173,7 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
                       >
                         <div className="flex items-start gap-2">
                           <span className="mt-0.5 text-sm">✍️</span>
-                          <p className="text-xs font-bold leading-6 text-[#171717]">{note.text}</p>
+                          <p className="text-xs font-bold leading-6 text-game-ink">{note.text}</p>
                         </div>
                       </motion.div>
                     ))
@@ -189,7 +189,7 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
                   transition={{ duration: 0.15 }}
                 >
                   {reports.length === 0 ? (
-                    <div className="col-span-full rounded-xl border border-black/15 bg-white p-3 text-center text-xs text-[#666]">
+                    <div className="col-span-full rounded-md border border-game-line bg-game-paper p-3 text-center text-xs text-game-muted">
                       مفيش تقارير ظهرت.
                     </div>
                   ) : (
@@ -197,7 +197,7 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
                       <motion.button
                         key={report.id}
                         onClick={() => setOpenReportId(report.id)}
-                        className="group rounded-xl border border-black/15 bg-white p-2.5 text-right shadow-sm transition-colors hover:border-primary hover:bg-[#fff7f7]"
+                        className="group rounded-md border border-game-line bg-game-paper p-2.5 text-right shadow-sm transition-colors hover:border-primary hover:bg-game-ivory"
                         style={{ willChange: "transform, opacity" }}
                         initial={{ opacity: 0, y: 12, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -213,10 +213,10 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
                             <FileText className="h-3.5 w-3.5 text-primary" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold leading-5 text-[#171717] line-clamp-2">
+                            <p className="text-xs font-bold leading-5 text-game-ink line-clamp-2">
                               {report.title}
                             </p>
-                            <p className="mt-0.5 text-[10px] text-[#666] line-clamp-1">
+                            <p className="mt-0.5 text-[10px] text-game-muted line-clamp-1">
                               {report.issuer || "تقرير"}
                               {report.reportDate ? ` • ${report.reportDate}` : ""}
                             </p>
@@ -233,7 +233,7 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
           {/* CTA */}
           <motion.button
             onClick={onComplete}
-            className="imp-action mx-4 mb-4 mt-3 flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-transform hover:scale-[1.01] active:scale-[0.98]"
+            className="imp-action mx-4 mb-4 mt-3 flex items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-bold transition-transform hover:scale-[1.01] active:scale-[0.98]"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: ITEMS_DELAY + 0.25, duration: 0.3 }}
@@ -253,7 +253,7 @@ export const ReflectionTransition = ({ onComplete }: ReflectionTransitionProps) 
       <AnimatePresence>
         {openReportId && EVIDENCE[openReportId] && (
           <motion.div
-            className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 p-4"
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-game-charcoal/80 p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
