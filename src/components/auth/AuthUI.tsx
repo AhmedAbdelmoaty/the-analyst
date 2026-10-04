@@ -66,10 +66,10 @@ export const PhoneInput = ({ id, dial, onDial, value, onChange, invalid }: {
       aria-label="كود الدولة"
       value={dial}
       onChange={(e) => onDial(e.target.value)}
-      className="h-12 w-[7.5rem] shrink-0 rounded-lg border border-border bg-input px-2 text-base text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="h-12 w-[8.75rem] shrink-0 rounded-lg border border-border bg-input px-2 text-base text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {COUNTRIES.map((c) => (
-        <option key={c.code} value={c.dial}>{c.flag} +{c.dial} {c.name}</option>
+        <option key={c.code} value={c.dial}>+{c.dial} {c.name}</option>
       ))}
     </select>
     <input
