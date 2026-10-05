@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { readSceneProgress, writeSceneProgress } from "@/lib/pf-game-persistence";
 import { motion, AnimatePresence } from "framer-motion";
 import { Target, BookOpen, CheckCircle2 } from "lucide-react";
 import { usePFGame } from "@/contexts/PFGameContext";
@@ -19,8 +20,23 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
   const { playSound } = useSound();
   useSceneAmbience("report_writing");
 
-  const [stage, setStage] = useState<Stage>("background");
-  const [activeSectionIdx, setActiveSectionIdx] = useState(0);
+  // Restore the report step after a reload; answers themselves live in the game state.
+  const [restored] = useState(() => readSceneProgress<{ stage: Stage; idx: number }>("framing"));
+  const [stage, setStage] = useState<Stage>(() => (restored?.stage === "summary" || restored?.stage === "sections" ? restored.stage : "background"));
+  const [activeSectionIdx, setActiveSectionIdx] = useState(() => Math.max(0, Math.min(restored?.idx ?? 0, framingSections.length - 1)));
+  const advanceTimerRef = useRef<number | null>(null);
+  const idxRef = useRef(activeSectionIdx);
+  idxRef.current = activeSectionIdx;
+  const completedRef = useRef(false);
+
+  useEffect(() => { writeSceneProgress("framing", { stage, idx: activeSectionIdx }); }, [stage, activeSectionIdx]);
+
+  // A report confirmed before a reload goes straight on — no re-evaluation.
+  useEffect(() => {
+    if (state.framingSubmitted && !completedRef.current) { completedRef.current = true; onComplete(); }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => () => { if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current); }, []);
   const [confirmed, setConfirmed] = useState(false);
   const [showStamp, setShowStamp] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -34,22 +50,24 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
 
   // Cinematic intro: show background only, then reveal sections
   useEffect(() => {
+    if (stage !== "background") return;
     const t = setTimeout(() => {
       setStage("sections");
       try { playSound("reveal"); } catch { /* optional audio */ }
     }, 1800);
     return () => clearTimeout(t);
-  }, [playSound]);
+  }, [playSound]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelect = (sectionId: keyof typeof state.framing, optionId: string) => {
-    if (confirmed) return;
+    if (confirmed || advanceTimerRef.current) return; // one pending advance at a time
     setFramingSelection(sectionId, optionId);
     // Removed paperRustle + tick — harsh "tssss" on every selection.
     try { playSound("click"); } catch { /* noop */ }
 
     // Auto-advance to next section after a small beat
-    setTimeout(() => {
-      if (activeSectionIdx < framingSections.length - 1) {
+    advanceTimerRef.current = window.setTimeout(() => {
+      advanceTimerRef.current = null;
+      if (idxRef.current < framingSections.length - 1) {
         try { playSound("whoosh"); } catch { /* noop */ }
         setActiveSectionIdx((i) => i + 1);
       } else {
@@ -60,7 +78,7 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
   };
 
   const handleConfirm = () => {
-    if (!allSelected || confirmed) return;
+    if (!allSelected || confirmed || state.framingSubmitted) return;
     submitFraming();
     setConfirmed(true);
     setShowStamp(true);
@@ -69,11 +87,11 @@ export const FramingScreen = ({ onComplete }: FramingScreenProps) => {
     setTimeout(() => setFlash(false), 120);
     setTimeout(() => {
       setShowStamp(false);
-      onComplete();
+      if (!completedRef.current) { completedRef.current = true; onComplete(); }
     }, 1500);
   };
 
-  const currentSection = framingSections[activeSectionIdx];
+  const currentSection = framingSections[Math.min(activeSectionIdx, framingSections.length - 1)];
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
