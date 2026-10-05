@@ -9,5 +9,6 @@
 - Account screens use scoped auth-theme tokens and local Cairo fonts so the light account surface never changes the dark game theme.
 - Gameplay surfaces use scoped game-paper/ink/charcoal tokens while photographic scenes retain their original dark overlays; this keeps text readable without altering scene media or dialogue timing.
 - The public landing and reused account forms are independent of the lazily loaded `/play` route; `/app` is the authenticated entry so marketing and OTP never preload game media.
+- Landing captures whether a visitor arrived signed out and owns post-auth navigation to `/app` — newly authenticated visitors bypass the returning-user welcome card even when the account form unmounts.
 - PWA installation is optional, the worker is guarded against previews and applies updates only outside an active round; account/network requests are never cached.
 - Game checkpoints use a versioned per-user browser key and restore engine state only alongside a safe screen, not from the old shared guest screen key.
