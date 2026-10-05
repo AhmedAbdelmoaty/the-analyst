@@ -214,6 +214,7 @@ export const PFGameProvider = ({ children, userId }: { children: ReactNode; user
   const submitFraming = useCallback((): CaseOutcome => {
     let outcome: CaseOutcome = "weak";
     setState((prev) => {
+      if (prev.framingSubmitted && prev.outcome) { outcome = prev.outcome; return prev; }
       const { outcome: o, correctCount } = engineEvaluate(prev, prev.framing);
       outcome = o;
       return {

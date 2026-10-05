@@ -16,6 +16,7 @@ import { getVoiceoverSrc } from "@/lib/voiceover/genderedDialogue";
 import { getAnalystVoice } from "@/lib/voiceover/analystVoiceMap";
 import { renderGenderText } from "@/lib/genderText";
 import { playVoice } from "@/lib/assetPreloader";
+import { readSceneProgress, writeSceneProgress } from "@/lib/pf-game-persistence";
 import analystImg from "@/assets/characters/analyst.webp";
 import saraImg from "@/assets/characters/sara.webp";
 import velaroInteriorWideImg from "@/assets/scenes/velaro-interior-wide.webp";
@@ -56,6 +57,8 @@ interface ActiveQuestion {
 const QUESTION_TO_DIALOGUE_DELAY_MS = 520;
 const QUESTION_FALLBACK_MS = 1200;
 
+interface SavedInquiryDialogue { questionsUsed: number; lines: DialogueLineUI[]; index: number }
+
 export const InquiryScreen = ({ onComplete, onSafeCheckpoint }: InquiryScreenProps) => {
   const { state, getChoices, pickChoice, collectInquiryFindings, restartInquiry, canRestart, markGameStarted } = usePFGame();
 
@@ -64,12 +67,28 @@ export const InquiryScreen = ({ onComplete, onSafeCheckpoint }: InquiryScreenPro
   const { playSound } = useSound();
   useSceneAmbience("store_interior");
 
-  const [phase, setPhase] = useState<InquiryPhase>("preQuestions");
+  // A counted question whose answer was on screen at reload resumes on that answer.
+  const [restoredDialogue] = useState(() => {
+    const d = readSceneProgress<SavedInquiryDialogue | null>("inquiry");
+    return d && d.questionsUsed === state.questionsUsed && d.lines?.length ? d : null;
+  });
+  const [phase, setPhase] = useState<InquiryPhase>(restoredDialogue ? "dialogue" : "preQuestions");
   useEffect(() => {
     if (phase === "choosing" && !state.isComplete) onSafeCheckpoint?.();
   }, [phase, state, onSafeCheckpoint]);
-  const [currentLines, setCurrentLines] = useState<DialogueLineUI[]>([]);
-  const [dialogueIndex, setDialogueIndex] = useState(0);
+  const [currentLines, setCurrentLines] = useState<DialogueLineUI[]>(restoredDialogue?.lines ?? []);
+  const [dialogueIndex, setDialogueIndex] = useState(restoredDialogue ? Math.min(restoredDialogue.index, restoredDialogue.lines.length - 1) : 0);
+  useEffect(() => {
+    if (!restoredDialogue) return;
+    // Findings are idempotent: re-apply what this answer hands over so nothing is lost.
+    restoredDialogue.lines.forEach((l) => {
+      if (l.saveId || l.inlineEvidence) collectInquiryFindings({ noteId: l.saveId, noteText: l.saveText, evidenceId: l.inlineEvidence?.id });
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (phase === "dialogue" && currentLines.length) writeSceneProgress("inquiry", { questionsUsed: state.questionsUsed, lines: currentLines, index: dialogueIndex });
+    else if (phase === "choosing") writeSceneProgress("inquiry", null);
+  }, [phase, currentLines, dialogueIndex, state.questionsUsed]);
   const [dialogueKey, setDialogueKey] = useState(0);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
