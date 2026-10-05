@@ -31,6 +31,7 @@ import hishamHandingReportFemaleImg from "@/assets/scenes/hisham-handing-report-
 
 interface InquiryScreenProps {
   onComplete: () => void;
+  onSafeCheckpoint?: () => void;
 }
 
 interface DialogueLineUI {
@@ -55,7 +56,7 @@ interface ActiveQuestion {
 const QUESTION_TO_DIALOGUE_DELAY_MS = 520;
 const QUESTION_FALLBACK_MS = 1200;
 
-export const InquiryScreen = ({ onComplete }: InquiryScreenProps) => {
+export const InquiryScreen = ({ onComplete, onSafeCheckpoint }: InquiryScreenProps) => {
   const { state, getChoices, pickChoice, collectInquiryFindings, restartInquiry, canRestart, markGameStarted } = usePFGame();
 
   useEffect(() => { markGameStarted(); }, [markGameStarted]);
@@ -64,6 +65,9 @@ export const InquiryScreen = ({ onComplete }: InquiryScreenProps) => {
   useSceneAmbience("store_interior");
 
   const [phase, setPhase] = useState<InquiryPhase>("preQuestions");
+  useEffect(() => {
+    if (phase === "choosing" && !state.isComplete) onSafeCheckpoint?.();
+  }, [phase, state, onSafeCheckpoint]);
   const [currentLines, setCurrentLines] = useState<DialogueLineUI[]>([]);
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [dialogueKey, setDialogueKey] = useState(0);

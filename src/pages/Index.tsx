@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { readPFGameSnapshot, writePFGameSnapshot, clearPFGameSnapshot, type PFScreen } from "@/lib/pf-game-persistence";
 import { CompanyBriefingScreen } from "@/components/game/screens/CompanyBriefingScreen";
 import { TravelScreen } from "@/components/game/screens/TravelScreen";
 import { VelaroStreetScreen } from "@/components/game/screens/VelaroStreetScreen";
@@ -40,17 +42,16 @@ type Screen =
 const GameContent = () => {
   const { resetGame, state: pfState, consumeRestartFlag } = usePFGame();
 
-  const storageKey = `pf-game-screen-guest`;
-  const introStorageKey = `the-analyst-brand-intro-seen-guest`;
+  const { user } = useAuth();
+  const uid = user?.id ?? "";
+  const introStorageKey = `the-analyst-brand-intro-seen:${uid}`;
+  const [saved] = useState(() => readPFGameSnapshot(uid));
 
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
-    const saved = localStorage.getItem(storageKey) as Screen | null;
-    if (saved === "replay-briefing") return "company-briefing";
-    return saved || "company-briefing";
+    return saved?.screen ?? "company-briefing";
   });
 
   const [showBrandIntro, setShowBrandIntro] = useState(() => {
-    const saved = localStorage.getItem(storageKey) as Screen | null;
     return !saved && !localStorage.getItem(introStorageKey);
   });
 
@@ -58,11 +59,13 @@ const GameContent = () => {
   const [resetVersion, setResetVersion] = useState(0);
 
   useEffect(() => {
-    if (showBrandIntro) return;
-    if (currentScreen !== "replay-briefing") {
-      localStorage.setItem(storageKey, currentScreen);
-    }
-  }, [currentScreen, showBrandIntro, storageKey]);
+    if (showBrandIntro || currentScreen === "replay-briefing" || currentScreen === "inquiry" || pfState.restartFromBeginning) return;
+    writePFGameSnapshot(uid, currentScreen as PFScreen, pfState);
+  }, [currentScreen, showBrandIntro, uid, pfState]);
+
+  const saveInquiryCheckpoint = useCallback(() => {
+    writePFGameSnapshot(uid, "inquiry", pfState);
+  }, [uid, pfState]);
 
   // Just-in-time prefetch: while the player is on the current screen,
   // start downloading the next screen's images and audio so transitions
@@ -103,8 +106,8 @@ const GameContent = () => {
         }
 
         if (options?.clearStorage) {
-          localStorage.removeItem(storageKey);
-          localStorage.removeItem("pf-game-submitted");
+          clearPFGameSnapshot(uid);
+          localStorage.removeItem(`pf-game-submitted:${uid}`);
           localStorage.removeItem(introStorageKey);
         }
 
@@ -118,7 +121,7 @@ const GameContent = () => {
         }, 100);
       }, 400);
     },
-    [introStorageKey, resetGame, storageKey]
+    [introStorageKey, resetGame, uid]
   );
 
   const handleBrandIntroComplete = useCallback(() => {
@@ -180,8 +183,8 @@ const GameContent = () => {
         {currentScreen === "replay-briefing" && (
           <CompanyBriefingScreen
             onComplete={() => {
-              const saved = localStorage.getItem(storageKey) as Screen | null;
-              setCurrentScreen(saved && saved !== "replay-briefing" ? saved : "company-briefing");
+              const previous = readPFGameSnapshot(uid);
+              setCurrentScreen(previous?.screen ?? "company-briefing");
             }}
             isReviewMode
           />
@@ -200,7 +203,7 @@ const GameContent = () => {
         )}
 
         {currentScreen === "inquiry" && (
-          <InquiryScreen onComplete={() => handleNavigate("reflection")} />
+          <InquiryScreen onComplete={() => handleNavigate("reflection")} onSafeCheckpoint={saveInquiryCheckpoint} />
         )}
 
         {currentScreen === "reflection" && (
@@ -235,10 +238,10 @@ const GameContent = () => {
   );
 };
 
-const Index = () => (
-  <PFGameProvider>
-    <GameContent />
-  </PFGameProvider>
-);
+const Index = () => {
+  const {user} = useAuth();
+  if (!user) return null;
+  return <PFGameProvider userId={user.id}><GameContent /></PFGameProvider>;
+};
 
 export default Index;
