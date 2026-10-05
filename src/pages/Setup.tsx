@@ -23,11 +23,11 @@ const Setup = () => {
   }, [profile]);
 
   useEffect(() => {
-    if (isProfileComplete) navigate("/", { replace: true });
+    if (isProfileComplete) navigate("/app", { replace: true });
   }, [isProfileComplete, navigate]);
 
   if (authLoading) return <div className="min-h-screen bg-background" />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/" replace />;
   if (isProfileComplete) return null;
 
   const needsName = !profile?.first_name || !profile?.last_name;
@@ -89,7 +89,7 @@ const Setup = () => {
           يلا نبدأ
         </PrimaryButton>
         <div className="text-center">
-          <LinkButton className="text-muted-foreground" onClick={async () => { await signOut(); navigate("/login", { replace: true }); }}>تسجيل الخروج</LinkButton>
+          <LinkButton className="text-muted-foreground" onClick={async () => { await signOut(); navigate("/", { replace: true }); }}>تسجيل الخروج</LinkButton>
         </div>
       </div>
     </AuthShell>

@@ -10,7 +10,7 @@ import { errText, maskPhone, phoneAuth, PhoneAuthResult, toE164 } from "@/lib/ph
 type Mode = "login" | "signup" | "verify" | "forgot" | "forgot_code" | "forgot_new" | "forgot_done";
 
 const modeFromPath = (p: string): Mode =>
-  p.startsWith("/signup") ? "signup" : p.startsWith("/forgot-password") ? "forgot" : "login";
+  p.startsWith("/login") ? "login" : p.startsWith("/forgot-password") ? "forgot" : "signup";
 
 function useCountdown() {
   const [left, setLeft] = useState(0);
@@ -48,7 +48,12 @@ const PlayerAuth = () => {
   const [resetToken, setResetToken] = useState("");
 
   useEffect(() => {
-    if (!authLoading && user && mode !== "forgot_done") navigate(isProfileComplete ? "/" : "/setup", { replace: true });
+    const pathMode = modeFromPath(location.pathname);
+    setModeState(current => current === 'verify' || current === 'forgot_code' || current === 'forgot_new' || current === 'forgot_done' ? current : pathMode);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!authLoading && user && mode !== "forgot_done") navigate('/app', { replace: true });
   }, [authLoading, user, isProfileComplete, navigate, mode]);
 
   const setMode = (m: Mode, path?: string) => {
@@ -206,7 +211,7 @@ const PlayerAuth = () => {
   );
 
   if (mode === "signup") return (
-    <AuthShell title={editingFrom ? "تغيير الرقم" : "إنشاء حساب"} subtitle={editingFrom ? undefined : "سنرسل رمز التحقق إلى رقم واتساب."}>
+    <AuthShell title={editingFrom ? "تغيير الرقم" : "أنشئ حسابك وابدأ التجربة."}>
       <form onSubmit={onSignup} className="space-y-3" noValidate>
         {!editingFrom && <div className="grid grid-cols-2 gap-2.5">
           <Field id="first" label="الاسم الأول"><TextInput id="first" autoComplete="given-name" dir="auto" placeholder="الاسم الأول" maxLength={50} value={firstName} onChange={(e) => setFirstName(e.target.value)} /></Field>

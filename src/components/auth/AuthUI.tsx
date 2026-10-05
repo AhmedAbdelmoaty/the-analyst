@@ -6,23 +6,29 @@ import * as Flags from "country-flag-icons/react/3x2";
 import storeFrontImg from "@/assets/scenes/prism-building-exterior.webp";
 import analystLockup from "@/assets/brand/the-analyst-lockup.png";
 import { COUNTRIES } from "@/lib/phoneAuth";
+import { useLandingAuth } from "@/components/auth/Landing";
 
-export const AuthShell = ({ title, subtitle, children }: { title: string; subtitle?: ReactNode; children: ReactNode }) => (
+export const AuthShell = ({ title, subtitle, children }: { title: string; subtitle?: ReactNode; children: ReactNode }) => {
+  const embedded = useLandingAuth();
+  const card = <motion.section initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.32 }} className="w-full max-w-[430px] rounded-lg border border-border bg-card px-5 py-6 shadow-sm sm:px-7 sm:py-7">
+        {!embedded && <img src={analystLockup} alt="The Analyst" className="mx-auto mb-3 h-[68px] w-[105px] object-contain sm:h-[76px] sm:w-[118px]" />}
+        <h2 className="text-center text-2xl font-bold text-foreground">{title}</h2>
+        {subtitle && <div className="mt-2 text-center text-sm leading-relaxed text-muted-foreground">{subtitle}</div>}
+        <div className="mt-5">{children}</div>
+      </motion.section>;
+  if (embedded) return card;
+  return (
   <div dir="rtl" className="auth-theme relative min-h-[100dvh] overflow-x-hidden bg-background text-foreground">
     <div className="fixed inset-0" aria-hidden="true">
       <img src={storeFrontImg} alt="" className="h-full w-full object-cover" />
       <div className="absolute inset-0 bg-background/55" />
     </div>
     <main className="relative z-10 flex min-h-[100dvh] items-center justify-center px-4 py-5 sm:py-8">
-      <motion.section initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.32 }} className="w-full max-w-[430px] rounded-lg bg-card px-5 py-6 shadow-xl sm:px-7 sm:py-7">
-        <img src={analystLockup} alt="The Analyst" className="mx-auto mb-3 h-[68px] w-[105px] object-contain sm:h-[76px] sm:w-[118px]" />
-        <h1 className="text-center text-2xl font-bold text-foreground">{title}</h1>
-        {subtitle && <div className="mt-2 text-center text-sm leading-relaxed text-muted-foreground">{subtitle}</div>}
-        <div className="mt-5">{children}</div>
-      </motion.section>
+      {card}
     </main>
   </div>
-);
+  );
+};
 
 const inputCls = "h-11 w-full rounded-md border border-border bg-input px-3 text-base text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 aria-[invalid=true]:border-destructive";
 
