@@ -18,6 +18,7 @@ import {
 import type { CaseOutcome } from "@/lib/pf-case/case-tree";
 import { EVIDENCE, type EvidenceData } from "@/lib/pf-case/evidence-catalog";
 import type { GenderText } from "@/lib/genderText";
+import { readPFGameSnapshot } from "@/lib/pf-game-persistence";
 
 interface SavedNote {
   id: string;
@@ -99,8 +100,8 @@ export const usePFGame = () => {
   return ctx;
 };
 
-export const PFGameProvider = ({ children }: { children: ReactNode }) => {
-  const [state, setState] = useState<PFGameState>(initialState);
+export const PFGameProvider = ({ children, userId }: { children: ReactNode; userId: string }) => {
+  const [state, setState] = useState<PFGameState>(() => readPFGameSnapshot(userId)?.gameState ?? initialState);
 
   const getChoices = useCallback(
     () => engineGetChoices(state, state.restartCount * 13),
