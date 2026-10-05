@@ -183,8 +183,8 @@ const GameContent = () => {
         {currentScreen === "replay-briefing" && (
           <CompanyBriefingScreen
             onComplete={() => {
-              const [saved] = useState(() => readPFGameSnapshot(uid));
-              setCurrentScreen(saved?.screen ?? "company-briefing");
+              const previous = readPFGameSnapshot(uid);
+              setCurrentScreen(previous?.screen ?? "company-briefing");
             }}
             isReviewMode
           />
