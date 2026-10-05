@@ -27,7 +27,10 @@ const emit = () => listeners.forEach((l) => l());
 
 export function subscribeTimeChallenge(fn: () => void) {
   listeners.add(fn);
-  return () => { listeners.delete(fn); };
+  // Another tab pausing the shared clock must refresh this tab's view too.
+  const onStorage = (e: StorageEvent) => { if (e.key?.startsWith("pf-time-challenge-")) fn(); };
+  window.addEventListener("storage", onStorage);
+  return () => { listeners.delete(fn); window.removeEventListener("storage", onStorage); };
 }
 
 export const challengeStorageKey = keyFor;
@@ -83,6 +86,13 @@ export function newRoundId() {
 /** Starts a fresh round (running) with the full duration. */
 export function startTimeChallenge(userId: string): TimeChallenge {
   const c: TimeChallenge = { version: 2, roundId: newRoundId(), remainingMs: TIME_CHALLENGE_DURATION_MS, runningSince: Date.now(), status: "active" };
+  write(userId, c);
+  return c;
+}
+
+/** A saved round from before the timer existed gets a paused full-length challenge. */
+export function adoptLegacyRound(userId: string): TimeChallenge {
+  const c: TimeChallenge = { version: 2, roundId: newRoundId(), remainingMs: TIME_CHALLENGE_DURATION_MS, runningSince: null, status: "active" };
   write(userId, c);
   return c;
 }
