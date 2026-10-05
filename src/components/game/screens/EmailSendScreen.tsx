@@ -9,9 +9,11 @@ import analystFemaleImg from "@/assets/photos/analyst-laptop-evening-female.webp
 
 interface EmailSendScreenProps {
   onComplete: () => void;
+  /** Called the instant the send is accepted; returning false rejects a late send. */
+  onSubmitReport?: () => boolean;
 }
 
-export const EmailSendScreen = ({ onComplete }: EmailSendScreenProps) => {
+export const EmailSendScreen = ({ onComplete, onSubmitReport }: EmailSendScreenProps) => {
   const { profile } = useAuth();
   const { playSound } = useSound();
   const [sending, setSending] = useState(false);
@@ -26,6 +28,7 @@ export const EmailSendScreen = ({ onComplete }: EmailSendScreenProps) => {
 
   const handleSend = () => {
     if (sending || sent) return;
+    if (onSubmitReport && !onSubmitReport()) return;
     setSending(true);
     try {
       playSound("whoosh");
