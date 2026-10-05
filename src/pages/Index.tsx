@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { readPFGameSnapshot, writePFGameSnapshot, clearPFGameSnapshot, type PFScreen } from "@/lib/pf-game-persistence";
+import { readPFGameSnapshot, writePFGameSnapshot, clearPFGameSnapshot, setSaveWritable, setSceneScope, type PFScreen } from "@/lib/pf-game-persistence";
 import { CompanyBriefingScreen } from "@/components/game/screens/CompanyBriefingScreen";
 import { TravelScreen } from "@/components/game/screens/TravelScreen";
 import { VelaroStreetScreen } from "@/components/game/screens/VelaroStreetScreen";
@@ -15,7 +15,7 @@ import { IncomingCallScreen } from "@/components/game/screens/IncomingCallScreen
 import { PhoneCallDebriefScreen } from "@/components/game/screens/PhoneCallDebriefScreen";
 import { ResultScreen } from "@/components/game/screens/ResultScreen";
 
-
+import { pauseGame, resumeGame, isGamePaused, subscribePause, discardPausedWork, nativeSetTimeout, nativeClearTimeout, nativeSetInterval, nativeClearInterval } from "@/lib/pf-pause";
 import {
   readTimeChallenge,
   startTimeChallenge,
@@ -24,9 +24,19 @@ import {
   submitTimeChallenge,
   subscribeTimeChallenge,
   stopAllMedia,
+  challengeStorageKey,
+  pauseTimeChallenge,
+  resumeTimeChallenge,
+  heartbeatTimeChallenge,
+  freezeAfterReload,
+  adoptLegacyRound,
+  remainingMs,
 } from "@/lib/pf-time-challenge";
+import { claimRound, releaseRound } from "@/lib/pf-round-owner";
+import { isUpdatePending, subscribeUpdate, applyPendingUpdate } from "@/lib/registerAppWorker";
 import { stopSceneAmbience } from "@/hooks/useSceneAudio";
 import { TimeChallengeBar } from "@/components/game/TimeChallengeBar";
+import { PauseOverlay } from "@/components/game/PauseOverlay";
 import { TimeUpScreen } from "@/components/game/screens/TimeUpScreen";
 import { AnalystBrandIntroScreen } from "@/components/game/AnalystBrandIntroScreen";
 import { PlayerSettingsPanel } from "@/components/game/PlayerSettingsPanel";
@@ -51,75 +61,153 @@ type Screen =
   | "result"
   | "replay-briefing";
 
+/** Reads the saved round once per mount, reconciling it with the time challenge. */
+function bootRound(uid: string) {
+  freezeAfterReload(uid);
+  const saved = readPFGameSnapshot(uid);
+  let challenge = readTimeChallenge(uid);
+  if (saved && !challenge && !saved.gameState.framingSubmitted) challenge = adoptLegacyRound(uid);
+  const resumable = !!saved && saved.screen !== "result";
+  // Restored rounds wait for "متابعة اللعب" — nothing plays before the player's tap.
+  if (resumable) { pauseGame(); pauseTimeChallenge(uid); }
+  return { saved, resumable };
+}
+
 const GameContent = () => {
   const { resetGame, state: pfState, consumeRestartFlag } = usePFGame();
 
   const { user } = useAuth();
   const uid = user?.id ?? "";
   const introStorageKey = `the-analyst-brand-intro-seen:${uid}`;
-  const [saved] = useState(() => readPFGameSnapshot(uid));
+  const [{ saved }] = useState(() => bootRound(uid));
 
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
     return saved?.screen ?? "company-briefing";
   });
 
-  const [showBrandIntro, setShowBrandIntro] = useState(() => {
-    return !saved && !localStorage.getItem(introStorageKey);
-  });
+  // Every new round starts from the cover's «ابدأ الآن», which starts the timer.
+  const [showBrandIntro, setShowBrandIntro] = useState(() => !saved);
 
   const [transitioning, setTransitioning] = useState(false);
 
-  // ---- Time challenge (deadline persisted per user; independent of gameStartedAt) ----
+  // ---- Time challenge (active-play clock persisted per user) ----
   const challengeRaw = useSyncExternalStore(
     subscribeTimeChallenge,
-    () => { try { return localStorage.getItem(`pf-time-challenge-v1:${uid}`); } catch { return null; } },
+    () => { try { return localStorage.getItem(challengeStorageKey(uid)); } catch { return null; } },
   );
   const challenge = challengeRaw ? readTimeChallenge(uid) : null;
   const expired = challenge?.status === "expired";
   const expiredRef = useRef(expired);
   expiredRef.current = expired;
+  const running = challenge?.status === "active" && challenge.runningSince != null;
+
+  // Scope per-screen progress to this round + screen before children render.
+  setSceneScope(uid, `${challenge?.roundId ?? "legacy"}|${currentScreen}`);
+
+  const paused = useSyncExternalStore(subscribePause, isGamePaused);
+  const updatePending = useSyncExternalStore(subscribeUpdate, isUpdatePending);
+  const [stale, setStale] = useState(false);
 
   useEffect(() => {
-    if (challenge?.status !== "active") return;
+    if (!running || !challenge) return;
     const check = () => {
       if (checkTimeChallengeExpiry(uid)) expiredRef.current = true;
     };
     check();
-    const id = window.setTimeout(check, Math.max(0, challenge.deadline - Date.now()) + 20);
-    document.addEventListener("visibilitychange", check);
-    window.addEventListener("focus", check);
-    window.addEventListener("pageshow", check);
-    return () => {
-      window.clearTimeout(id);
-      document.removeEventListener("visibilitychange", check);
-      window.removeEventListener("focus", check);
-      window.removeEventListener("pageshow", check);
-    };
-  }, [challenge?.status, challenge?.deadline, uid]);
+    const id = nativeSetTimeout(check, remainingMs(challenge) + 20);
+    const beat = nativeSetInterval(() => heartbeatTimeChallenge(uid), 1000);
+    return () => { nativeClearTimeout(id); nativeClearInterval(beat); };
+  }, [running, challenge?.runningSince, challenge?.remainingMs, uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!expired) return;
+    discardPausedWork();
+    resumeGame();
     stopSceneAmbience();
     stopAllMedia();
     setTransitioning(false);
   }, [expired]);
 
+  // Screen to persist: a confirmed report or an accepted send resumes at the next step.
+  const effectiveScreen = useCallback((screen: Screen, state: typeof pfState): PFScreen => {
+    if (screen === "framing" && state.framingSubmitted) return "email-send";
+    if (screen === "email-send" && readTimeChallenge(uid)?.status === "submitted") return "mansour-receives";
+    return screen as PFScreen;
+  }, [uid]);
+
+  const latest = useRef({ currentScreen, pfState, showBrandIntro, expired });
+  latest.current = { currentScreen, pfState, showBrandIntro, expired };
+
+  const saveNow = useCallback(() => {
+    const l = latest.current;
+    if (l.expired || l.showBrandIntro || l.currentScreen === "replay-briefing" || l.pfState.restartFromBeginning) return;
+    writePFGameSnapshot(uid, effectiveScreen(l.currentScreen, l.pfState), l.pfState, readTimeChallenge(uid)?.roundId);
+  }, [uid, effectiveScreen]);
+
   const handleSubmitReport = useCallback(() => {
     const ok = submitTimeChallenge(uid, Date.now());
-    if (!ok) expiredRef.current = true;
-    return ok;
+    if (!ok) { expiredRef.current = true; return false; }
+    // Persist the accepted send immediately so a reload continues past the email.
+    writePFGameSnapshot(uid, "mansour-receives", latest.current.pfState, readTimeChallenge(uid)?.roundId);
+    return true;
   }, [uid]);
   const [resetVersion, setResetVersion] = useState(0);
 
-  useEffect(() => {
-    if (expired || showBrandIntro || currentScreen === "replay-briefing" || currentScreen === "inquiry" || pfState.restartFromBeginning) return;
-    writePFGameSnapshot(uid, currentScreen as PFScreen, pfState);
-  }, [currentScreen, showBrandIntro, uid, pfState, expired]);
+  useEffect(() => { saveNow(); }, [currentScreen, showBrandIntro, pfState, expired, saveNow]);
 
-  const saveInquiryCheckpoint = useCallback(() => {
-    if (expiredRef.current) return;
-    writePFGameSnapshot(uid, "inquiry", pfState);
-  }, [uid, pfState]);
+  // ---- Pause: page hidden, app switched, screen locked, route left ----
+  const pausable = !showBrandIntro && !expired && currentScreen !== "result";
+  const pausableRef = useRef(pausable);
+  pausableRef.current = pausable;
+
+  const doPause = useCallback(() => {
+    saveNow();
+    if (!pausableRef.current) return;
+    pauseGame();
+    pauseTimeChallenge(uid);
+  }, [saveNow, uid]);
+
+  useEffect(() => {
+    const onLost = () => {
+      saveNow();
+      setSaveWritable(false);
+      setStale(true);
+      pauseGame();
+      pauseTimeChallenge(uid);
+    };
+    setSaveWritable(true);
+    claimRound(uid, onLost);
+    const onVis = () => { if (document.visibilityState === "hidden") doPause(); };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("pagehide", doPause);
+    document.addEventListener("freeze", doPause);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pagehide", doPause);
+      document.removeEventListener("freeze", doPause);
+      // Leaving /play (or signing out): save, freeze the clock, silence everything.
+      saveNow();
+      pauseTimeChallenge(uid);
+      discardPausedWork();
+      stopSceneAmbience();
+      stopAllMedia();
+      resumeGame();
+      releaseRound();
+      setSaveWritable(true);
+    };
+  }, [uid, doPause, saveNow]);
+
+  const handleContinue = useCallback(() => {
+    if (stale) { window.location.reload(); return; }
+    claimRound(uid, () => { setSaveWritable(false); setStale(true); pauseGame(); pauseTimeChallenge(uid); });
+    resumeTimeChallenge(uid);
+    resumeGame();
+  }, [stale, uid]);
+
+  const handleUpdateNow = useCallback(() => {
+    saveNow();
+    applyPendingUpdate();
+  }, [saveNow]);
 
   // Just-in-time prefetch: while the player is on the current screen,
   // start downloading the next screen's images and audio so transitions
@@ -244,7 +332,7 @@ const GameContent = () => {
   }
 
   const showSettings = currentScreen !== "replay-briefing" && !showBrandIntro;
-  const showTimer = !showBrandIntro && challenge?.status === "active";
+  const showTimer = !showBrandIntro && challenge?.status === "active" && currentScreen !== "replay-briefing";
   const showTimeline = !showBrandIntro && !["company-briefing", "replay-briefing", "result"].includes(currentScreen);
 
   return (
@@ -253,7 +341,11 @@ const GameContent = () => {
 
       {showTimeline && <ProgressTimeline currentScreen={currentScreen} />}
 
-      {showTimer && challenge && <TimeChallengeBar deadline={challenge.deadline} />}
+      {showTimer && challenge && <TimeChallengeBar challenge={challenge} belowTimeline={showTimeline} />}
+
+      {(paused || stale) && pausable && (
+        <PauseOverlay onContinue={handleContinue} updatePending={updatePending && !stale} onUpdate={handleUpdateNow} />
+      )}
 
       {showSettings && (
         <PlayerSettingsPanel
@@ -294,7 +386,7 @@ const GameContent = () => {
         )}
 
         {currentScreen === "inquiry" && (
-          <InquiryScreen onComplete={() => handleNavigate("reflection")} onSafeCheckpoint={saveInquiryCheckpoint} />
+          <InquiryScreen onComplete={() => handleNavigate("reflection")} />
         )}
 
         {currentScreen === "reflection" && (
