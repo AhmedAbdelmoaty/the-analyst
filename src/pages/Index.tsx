@@ -45,7 +45,7 @@ const GameContent = () => {
   const { user } = useAuth();
   const uid = user?.id ?? "";
   const introStorageKey = `the-analyst-brand-intro-seen:${uid}`;
-  const saved = readPFGameSnapshot(uid);
+  const [saved] = useState(() => readPFGameSnapshot(uid));
 
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
     return saved?.screen ?? "company-briefing";
@@ -183,7 +183,7 @@ const GameContent = () => {
         {currentScreen === "replay-briefing" && (
           <CompanyBriefingScreen
             onComplete={() => {
-              const saved = readPFGameSnapshot(uid);
+              const [saved] = useState(() => readPFGameSnapshot(uid));
               setCurrentScreen(saved?.screen ?? "company-briefing");
             }}
             isReviewMode
