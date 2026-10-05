@@ -357,3 +357,8 @@
 @media (prefers-reduced-motion: reduce) {
   .time-challenge.warning, .time-challenge.critical { animation: none; }
 }
+
+/* Real pause: freeze CSS animations in place while the round is paused. */
+.pf-paused *, .pf-paused *::before, .pf-paused *::after { animation-play-state: paused !important; }
+.time-challenge-fill { transition: transform 300ms linear; }
+@media (prefers-reduced-motion: reduce) { .time-challenge-fill { transition: none; } }
