@@ -22,6 +22,7 @@ export function readPFGameSnapshot(userId: string): PFGameSnapshot | null {
     if (['reflection','framing','email-send','mansour-receives','incoming-call','phone-call','result'].includes(data.screen) && !data.gameState.isComplete) return null;
     if (['email-send','mansour-receives','incoming-call','phone-call','result'].includes(data.screen) && !data.gameState.framingSubmitted) return null;
     if (data.screen === 'inquiry' && data.gameState.isComplete) return null;
+    if (data.screen === 'inquiry' && data.gameState.questionsUsed > 0 && !data.gameState.gameStartedAt) return null;
     if (data.screen === 'result' && !data.gameState.outcome) return null;
     return data;
   } catch { return null; }

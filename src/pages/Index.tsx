@@ -59,7 +59,7 @@ const GameContent = () => {
   const [resetVersion, setResetVersion] = useState(0);
 
   useEffect(() => {
-    if (showBrandIntro || currentScreen === "replay-briefing" || currentScreen === "inquiry") return;
+    if (showBrandIntro || currentScreen === "replay-briefing" || currentScreen === "inquiry" || pfState.restartFromBeginning) return;
     writePFGameSnapshot(uid, currentScreen as PFScreen, pfState);
   }, [currentScreen, showBrandIntro, uid, pfState]);
 
