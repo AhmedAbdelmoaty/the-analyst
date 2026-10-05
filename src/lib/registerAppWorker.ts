@@ -9,6 +9,6 @@ export function registerAppWorker() {
     navigator.serviceWorker.getRegistrations().then(registrations => registrations.filter(r => r.active?.scriptURL.endsWith('/sw.js') || r.installing?.scriptURL.endsWith('/sw.js')).forEach(r => void r.unregister()));
     return;
   }
-  const update = registerSW({ immediate: true, onNeedRefresh() { window.dispatchEvent(new Event('analyst-update-ready')); } });
+  const update = registerSW({ immediate: true, onNeedRefresh() { if (!location.pathname.startsWith('/play')) window.dispatchEvent(new Event('analyst-apply-update')); } });
   window.addEventListener('analyst-apply-update', () => { if (!location.pathname.startsWith('/play')) void update(true); });
 }
