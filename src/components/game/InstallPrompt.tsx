@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useInstall } from "@/contexts/InstallContext";
-import { Button } from "@/components/ui/button";
+import { PrimaryButton, LinkButton } from "@/components/auth/AuthUI";
 import analystLockup from "@/assets/brand/the-analyst-lockup.png";
 
 export default function InstallPrompt() {
@@ -15,9 +15,9 @@ export default function InstallPrompt() {
       {show ? <>
         <h1 className="text-2xl font-bold">The Analyst على شاشتك الرئيسية</h1>
         <p className="mt-3 text-muted-foreground">افتح التجربة بسهولة في أي وقت.</p>
-        {available ? <Button className="mt-7 w-full" disabled={busy} onClick={async () => { setBusy(true); await install(); setBusy(false); navigate('/play', {replace:true}); }}>تثبيت التطبيق</Button> : <p className="mt-6 rounded-md bg-muted p-3 text-sm text-muted-foreground">{guidance}</p>}
-        <Button variant="ghost" className="mt-2 w-full" onClick={() => { dismiss(); navigate('/play', {replace:true}); }}>لاحقًا</Button>
-      </> : <Button className="w-full" onClick={() => navigate('/play', {replace:true})}>متابعة اللعب</Button>}
+        {available ? <PrimaryButton disabled={busy} onClick={async () => { setBusy(true); await install(); setBusy(false); navigate('/play', {replace:true}); }}>تثبيت التطبيق</PrimaryButton> : <p className="mt-6 rounded-md bg-muted p-3 text-sm text-muted-foreground">{guidance}</p>}
+        <LinkButton onClick={() => { dismiss(); navigate('/play', {replace:true}); }}>لاحقًا</LinkButton>
+      </> : <PrimaryButton onClick={() => navigate('/play', {replace:true})}>متابعة اللعب</PrimaryButton>}
       <Link to="/" className="mt-5 block text-sm text-primary underline-offset-4 hover:underline">عن The Analyst</Link>
     </div>
   </div>;

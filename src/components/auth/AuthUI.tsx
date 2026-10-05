@@ -6,7 +6,7 @@ import * as Flags from "country-flag-icons/react/3x2";
 import storeFrontImg from "@/assets/scenes/prism-building-exterior.webp";
 import analystLockup from "@/assets/brand/the-analyst-lockup.png";
 import { COUNTRIES } from "@/lib/phoneAuth";
-import { useLandingAuth } from "@/components/auth/Landing";
+import { useLandingAuth } from "@/components/auth/LandingContext";
 
 export const AuthShell = ({ title, subtitle, children }: { title: string; subtitle?: ReactNode; children: ReactNode }) => {
   const embedded = useLandingAuth();

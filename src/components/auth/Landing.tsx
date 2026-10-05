@@ -1,12 +1,10 @@
-import { createContext, useContext } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import PlayerAuth from "@/pages/PlayerAuth";
 import analystLockup from "@/assets/brand/the-analyst-lockup.png";
 import impLogo from "@/assets/brand/imp-logo-upload.webp.asset.json";
 
-const LandingContext = createContext(false);
-export const useLandingAuth = () => useContext(LandingContext);
+import { LandingContext } from "@/components/auth/LandingContext";
 
 export default function Landing() {
   const { user, loading } = useAuth();
