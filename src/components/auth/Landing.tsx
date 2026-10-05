@@ -2,7 +2,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import PlayerAuth from "@/pages/PlayerAuth";
 import analystLockup from "@/assets/brand/the-analyst-lockup.png";
-import impLogo from "@/assets/brand/imp-logo-upload.webp.asset.json";
 
 import { LandingContext } from "@/components/auth/LandingContext";
 
@@ -39,7 +38,7 @@ export default function Landing() {
       </main>
       <footer className="flex items-center justify-between gap-4 border-t border-border/70 pt-5" dir="ltr">
         <span className="text-xs text-muted-foreground sm:text-sm">An experience by IMP</span>
-        <img src={impLogo.url} alt="IMP" className="h-10 w-auto max-w-[45%] object-contain sm:h-12" />
+        <img src="/imp-footer-logo.png" alt="IMP" className="h-10 w-auto max-w-[45%] object-contain sm:h-12" />
       </footer>
     </div>
   </div>;
