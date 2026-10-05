@@ -21,10 +21,10 @@ export default function Landing() {
   return <div dir="rtl" className="auth-theme min-h-[100dvh] bg-background text-foreground">
     <div className="mx-auto flex min-h-[100dvh] max-w-7xl flex-col px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 lg:px-12 lg:pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:pt-3">
       <header className="flex items-center justify-between border-b border-border/70 pb-2">
-        <Link to="/" aria-label="The Analyst"><img src={analystLockup} alt="The Analyst" className="h-16 w-auto object-contain sm:h-20" /></Link>
+        <Link to="/" aria-label="The Analyst"><img src={analystLockup} alt="The Analyst" className="h-14 w-auto object-contain sm:h-16" /></Link>
         {!loading && user && arrivedSignedOut === false && <Link to="/app" className="rounded-md border border-primary px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/5">متابعة اللعب</Link>}
       </header>
-      <main className="grid flex-1 content-start items-start gap-5 py-5 md:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(350px,430px)] lg:gap-12 lg:py-4">
+      <main className="grid flex-1 content-start items-center gap-5 py-5 md:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(350px,430px)] lg:gap-12 lg:py-2">
         <div className="max-w-2xl">
           <span className="mb-3 block h-1 w-12 bg-primary lg:mb-5" aria-hidden="true" />
           <h1 className="text-3xl font-bold leading-[1.45] text-foreground sm:text-4xl lg:text-[2.7rem]">متعة اللعب، وقيمة التعلّم.</h1>

@@ -9,11 +9,11 @@ import { useLandingAuth } from "@/components/auth/LandingContext";
 
 export const AuthShell = ({ title, subtitle, children }: { title: string; subtitle?: ReactNode; children: ReactNode }) => {
   const embedded = useLandingAuth();
-  const card = <motion.section initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.32 }} className={`w-full max-w-[430px] rounded-lg border border-border bg-card shadow-sm ${embedded ? "px-4 py-4 sm:px-7 sm:py-7" : "px-5 py-6 sm:px-7 sm:py-7"}`}>
+  const card = <motion.section initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.32 }} className={`w-full max-w-[430px] rounded-lg border border-border bg-card shadow-sm ${embedded ? "px-4 py-4 sm:px-7 sm:py-5" : "px-5 py-6 sm:px-7 sm:py-6"}`}>
         {!embedded && <img src={analystLockup} alt="The Analyst" className="mx-auto mb-3 h-[68px] w-[105px] object-contain sm:h-[76px] sm:w-[118px]" />}
         <h2 className="text-center text-2xl font-bold text-foreground">{title}</h2>
         {subtitle && <div className="mt-2 text-center text-sm leading-relaxed text-muted-foreground">{subtitle}</div>}
-        <div className="mt-5">{children}</div>
+        <div className="mt-4">{children}</div>
       </motion.section>;
   if (embedded) return card;
   return (
