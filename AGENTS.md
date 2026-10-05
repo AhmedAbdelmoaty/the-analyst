@@ -12,3 +12,4 @@
 - Landing captures whether a visitor arrived signed out and owns post-auth navigation to `/app` — newly authenticated visitors bypass the returning-user welcome card even when the account form unmounts.
 - PWA installation is optional, the worker is guarded against previews and applies updates only outside an active round; account/network requests are never cached.
 - Game checkpoints use a versioned per-user browser key and restore engine state only alongside a safe screen, not from the old shared guest screen key.
+- The round time challenge lives in `pf-time-challenge` as a per-user persisted absolute deadline (separate from `gameStartedAt`); report submission vs expiry is decided by comparing the acceptance instant to that deadline, and the ticking display is isolated so dialogue never re-renders.

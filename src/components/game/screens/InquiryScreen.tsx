@@ -366,9 +366,9 @@ export const InquiryScreen = ({ onComplete, onSafeCheckpoint }: InquiryScreenPro
         </motion.div>
       </AnimatePresence>
 
-      <div className="fixed top-4 right-4 z-20 flex gap-1.5">
+      <div className="fixed top-4 right-4 z-20 flex gap-1 sm:gap-1.5">
         {progressDots.map((i) => (
-          <motion.div key={i} className={`w-2.5 h-2.5 rounded-full transition-colors ${i < state.questionsUsed ? "bg-primary" : i === state.questionsUsed ? "bg-primary/60 ring-2 ring-primary/30" : "bg-muted"}`} />
+          <motion.div key={i} className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full transition-colors ${i < state.questionsUsed ? "bg-primary" : i === state.questionsUsed ? "bg-primary/60 ring-2 ring-primary/30" : "bg-muted"}`} />
         ))}
       </div>
 
@@ -380,7 +380,7 @@ export const InquiryScreen = ({ onComplete, onSafeCheckpoint }: InquiryScreenPro
           <motion.button
             key="restart-btn"
             onClick={() => setShowRestartConfirm(true)}
-            className="fixed top-4 left-4 z-[55] flex items-center gap-2 rounded-full border border-game-line bg-game-paper px-4 py-2.5 text-xs font-bold text-game-ink shadow-lg shadow-black/20 transition-all hover:scale-105 hover:border-primary hover:text-primary"
+            className="fixed top-16 left-4 z-[55] flex items-center gap-2 rounded-full border border-game-line bg-game-paper px-4 py-2.5 text-xs font-bold text-game-ink shadow-lg shadow-black/20 transition-all hover:scale-105 hover:border-primary hover:text-primary"
             initial={{ opacity: 0, y: -10 }}
             animate={{
               opacity: 1,
