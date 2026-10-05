@@ -10,5 +10,5 @@ export function registerAppWorker() {
     return;
   }
   const update = registerSW({ immediate: true, onNeedRefresh() { window.dispatchEvent(new Event('analyst-update-ready')); } });
-  window.addEventListener('analyst-apply-update', () => void update(true));
+  window.addEventListener('analyst-apply-update', () => { if (!location.pathname.startsWith('/play')) void update(true); });
 }
