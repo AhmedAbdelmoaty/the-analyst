@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useInstall } from "@/contexts/InstallContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, X, User, RotateCcw, Building2, Volume2, VolumeX, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +16,8 @@ interface PlayerSettingsPanelProps {
 
 export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: PlayerSettingsPanelProps) => {
   const { profile, updateProfile, signOut } = useAuth();
+  const { available, standalone, install, guidance } = useInstall();
+  const [showInstallHelp, setShowInstallHelp] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const { isSoundEnabled, setIsSoundEnabled, playSound } = useSound();
   const [isOpen, setIsOpen] = useState(false);
@@ -236,13 +240,18 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                   </div>
                 </button>
 
+                <Link to="/" className="w-full flex items-center gap-3 p-3 rounded-lg border border-game-line bg-game-paper hover:border-primary hover:bg-game-ivory text-game-ink transition-colors text-right text-sm font-bold">عن The Analyst</Link>
+                {!standalone && (available || guidance) && <div>
+                  <button type="button" onClick={() => available ? void install() : setShowInstallHelp(v => !v)} className="w-full flex items-center gap-3 p-3 rounded-lg border border-game-line bg-game-paper hover:border-primary hover:bg-game-ivory text-game-ink transition-colors text-right text-sm font-bold">تثبيت التطبيق</button>
+                  {showInstallHelp && !available && <p className="p-2 text-xs text-game-muted">{guidance}</p>}
+                </div>}
                 {/* Sign out */}
                 <button
                   onClick={async () => {
                     if (signingOut) return;
                     setSigningOut(true);
                     await signOut();
-                    window.location.assign("/login");
+                    window.location.assign("/");
                   }}
                   disabled={signingOut}
                   className="w-full flex items-center gap-3 p-3 rounded-lg border border-game-line bg-game-paper hover:border-primary hover:bg-game-ivory text-game-ink transition-colors text-right disabled:opacity-50"
@@ -250,7 +259,7 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
                   <LogOut className="w-5 h-5 text-primary" />
                   <div>
                     <p className="text-sm font-bold">{signingOut ? "جاري الخروج..." : "تسجيل الخروج"}</p>
-                    <p className="text-xs text-game-muted">هترجع لشاشة الدخول</p>
+                    <p className="text-xs text-game-muted">العودة إلى الصفحة الرئيسية</p>
                   </div>
                 </button>
 
