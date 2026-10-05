@@ -25,7 +25,7 @@ function useCountdown() {
 const PlayerAuth = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading: authLoading, isProfileComplete, signInWithPhone } = useAuth();
+  const { user, loading: authLoading, signInWithPhone } = useAuth();
 
   const [mode, setModeState] = useState<Mode>(modeFromPath(location.pathname));
   const [firstName, setFirstName] = useState("");
@@ -54,7 +54,7 @@ const PlayerAuth = () => {
 
   useEffect(() => {
     if (!authLoading && user && mode !== "forgot_done") navigate('/app', { replace: true });
-  }, [authLoading, user, isProfileComplete, navigate, mode]);
+  }, [authLoading, user, navigate, mode]);
 
   const setMode = (m: Mode, path?: string) => {
     setError(null); setNotice(null); setCode("");
