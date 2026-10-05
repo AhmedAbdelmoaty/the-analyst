@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
+import { readSceneProgress, writeSceneProgress } from "@/lib/pf-game-persistence";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookmarkPlus, Check, X, ChevronRight, FileText, StickyNote } from "lucide-react";
@@ -77,7 +78,21 @@ export const EnhancedDialogue = ({
   playerGender,
   renderOverlay,
 }: EnhancedDialogueProps) => {
-  const [internalIndex, setInternalIndex] = useState(0);
+  // Uncontrolled dialogues remember their line within the current scene across reloads.
+  const [progressKey] = useState(() => {
+    const src = dialogues.map((d) => d.text).join("|");
+    let h = 0;
+    for (let i = 0; i < src.length; i++) h = (h * 31 + src.charCodeAt(i)) | 0;
+    return `dlg:${h}`;
+  });
+  const [internalIndex, setInternalIndex] = useState(() => {
+    if (onIndexChange) return 0;
+    const saved = readSceneProgress<number>(progressKey);
+    return typeof saved === "number" && saved > 0 && saved < dialogues.length ? saved : 0;
+  });
+  useEffect(() => {
+    if (!onIndexChange && isActive) writeSceneProgress(progressKey, internalIndex);
+  }, [internalIndex, isActive, onIndexChange, progressKey]);
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
   const [showSaveButton, setShowSaveButton] = useState(false);

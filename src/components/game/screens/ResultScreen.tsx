@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
+import { readTimeChallenge } from "@/lib/pf-time-challenge";
+import { nativeSetTimeout, nativeClearTimeout } from "@/lib/pf-pause";
 import { motion } from "framer-motion";
 import { RotateCcw, Sparkles } from "lucide-react";
 import { usePFGame } from "@/contexts/PFGameContext";
@@ -100,40 +102,45 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
   const feedback = view.feedback[playerGender];
   const genderedChips = chips[playerGender];
 
-  // Record completion once per game session
-  const recordedRef = useRef(false);
+  // Record completion exactly once per round: the round id makes retries idempotent
+  // server-side, and the local "done" mark is set only after the server confirms.
   useEffect(() => {
-    if (recordedRef.current) return;
-    if (!user || !profile?.first_name || !profile?.last_name) return;
+    if (!user || !profile?.first_name || !profile?.last_name || !state.outcome) return;
+    const roundId = readTimeChallenge(user.id)?.roundId ?? `legacy-${state.gameStartedAt ?? "na"}`;
     const key = `pf-game-submitted:${user.id}`;
-    if (localStorage.getItem(key)) return;
-    recordedRef.current = true;
-    localStorage.setItem(key, "1");
-
+    const done = localStorage.getItem(key);
+    if (done === roundId || done === "1") return; // "1" = recorded by the previous version
+    let cancelled = false;
+    let retryTimer: number | null = null;
+    let attempt = 0;
     const startedAt = state.gameStartedAt ?? Date.now();
-    const duration_ms = Date.now() - startedAt;
-
-    // Note: `qualified` is intentionally NOT sent from the client. RLS forces
-    // qualified=false on insert; admins can mark a player as qualified after
-    // server-side review.
-    supabase
-      .from("completed_players")
-      .insert({
-        user_id: user.id,
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        outcome: state.outcome,
-        framing_correct: state.framingCorrectCount,
-        duration_ms,
-        started_at: new Date(startedAt).toISOString(),
-      })
-      .then(({ error }) => {
-        if (error) {
-          localStorage.removeItem(key);
-          console.warn("Failed to record completion:", error.message);
-        }
-      });
-  }, [user, profile?.first_name, profile?.last_name, state]);
+    const row = {
+      user_id: user.id,
+      round_id: roundId,
+      first_name: profile.first_name,
+      last_name: profile.last_name,
+      outcome: state.outcome,
+      framing_correct: state.framingCorrectCount,
+      duration_ms: Date.now() - startedAt,
+      started_at: new Date(startedAt).toISOString(),
+    };
+    const send = async () => {
+      if (cancelled) return;
+      // `qualified` is intentionally not sent; the server decides it.
+      const { error } = await supabase
+        .from("completed_players")
+        .upsert(row, { onConflict: "user_id,round_id", ignoreDuplicates: true });
+      if (cancelled) return;
+      if (!error) { localStorage.setItem(key, roundId); return; }
+      console.warn("Failed to record completion, retrying:", error.message);
+      attempt += 1;
+      retryTimer = nativeSetTimeout(send, Math.min(30000, 2000 * 2 ** Math.min(attempt, 4)));
+    };
+    const onOnline = () => { if (retryTimer) nativeClearTimeout(retryTimer); void send(); };
+    window.addEventListener("online", onOnline);
+    void send();
+    return () => { cancelled = true; if (retryTimer) nativeClearTimeout(retryTimer); window.removeEventListener("online", onOnline); };
+  }, [user, profile?.first_name, profile?.last_name, state.outcome]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const soundPlayedRef = useRef(false);
   useEffect(() => {

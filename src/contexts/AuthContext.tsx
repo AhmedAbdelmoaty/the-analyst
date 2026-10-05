@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -36,13 +36,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profileLoading, setProfileLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const loadUserData = useCallback(async (uid: string) => {
-    setProfileLoading(true);
+  // The user whose data the UI currently shows; stale responses for anyone else are dropped.
+  const currentUidRef = useRef<string | null>(null);
+  const requestRef = useRef(0);
+
+  /** `background` refreshes never toggle loading, so mounted screens (the game) stay put. */
+  const loadUserData = useCallback(async (uid: string, background = false) => {
+    const token = ++requestRef.current;
+    if (!background) setProfileLoading(true);
     const [{ data: prof }, { data: role }] = await Promise.all([
       supabase.from("profiles").select("first_name,last_name,display_name,gender,avatar_choice,phone").eq("user_id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle(),
     ]);
-    setProfile(prof ? { ...prof, gender: (prof.gender as "male" | "female" | null) ?? null } : null);
+    if (token !== requestRef.current || currentUidRef.current !== uid) return;
+    if (prof || !background) setProfile(prof ? { ...prof, gender: (prof.gender as "male" | "female" | null) ?? null } : null);
     setIsAdmin(!!role);
     setProfileLoading(false);
   }, []);
@@ -53,14 +60,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const apply = (s: Session | null) => {
       setSession(s);
+      const uid = s?.user?.id ?? null;
+      if (uid && uid === currentUidRef.current) {
+        // Same player re-confirmed (tab return, SIGNED_IN replay): refresh quietly.
+        setTimeout(() => loadUserData(uid, true), 0);
+        setSessionLoading(false);
+        return;
+      }
+      currentUidRef.current = uid;
+      requestRef.current++;
       setUser(s?.user ?? null);
-      if (s?.user) {
-        const uid = s.user.id;
+      setProfile(null);
+      setIsAdmin(false);
+      if (uid) {
         setProfileLoading(true);
         setTimeout(() => loadUserData(uid), 0);
       } else {
-        setProfile(null);
-        setIsAdmin(false);
+        setProfileLoading(false);
       }
       setSessionLoading(false);
     };
