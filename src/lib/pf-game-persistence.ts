@@ -1,7 +1,7 @@
 import type { PFGameState } from '@/contexts/PFGameContext';
 export const PF_SAVE_VERSION = 2;
 export const PF_OLD_SCREEN_KEY = 'pf-game-screen-guest';
-export type PFScreen = 'company-briefing' | 'travel' | 'velaro-street' | 'arrival' | 'inquiry' | 'reflection' | 'framing' | 'email-send' | 'mansour-receives' | 'incoming-call' | 'phone-call' | 'result';
+export type PFScreen = 'company-briefing' | 'travel' | 'velaro-street' | 'arrival' | 'inquiry' | 'reflection' | 'framing' | 'email-send' | 'mansour-receives' | 'incoming-call' | 'phone-call' | 'result' | 'replay-briefing';
 const SCREENS: PFScreen[] = ['company-briefing','travel','velaro-street','arrival','inquiry','reflection','framing','email-send','mansour-receives','incoming-call','phone-call','result'];
 export interface PFGameSnapshot {version: 2; screen: PFScreen; gameState: PFGameState; updatedAt: number}
 const keyFor = (userId: string) => `pf-game-save-v2:${userId}`;
