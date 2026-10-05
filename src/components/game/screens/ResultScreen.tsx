@@ -108,7 +108,8 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
     if (!user || !profile?.first_name || !profile?.last_name || !state.outcome) return;
     const roundId = readTimeChallenge(user.id)?.roundId ?? `legacy-${state.gameStartedAt ?? "na"}`;
     const key = `pf-game-submitted:${user.id}`;
-    if (localStorage.getItem(key) === roundId) return;
+    const done = localStorage.getItem(key);
+    if (done === roundId || done === "1") return; // "1" = recorded by the previous version
     let cancelled = false;
     let retryTimer: number | null = null;
     let attempt = 0;
