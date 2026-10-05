@@ -6,3 +6,4 @@
 - [x] Add optional PWA install flow, manifest, icons, guarded worker and safe updates.
 - [x] Isolate game save per player and restore only safe checkpoints.
 - [x] Review public routes and layout on phone and desktop; game/account end-to-end tests require a signed-in test account and real WhatsApp/device access.
+- [x] Round continuity: in-place pause/resume, active-play timer, per-screen restore, report/inquiry/send recovery, single-tab ownership, idempotent result save, safe installed-app updates, mobile timer placement (full play-through needs a signed-in player account and real devices).

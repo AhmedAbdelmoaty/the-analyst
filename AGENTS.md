@@ -10,6 +10,10 @@
 - Gameplay surfaces use scoped game-paper/ink/charcoal tokens while photographic scenes retain their original dark overlays; this keeps text readable without altering scene media or dialogue timing.
 - The public landing and reused account forms are independent of the lazily loaded `/play` route; `/app` is the authenticated entry so marketing and OTP never preload game media.
 - Landing captures whether a visitor arrived signed out and owns post-auth navigation to `/app` — newly authenticated visitors bypass the returning-user welcome card even when the account form unmounts.
-- PWA installation is optional, the worker is guarded against previews and applies updates only outside an active round; account/network requests are never cached.
+- PWA installation is optional and the worker is guarded against previews; account/network requests are never cached.
 - Game checkpoints use a versioned per-user browser key and restore engine state only alongside a safe screen, not from the old shared guest screen key.
-- The round time challenge lives in `pf-time-challenge` as a per-user persisted absolute deadline (separate from `gameStartedAt`); report submission vs expiry is decided by comparing the acceptance instant to that deadline, and the ticking display is isolated so dialogue never re-renders.
+- The round time challenge lives in `pf-time-challenge` as a per-user active-play clock (remaining ms + runningSince, heartbeat-checkpointed); submission vs expiry compares active time left at acceptance, so pauses and reloads neither deduct nor grant time.
+- Pausing is global and in place via `pf-pause` (virtualised timers, media and AudioContexts frozen) instead of unmounting or deactivating screens; restored rounds start paused until the player taps continue.
+- Saves carry the challenge `roundId`; per-screen progress lives in a scene store scoped to `roundId|screen`, and only the tab that last claimed the round (`pf-round-owner`) may write.
+- Result rows are upserted by `(user_id, round_id)` and marked done locally only after the server confirms.
+- Installed-app updates stay pending during /play and are applied on any route outside it or via the pause overlay's update action.
