@@ -24,6 +24,7 @@ export type Database = {
           last_name: string
           outcome: string | null
           qualified: boolean
+          round_id: string | null
           started_at: string | null
           user_id: string | null
         }
@@ -36,6 +37,7 @@ export type Database = {
           last_name: string
           outcome?: string | null
           qualified?: boolean
+          round_id?: string | null
           started_at?: string | null
           user_id?: string | null
         }
@@ -48,6 +50,7 @@ export type Database = {
           last_name?: string
           outcome?: string | null
           qualified?: boolean
+          round_id?: string | null
           started_at?: string | null
           user_id?: string | null
         }

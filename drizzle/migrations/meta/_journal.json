@@ -15,6 +15,13 @@
       "when": 1791109605141,
       "tag": "0001_profiles_phone_e164",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791201195745,
+      "tag": "0002_completed_players_round_id",
+      "breakpoints": true
     }
   ]
 }
