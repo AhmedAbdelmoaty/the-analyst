@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { readPFGameSnapshot, writePFGameSnapshot, clearPFGameSnapshot, type PFScreen } from "@/lib/pf-game-persistence";
 import { CompanyBriefingScreen } from "@/components/game/screens/CompanyBriefingScreen";
@@ -16,6 +16,18 @@ import { PhoneCallDebriefScreen } from "@/components/game/screens/PhoneCallDebri
 import { ResultScreen } from "@/components/game/screens/ResultScreen";
 
 
+import {
+  readTimeChallenge,
+  startTimeChallenge,
+  clearTimeChallenge,
+  checkTimeChallengeExpiry,
+  submitTimeChallenge,
+  subscribeTimeChallenge,
+  stopAllMedia,
+} from "@/lib/pf-time-challenge";
+import { stopSceneAmbience } from "@/hooks/useSceneAudio";
+import { TimeChallengeBar } from "@/components/game/TimeChallengeBar";
+import { TimeUpScreen } from "@/components/game/screens/TimeUpScreen";
 import { AnalystBrandIntroScreen } from "@/components/game/AnalystBrandIntroScreen";
 import { PlayerSettingsPanel } from "@/components/game/PlayerSettingsPanel";
 import { PFGameProvider, usePFGame } from "@/contexts/PFGameContext";
@@ -56,14 +68,56 @@ const GameContent = () => {
   });
 
   const [transitioning, setTransitioning] = useState(false);
+
+  // ---- Time challenge (deadline persisted per user; independent of gameStartedAt) ----
+  const challengeRaw = useSyncExternalStore(
+    subscribeTimeChallenge,
+    () => { try { return localStorage.getItem(`pf-time-challenge-v1:${uid}`); } catch { return null; } },
+  );
+  const challenge = challengeRaw ? readTimeChallenge(uid) : null;
+  const expired = challenge?.status === "expired";
+  const expiredRef = useRef(expired);
+  expiredRef.current = expired;
+
+  useEffect(() => {
+    if (challenge?.status !== "active") return;
+    const check = () => {
+      if (checkTimeChallengeExpiry(uid)) expiredRef.current = true;
+    };
+    check();
+    const id = window.setTimeout(check, Math.max(0, challenge.deadline - Date.now()) + 20);
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
+    window.addEventListener("pageshow", check);
+    return () => {
+      window.clearTimeout(id);
+      document.removeEventListener("visibilitychange", check);
+      window.removeEventListener("focus", check);
+      window.removeEventListener("pageshow", check);
+    };
+  }, [challenge?.status, challenge?.deadline, uid]);
+
+  useEffect(() => {
+    if (!expired) return;
+    stopSceneAmbience();
+    stopAllMedia();
+    setTransitioning(false);
+  }, [expired]);
+
+  const handleSubmitReport = useCallback(() => {
+    const ok = submitTimeChallenge(uid, Date.now());
+    if (!ok) expiredRef.current = true;
+    return ok;
+  }, [uid]);
   const [resetVersion, setResetVersion] = useState(0);
 
   useEffect(() => {
-    if (showBrandIntro || currentScreen === "replay-briefing" || currentScreen === "inquiry" || pfState.restartFromBeginning) return;
+    if (expired || showBrandIntro || currentScreen === "replay-briefing" || currentScreen === "inquiry" || pfState.restartFromBeginning) return;
     writePFGameSnapshot(uid, currentScreen as PFScreen, pfState);
-  }, [currentScreen, showBrandIntro, uid, pfState]);
+  }, [currentScreen, showBrandIntro, uid, pfState, expired]);
 
   const saveInquiryCheckpoint = useCallback(() => {
+    if (expiredRef.current) return;
     writePFGameSnapshot(uid, "inquiry", pfState);
   }, [uid, pfState]);
 
@@ -96,10 +150,12 @@ const GameContent = () => {
   }, [pfState.restartFromBeginning, consumeRestartFlag]);
 
   const navigateWithTransition = useCallback(
-    (screen: Screen, options?: { reset?: boolean; clearStorage?: boolean }) => {
+    (screen: Screen, options?: { reset?: boolean; clearStorage?: boolean; fromTimeUp?: boolean }) => {
+      if (expiredRef.current && !options?.fromTimeUp) return;
       setTransitioning(true);
 
       setTimeout(() => {
+        if (expiredRef.current && !options?.fromTimeUp) return;
         if (options?.reset) {
           resetGame();
           setResetVersion((version) => version + 1);
@@ -109,6 +165,7 @@ const GameContent = () => {
           clearPFGameSnapshot(uid);
           localStorage.removeItem(`pf-game-submitted:${uid}`);
           localStorage.removeItem(introStorageKey);
+          clearTimeChallenge(uid);
         }
 
         setCurrentScreen(screen);
@@ -126,8 +183,31 @@ const GameContent = () => {
 
   const handleBrandIntroComplete = useCallback(() => {
     localStorage.setItem(introStorageKey, "1");
+    startTimeChallenge(uid);
     setShowBrandIntro(false);
-  }, [introStorageKey]);
+  }, [introStorageKey, uid]);
+
+  const handleTimeUpRetry = useCallback(() => {
+    resetGame();
+    setResetVersion((v) => v + 1);
+    clearPFGameSnapshot(uid);
+    localStorage.removeItem(`pf-game-submitted:${uid}`);
+    localStorage.setItem(introStorageKey, "1");
+    setShowBrandIntro(false);
+    setCurrentScreen("company-briefing");
+    startTimeChallenge(uid);
+  }, [introStorageKey, resetGame, uid]);
+
+  const handleTimeUpBack = useCallback(() => {
+    resetGame();
+    setResetVersion((v) => v + 1);
+    clearPFGameSnapshot(uid);
+    localStorage.removeItem(`pf-game-submitted:${uid}`);
+    localStorage.removeItem(introStorageKey);
+    setCurrentScreen("company-briefing");
+    setShowBrandIntro(true);
+    clearTimeChallenge(uid);
+  }, [introStorageKey, resetGame, uid]);
 
   const handleNavigate = useCallback(
     (screen: string) => {
@@ -155,7 +235,16 @@ const GameContent = () => {
     });
   }, [navigateWithTransition]);
 
+  if (expired) {
+    return (
+      <div className="game-surface min-h-screen bg-background">
+        <TimeUpScreen onRetry={handleTimeUpRetry} onBackToStart={handleTimeUpBack} />
+      </div>
+    );
+  }
+
   const showSettings = currentScreen !== "replay-briefing" && !showBrandIntro;
+  const showTimer = !showBrandIntro && challenge?.status === "active";
   const showTimeline = !showBrandIntro && !["company-briefing", "replay-briefing", "result"].includes(currentScreen);
 
   return (
@@ -163,6 +252,8 @@ const GameContent = () => {
       <ScreenTransition isActive={transitioning} />
 
       {showTimeline && <ProgressTimeline currentScreen={currentScreen} />}
+
+      {showTimer && challenge && <TimeChallengeBar deadline={challenge.deadline} />}
 
       {showSettings && (
         <PlayerSettingsPanel
@@ -215,7 +306,7 @@ const GameContent = () => {
         )}
 
         {currentScreen === "email-send" && (
-          <EmailSendScreen onComplete={() => handleNavigate("mansour-receives")} />
+          <EmailSendScreen onComplete={() => handleNavigate("mansour-receives")} onSubmitReport={handleSubmitReport} />
         )}
 
         {currentScreen === "mansour-receives" && (
@@ -241,7 +332,7 @@ const GameContent = () => {
 const Index = () => {
   const {user} = useAuth();
   if (!user) return null;
-  return <PFGameProvider userId={user.id}><GameContent /></PFGameProvider>;
+  return <PFGameProvider key={user.id} userId={user.id}><GameContent key={user.id} /></PFGameProvider>;
 };
 
 export default Index;
