@@ -3,7 +3,6 @@ import { ReactNode, useEffect, useRef, useState, ClipboardEvent, KeyboardEvent }
 import { motion } from "framer-motion";
 import { AlertCircle, ChevronDown, Eye, EyeOff, Search } from "lucide-react";
 import * as Flags from "country-flag-icons/react/3x2";
-import storeFrontImg from "@/assets/scenes/prism-building-exterior.webp";
 import analystLockup from "@/assets/brand/the-analyst-lockup.png";
 import { COUNTRIES } from "@/lib/phoneAuth";
 import { useLandingAuth } from "@/components/auth/LandingContext";
@@ -20,7 +19,7 @@ export const AuthShell = ({ title, subtitle, children }: { title: string; subtit
   return (
   <div dir="rtl" className="auth-theme relative min-h-[100dvh] overflow-x-hidden bg-background text-foreground">
     <div className="fixed inset-0" aria-hidden="true">
-      <img src={storeFrontImg} alt="" className="h-full w-full object-cover" />
+
       <div className="absolute inset-0 bg-background/55" />
     </div>
     <main className="relative z-10 flex min-h-[100dvh] items-center justify-center px-4 py-5 sm:py-8">
