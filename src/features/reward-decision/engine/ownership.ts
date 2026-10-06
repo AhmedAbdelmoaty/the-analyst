@@ -1,0 +1,6 @@
+const tabId=crypto.randomUUID();let channel:BroadcastChannel|null=null;let timer:number|undefined;let owned=false;
+const key=(u:string,r:string)=>`the-analyst:reward-decision:owner:${u}:${r}`;
+export function claimOwnership(uid:string,runId:string,onLost:()=>void){releaseOwnership();owned=true;const k=key(uid,runId);const write=()=>{if(owned)localStorage.setItem(k,JSON.stringify({tabId,at:Date.now()}))};try{const raw=localStorage.getItem(k);if(raw){const old=JSON.parse(raw) as {tabId:string;at:number};if(old.tabId!==tabId&&Date.now()-old.at<5000)owned=false}}catch{/* continue */}channel=typeof BroadcastChannel==='undefined'?null:new BroadcastChannel(k);channel?.addEventListener('message',(e)=>{if(e.data?.type==='claim'&&e.data.tabId!==tabId){owned=false;onLost()}});if(owned){write();channel?.postMessage({type:'claim',tabId});timer=window.setInterval(write,2000)}return owned}
+export function takeOwnership(uid:string,runId:string){owned=true;try{localStorage.setItem(key(uid,runId),JSON.stringify({tabId,at:Date.now()}))}catch{/* unavailable */}channel?.postMessage({type:'claim',tabId});}
+export const mayWrite=()=>owned;
+export function releaseOwnership(){owned=false;if(timer)window.clearInterval(timer);timer=undefined;channel?.close();channel=null}
