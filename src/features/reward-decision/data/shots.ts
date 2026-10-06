@@ -1,0 +1,2 @@
+export const SHOT_MOTION=Object.fromEntries(Array.from({length:26},(_,i)=>{const id=`A${String(i).padStart(2,'0')}`;return [id,{scale:1.04,durationMs:i===0?220:6000,focalPortrait:'50% 42%',focalLandscape:'55% 48%',enabled:false,reason:'الصورة المؤقتة ثابتة؛ إعداد الحركة محفوظ للأصل النهائي'}]}));
+export const TRANSITIONS={crossfade:350,placeOut:180,placeIn:220,speaker:160,paper:220,evidence:280,sort:250,closeRecommendation:300,reveal:250};
