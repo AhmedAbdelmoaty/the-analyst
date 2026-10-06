@@ -1,5 +1,6 @@
 """Browser verification for the redesigned Reward Decision flow."""
 import asyncio, base64, json, sys, time
+import traceback
 from pathlib import Path
 from playwright.async_api import async_playwright
 
@@ -85,7 +86,7 @@ async def main():
   for w in (320,360,390):
    ctx=await b.new_context(viewport={'width':w,'height':844});await mock(ctx)
    try:await handoff_pause_mobile(ctx,w);print('PASS mobile',w)
-   except Exception as e:failures.append(f'mobile {w}: {e!r}')
+   except Exception as e:failures.append(f'mobile {w}: {e!r}\n{traceback.format_exc()}')
    await ctx.close()
   ctx=await b.new_context(viewport={'width':1280,'height':900});await mock(ctx)
   try:await migration(ctx);print('PASS migration')
