@@ -1,2 +1,27 @@
-import {useState} from 'react';import {CLAIMS,EVIDENCE,TEAMS,type ClaimId,type EvidenceId} from '../data/case';import type {Link,RewardRun} from '../engine/model';import {ActionButton,Panel} from './Ui';
-export function Meeting({run,onDefense,onDecide,onReview}:{run:RewardRun;onDefense:(l:Link)=>void;onDecide:()=>void;onReview:()=>void}){const [ev,setEv]=useState<EvidenceId|null>(run.meeting.defense?.evidenceId??null);const [claim,setClaim]=useState<ClaimId|null>(run.meeting.defense?.claimId??null);const team=run.submitted?.teamId;return <Panel title="اجتماع الاعتماد"><div className="rd-meeting-copy"><b>شريف</b><p>اتفضل. هتوصي بمين؟</p><b>أنت</b><p>دي توصية التكريم، ومعاها المقارنات اللي بنيت عليها القرار.</p><b>شريف</b><p>خلينا نراجع أسبابك.</p><b>{team==='mahmoud'?'حسام':'داليا'}</b><p>{team==='mahmoud'?'فريق مروان حقق إجمالي أعلى، ومتوسطه أعلى. إيه اللي يخلي فريق محمود الأنسب للتكريم ده؟':'هل الأدلة اللي معاك بتوضح تحقيق المعيار وتقارب النتائج بين أفراد الفريق؟'}</p></div><div className="rd-link"><b>دفاعك عن {team?TEAMS[team].name:'التوصية'}</b><select value={ev??''} onChange={e=>setEv(e.target.value as EvidenceId)}><option value="">اختر دليلًا</option>{run.evidence.map(id=><option key={id} value={id}>{EVIDENCE[id].title}</option>)}</select><select value={claim??''} onChange={e=>setClaim(e.target.value as ClaimId)}><option value="">ماذا يثبت؟</option>{Object.entries(CLAIMS).map(([id,t])=><option value={id} key={id}>{t}</option>)}</select>{ev&&claim&&<ActionButton variant="secondary" onClick={()=>onDefense({evidenceId:ev,claimId:claim})}>تأكيد الحجة</ActionButton>}</div><div className="rd-actions"><ActionButton variant="secondary" onClick={onReview}>العودة للفحص</ActionButton><ActionButton disabled={!run.meeting.defense} onClick={onDecide}>اعتماد التوصية</ActionButton></div></Panel>}
+import { useState } from 'react';
+import { CLAIMS, EVIDENCE, TEAMS, type ClaimId, type EvidenceId, type TeamId } from '../data/case';
+import type { Link } from '../engine/model';
+import { ActionButton, Panel } from './Ui';
+
+/** The player's defence after the scripted objection: one comparison + what it proves, or go back to review. */
+export function MeetingDefense({ team, evidence, current, followup, onConfirm, onReview }: {
+  team: TeamId; evidence: EvidenceId[]; current: Link | null; followup: boolean;
+  onConfirm: (l: Link) => void; onReview: () => void;
+}) {
+  const [ev, setEv] = useState<EvidenceId | ''>(current?.evidenceId ?? '');
+  const [claim, setClaim] = useState<ClaimId | ''>(current?.claimId ?? '');
+  return (
+    <Panel title={followup ? 'متابعة شريف' : `دفاعك عن ترشيح ${TEAMS[team].name}`}>
+      <p className="rd-lead">اختر مقارنة من ملفك وحدد ما تثبته.</p>
+      <div className="rd-link">
+        <b>الحجة</b>
+        <select aria-label="دليل الدفاع" value={ev} onChange={e => setEv(e.target.value as EvidenceId)}><option value="">اختر مقارنة</option>{evidence.map(id => <option key={id} value={id}>{EVIDENCE[id].title}</option>)}</select>
+        <select aria-label="تفسير الدفاع" value={claim} onChange={e => setClaim(e.target.value as ClaimId)}><option value="">ماذا تثبت؟</option>{Object.entries(CLAIMS).map(([id, t]) => <option value={id} key={id}>{t}</option>)}</select>
+      </div>
+      <div className="rd-actions">
+        <ActionButton disabled={!ev || !claim} onClick={() => ev && claim && onConfirm({ evidenceId: ev, claimId: claim })}>تأكيد الحجة</ActionButton>
+        <ActionButton variant="secondary" onClick={onReview}>العودة للفحص</ActionButton>
+      </div>
+    </Panel>
+  );
+}
