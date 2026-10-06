@@ -9,7 +9,7 @@ let pending = false;
 let apply: ((reload?: boolean) => Promise<void>) | null = null;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
-const inRound = () => location.pathname.startsWith('/play');
+const inRound = () => location.pathname.startsWith('/play') || location.pathname.startsWith('/games/reward-decision');
 
 export const isUpdatePending = () => pending;
 export function subscribeUpdate(fn: () => void) { listeners.add(fn); return () => { listeners.delete(fn); }; }

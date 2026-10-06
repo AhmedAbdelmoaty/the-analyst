@@ -1,4 +1,5 @@
 # Current tasks
+- [ ] Add the complete Reward Decision game, game picker, isolated persistence, temporary responsive assets, and regression checks.
 - [x] Fit the landing footer into typical desktop viewports and place all introductory copy above the form on mobile.
 - [x] Send newly authenticated players directly into `/app`, reserving the welcome card for returning signed-in visitors (authenticated end-to-end check needs a signed-in preview account).
 - [x] Implement public landing and reuse existing phone account flows inside it.

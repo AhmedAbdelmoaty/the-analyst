@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 
 const Setup = lazy(() => import('./pages/Setup'));
 const GameRoute = lazy(() => import('./pages/GameRoute'));
+const RewardDecisionRoute = lazy(() => import('./pages/RewardDecisionRoute'));
 const queryClient = new QueryClient();
 
 const RequireProfile = ({ children }: { children: React.ReactNode }) => {
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/app" element={<AppEntry />} />
             <Route path="/setup" element={<Setup />} />
             <Route path="/play" element={<RequireProfile><GameRoute /></RequireProfile>} />
+            <Route path="/games/reward-decision" element={<RequireProfile><RewardDecisionRoute /></RequireProfile>} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/board-9k2x" element={<AdminBoard />} />
             <Route path="*" element={<NotFound />} />

@@ -3,6 +3,7 @@ import { applyUpdateIfSafe } from '@/lib/registerAppWorker';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInstall } from '@/contexts/InstallContext';
 import InstallPrompt from '@/components/game/InstallPrompt';
+import Games from '@/pages/Games';
 export default function AppEntry() {
   const {user, loading, isProfileComplete} = useAuth();
   const {available, standalone, deferred, guidance} = useInstall();
@@ -12,5 +13,5 @@ export default function AppEntry() {
   if (!user) return <Navigate to="/" replace />;
   if (!isProfileComplete) return <Navigate to="/setup" replace />;
   if (!standalone && !deferred && (available || !!guidance)) return <InstallPrompt />;
-  return <Navigate to="/play" replace />;
+  return <Games />;
 }
