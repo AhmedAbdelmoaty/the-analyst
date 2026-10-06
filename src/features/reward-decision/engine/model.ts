@@ -39,7 +39,7 @@ export function shotFor(r: RewardRun): string {
     case 'debate': return r.dialogueIndex < 2 ? 'A04' : 'A05'; case 'briefing': return 'A07';
     case 'hub': return 'A09'; case 'sales': return 'A11'; case 'hr': return 'A13';
     case 'workbench': return 'A15'; case 'recommendation': return 'A17';
-    case 'meeting': return r.stage === 'open' ? 'A18' : r.submitted?.teamId === 'mahmoud' ? 'A19' : 'A20';
+    case 'meeting': return r.dialogueIndex < 2 ? 'A18' : r.submitted?.teamId === 'mahmoud' ? 'A19' : 'A20';
     case 'resolution': return r.evaluation?.outcome === 'supported' ? (r.stage === 'impact' ? 'A23' : 'A22') : 'A24';
     case 'debrief': return 'A25';
   }
