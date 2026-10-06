@@ -1,8 +1,10 @@
-import { TEAMS, type TeamId } from '../data/case';
-const values=(team:TeamId)=>TEAMS[team].members.map(m=>m.value);
-export const mean=(xs:number[])=>xs.reduce((a,b)=>a+b,0)/xs.length;
-export const median=(xs:number[])=>{const s=[...xs].sort((a,b)=>a-b);return (s[4]+s[5])/2};
-export const range=(xs:number[])=>Math.max(...xs)-Math.min(...xs);
-export const populationSd=(xs:number[])=>{const m=mean(xs);return Math.sqrt(xs.reduce((n,x)=>n+(x-m)**2,0)/xs.length)};
-export const quartiles=(xs:number[])=>{const s=[...xs].sort((a,b)=>a-b);return {q1:s[2],q3:s[7],iqr:s[7]-s[2]}};
-export const stats=(team:TeamId)=>{const xs=values(team);const q=quartiles(xs);return {mean:mean(xs),total:mean(xs)/10,median:median(xs),range:range(xs),sd:populationSd(xs),...q,threshold:xs.filter(x=>x>=85).length,values:xs}};
+import { TEAMS, type TeamId, type ToolId } from '../data/case';
+const values = (team: TeamId) => TEAMS[team].members.map(m => m.value);
+export const mean = (xs: number[]) => xs.reduce((a,b) => a + b, 0) / xs.length;
+export const median = (xs: number[]) => { const s = [...xs].sort((a,b) => a-b); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2; };
+export const range = (xs: number[]) => Math.max(...xs) - Math.min(...xs);
+export const populationSd = (xs: number[]) => { const m = mean(xs); return Math.sqrt(xs.reduce((n,x) => n + (x-m) ** 2, 0) / xs.length); };
+export const quartiles = (xs: number[]) => { const s = [...xs].sort((a,b) => a-b); const m = Math.floor(s.length/2); const lower = s.slice(0,m); const upper = s.slice(s.length % 2 ? m+1 : m); const q1 = median(lower), q3 = median(upper); return { q1, q3, iqr: q3-q1 }; };
+export const stats = (team: TeamId) => { const xs = values(team), q = quartiles(xs); return { mean: mean(xs), total: mean(xs)/10, median: median(xs), range: range(xs), sd: populationSd(xs), ...q, threshold: xs.filter(x => x >= 85).length, values: xs }; };
+const fmt = (v: number) => Number.isInteger(v) ? String(v) : v.toFixed(1);
+export const toolValue = (tool: ToolId, team: TeamId) => { const s = stats(team); return ({ mean: `${fmt(s.mean)}%`, median: `${fmt(s.median)}%`, range: `${fmt(s.range)} نقطة مئوية`, sd: `${s.sd.toFixed(1)} نقطة مئوية`, iqr: `${fmt(s.iqr)} نقطة مئوية` })[tool]; };

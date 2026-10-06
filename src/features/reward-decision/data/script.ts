@@ -1,101 +1,45 @@
+import type { DocumentId } from './case';
+
 export type Speaker = 'sherif' | 'hossam' | 'dalia' | 'marwan' | 'mahmoud' | 'player' | 'narrator';
-export interface Line { id: string; speaker: Speaker; text: string }
+export interface Line { id: string; speaker: Speaker; text: string; documentId?: DocumentId }
 
-export const SPEAKERS: Record<Speaker, { name: string; role: string }> = {
-  sherif: { name: 'شريف', role: 'الرئيس التنفيذي' },
-  hossam: { name: 'حسام', role: 'مدير المبيعات' },
-  dalia: { name: 'داليا', role: 'مديرة الموارد البشرية' },
-  marwan: { name: 'مروان', role: 'قائد فريق' },
-  mahmoud: { name: 'محمود', role: 'قائد فريق' },
-  player: { name: 'أنت', role: 'المحلل' },
-  narrator: { name: 'الخلاصة', role: 'The Analyst' },
+export const SPEAKERS: Record<Speaker, { name: string; role: string; tone: 'light' | 'dark' }> = {
+  sherif: { name: 'شريف', role: 'الرئيس التنفيذي', tone: 'dark' },
+  hossam: { name: 'حسام', role: 'مدير المبيعات', tone: 'dark' },
+  dalia: { name: 'داليا', role: 'مديرة الموارد البشرية', tone: 'light' },
+  marwan: { name: 'مروان', role: 'قائد الفريق الأول', tone: 'light' },
+  mahmoud: { name: 'محمود', role: 'قائد الفريق الثاني', tone: 'dark' },
+  player: { name: 'أنت', role: 'المحلل', tone: 'light' },
+  narrator: { name: 'الخلاصة', role: 'The Analyst', tone: 'dark' },
 };
+const L = (id: string, speaker: Speaker, text: string, documentId?: DocumentId): Line => ({ id, speaker, text, documentId });
 
-const L = (id: string, speaker: Speaker, text: string): Line => ({ id, speaker, text });
+export const SCRIPT = {
+  celebration: [
+    L('celebration_01', 'hossam', 'مبروك يا مروان. فريقك حقق أعلى متوسط الشهر ده، ورفعت ترشيحه للتكريم.'),
+    L('celebration_02', 'marwan', 'شكرًا يا أستاذ حسام. الفريق تعب، ومستنيين الاعتماد الرسمي.'),
+    L('celebration_03', 'hossam', 'نستنى قرار الإدارة الأول، وبعدها نعلن النتيجة.'),
+  ],
+  debate: [
+    L('debate_01', 'hossam', 'فريق مروان متوسطه 95%، وفريق محمود 88%. الترشيح واضح من التقرير المجمع.'),
+    L('debate_02', 'dalia', 'الأرقام معتمدة، لكن التكريم له سياسة لازم تتطبق على نتائج الأفراد.'),
+    L('debate_03', 'hossam', 'تمام. نرفع التقرير والسياسة لشريف، والمحلل يراجعهم قبل الاجتماع.'),
+  ],
+  briefing: [
+    L('briefing_01', 'sherif', 'قدامي ترشيح لتكريم فريق مروان، ولسه الاعتماد متوقف. راجع نتائج الفريقين وسياسة التكريم، وارجع لي بتوصية مبنية على اللي لقيته.'),
+    L('briefing_02', 'player', 'هراجع المستندات وأقارن أداء الفريقين، وبعدها أجهز التوصية.'),
+    L('briefing_03', 'sherif', 'تمام. حسام وداليا منتظرينك في مكاتبهم.'),
+  ],
+  sales: [
+    L('sales_01', 'hossam', 'التقرير المجمع عندك. الفريقين عن نفس الشهر، وعدد الأفراد والأهداف موحدة.', 'sales-summary'),
+    L('sales_02', 'player', 'محتاج كمان أشوف النتائج على مستوى كل فرد.'),
+    L('sales_03', 'hossam', 'وده كشف نتائج الأفراد المعتمد. هتلاقي المستندين في ملف التحليل.', 'individual-records'),
+  ],
+  hr: [
+    L('hr_01', 'dalia', 'دي السياسة المعتمدة للتكريم. فيها معيار الأداء المطلوب من كل فرد وأساس التكريم الجماعي.', 'policy'),
+    L('hr_02', 'player', 'هطبق نفس السياسة على بيانات الفريقين وأبني التوصية.'),
+    L('hr_03', 'dalia', 'تمام. القرار لازم يكون مبرره واضح في الاجتماع.'),
+  ],
+} satisfies Record<string, Line[]>;
 
-export type ScriptKey = 'D01' | 'D02' | 'D03' | 'D04' | 'D05' | 'D06' | 'D07' | 'D08';
-
-export const SCRIPT: Record<ScriptKey, Line[]> = {
-  D01: [
-    L('d01_01', 'hossam', 'مبروك يا مروان على النتيجة. فريقك أعلى متوسط الشهر ده، وأنا رفعت الترشيح.'),
-    L('d01_02', 'marwan', 'تسلم يا أستاذ حسام. الناس تعبت، والخبر ده هيفرق معاهم.'),
-    L('d01_03', 'hossam', 'بس نستنى الاعتماد قبل أي إعلان رسمي.'),
-    L('d01_04', 'marwan', 'أكيد. إحنا بنحتفل بالنتيجة بس.'),
-  ],
-  D02: [
-    L('d02_01', 'hossam', 'فريق مروان متوسطه خمسة وتسعين في المية، وفريق محمود تمانية وتمانين. دي النتائج المعتمدة.'),
-    L('d02_02', 'dalia', 'ونفس المستهدفات للفريقين؟'),
-    L('d02_03', 'hossam', 'أيوه، ونفس عدد الأفراد.'),
-    L('d02_04', 'dalia', 'تمام. بس ملف التكريم ناقصه مراجعة تطبيق المعيار على نتائج الناس.'),
-    L('d02_05', 'hossam', 'أنا شايف النتيجة الإجمالية أساس واضح للترشيح.'),
-    L('d02_06', 'dalia', 'للترشيح، ماشي. إنما الاعتماد محتاج المراجعة كاملة.'),
-    L('d02_07', 'hossam', 'نبعته لشريف، ونراجع الموضوع قبل الاجتماع.'),
-  ],
-  D03: [
-    L('d03_01', 'sherif', 'عندنا ترشيح لتكريم فريق المبيعات، ولسه ما اتعتمدش.'),
-    L('d03_02', 'player', 'إيه المطلوب مني بالضبط؟'),
-    L('d03_03', 'sherif', 'تراجع الترشيح على معيار الشركة. مش عايز أرفضه لمجرد اعتراض، ولا أعتمده لمجرد إن أول تقرير مقنع.'),
-    L('d03_04', 'player', 'والقرار بناءً على نتائج الشهر ده؟'),
-    L('d03_05', 'sherif', 'أيوه. النتائج معتمدة. حسام وداليا موجودين، ولو محتاج استيضاح من القادة تقدر ترجع لهم.'),
-    L('d03_06', 'player', 'هراجع الملف وأرجع بتوصية مدعومة.'),
-    L('d03_07', 'sherif', 'محتاج أعرف هتوصي بمين، وعلى أساس إيه. وفي الاجتماع هنناقش أسبابك.'),
-  ],
-  D04: [
-    L('d04_01', 'hossam', 'دي النسخة المعتمدة من تقرير الشهر. الفريقين عشرة أفراد، ونفس المستهدف للفرد.'),
-    L('d04_02', 'player', 'خليني أشوف أساس الترشيح.'),
-    L('d04_03', 'hossam', 'فريق مروان أعلى في إجمالي المبيعات ومتوسط تحقيق المستهدف. ده أساس ترشيحي.'),
-    L('d04_04', 'player', 'وعندي كشف نتائج الأفراد؟'),
-    L('d04_05', 'hossam', 'طبعًا. افتحه من هنا، وهتقدر ترجع له في أي وقت.'),
-  ],
-  D05: [
-    L('d05_01', 'dalia', 'دي وثيقة التكريم اللي بنراجع عليها.'),
-    L('d05_02', 'player', 'إيه الجزء اللي محتاج مراجعة في الترشيح؟'),
-    L('d05_03', 'dalia', 'ربط معيار الأداء بنتائج الناس. التقرير الإجمالي موجود، إنما المراجعة دي لسه ناقصة.'),
-    L('d05_04', 'player', 'الخمسة وتمانين في المية بتتحسب للفرد؟'),
-    L('d05_05', 'dalia', 'أيوه، من مستهدفه هو. والوثيقة فيها أساس التكريم الجماعي.'),
-    L('d05_06', 'player', 'تمام. هراجع التطبيق على الفريقين.'),
-    L('d05_07', 'dalia', 'بنفس المعيار على الاتنين. والتوصية النهائية منك.'),
-  ],
-  D06: [
-    L('d06_01', 'sherif', 'اتفضل. هتوصي بمين؟'),
-    L('d06_02', 'player', 'دي توصية التكريم، ومعاها المقارنات اللي بنيت عليها القرار.'),
-    L('d06_03', 'sherif', 'خلينا نراجع أسبابك.'),
-  ],
-  D07: [
-    L('d07_01', 'sherif', 'نعتمد تكريم فريق محمود على معيار الأداء الجماعي.'),
-    L('d07_02', 'hossam', 'وصلت. المتوسط اللي رشحت عليه كان صحيح، لكنه ما كانش كفاية للقرار ده.'),
-    L('d07_03', 'dalia', 'هنوثق أسباب الاعتماد مع الملف.'),
-  ],
-  D08: [
-    L('d08_01', 'narrator', 'المتوسط مش غلط. لكنه مش الصورة كلها.'),
-    L('d08_02', 'narrator', 'الوسيط يوضح منتصف النتائج. والمدى والانحراف المعياري والمدى الربيعي يوضحوا زوايا مختلفة من التشتت.'),
-    L('d08_03', 'narrator', 'في الحالة دي، فريق محمود جمع تحقيق المطلوب وتقارب الأداء. عشان كده هو الأنسب للتكريم الجماعي.'),
-  ],
-};
-
-/** Single conditional lines (meeting follow-up, objections, endings). */
-export const LINES = {
-  followup: L('d06_04', 'sherif', 'المعلومة دي صحيحة. بس إيه اللي بتثبته بالنسبة لمعيار التكريم؟'),
-  objectionMahmoud: L('meeting_mahmoud_objection', 'hossam', 'فريق مروان حقق إجمالي أعلى، ومتوسطه أعلى. إيه اللي يخلي فريق محمود الأنسب للتكريم ده؟'),
-  objectionMarwan: L('meeting_marwan_objection', 'dalia', 'هل الأدلة اللي معاك بتوضح تحقيق المعيار وتقارب النتائج بين أفراد الفريق؟'),
-  endingInsufficient: L('ending_insufficient', 'sherif', 'ترشيحك ممكن يكون مناسب، لكن الملف لسه محتاج يثبت تحقيق المعيار وتقارب النتائج. ارجع كمّل المراجعة.'),
-  endingMismatch: L('ending_mismatch', 'sherif', 'أثبتّ النتيجة الأعلى، لكن لسه ما أثبتّش إنها الأنسب للتكريم الجماعي. التوصية تحتاج مراجعة.'),
-} satisfies Record<string, Line>;
-
-export type OptionalId = 'opt_sales_01' | 'opt_sales_02' | 'opt_sales_03' | 'opt_hr_01' | 'opt_leader_01' | 'opt_leader_02' | 'opt_marwan_03';
-export const OPTIONAL: Record<OptionalId, { place: 'sales' | 'hr' | 'leaders'; lines: Line[] }> = {
-  opt_sales_01: { place: 'sales', lines: [L('opt_sales_01_q', 'player', 'هل النتائج نهائية؟'), L('opt_sales_01_a', 'hossam', 'أيوه، بعد التسويات والمرتجعات وبنفس قواعد التسجيل.')] },
-  opt_sales_02: { place: 'sales', lines: [L('opt_sales_02_q', 'player', 'هل ظروف المقارنة متقاربة؟'), L('opt_sales_02_a', 'hossam', 'نفس فئة الأجهزة وشريحة العملاء، وأحجام فرص البيع متقاربة.')] },
-  opt_sales_03: { place: 'sales', lines: [L('opt_sales_03_q', 'player', 'هل المتوسط يكفي للاعتماد؟'), L('opt_sales_03_a', 'hossam', 'ده أساس ترشيحي. لو محتاجين تحليل إضافي، وريني اللي هتضيفه.')] },
-  opt_hr_01: { place: 'hr', lines: [L('opt_hr_01_q', 'player', 'هل عندك ترشيح بديل؟'), L('opt_hr_01_a', 'dalia', 'أنا بطلب مراجعة الملف، مش بقدم اسم بديل. النتائج والمعيار هم اللي يدعموا التوصية.')] },
-  opt_leader_01: { place: 'leaders', lines: [L('opt_leader_01_q', 'player', 'هل في تغيير خاص بالمستهدفات؟'), L('opt_marwan_01_a', 'marwan', 'لا، نفس المستهدفات طول الشهر. موجودة في الملف.'), L('opt_mahmoud_01_a', 'mahmoud', 'لا، نفس المستهدفات ونفس عدد الناس.')] },
-  opt_leader_02: { place: 'leaders', lines: [L('opt_leader_02_q', 'player', 'هل عندك مصدر نتائج مختلف؟'), L('opt_marwan_02_a', 'marwan', 'نفس الكشف المعتمد. مش محتاج نغيّر المصدر.'), L('opt_mahmoud_02_a', 'mahmoud', 'نفس النسخة المعتمدة للفريقين.')] },
-  opt_marwan_03: { place: 'leaders', lines: [L('opt_marwan_03_q', 'player', 'النتائج الكبيرة دي تخص الشهر نفسه؟'), L('opt_marwan_03_a', 'marwan', 'أيوه. الصفقات اتقفلت واتسجلت خلال الشهر حسب قواعد الشركة.')] },
-};
-export const OPTIONAL_IDS = Object.keys(OPTIONAL) as OptionalId[];
-
-export const ALL_LINES: Line[] = [
-  ...Object.values(SCRIPT).flat(),
-  ...Object.values(LINES),
-  ...Object.values(OPTIONAL).flatMap(o => o.lines),
-];
+export const ALL_LINES = Object.values(SCRIPT).flat();
