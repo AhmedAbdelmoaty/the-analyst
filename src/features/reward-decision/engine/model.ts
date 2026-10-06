@@ -1,71 +1,46 @@
-import type { ClaimId, EvidenceId, Outcome, TeamId } from '../data/case';
-import type { OptionalId } from '../data/script';
-import { MEANINGS } from './evidence';
+import { ARGUMENTS, type ArgumentId, type DocumentId, type Outcome, type TeamId, type ToolId } from '../data/case';
 
 export type Phase = 'cover' | 'celebration' | 'debate' | 'briefing' | 'hub' | 'sales' | 'hr' | 'workbench' | 'recommendation' | 'meeting' | 'resolution' | 'debrief';
-export interface Link { evidenceId: EvidenceId; claimId: ClaimId }
-export interface DraftLink { evidenceId: EvidenceId | ''; claimId: ClaimId | '' }
-export interface ToolState { step: number; selected: string[] }
+export interface DraftReport { teamId: TeamId | null; documentId: DocumentId | null; arguments: [ArgumentId | null, ArgumentId | null] }
+export interface FinalReport { teamId: TeamId; documentId: DocumentId; arguments: [ArgumentId, ArgumentId]; submittedAt: string }
+export interface Evaluation { outcome: Outcome; reason: 'complete' | 'wrong_team' | 'wrong_document' | 'missing_performance' | 'missing_spread' | 'weak_arguments'; argumentValidity: [boolean, boolean] }
 export interface RewardRun {
-  schemaVersion: 2; gameId: 'reward-decision'; caseVersion: 'rowad-v1';
+  schemaVersion: 3; gameId: 'reward-decision'; caseVersion: 'rowad-v2';
   userId: string; runId: string; revision: number;
-  phase: Phase;
-  /** Sub-step inside a phase (e.g. talk/draft/menu/doc/defend). */
-  stage: string;
-  dialogueIndex: number; visibleGraphemes: number;
-  visited: ('sales' | 'hr')[]; collectedDocs: string[]; completedCameos: string[];
-  pendingDestination: 'sales' | 'hr' | null;
-  openedIndividualRecords: boolean;
-  evidence: EvidenceId[];
-  activeTool: EvidenceId | null;
-  tools: Partial<Record<EvidenceId, ToolState>>;
-  optional: { id: OptionalId | null; index: number; visible: number; asked: OptionalId[]; leadersOpen: boolean };
-  draft: { teamId: TeamId | null; links: DraftLink[] };
-  submitted: { teamId: TeamId; links: Link[] } | null;
-  meeting: { defense: Link | null; followupUsed: boolean };
-  outcome: Outcome | null;
-  debriefStep: number;
-  reviewCount: number;
-  paused: boolean;
-  savedAt: string;
+  phase: Phase; stage: string; dialogueIndex: number; visibleGraphemes: number;
+  visited: ('sales' | 'hr')[]; collectedDocs: DocumentId[];
+  usedTools: ToolId[]; visibleTools: ToolId[]; activeTeamChart: TeamId;
+  draft: DraftReport; submitted: FinalReport | null; evaluation: Evaluation | null;
+  meetingIndex: number; debriefStep: number; paused: boolean; savedAt: string;
 }
 
+export const emptyDraft = (): DraftReport => ({ teamId: null, documentId: null, arguments: [null, null] });
 export const newRun = (userId: string): RewardRun => ({
-  schemaVersion: 2, gameId: 'reward-decision', caseVersion: 'rowad-v1', userId, runId: crypto.randomUUID(), revision: 0,
-  phase: 'cover', stage: '', dialogueIndex: 0, visibleGraphemes: 0,
-  visited: [], collectedDocs: [], completedCameos: [], pendingDestination: null, openedIndividualRecords: false,
-  evidence: [], activeTool: null, tools: {},
-  optional: { id: null, index: 0, visible: 0, asked: [], leadersOpen: false },
-  draft: { teamId: null, links: [] }, submitted: null,
-  meeting: { defense: null, followupUsed: false }, outcome: null, debriefStep: 0, reviewCount: 0,
-  paused: false, savedAt: new Date().toISOString(),
+  schemaVersion: 3, gameId: 'reward-decision', caseVersion: 'rowad-v2', userId, runId: crypto.randomUUID(), revision: 0,
+  phase: 'cover', stage: '', dialogueIndex: 0, visibleGraphemes: 0, visited: [], collectedDocs: [],
+  usedTools: [], visibleTools: [], activeTeamChart: 'marwan', draft: emptyDraft(), submitted: null, evaluation: null,
+  meetingIndex: 0, debriefStep: 0, paused: false, savedAt: new Date().toISOString(),
 });
 
-export const effectiveLinks = (run: RewardRun): Link[] => [...(run.submitted?.links ?? []), ...(run.meeting.defense ? [run.meeting.defense] : [])];
+export function evaluateReport(report: FinalReport, usedTools: ToolId[], docs: DocumentId[]): Evaluation {
+  const valid = report.arguments.map(id => { const a = ARGUMENTS[id]; return a.correct && (!a.tool || usedTools.includes(a.tool)) && (!a.document || docs.includes(a.document)); }) as [boolean, boolean];
+  const validArgs = report.arguments.filter((_, i) => valid[i]).map(id => ARGUMENTS[id]);
+  let reason: Evaluation['reason'] = 'complete';
+  if (report.teamId !== 'mahmoud') reason = 'wrong_team';
+  else if (report.documentId !== 'policy') reason = 'wrong_document';
+  else if (!validArgs.some(a => a.kind === 'performance')) reason = valid.every(Boolean) ? 'missing_performance' : 'weak_arguments';
+  else if (!validArgs.some(a => a.kind === 'spread')) reason = valid.every(Boolean) ? 'missing_spread' : 'weak_arguments';
+  return { outcome: reason === 'complete' ? 'supported' : reason === 'wrong_team' ? 'criterion_mismatch' : 'insufficient', reason, argumentValidity: valid };
+}
 
-export const evaluate = (run: RewardRun): Outcome => {
-  const links = effectiveLinks(run);
-  const valid = (ev: EvidenceId, claim: ClaimId) => run.evidence.includes(ev) && MEANINGS[ev] === claim && links.some(l => l.evidenceId === ev && l.claimId === claim);
-  const coverage = valid('ev_threshold', 'coverage');
-  const spread = (['ev_range', 'ev_sd', 'ev_iqr'] as EvidenceId[]).some(ev => valid(ev, 'spread'));
-  if (run.submitted?.teamId !== 'mahmoud') return 'criterion_mismatch';
-  return coverage && spread ? 'supported' : 'insufficient';
-};
-
-/** Every shot has its own id; the visible shot is derived from state so reloads land on the same picture. */
 export function shotFor(r: RewardRun): string {
   switch (r.phase) {
-    case 'cover': return 'A00';
-    case 'celebration': return r.stage === 'intro' ? 'A01' : r.stage === 'draft' ? 'A03' : 'A02';
-    case 'debate': return r.stage === 'door' ? 'A06' : r.dialogueIndex < 3 ? 'A04' : 'A05';
-    case 'briefing': return r.dialogueIndex < 5 ? 'A07' : 'A08';
-    case 'hub': return r.stage === 'cameo' ? 'A10' : 'A09';
-    case 'sales': return r.stage === 'doc' ? 'A12' : 'A11';
-    case 'hr': return r.stage === 'doc' ? 'A14' : 'A13';
-    case 'workbench': return r.activeTool ? 'A16' : 'A15';
-    case 'recommendation': return 'A17';
-    case 'meeting': return r.stage === 'open' ? 'A18' : r.stage === 'objection' || r.stage === 'defend' ? (r.submitted?.teamId === 'mahmoud' ? 'A19' : 'A20') : 'A21';
-    case 'resolution': return r.outcome !== 'supported' ? 'A24' : r.stage === 'paper' ? 'A22' : r.stage === 'news' ? 'A23' : 'A21';
+    case 'cover': return 'A00'; case 'celebration': return r.stage === 'intro' ? 'A01' : 'A02';
+    case 'debate': return r.dialogueIndex < 2 ? 'A04' : 'A05'; case 'briefing': return 'A07';
+    case 'hub': return 'A09'; case 'sales': return 'A11'; case 'hr': return 'A13';
+    case 'workbench': return 'A15'; case 'recommendation': return 'A17';
+    case 'meeting': return r.dialogueIndex < 2 ? 'A18' : r.submitted?.teamId === 'mahmoud' ? 'A19' : 'A20';
+    case 'resolution': return r.evaluation?.outcome === 'supported' ? (r.stage === 'impact' ? 'A23' : 'A22') : 'A24';
     case 'debrief': return 'A25';
   }
 }

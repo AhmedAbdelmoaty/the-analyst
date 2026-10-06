@@ -1,27 +1,10 @@
-import { useState } from 'react';
-import { CLAIMS, EVIDENCE, TEAMS, type ClaimId, type EvidenceId, type TeamId } from '../data/case';
-import type { Link } from '../engine/model';
-import { ActionButton, Panel } from './Ui';
-
-/** The player's defence after the scripted objection: one comparison + what it proves, or go back to review. */
-export function MeetingDefense({ team, evidence, current, followup, onConfirm, onReview }: {
-  team: TeamId; evidence: EvidenceId[]; current: Link | null; followup: boolean;
-  onConfirm: (l: Link) => void; onReview: () => void;
-}) {
-  const [ev, setEv] = useState<EvidenceId | ''>(current?.evidenceId ?? '');
-  const [claim, setClaim] = useState<ClaimId | ''>(current?.claimId ?? '');
-  return (
-    <Panel title={followup ? 'متابعة شريف' : `دفاعك عن ترشيح ${TEAMS[team].name}`}>
-      <p className="rd-lead">اختر مقارنة من ملفك وحدد ما تثبته.</p>
-      <div className="rd-link">
-        <b>الحجة</b>
-        <select aria-label="دليل الدفاع" value={ev} onChange={e => setEv(e.target.value as EvidenceId)}><option value="">اختر مقارنة</option>{evidence.map(id => <option key={id} value={id}>{EVIDENCE[id].title}</option>)}</select>
-        <select aria-label="تفسير الدفاع" value={claim} onChange={e => setClaim(e.target.value as ClaimId)}><option value="">ماذا تثبت؟</option>{Object.entries(CLAIMS).map(([id, t]) => <option value={id} key={id}>{t}</option>)}</select>
-      </div>
-      <div className="rd-actions">
-        <ActionButton disabled={!ev || !claim} onClick={() => ev && claim && onConfirm({ evidenceId: ev, claimId: claim })}>تأكيد الحجة</ActionButton>
-        <ActionButton variant="secondary" onClick={onReview}>العودة للفحص</ActionButton>
-      </div>
-    </Panel>
-  );
-}
+import { ARGUMENTS, DOCUMENTS, TEAMS } from '../data/case';
+import type { Evaluation, FinalReport } from '../engine/model';
+import type { Line } from '../data/script';
+const L=(id:string,speaker:Line['speaker'],text:string):Line=>({id,speaker,text});
+export function meetingLines(report:FinalReport,evaluation:Evaluation):Line[]{const team=TEAMS[report.teamId].name;const a1=ARGUMENTS[report.arguments[0]].text,a2=ARGUMENTS[report.arguments[1]].text;
+ const lines=[L('meeting_01','sherif','اتفضل، وصلت لإيه؟'),L('meeting_02','player',`أوصي بتكريم ${team}. استندت إلى ${DOCUMENTS[report.documentId].title}. حجتي الأولى: ${a1} وحجتي الثانية: ${a2}`)];
+ if(evaluation.reason==='complete')return [...lines,L('meeting_03_supported','dalia','التوصية طبقت معيار السياسة على مستوى الأفراد وربطته بتقارب النتائج.'),L('meeting_04_supported','hossam','واضح إن المتوسط كان جزء من الصورة، والتقرير ده بيكملها.'),L('meeting_05_supported','sherif','التوصية مدعومة. نعتمد تكريم فريق محمود ونوثق أسباب القرار.')];
+ if(evaluation.reason==='wrong_team')return [...lines,L('meeting_03_wrong_team','dalia','المستندات لا توضح أن الترشيح ده يحقق انتشار الأداء المقبول وتقارب النتائج.'),L('meeting_04_wrong_team','hossam','المتوسط الأعلى صحيح، لكن المبررات المقدمة لا تطبق معيار التكريم الجماعي بالكامل.'),L('meeting_05_wrong_team','sherif','التوصية لا تحقق معيار التكريم بصورتها الحالية.')];
+ const missing=evaluation.reason==='wrong_document'?'السياسة المعتمدة مش هي المستند المرجعي في التقرير':evaluation.reason==='missing_spread'?'التقرير لا يقدم حجة صحيحة عن تقارب النتائج':evaluation.reason==='missing_performance'?'التقرير لا يثبت مستوى الأداء أو انتشار تحقيق المعيار':'واحدة أو أكثر من الحجج لا تثبت المعنى المكتوب';
+ return [...lines,L('meeting_03_insufficient','dalia',`${missing}.`),L('meeting_04_insufficient','hossam','اختيار الفريق قد يكون مناسبًا، لكن التقرير الحالي لا يكفي لاعتماد القرار.'),L('meeting_05_insufficient','sherif','الترشيح غير مدعوم بالمبررات المطلوبة. هنسجل سبب المراجعة بوضوح.')];}
