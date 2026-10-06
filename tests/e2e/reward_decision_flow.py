@@ -61,7 +61,9 @@ async def handoff_pause_mobile(ctx,width):
 
 async def migration(ctx):
  p=await open_game(ctx,True);old={'schemaVersion':2,'gameId':'reward-decision','caseVersion':'rowad-v1','userId':UID,'runId':'legacy','revision':6,'phase':'meeting','stage':'defend','evidence':['ev_threshold','ev_range'],'tools':{'ev_range':{'step':2,'selected':[]}},'collectedDocs':['sales','records','policy'],'openedIndividualRecords':True,'draft':{'teamId':'mahmoud','links':[{'evidenceId':'ev_threshold'},{'evidenceId':'ev_range'}]}}
- await p.evaluate(f"localStorage.setItem('the-analyst:reward-decision:v1:{UID}',{json.dumps(json.dumps(old))})");await p.reload();await p.wait_for_selector('.rd-root');await button(p,'متابعة اللعب');s=await state(p);assert s['phase']=='recommendation' and s['stage']=='';assert not await p.locator('[data-stage=defend]').count();await p.close()
+ await p.evaluate(f"localStorage.setItem('the-analyst:reward-decision:v1:{UID}',{json.dumps(json.dumps(old))})");await p.reload();await p.wait_for_selector('.rd-root');
+ if await p.get_by_test_id('pause-layer').count():await button(p,'متابعة اللعب')
+ s=await state(p);assert s['phase']=='recommendation' and s['stage']=='',s;assert not await p.locator('[data-stage=defend]').count();await p.close()
 
 async def main():
  failures=[]
