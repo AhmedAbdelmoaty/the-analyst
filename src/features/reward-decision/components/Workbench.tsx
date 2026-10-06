@@ -1,10 +1,11 @@
 import { Eye, EyeOff } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { TEAMS, TOOLS, TOOL_ORDER, type TeamId, type ToolId } from '../data/case';
 import { toolValue } from '../engine/statistics';
 import { ActionButton, Panel } from './Ui';
 
 const bars: Record<TeamId, number[]> = { marwan:[22,30,24,34,27,20,14,17,25,45], mahmoud:[4,7,15,34,58,76,58,34,15,7] };
-function Distribution({team}:{team:TeamId}) { const points=bars[team].map((h,i)=>`${i*11+2},${82-h}`).join(' '); return <div className="rd-distribution" data-chart={team}><header><b>{TEAMS[team].name}</b><small>تصوّر توضيحي للتوزيع</small></header><div className="rd-chart" aria-label={`تصور توزيع ${TEAMS[team].name}`}>{bars[team].map((h,i)=><span key={i} style={{'--bar-height':`${h}%`} as React.CSSProperties}/>) }<svg viewBox="0 0 102 88" preserveAspectRatio="none" aria-hidden="true"><polyline points={points}/></svg></div></div>; }
+function Distribution({team}:{team:TeamId}) { const points=bars[team].map((h,i)=>`${i*11+2},${82-h}`).join(' '); return <div className="rd-distribution" data-chart={team}><header><b>{TEAMS[team].name}</b><small>تصوّر توضيحي للتوزيع</small></header><div className="rd-chart" aria-label={`تصور توزيع ${TEAMS[team].name}`}>{bars[team].map((h,i)=><span key={i} style={{'--bar-height':`${h}%`} as CSSProperties}/>) }<svg viewBox="0 0 102 88" preserveAspectRatio="none" aria-hidden="true"><polyline points={points}/></svg></div></div>; }
 export function Workbench({ used, visible, activeTeam, onToggle, onTeam, onBack, onRecommendation }: { used:ToolId[]; visible:ToolId[]; activeTeam:TeamId; onToggle:(id:ToolId)=>void; onTeam:(id:TeamId)=>void; onBack:()=>void; onRecommendation:()=>void }) {
  return <Panel title="مكتب المحلل · شاشة التحليل" onBack={onBack}>
   <div className="rd-tool-strip">{TOOL_ORDER.map(id=>{const shown=visible.includes(id);return <button key={id} data-tool-toggle={id} className={shown?'active':''} onClick={()=>onToggle(id)} aria-pressed={shown}><span>{TOOLS[id].short}</span>{used.includes(id)?shown?<EyeOff/>:<Eye/>:null}</button>})}</div>

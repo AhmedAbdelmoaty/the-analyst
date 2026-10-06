@@ -18,3 +18,4 @@
 - Result rows are upserted by `(user_id, round_id)` and marked done locally only after the server confirms.
 - Installed-app updates stay pending during /play and are applied on any route outside it or via the pause overlay's update action.
 - Reward Decision is an isolated local-save game under `/games/reward-decision`; it shares player identity but never the original game engine, timer, saves, or leaderboard.
+- Reward Decision derives analysis values from its single team dataset and freezes one submitted report before conditional meeting feedback — keeps displayed statistics, evaluation, and restored outcomes consistent.
