@@ -60,7 +60,7 @@ async def handoff_pause_mobile(ctx,width):
  await p.locator('.rd-dialogue-copy').click();await p.wait_for_timeout(280);assert await p.locator('.rd-inline-document').count()==1
  await p.locator('.rd-inline-document').click();assert await p.get_by_test_id('analysis-file').count()==1;await p.get_by_label('إغلاق الملف').click();line=await p.locator('.rd-dialogue').get_attribute('data-line');assert line=='sales_01'
  assert 'rd-dialogue-dark' in (await p.locator('.rd-dialogue').get_attribute('class'))
- await p.locator('.rd-dialogue-copy').click();await p.wait_for_timeout(280);assert await p.locator('.rd-dialogue').get_attribute('data-speaker')=='player';assert 'rd-dialogue-light' in (await p.locator('.rd-dialogue').get_attribute('class'))
+ await p.wait_for_timeout(400);await p.locator('.rd-dialogue-copy').click();await p.wait_for_timeout(400);assert await p.locator('.rd-dialogue').get_attribute('data-speaker')=='player';assert 'rd-dialogue-light' in (await p.locator('.rd-dialogue').get_attribute('class'))
  await p.reload();await p.wait_for_selector('.rd-root');await button(p,'متابعة اللعب');assert await p.locator('.rd-dialogue').get_attribute('data-line')=='sales_01'
  saved=json.loads(await p.evaluate(f"localStorage.getItem('the-analyst:reward-decision:v1:{UID}')"));assert saved['collectedDocs'].count('sales-summary')==1
  await p.screenshot(path=str(OUT/f'mobile_{width}.png'));assert await p.locator('.rd-hud').evaluate('(e)=>e.getBoundingClientRect().right<=innerWidth')
