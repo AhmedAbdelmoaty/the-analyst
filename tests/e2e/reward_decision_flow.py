@@ -103,11 +103,16 @@ async def run_tool(page, t):
     assert await page.get_by_test_id("tool-result").count() == 1, t
     await btn(page, "حفظ المقارنة"); await btn(page, "أدوات أخرى")
 
-async def recommend(page, team, links):
+async def recommend(page, team, links, reload=False):
     await btn(page, "تجهيز التوصية"); assert (await state(page))["shot"] == "A17"
     await click(page, f"[data-team={team}]")
     for i, (ev, cl) in enumerate(links, 1):
         await page.get_by_label(f"الدليل {i}").select_option(ev); await page.get_by_label(f"التفسير {i}").select_option(cl); await page.wait_for_timeout(120)
+        if reload and i == 1:
+            await page.wait_for_timeout(300); await page.reload(); await page.wait_for_selector(".rd-root"); await resume_if_paused(page)
+            assert await page.get_by_label("الدليل 1").input_value() == ev and await page.get_by_label("التفسير 1").input_value() == cl
+            assert "selected" in (await page.locator(f"[data-team={team}]").get_attribute("class"))
+            results.append("reload inside recommendation kept team + first attachment")
     await btn(page, "تقديم التوصية")
 
 async def meeting(page, defense, expect_followup, second=None):
@@ -140,7 +145,7 @@ async def scenario_supported(ctx):
     txt = await page.get_by_test_id("case-file").inner_text(); assert "4 من 10" in txt and "المدى 77" in txt, txt[:300]
     await page.screenshot(path=str(OUT / "2_case_file.png")); await page.get_by_label("إغلاق الملف").click()
     # reload in recommendation keeps the draft
-    await recommend(page, "mahmoud", [("ev_threshold", "coverage"), ("ev_median", "middle")])
+    await recommend(page, "mahmoud", [("ev_threshold", "coverage"), ("ev_median", "middle")], reload=True)
     obj = await meeting(page, ("ev_range", "spread"), expect_followup=False)
     assert obj == ["A19"], obj
     sh = await talk(page); assert set(sh) == {"A21"}, sh
