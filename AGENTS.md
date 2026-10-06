@@ -17,3 +17,4 @@
 - Saves carry the challenge `roundId`; per-screen progress lives in a scene store scoped to `roundId|screen`, and only the tab that last claimed the round (`pf-round-owner`) may write.
 - Result rows are upserted by `(user_id, round_id)` and marked done locally only after the server confirms.
 - Installed-app updates stay pending during /play and are applied on any route outside it or via the pause overlay's update action.
+- Reward Decision is an isolated local-save game under `/games/reward-decision`; it shares player identity but never the original game engine, timer, saves, or leaderboard.

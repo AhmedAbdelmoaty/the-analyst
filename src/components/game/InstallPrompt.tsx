@@ -15,9 +15,9 @@ export default function InstallPrompt() {
       {show ? <>
         <h1 className="text-2xl font-bold">The Analyst على شاشتك الرئيسية</h1>
         <p className="mt-3 text-muted-foreground">افتح التجربة بسهولة في أي وقت.</p>
-        {available ? <PrimaryButton disabled={busy} onClick={async () => { setBusy(true); await install(); setBusy(false); navigate('/play', {replace:true}); }}>تثبيت التطبيق</PrimaryButton> : <p className="mt-6 rounded-md bg-muted p-3 text-sm text-muted-foreground">{guidance}</p>}
-        <LinkButton onClick={() => { dismiss(); navigate('/play', {replace:true}); }}>لاحقًا</LinkButton>
-      </> : <PrimaryButton onClick={() => navigate('/play', {replace:true})}>متابعة اللعب</PrimaryButton>}
+        {available ? <PrimaryButton disabled={busy} onClick={async () => { setBusy(true); await install(); setBusy(false); navigate('/app', {replace:true}); }}>تثبيت التطبيق</PrimaryButton> : <p className="mt-6 rounded-md bg-muted p-3 text-sm text-muted-foreground">{guidance}</p>}
+        <LinkButton onClick={() => { dismiss(); navigate('/app', {replace:true}); }}>لاحقًا</LinkButton>
+      </> : <PrimaryButton onClick={() => navigate('/app', {replace:true})}>متابعة</PrimaryButton>}
       <Link to="/" className="mt-5 block text-sm text-primary underline-offset-4 hover:underline">عن The Analyst</Link>
     </div>
   </div>;
