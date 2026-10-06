@@ -11,7 +11,7 @@ export function DialoguePanel({ line, index, total, visible, paused, gender, del
   const who=SPEAKERS[line.speaker]; const portrait=line.speaker==='player'?PORTRAITS[gender==='female'?'player_female':'player_male']:PORTRAITS[line.speaker]; const done=shown>=graphemes.length;
   const click=()=>{ if(paused)return; const now=Date.now(); if(now-lock.current<220)return; lock.current=now; if(!done)onVisible(graphemes.length);else onAdvance(); };
   return <section className={`rd-dialogue rd-dialogue-${who.tone}`} data-line={line.id} data-speaker={line.speaker}>
-    {portrait?<img src={portrait} alt=""/>:<span className="rd-initial" aria-hidden="true">{who.name.slice(0,1)}</span>}
+    {portrait?<span className="rd-portrait" aria-hidden="true"><b>{who.name.slice(0,1)}</b><img src={portrait} alt="" onError={e=>{e.currentTarget.hidden=true}}/></span>:<span className="rd-initial" aria-hidden="true">{who.name.slice(0,1)}</span>}
     <div><header><span>{who.name}</span><small>{who.role}</small><em>{index+1}/{total}</em></header><button className="rd-dialogue-copy" onClick={click} aria-label={done?'متابعة الحوار':'إكمال النص'}><p>{graphemes.slice(0,shown).join('')}{!done&&<i aria-hidden="true"/>}</p>{done&&<ChevronLeft className="rd-next"/>}</button>
       {done&&line.documentId&&<button className={`rd-inline-document ${delivered?'is-delivered':''}`} onClick={()=>{ if(line.documentId) onOpenDocument?.(line.documentId); }}><FileText/><span><small>{delivered?'محفوظ في ملف التحليل':'مستند جديد'}</small><b>{DOCUMENTS[line.documentId].title}</b></span><ChevronLeft/></button>}
     </div>
