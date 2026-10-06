@@ -69,7 +69,7 @@ async def main():
  failures=[]
  async with async_playwright() as pw:
   b=await pw.chromium.launch(headless=True)
-  cases=[('supported',('mahmoud',['records-coverage','range-mahmoud'],'تدعم القرار','A18'),1280),('weak',('mahmoud',['median-proves-all','sd-mahmoud'],'لا تثبت المطلوب','A18'),390),('spread-only',('mahmoud',['range-mahmoud','iqr-mahmoud'],'لا تثبت المطلوب','A18'),1280),('wrong-team',('marwan',['records-coverage','range-mahmoud'],'فريق مروان','A18'),390)]
+  cases=[('supported',('mahmoud',['records-coverage','range-mahmoud'],'تدعم القرار','A18'),1280),('weak',('mahmoud',['median-proves-all','sd-mahmoud'],'لا تثبت المطلوب','A18'),390),('spread-only',('mahmoud',['range-mahmoud','iqr-mahmoud'],'لا تثبتان انتشار','A18'),1280),('wrong-team',('marwan',['records-coverage','range-mahmoud'],'فريق مروان','A18'),390)]
   for name,args,w in cases:
    ctx=await b.new_context(viewport={'width':w,'height':900 if w>400 else 844});await mock(ctx)
    try:await scenario(ctx,*args);print('PASS',name)

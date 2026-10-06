@@ -23,7 +23,7 @@ function migrateV2(d: Record<string, unknown>, uid: string): RewardRun {
   const draft: DraftReport = { teamId: source.teamId ?? null, documentId: collectedDocs.includes('policy') ? 'policy' : null, arguments: [mappedArgs[0] ?? null, mappedArgs[1] ?? null] };
   const oldPhase = typeof d.phase === 'string' ? d.phase : 'hub';
   const safePhase = ['cover','celebration','debate','briefing','hub','sales','hr','workbench'].includes(oldPhase) ? oldPhase as RewardRun['phase'] : 'recommendation';
-  const safeStage = safePhase === 'workbench' || safePhase === 'hub' ? '' : typeof d.stage === 'string' ? d.stage : '';
+  const safeStage = safePhase === 'workbench' || safePhase === 'hub' || safePhase === 'recommendation' ? '' : typeof d.stage === 'string' ? d.stage : '';
   return { ...base, runId: typeof d.runId === 'string' ? d.runId : base.runId, revision: typeof d.revision === 'number' ? d.revision + 1 : 1,
     phase: safePhase, stage: safeStage, dialogueIndex: typeof d.dialogueIndex === 'number' ? d.dialogueIndex : 0,
     visibleGraphemes: typeof d.visibleGraphemes === 'number' ? d.visibleGraphemes : 0,
