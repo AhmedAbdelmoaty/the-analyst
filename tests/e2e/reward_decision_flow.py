@@ -45,7 +45,12 @@ async def recommend(p,team,args,doc='policy'):
 async def finish(p):await talk(p);assert (await state(p))['phase']=='resolution';await button(p,'عرض الخلاصة');return await p.locator('.rd-final-report').inner_text()
 
 async def scenario(ctx,team,args,expected,shot):
- p=await open_game(ctx,True);await to_hub(p);await gather(p);await analyze(p,['mean','median','range','sd','iqr']);await recommend(p,team,args);s=await state(p);assert s['shot']==shot,s
+ p=await open_game(ctx,True);await to_hub(p);await gather(p);await analyze(p,['mean','median','range','sd','iqr'])
+ if expected=='تدعم القرار':
+  await p.reload();await p.wait_for_selector('.rd-root');await button(p,'متابعة اللعب');assert (await state(p))['phase']=='workbench';assert await p.locator('[data-tool-toggle].active').count()==5
+  await button(p,'تجهيز التوصية');await p.locator(f'[data-team={team}]').click();await p.get_by_label('المستند المرجعي').select_option('policy');await p.get_by_label('الحجة 1').select_option(args[0]);await p.reload();await p.wait_for_selector('.rd-root');await button(p,'متابعة اللعب');assert await p.get_by_label('الحجة 1').input_value()==args[0];await p.get_by_label('الحجة 2').select_option(args[1]);await button(p,'تقديم التوصية')
+ else:await recommend(p,team,args)
+ s=await state(p);assert s['shot']==shot,s
  meeting=await p.locator('.rd-dialogue').get_attribute('data-line');assert meeting=='meeting_01';await p.reload();await p.wait_for_selector('.rd-root');assert await p.get_by_test_id('pause-layer').count()==1;await button(p,'متابعة اللعب');assert await p.locator('.rd-dialogue').get_attribute('data-line')=='meeting_01'
  text=await finish(p);assert expected in text;text_all=await p.locator('body').inner_text();assert 'استيضاح' not in text_all and 'دفاع' not in text_all
  await p.close()
@@ -54,6 +59,7 @@ async def handoff_pause_mobile(ctx,width):
  p=await open_game(ctx,True);await to_hub(p);await p.locator('[data-dest=sales]').click();await p.wait_for_timeout(300)
  await p.locator('.rd-dialogue-copy').click();await p.wait_for_timeout(280);assert await p.locator('.rd-inline-document').count()==1
  await p.locator('.rd-inline-document').click();assert await p.get_by_test_id('analysis-file').count()==1;await p.get_by_label('إغلاق الملف').click();line=await p.locator('.rd-dialogue').get_attribute('data-line');assert line=='sales_01'
+ assert 'rd-dialogue-dark' in (await p.locator('.rd-dialogue').get_attribute('class'));assert await p.locator('.rd-dialogue [data-speaker=player]').count()==0
  await p.reload();await p.wait_for_selector('.rd-root');await button(p,'متابعة اللعب');assert await p.locator('.rd-dialogue').get_attribute('data-line')=='sales_01'
  saved=json.loads(await p.evaluate(f"localStorage.getItem('the-analyst:reward-decision:v1:{UID}')"));assert saved['collectedDocs'].count('sales-summary')==1
  await p.screenshot(path=str(OUT/f'mobile_{width}.png'));assert await p.locator('.rd-hud').evaluate('(e)=>e.getBoundingClientRect().right<=innerWidth')
