@@ -93,11 +93,25 @@ export default function RewardDecisionGame() {
   const frozen = run.paused || otherTab;
   const shot = shotFor(run);
   useEffect(() => {
-    if (frozen || run.phase !== 'resolution' || (run.stage !== 'office' && run.stage !== 'gap')) return;
+    if (run.phase !== 'resolution' || (run.stage !== 'office' && run.stage !== 'gap')) return;
     const delay = run.stage === 'office' ? 1000 : 700;
-    const timer = window.setTimeout(() => commit(r => r.phase === 'resolution' && (r.stage === 'office' || r.stage === 'gap') ? { ...at(r, 'resolution', 'incoming'), callAnswered: false } : r), delay);
-    return () => window.clearTimeout(timer);
-  }, [frozen, run.phase, run.stage, commit]);
+    let remaining = delay;
+    let startedAt = 0;
+    let timer: number | undefined;
+    const clear = () => { if (timer !== undefined) window.clearTimeout(timer); timer = undefined; };
+    const schedule = () => {
+      if (runRef.current.paused || otherTab || timer !== undefined) return;
+      startedAt = performance.now();
+      timer = window.setTimeout(() => commit(r => r.phase === 'resolution' && (r.stage === 'office' || r.stage === 'gap') ? { ...at(r, 'resolution', 'incoming'), callAnswered: false } : r), remaining);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') { if (timer !== undefined) remaining = Math.max(0, remaining - (performance.now() - startedAt)); clear(); }
+      else schedule();
+    };
+    schedule();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => { clear(); document.removeEventListener('visibilitychange', onVisibility); };
+  }, [run.phase, run.stage, otherTab, commit]);
 
   return <MotionConfig reducedMotion={frozen ? 'always' : 'user'}><main className={`rd-root ${frozen ? 'rd-paused' : ''}`} dir="rtl" data-phase={run.phase} data-stage={run.stage} data-shot={shot}>
     <ScenePlayer shotId={shot}>
