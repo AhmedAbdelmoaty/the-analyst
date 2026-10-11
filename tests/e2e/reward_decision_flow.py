@@ -43,7 +43,15 @@ async def analyze(p,tools):
  for t in tools:await p.locator(f'[data-tool-toggle={t}]').click();await p.wait_for_timeout(300)
 async def recommend(p,team,args,doc='policy'):
  await button(p,'تجهيز التوصية');await p.locator(f'[data-team={team}]').click();await p.get_by_label('المستند المرجعي').select_option(doc);await p.get_by_label('الحجة 1').select_option(args[0]);await p.get_by_label('الحجة 2').select_option(args[1]);await button(p,'تقديم التوصية')
-async def finish(p):await talk(p);assert (await state(p))['phase']=='resolution';await button(p,'عرض الخلاصة');return await p.locator('.rd-final-report').inner_text()
+async def answer_call(p,caller):
+ await p.wait_for_selector(f'[data-testid=rd-incoming-call][data-caller={caller}]',timeout=5000)
+ await button(p,f'الرد على {"محمود" if caller=="mahmoud" else "مروان"}')
+ await talk(p)
+async def finish(p):
+ await talk(p);assert (await state(p))['phase']=='resolution'
+ await answer_call(p,'mahmoud');await answer_call(p,'marwan')
+ assert (await state(p))['phase']=='debrief'
+ return await p.locator('.rd-final-report').inner_text()
 
 async def scenario(ctx,team,args,expected,shot):
  p=await open_game(ctx,True);await to_hub(p);await gather(p);await analyze(p,['mean','median','range','sd','iqr'])
