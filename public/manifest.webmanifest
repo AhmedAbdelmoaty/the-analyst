@@ -9,9 +9,29 @@
   "background_color": "#f8f6f1",
   "theme_color": "#A61E25",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/__l5e/assets-v1/793293d0-52b9-4827-b904-e283748d95c1/imp-trial-20261011-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/__l5e/assets-v1/2d98323f-5181-4925-afc6-518b4a5eb7cb/imp-trial-20261011-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/__l5e/assets-v1/b3a0c845-0148-4de3-b618-7b9ff6d3ba35/imp-trial-20261011-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/__l5e/assets-v1/f081bf2c-427f-436d-8a80-3bf1801df501/imp-trial-20261011-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
