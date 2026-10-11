@@ -125,7 +125,7 @@ async def migration_v3(ctx):
  k=f'the-analyst:reward-decision:v1:{UID}'
  for phase,expect in (('resolution','resolution'),('debrief','debrief')):
   await p.goto(BASE);await p.evaluate(f"(()=>{{const d=JSON.parse(localStorage.getItem('{k}'));d.schemaVersion=3;delete d.endingCall;delete d.callAnswered;d.phase='{phase}';d.stage='old';localStorage.setItem('{k}',JSON.stringify(d))}})()")
-  await p.goto(f'{BASE}/games/reward-decision');await p.wait_for_selector('.rd-root');await button(p,'متابعة اللعب');await p.wait_for_timeout(1600)
+  await p.goto(f'{BASE}/games/reward-decision');await p.wait_for_selector('.rd-root');p.on('console',lambda m:print('  console',m.type,m.text[:200]));await button(p,'متابعة اللعب');await p.wait_for_timeout(3000)
   s=await state(p);assert s['phase']==expect,s
   if phase=='resolution':assert s['stage'] in ('office','incoming'),s;s2=await state(p);await p.screenshot(path='/tmp/browser/mig.png');assert await p.locator('[data-testid=rd-incoming-call][data-caller=mahmoud]').count()==1,(s,s2,await p.locator('.rd-root').get_attribute('class'),(await p.locator('body').inner_text())[:300])
   else:assert await p.locator('.rd-final-report').count()==1
