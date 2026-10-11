@@ -127,7 +127,7 @@ async def migration_v3(ctx):
   await p.goto(BASE);await p.evaluate(f"(()=>{{const d=JSON.parse(localStorage.getItem('{k}'));d.schemaVersion=3;delete d.endingCall;delete d.callAnswered;d.phase='{phase}';d.stage='old';localStorage.setItem('{k}',JSON.stringify(d))}})()")
   await p.goto(f'{BASE}/games/reward-decision');await p.wait_for_selector('.rd-root');await button(p,'متابعة اللعب');await p.wait_for_timeout(1600)
   s=await state(p);assert s['phase']==expect,s
-  if phase=='resolution':assert s['stage'] in ('office','incoming'),s;await p.wait_for_selector('[data-testid=rd-incoming-call][data-caller=mahmoud]',timeout=5000)
+  if phase=='resolution':assert s['stage'] in ('office','incoming'),s;s2=await state(p);assert await p.locator('[data-testid=rd-incoming-call][data-caller=mahmoud]').count()==1,(s,s2)
   else:assert await p.locator('.rd-final-report').count()==1
  await p.close()
 
