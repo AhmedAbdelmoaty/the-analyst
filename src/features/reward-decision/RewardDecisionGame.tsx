@@ -5,6 +5,7 @@ import { Building2, FileSpreadsheet, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { DOCUMENTS, TEAMS, type DocumentId, type ToolId } from './data/case';
 import { SCRIPT, type Line } from './data/script';
+import { endingCalls } from './data/endingCalls';
 import { evaluateReport, newRun, shotFor, type FinalReport, type RewardRun } from './engine/model';
 import { argumentNote } from './engine/evidence';
 import { clearRun, inspectRun, saveRun } from './engine/persistence';
@@ -16,6 +17,7 @@ import { CaseFile } from './components/CaseFile';
 import { Workbench } from './components/Workbench';
 import { Recommendation } from './components/Recommendation';
 import { meetingLines } from './components/Meeting';
+import { IncomingCall } from './components/IncomingCall';
 import impLogo from '@/assets/brand/imp-logo.webp';
 import analystMark from '@/assets/brand/the-analyst-mark.png';
 import './reward-decision.css';
@@ -35,7 +37,7 @@ function afterDialogue(r: RewardRun): RewardRun {
   if (r.phase === 'debate') return at(r, 'debate', 'door');
   if (r.phase === 'briefing') return at(r, 'briefing', 'done');
   if (r.phase === 'sales' || r.phase === 'hr') return at(r, 'hub');
-  if (r.phase === 'meeting') return at(r, 'resolution', 'impact');
+  if (r.phase === 'meeting') return { ...at(r, 'resolution', 'office'), endingCall: 0, callAnswered: false };
   return r;
 }
 
@@ -64,12 +66,22 @@ export default function RewardDecisionGame() {
   useEffect(() => { if (!uid || run.phase === 'cover') return; setOtherTab(!claimOwnership(uid, run.runId, onLost)); return () => releaseOwnership(); }, [uid, run.runId, run.phase, onLost]);
   useEffect(() => { const pause = (event: Event) => { if (event.type === 'visibilitychange' && document.visibilityState !== 'hidden') return; const cur = runRef.current; if (cur.phase === 'cover') return; window.clearTimeout(saveTimer.current); const next = { ...cur, paused: true, revision: cur.revision + 1 }; runRef.current = next; setRun(next); persist(next); }; document.addEventListener('visibilitychange', pause); window.addEventListener('pagehide', pause); return () => { document.removeEventListener('visibilitychange', pause); window.removeEventListener('pagehide', pause); }; }, [persist]);
 
-  const lines = useMemo(() => dialogueFor(run), [run.phase, run.stage, run.submitted, run.evaluation]);
+  const gender = profile?.gender === 'female' ? 'female' : 'male';
+  const calls = useMemo(() => run.submitted && run.evaluation ? endingCalls(run.submitted, run.evaluation, gender) : null, [run.submitted, run.evaluation, gender]);
+  const lines = useMemo(() => run.phase === 'resolution' && run.stage === 'talking' ? calls?.[run.endingCall]?.lines ?? null : dialogueFor(run), [run, calls]);
   const line = lines && run.dialogueIndex < lines.length ? lines[run.dialogueIndex] : null;
   useEffect(() => { const id = line?.documentId; if (!id || runRef.current.collectedDocs.includes(id)) return; setFlyingDoc(id); commit(r => ({ ...r, collectedDocs: r.collectedDocs.includes(id) ? r.collectedDocs : [...r.collectedDocs, id] })); }, [line?.id, line?.documentId, commit]);
 
   const start = () => { const next = { ...newRun(uid), phase: 'celebration' as const, stage: 'intro', revision: 1 }; setCorrupt(false); setOtherTab(false); runRef.current = next; setRun(next); claimOwnership(uid, next.runId, onLost); persist(next); };
-  const advance = () => commit(r => { const active = dialogueFor(r); if (!active) return r; return r.dialogueIndex + 1 < active.length ? { ...r, dialogueIndex: r.dialogueIndex + 1, visibleGraphemes: 0 } : afterDialogue(r); });
+  const advance = () => commit(r => {
+    const active = r.phase === 'resolution' && r.stage === 'talking' ? calls?.[r.endingCall]?.lines ?? null : dialogueFor(r);
+    if (!active) return r;
+    if (r.dialogueIndex + 1 < active.length) return { ...r, dialogueIndex: r.dialogueIndex + 1, visibleGraphemes: 0 };
+    if (r.phase === 'resolution') return r.endingCall === 0
+      ? { ...at(r, 'resolution', 'gap'), endingCall: 1, callAnswered: false }
+      : at(r, 'debrief', 'notes');
+    return afterDialogue(r);
+  });
   const onVisible = useCallback((n: number) => commit(r => ({ ...r, visibleGraphemes: n }), true), [commit]);
   const visit = (place: 'sales' | 'hr') => act(r => at({ ...r, visited: r.visited.includes(place) ? r.visited : [...r.visited, place] }, place, 'talk'));
   const toHub = () => act(r => at(r, 'hub'));
@@ -80,13 +92,17 @@ export default function RewardDecisionGame() {
   const exit = () => { commit(r => ({ ...r, paused: r.phase !== 'cover' })); releaseOwnership(); navigate('/app'); };
   const frozen = run.paused || otherTab;
   const shot = shotFor(run);
-  const outcomeTitle = run.evaluation?.outcome === 'supported' ? 'قرار مدعوم' : run.evaluation?.outcome === 'criterion_mismatch' ? 'التوصية لا تحقق المعيار' : 'ترشيح غير مدعوم';
-  const impact = run.evaluation?.outcome === 'supported' ? 'في تقرير الشهر التالي، استمر انتشار الأداء المقبول داخل الفريق المتقارب وتحسنت نتيجته الإجمالية.' : run.evaluation?.outcome === 'criterion_mismatch' ? 'في تقرير الشهر التالي، تراجعت بعض النتائج الاستثنائية، فظهر أن المتوسط المرتفع لم يكن منتشرًا بين أغلب أفراد الفريق.' : 'اختيار الفريق المناسب وحده لم يكن كافيًا؛ احتاج القرار إلى مستند صحيح وحجتين تثبتان مستوى الأداء وتقارب النتائج.';
+  useEffect(() => {
+    if (frozen || run.phase !== 'resolution' || (run.stage !== 'office' && run.stage !== 'gap')) return;
+    const delay = run.stage === 'office' ? 1000 : 700;
+    const timer = window.setTimeout(() => commit(r => r.phase === 'resolution' && (r.stage === 'office' || r.stage === 'gap') ? { ...at(r, 'resolution', 'incoming'), callAnswered: false } : r), delay);
+    return () => window.clearTimeout(timer);
+  }, [frozen, run.phase, run.stage, commit]);
 
   return <MotionConfig reducedMotion={frozen ? 'always' : 'user'}><main className={`rd-root ${frozen ? 'rd-paused' : ''}`} dir="rtl" data-phase={run.phase} data-stage={run.stage} data-shot={shot}>
     <ScenePlayer shotId={shot}>
       {run.phase !== 'cover' && <GameHud count={run.collectedDocs.length + run.usedTools.length} onFile={() => { setFocusDoc(null); setFileOpen(true); }} onPause={() => commit(r => ({ ...r, paused: true }))} onExit={exit}/>} 
-      <div className="rd-content"><AnimatePresence mode="wait"><motion.div key={`${run.phase}-${run.stage}-${shot}`} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:.2}}>
+      <div className="rd-content"><AnimatePresence mode="wait"><motion.div key={`${run.phase}-${run.stage}-${run.endingCall}-${shot}`} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:.2}}>
         {corrupt && run.phase === 'cover' && <section className="rd-cover"><h1>تعذر استعادة هذه الجولة</h1><span>يمكنك بدء جولة جديدة دون التأثير على حسابك أو اللعبة الأخرى.</span><ActionButton onClick={start}>بداية جديدة</ActionButton></section>}
         {!corrupt && run.phase === 'cover' && <section className="rd-cover"><img src={analystMark} alt="The Analyst"/><p>شركة روّاد للأجهزة الكهربائية</p><h1>قرار التكريم</h1><span>اقرأ المستندات، حلّل النتائج، وابنِ توصيتك.</span><ActionButton onClick={start}>ابدأ الآن</ActionButton><img className="rd-imp" src={impLogo} alt="IMP"/></section>}
         {run.phase === 'celebration' && run.stage === 'intro' && <div className="rd-bottom-action"><ActionButton onClick={() => act(r => at(r,'celebration','talk'))}>متابعة</ActionButton></div>}
@@ -101,7 +117,9 @@ export default function RewardDecisionGame() {
         </div></Panel>}
         {run.phase === 'workbench' && <Workbench used={run.usedTools} visible={run.visibleTools} activeTeam={run.activeTeamChart} onToggle={toggleTool} onTeam={activeTeamChart => commit(r => ({...r,activeTeamChart}))} onBack={toHub} onRecommendation={() => act(r => at(r,'recommendation'))}/>} 
         {run.phase === 'recommendation' && <Recommendation draft={run.draft} docs={run.collectedDocs} tools={run.usedTools} onChange={draft => commit(r => ({...r,draft}))} onSubmit={submit} onBack={() => act(r => at(r,'workbench'))}/>} 
-        {run.phase === 'resolution' && run.stage === 'impact' && <section className="rd-impact"><p>تقرير الشهر التالي</p><h2>{outcomeTitle}</h2><span>{impact}</span><div className="rd-actions"><ActionButton onClick={() => act(r => at(r,'debrief','notes'))}>عرض الخلاصة</ActionButton></div></section>}
+        {run.phase === 'resolution' && run.stage === 'office' && <section className="rd-office-return" aria-label="العودة إلى مكتب المحلل"><p>بعد الاجتماع</p><h2>مكتب المحلل</h2></section>}
+        {run.phase === 'resolution' && run.stage === 'gap' && <section className="rd-call-gap" aria-label="انتهت المكالمة"><span>انتهت المكالمة</span></section>}
+        {run.phase === 'resolution' && run.stage === 'incoming' && calls && <IncomingCall caller={calls[run.endingCall].caller} paused={frozen} onAnswer={() => act(r => r.phase === 'resolution' && r.stage === 'incoming' && !r.callAnswered ? { ...at(r, 'resolution', 'talking'), callAnswered: true } : r)}/>} 
         {run.phase === 'debrief' && run.submitted && run.evaluation && <Panel title="خلاصة قرارك"><div className="rd-final-report"><b>{TEAMS[run.submitted.teamId].name}</b><span>{DOCUMENTS[run.submitted.documentId].title}</span><p className={run.evaluation.outcome==='supported'?'valid':'weak'}>{run.evaluation.reason==='complete'?'التوصية تجمع دليلًا صحيحًا على انتشار مستوى الأداء ودليلًا صحيحًا على تقارب النتائج.':run.evaluation.reason==='wrong_team'?'التوصية لا تحقق معيار التكريم الجماعي في بيانات الفترة.':run.evaluation.reason==='wrong_document'?'التقرير لم يستند إلى سياسة التكريم المعتمدة.':run.evaluation.reason==='missing_performance'?'حجتا التشتت لا تثبتان انتشار مستوى الأداء المقبول.':run.evaluation.reason==='missing_spread'?'التقرير لا يثبت تقارب نتائج الفريق.':'واحدة أو أكثر من الحجج لا تثبت المطلوب بالتفسير المختار.'}</p>{run.submitted.arguments.map((id,i)=><p key={id} className={run.evaluation?.argumentValidity[i]?'valid':'weak'}>{argumentNote(id,run.evaluation?.argumentValidity[i]??false)}</p>)}</div><div className="rd-actions"><ReplayButton onClick={() => { clearRun(uid); start(); }}/><ActionButton onClick={exit}>الألعاب</ActionButton></div></Panel>}
       </motion.div></AnimatePresence></div>
     </ScenePlayer>
