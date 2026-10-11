@@ -81,6 +81,56 @@ async def migration(ctx):
  if await p.get_by_test_id('pause-layer').count():await button(p,'متابعة اللعب')
  s=await state(p);assert s['phase']=='recommendation' and s['stage']=='',s;assert not await p.locator('[data-stage=defend]').count();await p.close()
 
+async def calls_resilience(ctx,width):
+ await ctx.add_init_script("window.__plays=[];const o=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){window.__plays.push({src:this.src,muted:this.muted,vol:this.volume});return o.call(this)}")
+ p=await open_game(ctx,True);await to_hub(p);await gather(p);await analyze(p,['mean','range']);await recommend(p,'mahmoud',['records-coverage','range-mahmoud'])
+ await talk(p);s=await state(p);assert s['phase']=='resolution',s
+ assert await p.locator('.rd-final-report').count()==0
+ await p.wait_for_selector('[data-testid=rd-incoming-call][data-caller=mahmoud]',timeout=10000);await p.wait_for_timeout(600)
+ btn=p.get_by_role('button',name='الرد على محمود');box=await btn.bounding_box();assert box and box['y']+box['height']<=await p.evaluate('innerHeight'),box
+ await p.screenshot(path=str(OUT/f'call_ring_{width}.png'))
+ rings=await p.evaluate("__plays.filter(x=>x.src.includes('ringtone')).length")
+ # reload while ringing: paused, still unanswered, same caller
+ await p.reload();await p.wait_for_selector('.rd-root');assert await p.get_by_test_id('pause-layer').count()==1
+ assert (await state(p))['stage']=='incoming';assert await p.evaluate("__plays.filter(x=>x.src.includes('ringtone')).length")==0,'ring while paused'
+ await button(p,'متابعة اللعب');await p.wait_for_timeout(500)
+ btn=p.get_by_role('button',name='الرد على محمود');await btn.dblclick();await p.wait_for_timeout(400)
+ s=await state(p);assert s['stage']=='talking',s;assert await p.locator('.rd-dialogue').get_attribute('data-line')=='call_mahmoud_mahmoud_01'
+ await p.locator('.rd-dialogue-copy').click();await p.wait_for_timeout(300);await p.locator('.rd-dialogue-copy').click();await p.wait_for_timeout(300)
+ line=await p.locator('.rd-dialogue').get_attribute('data-line');assert line=='call_mahmoud_mahmoud_02',line
+ await p.screenshot(path=str(OUT/f'call_talk_{width}.png'))
+ await p.reload();await p.wait_for_selector('.rd-root');await button(p,'متابعة اللعب');assert await p.locator('.rd-dialogue').get_attribute('data-line')==line
+ await talk(p);await p.wait_for_selector('[data-testid=rd-incoming-call][data-caller=marwan]',timeout=10000)
+ await p.reload();await p.wait_for_selector('.rd-root');await button(p,'متابعة اللعب');assert await p.get_by_test_id('rd-incoming-call').get_attribute('data-caller')=='marwan'
+ await answer_call(p,'marwan');assert (await state(p))['phase']=='debrief'
+ await p.reload();await p.wait_for_selector('.rd-root')
+ if await p.get_by_test_id('pause-layer').count():await button(p,'متابعة اللعب')
+ assert (await state(p))['phase']=='debrief';print('  ringtone plays before reload:',rings);await p.close()
+
+async def calls_muted(ctx):
+ """Pause during ringing must silence the ringtone and keep the call unanswered."""
+ await ctx.add_init_script("window.__els=[];const o=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){window.__els.push(this);return o.call(this)}")
+ p=await open_game(ctx,True);await to_hub(p);await gather(p);await analyze(p,['mean']);await recommend(p,'marwan',['mean-marwan','records-coverage'])
+ await talk(p);await p.wait_for_selector('[data-testid=rd-incoming-call]',timeout=10000);await p.wait_for_timeout(1200)
+ ring="__els.filter(e=>e.src.includes('ringtone')&&!e.paused&&!e.muted).length"
+ before=await p.evaluate(ring);print('  ringing elements while playing:',before)
+ await p.get_by_role('button',name='إيقاف مؤقت').click();await p.wait_for_timeout(500)
+ assert await p.evaluate(ring)==0,'ringtone still audible while paused'
+ assert (await state(p))['stage']=='incoming'
+ await button(p,'متابعة اللعب');await button(p,'الرد على محمود');await p.wait_for_timeout(300)
+ assert await p.evaluate(ring)==0,'ringtone continues after answering';await p.close()
+
+async def migration_v3(ctx):
+ p=await open_game(ctx,True);await to_hub(p);await gather(p);await analyze(p,['mean','range']);await recommend(p,'mahmoud',['records-coverage','range-mahmoud'])
+ k=f'the-analyst:reward-decision:v1:{UID}'
+ for phase,expect in (('resolution','resolution'),('debrief','debrief')):
+  await p.evaluate(f"(()=>{{const d=JSON.parse(localStorage.getItem('{k}'));d.schemaVersion=3;delete d.endingCall;delete d.callAnswered;d.phase='{phase}';d.stage='old';localStorage.setItem('{k}',JSON.stringify(d))}})()")
+  await p.reload();await p.wait_for_selector('.rd-root');await button(p,'متابعة اللعب');await p.wait_for_timeout(1600)
+  s=await state(p);assert s['phase']==expect,s
+  if phase=='resolution':assert s['stage'] in ('office','incoming'),s;await p.wait_for_selector('[data-testid=rd-incoming-call][data-caller=mahmoud]',timeout=5000)
+  else:assert await p.locator('.rd-final-report').count()==1
+ await p.close()
+
 async def main():
  failures=[]
  async with async_playwright() as pw:
@@ -96,7 +146,17 @@ async def main():
    try:await handoff_pause_mobile(ctx,w);print('PASS mobile',w)
    except Exception as e:failures.append(f'mobile {w}: {e!r}\n{traceback.format_exc()}')
    await ctx.close()
-  ctx=await b.new_context(viewport={'width':1280,'height':900});await mock(ctx)
+   for w in (320,360,390,1280):
+    ctx=await b.new_context(viewport={'width':w,'height':900 if w>400 else 640});await mock(ctx)
+    try:await calls_resilience(ctx,w);print('PASS calls',w)
+    except Exception as e:failures.append(f'calls {w}: {e!r}\n{traceback.format_exc()}')
+    await ctx.close()
+   for fn in (calls_muted,migration_v3):
+    ctx=await b.new_context(viewport={'width':1280,'height':900});await mock(ctx)
+    try:await fn(ctx);print('PASS',fn.__name__)
+    except Exception as e:failures.append(f'{fn.__name__}: {e!r}\n{traceback.format_exc()}')
+    await ctx.close()
+   ctx=await b.new_context(viewport={'width':1280,'height':900});await mock(ctx)
   try:await migration(ctx);print('PASS migration')
   except Exception as e:failures.append(f'migration: {e!r}')
   await ctx.close();await b.close()
