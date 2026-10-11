@@ -111,7 +111,7 @@ export default function RewardDecisionGame() {
     schedule();
     document.addEventListener('visibilitychange', onVisibility);
     return () => { clear(); document.removeEventListener('visibilitychange', onVisibility); };
-  }, [run.phase, run.stage, otherTab, commit]);
+  }, [run.phase, run.stage, run.paused, otherTab, commit]);
 
   return <MotionConfig reducedMotion={frozen ? 'always' : 'user'}><main className={`rd-root ${frozen ? 'rd-paused' : ''}`} dir="rtl" data-phase={run.phase} data-stage={run.stage} data-shot={shot}>
     <ScenePlayer shotId={shot}>
