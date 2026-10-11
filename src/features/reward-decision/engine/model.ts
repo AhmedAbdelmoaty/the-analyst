@@ -5,20 +5,21 @@ export interface DraftReport { teamId: TeamId | null; documentId: DocumentId | n
 export interface FinalReport { teamId: TeamId; documentId: DocumentId; arguments: [ArgumentId, ArgumentId]; submittedAt: string }
 export interface Evaluation { outcome: Outcome; reason: 'complete' | 'wrong_team' | 'wrong_document' | 'missing_performance' | 'missing_spread' | 'weak_arguments'; argumentValidity: [boolean, boolean] }
 export interface RewardRun {
-  schemaVersion: 3; gameId: 'reward-decision'; caseVersion: 'rowad-v2';
+  schemaVersion: 4; gameId: 'reward-decision'; caseVersion: 'rowad-v2';
   userId: string; runId: string; revision: number;
   phase: Phase; stage: string; dialogueIndex: number; visibleGraphemes: number;
   visited: ('sales' | 'hr')[]; collectedDocs: DocumentId[];
   usedTools: ToolId[]; visibleTools: ToolId[]; activeTeamChart: TeamId;
   draft: DraftReport; submitted: FinalReport | null; evaluation: Evaluation | null;
+  endingCall: 0 | 1; callAnswered: boolean;
   meetingIndex: number; debriefStep: number; paused: boolean; savedAt: string;
 }
 
 export const emptyDraft = (): DraftReport => ({ teamId: null, documentId: null, arguments: [null, null] });
 export const newRun = (userId: string): RewardRun => ({
-  schemaVersion: 3, gameId: 'reward-decision', caseVersion: 'rowad-v2', userId, runId: crypto.randomUUID(), revision: 0,
+  schemaVersion: 4, gameId: 'reward-decision', caseVersion: 'rowad-v2', userId, runId: crypto.randomUUID(), revision: 0,
   phase: 'cover', stage: '', dialogueIndex: 0, visibleGraphemes: 0, visited: [], collectedDocs: [],
-  usedTools: [], visibleTools: [], activeTeamChart: 'marwan', draft: emptyDraft(), submitted: null, evaluation: null,
+  usedTools: [], visibleTools: [], activeTeamChart: 'marwan', draft: emptyDraft(), submitted: null, evaluation: null, endingCall: 0, callAnswered: false,
   meetingIndex: 0, debriefStep: 0, paused: false, savedAt: new Date().toISOString(),
 });
 
@@ -40,7 +41,7 @@ export function shotFor(r: RewardRun): string {
     case 'hub': return 'A09'; case 'sales': return 'A11'; case 'hr': return 'A13';
     case 'workbench': return 'A15'; case 'recommendation': return 'A17';
     case 'meeting': return r.dialogueIndex < 2 ? 'A18' : r.submitted?.teamId === 'mahmoud' ? 'A19' : 'A20';
-    case 'resolution': return r.evaluation?.outcome === 'supported' ? (r.stage === 'impact' ? 'A23' : 'A22') : 'A24';
+    case 'resolution': return 'A21';
     case 'debrief': return 'A25';
   }
 }

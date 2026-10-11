@@ -31,6 +31,24 @@ function migrateV2(d: Record<string, unknown>, uid: string): RewardRun {
     collectedDocs, usedTools, visibleTools: usedTools, draft, paused: safePhase !== 'cover' };
 }
 
+function migrateV3(d: Record<string, unknown>, uid: string): RewardRun {
+  const base = newRun(uid);
+  const old = d as unknown as Omit<RewardRun, 'schemaVersion' | 'endingCall' | 'callAnswered'>;
+  const wasSummary = old.phase === 'debrief';
+  const wasOldEnding = old.phase === 'resolution';
+  return {
+    ...base,
+    ...old,
+    schemaVersion: 4,
+    phase: wasSummary ? 'debrief' : old.phase,
+    stage: wasSummary ? 'notes' : wasOldEnding ? 'office' : old.stage,
+    endingCall: 0,
+    callAnswered: false,
+    paused: old.phase !== 'cover',
+    revision: typeof old.revision === 'number' ? old.revision + 1 : 1,
+  };
+}
+
 export function inspectRun(uid: string): LoadResult {
   let raw: string | null = null; try { raw = localStorage.getItem(storageKey(uid)); } catch { return { status: 'none' }; }
   if (!raw) return { status: 'none' };
@@ -38,7 +56,8 @@ export function inspectRun(uid: string): LoadResult {
     const d = JSON.parse(raw) as Record<string, unknown>;
     if (!d || d.gameId !== 'reward-decision' || d.userId !== uid) return { status: 'corrupt' };
     if (d.schemaVersion === 2) return { status: 'ok', run: migrateV2(d, uid), migrated: true };
-    if (d.schemaVersion !== 3 || d.caseVersion !== 'rowad-v2') return { status: 'corrupt' };
+    if (d.schemaVersion === 3 && d.caseVersion === 'rowad-v2') return { status: 'ok', run: migrateV3(d, uid), migrated: true };
+    if (d.schemaVersion !== 4 || d.caseVersion !== 'rowad-v2') return { status: 'corrupt' };
     const base = newRun(uid), r = d as unknown as RewardRun;
     return { status: 'ok', run: { ...base, ...r, draft: { ...base.draft, ...r.draft }, paused: r.phase !== 'cover' } };
   } catch { return { status: 'corrupt' }; }

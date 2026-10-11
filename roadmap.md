@@ -1,4 +1,5 @@
 # Current tasks
+- [ ] Replace Reward Decision's month-later ending with two saved, pausable phone calls and verify all three outcomes without changing the original game.
 - [x] Simplify Reward Decision into the approved short narrative flow with dialogue handoffs, unified analysis, report-based evaluation, conditional meeting/endings, save migration, and responsive/E2E verification.
 - [x] Add the complete Reward Decision game, game picker, isolated persistence, temporary responsive assets, and regression checks (authenticated full play-through still needs a signed-in preview account).
 - [x] Fix Reward Decision dialogue contract crash, add error boundary, real tool interactions, scripted meeting/endings (A18–A24), optional questions, saved figures in case file, pause-bound motion, tab-ownership renewal; e2e covers all three endings (real-account run and scene images on hosted preview still to check).
