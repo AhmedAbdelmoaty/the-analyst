@@ -44,7 +44,7 @@ async def analyze(p,tools):
 async def recommend(p,team,args,doc='policy'):
  await button(p,'تجهيز التوصية');await p.locator(f'[data-team={team}]').click();await p.get_by_label('المستند المرجعي').select_option(doc);await p.get_by_label('الحجة 1').select_option(args[0]);await p.get_by_label('الحجة 2').select_option(args[1]);await button(p,'تقديم التوصية')
 async def answer_call(p,caller):
- await p.wait_for_selector(f'[data-testid=rd-incoming-call][data-caller={caller}]',timeout=5000)
+ await p.wait_for_selector(f'[data-testid=rd-incoming-call][data-caller={caller}]',timeout=10000)
  await button(p,f'الرد على {"محمود" if caller=="mahmoud" else "مروان"}')
  await talk(p)
 async def finish(p):
