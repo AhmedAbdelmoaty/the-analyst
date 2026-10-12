@@ -394,6 +394,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_activity_summary: {
+        Args: { _from: string; _game?: string; _include?: boolean; _to: string }
+        Returns: Json
+      }
       admin_export_rounds: {
         Args: {
           _from: string
