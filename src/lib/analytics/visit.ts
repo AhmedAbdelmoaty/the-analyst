@@ -9,6 +9,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { nextVisitState, VISIT_PING_MS, type VisitState } from "./core";
 export { nextVisitState, VISIT_IDLE_MS, VISIT_PING_MS, type VisitState } from "./core";
 const KEY = "ta-visit-v1";
+const PENDING = "ta-visit-pending-v1";
+let flushing = false;
+const pending = (): VisitState[] => {
+  try { return JSON.parse(localStorage.getItem(PENDING) ?? "[]"); } catch { return []; }
+};
+const savePending = (states: VisitState[]) => {
+  try { localStorage.setItem(PENDING, JSON.stringify(states)); } catch { /* unavailable */ }
+};
+
+async function flushVisits(owner: string) {
+  if (flushing) return;
+  flushing = true;
+  try {
+    for (const state of pending().filter(s => s.owner === owner)) {
+      const { data: session } = await supabase.auth.getSession();
+      if ((session.session?.user.id ?? "anon") !== owner) return;
+      const { data, error } = await supabase.rpc("track_visit", { _visit_id: state.visitId, _segment_id: state.segmentId, _secret: state.secret ?? undefined });
+      if (error || data !== true) return;
+      savePending(pending().filter(s => s.segmentId !== state.segmentId || s.lastActive > state.lastActive));
+      const current = read();
+      if (current?.segmentId === state.segmentId) write({ ...current, sentAt: Date.now() });
+    }
+  } catch { /* keep pending visits until the next retry */ }
+  finally { flushing = false; }
+}
 
 const read = (): VisitState | null => {
   try { const raw = localStorage.getItem(KEY); return raw ? (JSON.parse(raw) as VisitState) : null; } catch { return null; }
@@ -20,11 +45,7 @@ export async function touchVisit(userId: string | null, now = Date.now()) {
   const owner = userId ?? "anon";
   const { state } = nextVisitState(read(), owner, now);
   const due = now - state.sentAt >= VISIT_PING_MS;
-  if (due) state.sentAt = now;
   write(state);
-  if (!due) return;
-  try {
-    // The server checks the segment's owner against the session (or the secret for anonymous segments).
-    await supabase.rpc("track_visit", { _visit_id: state.visitId, _segment_id: state.segmentId, _secret: state.secret ?? undefined });
-  } catch { /* statistics never block the app */ }
+  if (due) savePending([...pending().filter(s => s.segmentId !== state.segmentId), state]);
+  await flushVisits(owner);
 }

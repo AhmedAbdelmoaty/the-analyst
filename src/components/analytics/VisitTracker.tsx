@@ -16,9 +16,9 @@ export default function VisitTracker() {
 
   useEffect(() => {
     if (loading) return;
-    const onInput = () => { lastInput.current = Date.now(); };
+    const onInput = () => { lastInput.current = Date.now(); void touchVisit(uid); };
     const onVis = () => { if (document.visibilityState === "visible") { lastInput.current = Date.now(); void touchVisit(uid); } };
-    const onOnline = () => { if (uid) void flushRounds(uid); };
+    const onOnline = () => { void touchVisit(uid); if (uid) void flushRounds(uid); };
     const id = window.setInterval(() => {
       if (document.visibilityState === "visible" && Date.now() - lastInput.current < VISIT_PING_MS) void touchVisit(uid);
     }, VISIT_PING_MS);
