@@ -5,20 +5,9 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 
-export type GameKey = "problem-framing" | "reward-decision";
-export type RoundEventType = "start" | "stage" | "submit" | "complete" | "timeout";
-export interface RoundEvent {
-  event_id: string;
-  game: GameKey;
-  round_id: string;
-  type: RoundEventType;
-  revision: number;
-  stage?: string;
-  active_ms?: number;
-  payload?: Record<string, unknown>;
-}
+import { enqueue, type GameKey, type RoundEvent, type RoundEventType } from "./core";
+export { enqueue, type GameKey, type RoundEvent, type RoundEventType } from "./core";
 
-const MAX_QUEUE = 300;
 const queueKey = (uid: string) => `ta-rq-v1:${uid}`;
 let seq = 0;
 /** Monotonic per device: later stage updates always carry a higher revision. */
@@ -30,17 +19,6 @@ export function readQueue(uid: string): RoundEvent[] {
 function writeQueue(uid: string, q: RoundEvent[]) {
   try { if (q.length) localStorage.setItem(queueKey(uid), JSON.stringify(q)); else localStorage.removeItem(queueKey(uid)); } catch { /* storage unavailable */ }
 }
-/** Stage-only events may be dropped when the queue is full; final events are always kept. */
-export function enqueue(q: RoundEvent[], ev: RoundEvent): RoundEvent[] {
-  const next = [...q, ev];
-  while (next.length > MAX_QUEUE) {
-    const i = next.findIndex(e => e.type === "stage");
-    if (i < 0) break;
-    next.splice(i, 1);
-  }
-  return next;
-}
-
 export function trackRound(uid: string, ev: Omit<RoundEvent, "event_id" | "revision">) {
   if (!uid || !ev.round_id) return;
   const active = ev.active_ms == null || !Number.isFinite(ev.active_ms) ? undefined : Math.max(0, Math.round(ev.active_ms));

@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { nextVisitState, VISIT_IDLE_MS } from "../src/lib/analytics/visit";
-import { enqueue, type RoundEvent } from "../src/lib/analytics/rounds";
+import { nextVisitState, VISIT_IDLE_MS, enqueue, type RoundEvent } from "../src/lib/analytics/core";
 import { safeText, toCsv } from "../src/lib/analytics/export";
 import { presetRange } from "../src/features/admin-stats/dates";
 import { evaluateReport, type FinalReport } from "../src/features/reward-decision/engine/model";
