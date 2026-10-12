@@ -394,6 +394,87 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_export_rounds: {
+        Args: {
+          _from: string
+          _game?: string
+          _include?: boolean
+          _status?: string
+          _to: string
+        }
+        Returns: {
+          active_ms: number
+          completed_at: string
+          content_version: string
+          details: Json
+          first_name: string
+          game: string
+          last_activity_at: string
+          last_name: string
+          last_stage: string
+          outcome: string
+          phone: string
+          round_id: string
+          server_outcome: string
+          server_reason: string
+          source: string
+          started_at: string
+          submitted_at: string
+          timed_out_at: string
+        }[]
+      }
+      admin_games: {
+        Args: {
+          _from: string
+          _include?: boolean
+          _status?: string
+          _to: string
+        }
+        Returns: Json
+      }
+      admin_log_export: {
+        Args: { _filters: Json; _format: string; _kind: string; _rows: number }
+        Returns: undefined
+      }
+      admin_overview: {
+        Args: {
+          _from: string
+          _game?: string
+          _include?: boolean
+          _status?: string
+          _to: string
+        }
+        Returns: Json
+      }
+      admin_set_test_flag: {
+        Args: { _is_test: boolean; _user_id: string }
+        Returns: undefined
+      }
+      admin_user_detail: { Args: { _user_id: string }; Returns: Json }
+      admin_users: {
+        Args: {
+          _dir?: string
+          _from: string
+          _game?: string
+          _include?: boolean
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _sort?: string
+          _status?: string
+          _to: string
+        }
+        Returns: Json
+      }
+      analytics_excluded: { Args: { _uid: string }; Returns: boolean }
+      analytics_round_matches: {
+        Args: {
+          _game: string
+          _status: string
+          r: Database["public"]["Tables"]["game_rounds"]["Row"]
+        }
+        Returns: boolean
+      }
       auth_user_by_phone: {
         Args: { _phone: string }
         Returns: {
@@ -401,6 +482,7 @@ export type Database = {
           phone_confirmed: boolean
         }[]
       }
+      backfill_legacy_results: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -424,6 +506,13 @@ export type Database = {
           outcome: string
         }[]
       }
+      rd_argument_check: {
+        Args: { _arg: string; _docs: string[]; _tools: string[] }
+        Returns: {
+          kind: string
+          ok: boolean
+        }[]
+      }
       rd_evaluate: {
         Args: {
           _args: string[]
@@ -436,6 +525,23 @@ export type Database = {
           outcome: string
           reason: string
         }[]
+      }
+      track_round_event: {
+        Args: {
+          _active_ms?: number
+          _event_id: string
+          _game: string
+          _payload?: Json
+          _revision?: number
+          _round_id: string
+          _stage?: string
+          _type: string
+        }
+        Returns: string
+      }
+      track_visit: {
+        Args: { _secret?: string; _segment_id: string; _visit_id: string }
+        Returns: boolean
       }
     }
     Enums: {
