@@ -6,34 +6,9 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 
-export const VISIT_IDLE_MS = 30 * 60 * 1000;
-export const VISIT_PING_MS = 60 * 1000;
+import { nextVisitState, VISIT_PING_MS, type VisitState } from "./core";
+export { nextVisitState, VISIT_IDLE_MS, VISIT_PING_MS, type VisitState } from "./core";
 const KEY = "ta-visit-v1";
-
-export interface VisitState {
-  visitId: string;
-  segmentId: string;
-  /** Account id, or "anon" for a signed-out segment. */
-  owner: string;
-  /** Random proof for anonymous segments (only its hash is stored on the server). */
-  secret: string | null;
-  lastActive: number;
-  sentAt: number;
-}
-
-const rand = () => crypto.randomUUID();
-const secret = () => `${rand()}${rand()}`.replace(/-/g, "");
-
-/** Pure transition: decides whether activity continues the visit/segment or opens new ones. */
-export function nextVisitState(prev: VisitState | null, owner: string, now: number, gen: () => string = rand, genSecret: () => string = secret) {
-  if (!prev || now - prev.lastActive > VISIT_IDLE_MS || now < prev.lastActive - VISIT_IDLE_MS) {
-    return { state: { visitId: gen(), segmentId: gen(), owner, secret: owner === "anon" ? genSecret() : null, lastActive: now, sentAt: 0 }, newVisit: true, newSegment: true };
-  }
-  if (prev.owner !== owner) {
-    return { state: { ...prev, segmentId: gen(), owner, secret: owner === "anon" ? genSecret() : null, lastActive: now, sentAt: 0 }, newVisit: false, newSegment: true };
-  }
-  return { state: { ...prev, lastActive: Math.max(prev.lastActive, now) }, newVisit: false, newSegment: false };
-}
 
 const read = (): VisitState | null => {
   try { const raw = localStorage.getItem(KEY); return raw ? (JSON.parse(raw) as VisitState) : null; } catch { return null; }

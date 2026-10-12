@@ -15,10 +15,11 @@ export function cairoDateTime(v: string | Date | null | undefined): string {
   return CAIRO.format(d).replace(",", "");
 }
 
+const PHONE = /^\+?\d{3,20}$/;
 function cellText(v: Cell, col: Sheet["columns"][number]): string {
   if (v == null) return "";
   if (col.date) return cairoDateTime(v as string);
-  if (typeof v === "string") return safeText(v);
+  if (typeof v === "string") return col.text && PHONE.test(v) ? v : safeText(v);
   return String(v);
 }
 
@@ -29,7 +30,7 @@ export function toCsv(sheet: Sheet): string {
     lines.push(sheet.columns.map(c => {
       const t = cellText(r[c.key], c);
       // Keep phone numbers as text in Excel (preserves + and leading zeros).
-      return esc(c.text && /^\+?\d{3,20}$/.test(t) ? `="${t}"` : t);
+      return esc(c.text && PHONE.test(t) ? `="${t}"` : t);
     }).join(","));
   }
   return "\uFEFF" + lines.join("\r\n");
