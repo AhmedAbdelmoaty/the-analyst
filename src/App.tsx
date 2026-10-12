@@ -13,10 +13,12 @@ import PlayerAuth from "./pages/PlayerAuth";
 import AdminLogin from "./pages/AdminLogin";
 import AdminBoard from "./pages/AdminBoard";
 import NotFound from "./pages/NotFound";
+import VisitTracker from "@/components/analytics/VisitTracker";
 
 const Setup = lazy(() => import('./pages/Setup'));
 const GameRoute = lazy(() => import('./pages/GameRoute'));
 const RewardDecisionRoute = lazy(() => import('./pages/RewardDecisionRoute'));
+const AdminStats = lazy(() => import('./pages/AdminStats'));
 const queryClient = new QueryClient();
 
 const RequireProfile = ({ children }: { children: React.ReactNode }) => {
@@ -38,7 +40,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster /><Sonner />
-      <BrowserRouter><UpdateGate /><AuthProvider><InstallProvider>
+      <BrowserRouter><UpdateGate /><AuthProvider><VisitTracker /><InstallProvider>
         <Suspense fallback={<div className="auth-theme flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">جاري التحميل...</div>}>
           <Routes>
             <Route path="/" element={<Landing />} />
@@ -51,6 +53,7 @@ const App = () => (
             <Route path="/games/reward-decision" element={<RequireProfile><RewardDecisionRoute /></RequireProfile>} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/board-9k2x" element={<AdminBoard />} />
+            <Route path="/admin/stats" element={<AdminStats />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

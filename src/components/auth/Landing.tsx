@@ -43,6 +43,7 @@ export default function Landing() {
             <LandingContext.Provider value={true}><PlayerAuth /></LandingContext.Provider>}
         </div>
       </main>
+      <p className="pb-1 text-center text-[11px] leading-snug text-muted-foreground">نسجّل داخل المنصة فقط أوقات زياراتك، وبداية جولاتك ومراحلها ونتائجها ووقت اللعب، لتحسين التجربة ومتابعة التعلّم. لا نستخدم أدوات تتبع خارجية، ولا نشارك اسمك أو رقمك مع أي طرف ثالث.</p>
       <footer className="flex items-center justify-between gap-4 border-t border-border/70 pt-3 lg:pt-2" dir="ltr">
         <span className="text-xs text-muted-foreground sm:text-sm">An experience by IMP</span>
         <img src="/imp-footer-logo.png" alt="IMP" className="h-10 w-auto max-w-[45%] object-contain sm:h-12" />
