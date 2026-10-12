@@ -83,7 +83,11 @@ export default function AdminStats() {
   const activity = useQuery({ ...opts, queryKey: ["adm-activity", f], queryFn: () => rpc("admin_activity_summary", { ...base(f), _game: game }) });
   const metrics = activity.data?.games ?? [];
   const totals = (key: string) => metrics.reduce((sum: number, g: any) => sum + (g[key] ?? 0), 0);
-  const mergedUser = (r: any) => ({ ...r, ...(activity.data?.users?.[r.user_id] ?? {}) });
+  const mergedUser = (r: any) => {
+    const row = { ...r, ...(activity.data?.users?.[r.user_id] ?? {}) };
+    const tracking = activity.data?.tracking_since?.rounds_since;
+    return { ...row, attempts: row.attempts === 0 && tracking && row.created_at < tracking ? null : row.attempts };
+  };
   const detail = useQuery({ queryKey: ["adm-user", selected], queryFn: () => rpc("admin_user_detail", { _user_id: selected }), enabled: ok && !!selected });
   const active = tab === "overview" ? overview : tab === "users" ? users : activity;
   const updatedAt = active.dataUpdatedAt ? cairoDateTime(new Date(active.dataUpdatedAt)) : "—";
@@ -225,7 +229,7 @@ export default function AdminStats() {
                   <td className="px-2 py-2" dir="ltr" style={{ textAlign: "right" }}>{cairoDateTime(r.created_at)}</td>
                   <td className="px-2 py-2">{r.confirmed ? "مؤكد" : "غير مؤكد"}</td>
                   <td className="px-2 py-2" dir="ltr" style={{ textAlign: "right" }}>{cairoDateTime(r.last_activity) || "—"}</td>
-                  <td className="px-2 py-2">{r.visits == null ? "غير متاح" : r.visits}</td><td className="px-2 py-2">{r.attempts}</td><td className="px-2 py-2">{r.completed}</td>
+                  <td className="px-2 py-2">{r.visits == null ? "غير متاح" : r.visits}</td><td className="px-2 py-2">{r.attempts == null ? "غير متاح" : r.attempts}</td><td className="px-2 py-2">{r.completed}</td>
                 </tr>))}</tbody>
             </table></div>
             <div className="mt-3 flex items-center justify-between text-sm">
@@ -240,7 +244,7 @@ export default function AdminStats() {
           <div className="mt-3 space-y-6">{metrics.map((g: any) => (
             <Section key={g.game} title={gameLabel(g.game)} action={<ExportBtns kind="games" />}>
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Card title="لاعبون معروفون" value={n(g.players)} /><Card title="محاولات مسجلة" value={n(g.attempts)} note={g.legacy ? `منها ${g.legacy} قديمة مكتملة` : undefined} />
+                <Card title="لاعبون معروفون" value={n(g.players)} /><Card title="محاولات مسجلة" value={n(g.attempts)} note={`${g.tracked_starts} بداية مسجلة منذ التتبع${g.legacy ? ` · ${g.legacy} قديمة مكتملة` : ""}`} />
                 <Card title="مكتملة" value={n(g.completed)} /><Card title="نسبة الإكمال" value={completionRate(g.tracked_finished, g.tracked_starts)} note="الجولات معروفة البداية فقط؛ تشمل انتهاء الوقت" />
               </div>
               <div className="mt-5"><h3 className="mb-3 font-semibold">نتيجة اللعبة</h3><Dist data={{ win: g.wins, loss: g.losses }} label={resultLabel} /></div>

@@ -19,7 +19,7 @@ const savePending = (states: VisitState[]) => {
 };
 
 async function flushVisits(owner: string) {
-  if (flushing) return;
+  if (flushing || !pending().some(s => s.owner === owner)) return;
   flushing = true;
   try {
     for (const state of pending().filter(s => s.owner === owner)) {
