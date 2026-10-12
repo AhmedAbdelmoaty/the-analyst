@@ -29,7 +29,7 @@ export function toCsv(sheet: Sheet): string {
     lines.push(sheet.columns.map(c => {
       const t = cellText(r[c.key], c);
       // Keep phone numbers as text in Excel (preserves + and leading zeros).
-      return esc(c.text && t ? `="${t.replace(/"/g, "")}"`.replace(/^="'/, '="') : t);
+      return esc(c.text && /^\+?\d{3,20}$/.test(t) ? `="${t}"` : t);
     }).join(","));
   }
   return "\uFEFF" + lines.join("\r\n");
