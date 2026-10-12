@@ -14,6 +14,9 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminBoard from "./pages/AdminBoard";
 import NotFound from "./pages/NotFound";
 import VisitTracker from "@/components/analytics/VisitTracker";
+import PlanChoice from "@/pages/PlanChoice";
+import MySubscription from "@/pages/MySubscription";
+import SubscriptionSummary from "@/pages/SubscriptionSummary";
 
 const Setup = lazy(() => import('./pages/Setup'));
 const GameRoute = lazy(() => import('./pages/GameRoute'));
@@ -48,6 +51,10 @@ const App = () => (
             <Route path="/signup" element={<Landing />} />
             <Route path="/forgot-password" element={<Landing />} />
             <Route path="/app" element={<AppEntry />} />
+            <Route path="/plans" element={<PlanChoice />} />
+            <Route path="/plans/choose" element={<Navigate to="/plans" replace />} />
+            <Route path="/subscription" element={<MySubscription />} />
+            <Route path="/subscription/summary" element={<RequireProfile><SubscriptionSummary /></RequireProfile>} />
             <Route path="/setup" element={<Setup />} />
             <Route path="/play" element={<RequireProfile><GameRoute /></RequireProfile>} />
             <Route path="/games/reward-decision" element={<RequireProfile><RewardDecisionRoute /></RequireProfile>} />

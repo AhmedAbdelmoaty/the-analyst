@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
+import { clearPlanIntent } from "@/features/subscription/planIntent";
 
 export interface PlayerProfile {
   display_name: string | null; // Equals firstName — used everywhere in-game
@@ -112,6 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    clearPlanIntent();
     await supabase.auth.signOut();
     setProfile(null);
   };

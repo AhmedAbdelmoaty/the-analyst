@@ -1,22 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import PlayerAuth from "@/pages/PlayerAuth";
 import analystLockup from "@/assets/brand/the-analyst-lockup.png";
+import { destinationForPlan, readPlanIntent, takePlanIntent } from "@/features/subscription/planIntent";
 
 import { LandingContext } from "@/components/auth/LandingContext";
 
 export default function Landing() {
-  const { user, loading } = useAuth();
+  const { user, loading, isProfileComplete } = useAuth();
   const navigate = useNavigate();
   // Capture the session as the visitor arrived; a new sign-in should not flash the welcome card.
   const [arrivedSignedOut, setArrivedSignedOut] = useState<boolean | null>(null);
+  const redirected = useRef(false);
   useEffect(() => {
     if (!loading && arrivedSignedOut === null) setArrivedSignedOut(!user);
   }, [loading, user, arrivedSignedOut]);
   useEffect(() => {
-    if (!loading && user && arrivedSignedOut) navigate("/app", { replace: true });
-  }, [loading, user, arrivedSignedOut, navigate]);
+    if (!loading && user && arrivedSignedOut !== null && !redirected.current) {
+      const pendingIntent = readPlanIntent();
+      if (arrivedSignedOut || pendingIntent) {
+        redirected.current = true;
+        const intent = isProfileComplete ? takePlanIntent() : pendingIntent;
+        navigate(destinationForPlan(intent, isProfileComplete), { replace: true });
+      }
+    }
+  }, [loading, user, arrivedSignedOut, navigate, isProfileComplete]);
 
   return <div dir="rtl" className="auth-theme min-h-[100dvh] bg-background text-foreground">
     <div className="mx-auto flex min-h-[100dvh] max-w-7xl flex-col px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 lg:px-12 lg:pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:pt-3">
@@ -33,6 +42,7 @@ export default function Landing() {
             <h2 className="text-xl font-bold text-foreground">درّب طريقة تفكيرك… بتجربة تفاعلية.</h2>
             <p className="mt-2 leading-8 text-muted-foreground">استكشف مواقف وتحديات تدعوك إلى طرح أسئلة أفضل، وفحص الأدلة، ومراجعة افتراضاتك قبل الوصول إلى القرار.</p>
           </div>
+          <Link to="/plans" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-md border border-[#A61E25] px-4 text-sm font-bold text-[#A61E25] transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A61E25]">اختار تجربتك <span aria-hidden="true">←</span></Link>
         </div>
         <div className="min-w-0">
           {loading || arrivedSignedOut === null || (user && arrivedSignedOut) ? <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">جاري التحميل...</div> : user ?

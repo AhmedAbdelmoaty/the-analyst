@@ -9,7 +9,7 @@
 - Account screens use scoped auth-theme tokens and local Cairo fonts so the light account surface never changes the dark game theme.
 - Gameplay surfaces use scoped game-paper/ink/charcoal tokens while photographic scenes retain their original dark overlays; this keeps text readable without altering scene media or dialogue timing.
 - The public landing and reused account forms are independent of the lazily loaded `/play` route; `/app` is the authenticated entry so marketing and OTP never preload game media.
-- Landing captures whether a visitor arrived signed out and owns post-auth navigation to `/app` — newly authenticated visitors bypass the returning-user welcome card even when the account form unmounts.
+- `/plans` is public. A plan click stores only a validated navigation intent in session storage, carried through phone auth and `/setup`, then consumed for `/app` (free) or `/subscription/summary` (annual); it is never an entitlement. Sign-ins without a choice continue to `/app`. Free routing to game selection is temporary until server-side subscription access is implemented.
 - PWA installation is optional and the worker is guarded against previews; account/network requests are never cached.
 - Game checkpoints use a versioned per-user browser key and restore engine state only alongside a safe screen, not from the old shared guest screen key.
 - The round time challenge lives in `pf-time-challenge` as a per-user active-play clock (remaining ms + runningSince, heartbeat-checkpointed); submission vs expiry compares active time left at acceptance, so pauses and reloads neither deduct nor grant time.
@@ -34,4 +34,4 @@
 - Read `docs/PROJECT_CONTEXT.md` and `docs/SECURITY_REVIEW.md` for the current checkout; the older Arabic handoff is historical context.
 - Treat the configured backend as live unless separately verified. Repository migrations and Edge Function source do not prove deployed policy or settings.
 - `server_outcome` is computed server-side from client-supplied game payloads; it is not independent proof of gameplay. Do not use game outcomes or browser state as payment entitlement.
-- Payment is not implemented. Future Fawaterak secrets, pricing decisions, callbacks, and access grants belong on the server after merchant terms are confirmed; never put secrets in `VITE_` variables.
+- Subscription screens are UI only: they show free “اسأل صح” and $10 for one year of available games without checkout, subscription records, or access restrictions. `/subscription` must not infer a tier from missing server data. Future Fawaterak secrets, callbacks, and access grants belong on the server after merchant terms are confirmed; never put secrets in `VITE_` variables or use browser storage as entitlement.

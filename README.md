@@ -1,11 +1,12 @@
 # The Analyst
 
-The Analyst is IMP's platform for analytical thinking games. It currently includes **Problem Framing** ("أقل من المتوقع.. مقارنة بإيه؟") and **Reward Decision** ("قرار التكريم"). Both games use the same player account and game selection page. Payment and paid access are **not implemented**.
+The Analyst is IMP's platform for analytical thinking games. It currently includes **Problem Framing** ("أقل من المتوقع.. مقارنة بإيه؟") and **Reward Decision** ("قرار التكريم"). Both games use the same player account and game selection page. Subscription screens show a free “اسأل صح” plan and a $10 annual plan, but payment and paid access are **not implemented**.
 
 ## Architecture
 
 - React 18, TypeScript, Vite 5, React Router 6, Tailwind CSS, shadcn/Radix, and Supabase JS.
 - `/`, `/login`, `/signup`, and `/forgot-password`: public landing and player account forms. `/app`: authenticated entry and game selection. `/setup`: player profile. `/play`: Problem Framing. `/games/reward-decision`: Reward Decision.
+- `/plans`: public plan comparison. Choosing a plan carries a tab-scoped navigation intent through the existing account and profile flow; free leads to `/app` game selection and paid leads to `/subscription/summary`, where payment is disabled. `/subscription`: authenticated subscription page, currently showing a plan discovery card. Free routing to `/app` is temporary until server-side subscription access is implemented; both games retain their existing sign-in protection and availability. These routes do not grant or restrict game access.
 - `/admin/login`: email sign-in. `/admin/board-9k2x`: existing result board. `/admin/stats`: lazily loaded analytics dashboard with CSV and on-demand XLSX export. Admin permissions come from `user_roles` and database checks, not route names.
 - `supabase/functions/phone-auth` handles signup verification and password recovery. It sends OTP through ChakraHQ WhatsApp, stores HMACs server-side, and uses managed Supabase Auth. The frontend contains only public Supabase configuration.
 - Problem Framing's time challenge, pause state, and checkpoints live in the browser; its completion is submitted to the backend. Reward Decision has a separate local save. Analytics visit and round events go through SQL RPCs. A local run using this project's `.env` can contact the configured live backend.
@@ -48,6 +49,6 @@ The unit tests use Bun, which must be installed separately if you want to run th
 
 Editing locally or committing changes does not deploy them. Pushing the Git branch can update the Lovable-connected source; publishing the site is a separate action. Edge Function deployment, database migrations, environment secrets, and Auth settings must be reviewed and applied separately to the intended backend. The migration history spans `supabase/migrations` and `drizzle/migrations`; do not replay it wholesale on an existing database.
 
-## Planned payments
+## Subscription UI and planned payments
 
-Problem Framing is intended to remain free; additional games may require payment. Fawaterak is the prospective provider, pending merchant and product decisions. Pricing, currency, duration, recurrence, and future-game coverage are not set. Any eventual checkout must require an authenticated account, use provider-hosted payment, and grant access only after a verified server-side confirmation. There is no checkout or payment entitlement code in this repository today.
+The UI presents a free “اسأل صح” tier and $10 for one year of all available games. The paid plan leads to an authenticated summary with a disabled payment button. The current games remain accessible as before. Fawaterak is the prospective provider, pending merchant confirmation. There is no checkout, subscription record, or entitlement enforcement in this repository today. Any eventual checkout must require an authenticated account, use provider-hosted payment, and grant access only after verified server-side confirmation. See [subscription handoff](docs/SUBSCRIPTION_UI_HANDOFF.md) for the required server data and states.

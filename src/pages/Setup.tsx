@@ -5,6 +5,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import analystImg from "@/assets/characters/analyst.webp";
 import saraImg from "@/assets/characters/sara.webp";
 import { AuthShell, ErrorBox, Field, LinkButton, PrimaryButton, TextInput } from "@/components/auth/AuthUI";
+import { destinationForPlan, takePlanIntent } from "@/features/subscription/planIntent";
 
 const Setup = () => {
   const { user, profile, loading: authLoading, updateProfile, isProfileComplete, signOut } = useAuth();
@@ -23,7 +24,7 @@ const Setup = () => {
   }, [profile]);
 
   useEffect(() => {
-    if (isProfileComplete) navigate("/app", { replace: true });
+    if (isProfileComplete) navigate(destinationForPlan(takePlanIntent(), true), { replace: true });
   }, [isProfileComplete, navigate]);
 
   if (authLoading) return <div className="min-h-screen bg-background" />;
