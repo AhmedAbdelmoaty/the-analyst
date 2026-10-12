@@ -1,73 +1,53 @@
-# Welcome to your Lovable project
+# The Analyst
 
-## Project info
+The Analyst is IMP's platform for analytical thinking games. It currently includes **Problem Framing** ("أقل من المتوقع.. مقارنة بإيه؟") and **Reward Decision** ("قرار التكريم"). Both games use the same player account and game selection page. Payment and paid access are **not implemented**.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Architecture
 
-## How can I edit this code?
+- React 18, TypeScript, Vite 5, React Router 6, Tailwind CSS, shadcn/Radix, and Supabase JS.
+- `/`, `/login`, `/signup`, and `/forgot-password`: public landing and player account forms. `/app`: authenticated entry and game selection. `/setup`: player profile. `/play`: Problem Framing. `/games/reward-decision`: Reward Decision.
+- `/admin/login`: email sign-in. `/admin/board-9k2x`: existing result board. `/admin/stats`: lazily loaded analytics dashboard with CSV and on-demand XLSX export. Admin permissions come from `user_roles` and database checks, not route names.
+- `supabase/functions/phone-auth` handles signup verification and password recovery. It sends OTP through ChakraHQ WhatsApp, stores HMACs server-side, and uses managed Supabase Auth. The frontend contains only public Supabase configuration.
+- Problem Framing's time challenge, pause state, and checkpoints live in the browser; its completion is submitted to the backend. Reward Decision has a separate local save. Analytics visit and round events go through SQL RPCs. A local run using this project's `.env` can contact the configured live backend.
+- PWA installation is optional. The worker is disabled in development and guarded in previews; account requests are not cached.
 
-There are several ways of editing your application.
+More detail: [project context](docs/PROJECT_CONTEXT.md) and [security review](docs/SECURITY_REVIEW.md). An older Arabic handoff is preserved as a separate local user file; it may predate current analytics work.
 
-**Use Lovable**
+## Local setup
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Use Node.js and npm; this checkout was verified with Node 24 and npm 11. Internet access is required for the existing cloud backend.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm ci
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Vite is configured for `http://localhost:8080`; use the address it prints if the port changes. The repo's `.env` contains only these **browser-visible** variable names:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `VITE_SUPABASE_PROJECT_ID`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-**Use GitHub Codespaces**
+Use ignored `.env.local` for local overrides. Never put a Chakra token, OTP HMAC secret, Supabase service-role key, database migration credential, or future Fawaterak secret in a `VITE_` variable. The local frontend uses the configured cloud backend. Do not run migrations, send OTPs, or modify real accounts merely to check that the UI starts.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Lovable metadata in `*.asset.json` gives `__l5e` URLs rather than image bytes. The five PWA icons in this change are under `public/__l5e`. This working tree also has 15 pre-existing, untracked Reward Decision WebPs at their matching paths; a clean clone needs those assets added separately to display that game's images locally. Keep asset paths and portrait/landscape pairs intact.
 
-## What technologies are used for this project?
+## Verification commands
 
-This project is built with:
+```sh
+npx tsc -p tsconfig.app.json --noEmit
+npx tsc -p tsconfig.node.json --noEmit
+npm run lint
+npm run build
+bun test tests/reward-decision.test.ts tests/round-persistence.test.ts tests/admin-results.test.ts tests/admin-analytics.test.ts
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The unit tests use Bun, which must be installed separately if you want to run them. At the reviewed commit, lint has pre-existing errors; see the [security review](docs/SECURITY_REVIEW.md) for the check result. `npm run preview` serves a local production build. Build success does not verify live authentication, OTP delivery, database permissions, or the deployed site.
 
-## How can I deploy this project?
+## Deployment boundary
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Editing locally or committing changes does not deploy them. Pushing the Git branch can update the Lovable-connected source; publishing the site is a separate action. Edge Function deployment, database migrations, environment secrets, and Auth settings must be reviewed and applied separately to the intended backend. The migration history spans `supabase/migrations` and `drizzle/migrations`; do not replay it wholesale on an existing database.
 
-## Can I connect a custom domain to my Lovable project?
+## Planned payments
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Problem Framing is intended to remain free; additional games may require payment. Fawaterak is the prospective provider, pending merchant and product decisions. Pricing, currency, duration, recurrence, and future-game coverage are not set. Any eventual checkout must require an authenticated account, use provider-hosted payment, and grant access only after a verified server-side confirmation. There is no checkout or payment entitlement code in this repository today.

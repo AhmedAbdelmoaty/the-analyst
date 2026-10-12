@@ -28,3 +28,10 @@
 - The admin dashboard (`/admin/stats`) is a lazily loaded route; Excel export loads its library on demand only there.
 
 - Simplified admin reporting uses the protected `admin_activity_summary` RPC alongside existing reports; legacy completed rows count as known attempts without inventing starts or visits.
+
+## Review and deployment
+
+- Read `docs/PROJECT_CONTEXT.md` and `docs/SECURITY_REVIEW.md` for the current checkout; the older Arabic handoff is historical context.
+- Treat the configured backend as live unless separately verified. Repository migrations and Edge Function source do not prove deployed policy or settings.
+- `server_outcome` is computed server-side from client-supplied game payloads; it is not independent proof of gameplay. Do not use game outcomes or browser state as payment entitlement.
+- Payment is not implemented. Future Fawaterak secrets, pricing decisions, callbacks, and access grants belong on the server after merchant terms are confirmed; never put secrets in `VITE_` variables.
