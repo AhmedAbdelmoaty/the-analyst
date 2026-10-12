@@ -53,6 +53,19 @@ export async function flushRounds(uid: string): Promise<void> {
   } finally {
     flushing.delete(uid);
   }
+  // Events queued while this flush was running would otherwise wait for the next trigger.
+  if (!attempts.has(uid) && readQueue(uid).length) void flushRounds(uid);
+}
+
+// Resend pending events as soon as the connection comes back (or the tab is reopened).
+if (typeof window !== "undefined") {
+  const resume = async () => {
+    const { data } = await supabase.auth.getSession();
+    const uid = data.session?.user.id;
+    if (uid) { attempts.delete(uid); window.clearTimeout(retry.get(uid)); void flushRounds(uid); }
+  };
+  window.addEventListener("online", () => void resume());
+  window.addEventListener("load", () => void resume());
 }
 
 /**
