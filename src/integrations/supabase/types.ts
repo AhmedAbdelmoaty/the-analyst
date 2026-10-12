@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_flags: {
+        Row: {
+          is_test: boolean
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          is_test?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          is_test?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      admin_export_log: {
+        Row: {
+          admin_id: string
+          created_at: string
+          filters: Json
+          format: string
+          id: string
+          kind: string
+          row_count: number | null
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          filters?: Json
+          format: string
+          id?: string
+          kind: string
+          row_count?: number | null
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          filters?: Json
+          format?: string
+          id?: string
+          kind?: string
+          row_count?: number | null
+        }
+        Relationships: []
+      }
+      analytics_meta: {
+        Row: {
+          key: string
+          value: string
+        }
+        Insert: {
+          key: string
+          value: string
+        }
+        Update: {
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
       completed_players: {
         Row: {
           completed_at: string
@@ -52,6 +118,75 @@ export type Database = {
           qualified?: boolean
           round_id?: string | null
           started_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      game_rounds: {
+        Row: {
+          active_ms: number | null
+          completed_at: string | null
+          content_version: string | null
+          details: Json
+          first_seen_at: string
+          game: string
+          id: string
+          last_activity_at: string
+          last_stage: string | null
+          legacy_ref: string | null
+          outcome: string | null
+          round_id: string
+          server_outcome: string | null
+          server_reason: string | null
+          source: string
+          stage_revision: number
+          started_at: string | null
+          submitted_at: string | null
+          timed_out_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          active_ms?: number | null
+          completed_at?: string | null
+          content_version?: string | null
+          details?: Json
+          first_seen_at?: string
+          game: string
+          id?: string
+          last_activity_at?: string
+          last_stage?: string | null
+          legacy_ref?: string | null
+          outcome?: string | null
+          round_id: string
+          server_outcome?: string | null
+          server_reason?: string | null
+          source?: string
+          stage_revision?: number
+          started_at?: string | null
+          submitted_at?: string | null
+          timed_out_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          active_ms?: number | null
+          completed_at?: string | null
+          content_version?: string | null
+          details?: Json
+          first_seen_at?: string
+          game?: string
+          id?: string
+          last_activity_at?: string
+          last_stage?: string | null
+          legacy_ref?: string | null
+          outcome?: string | null
+          round_id?: string
+          server_outcome?: string | null
+          server_reason?: string | null
+          source?: string
+          stage_revision?: number
+          started_at?: string | null
+          submitted_at?: string | null
+          timed_out_at?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -173,6 +308,33 @@ export type Database = {
         }
         Relationships: []
       }
+      round_events: {
+        Row: {
+          event_id: string
+          game: string
+          received_at: string
+          round_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          game: string
+          received_at?: string
+          round_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          game?: string
+          received_at?: string
+          round_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -194,11 +356,125 @@ export type Database = {
         }
         Relationships: []
       }
+      visit_segments: {
+        Row: {
+          hits: number
+          id: string
+          ip_hash: string | null
+          last_seen_at: string
+          secret_hash: string | null
+          started_at: string
+          user_id: string | null
+          visit_id: string
+        }
+        Insert: {
+          hits?: number
+          id: string
+          ip_hash?: string | null
+          last_seen_at?: string
+          secret_hash?: string | null
+          started_at?: string
+          user_id?: string | null
+          visit_id: string
+        }
+        Update: {
+          hits?: number
+          id?: string
+          ip_hash?: string | null
+          last_seen_at?: string
+          secret_hash?: string | null
+          started_at?: string
+          user_id?: string | null
+          visit_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_export_rounds: {
+        Args: {
+          _from: string
+          _game?: string
+          _include?: boolean
+          _status?: string
+          _to: string
+        }
+        Returns: {
+          active_ms: number
+          completed_at: string
+          content_version: string
+          details: Json
+          first_name: string
+          game: string
+          last_activity_at: string
+          last_name: string
+          last_stage: string
+          outcome: string
+          phone: string
+          round_id: string
+          server_outcome: string
+          server_reason: string
+          source: string
+          started_at: string
+          submitted_at: string
+          timed_out_at: string
+        }[]
+      }
+      admin_games: {
+        Args: {
+          _from: string
+          _include?: boolean
+          _status?: string
+          _to: string
+        }
+        Returns: Json
+      }
+      admin_log_export: {
+        Args: { _filters: Json; _format: string; _kind: string; _rows: number }
+        Returns: undefined
+      }
+      admin_overview: {
+        Args: {
+          _from: string
+          _game?: string
+          _include?: boolean
+          _status?: string
+          _to: string
+        }
+        Returns: Json
+      }
+      admin_set_test_flag: {
+        Args: { _is_test: boolean; _user_id: string }
+        Returns: undefined
+      }
+      admin_user_detail: { Args: { _user_id: string }; Returns: Json }
+      admin_users: {
+        Args: {
+          _dir?: string
+          _from: string
+          _game?: string
+          _include?: boolean
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _sort?: string
+          _status?: string
+          _to: string
+        }
+        Returns: Json
+      }
+      analytics_excluded: { Args: { _uid: string }; Returns: boolean }
+      analytics_round_matches: {
+        Args: {
+          _game: string
+          _status: string
+          r: Database["public"]["Tables"]["game_rounds"]["Row"]
+        }
+        Returns: boolean
+      }
       auth_user_by_phone: {
         Args: { _phone: string }
         Returns: {
@@ -206,6 +482,7 @@ export type Database = {
           phone_confirmed: boolean
         }[]
       }
+      backfill_legacy_results: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -220,6 +497,51 @@ export type Database = {
           status: string
           user_id: string
         }[]
+      }
+      pf_evaluate: {
+        Args: { _framing: Json; _history: string[]; _track_entered: boolean }
+        Returns: {
+          correct_count: number
+          full_spine: boolean
+          outcome: string
+        }[]
+      }
+      rd_argument_check: {
+        Args: { _arg: string; _docs: string[]; _tools: string[] }
+        Returns: {
+          kind: string
+          ok: boolean
+        }[]
+      }
+      rd_evaluate: {
+        Args: {
+          _args: string[]
+          _doc: string
+          _docs: string[]
+          _team: string
+          _tools: string[]
+        }
+        Returns: {
+          outcome: string
+          reason: string
+        }[]
+      }
+      track_round_event: {
+        Args: {
+          _active_ms?: number
+          _event_id: string
+          _game: string
+          _payload?: Json
+          _revision?: number
+          _round_id: string
+          _stage?: string
+          _type: string
+        }
+        Returns: string
+      }
+      track_visit: {
+        Args: { _secret?: string; _segment_id: string; _visit_id: string }
+        Returns: boolean
       }
     }
     Enums: {

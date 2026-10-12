@@ -157,6 +157,12 @@ const AdminBoard = () => {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => navigate("/admin/stats")}
+              className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-muted-foreground hover:text-foreground transition font-bold text-sm"
+            >
+              الإحصائيات
+            </button>
+            <button
               onClick={() => setShowResetConfirm(true)}
               className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-300 hover:text-red-200 transition-all font-bold text-sm"
               title="إعادة تعيين"

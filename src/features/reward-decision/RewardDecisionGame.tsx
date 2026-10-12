@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { DOCUMENTS, TEAMS, type DocumentId, type ToolId } from './data/case';
 import { SCRIPT, type Line } from './data/script';
 import { endingCalls } from './data/endingCalls';
+import { addActiveMs, readActiveMs, trackRound } from '@/lib/analytics/rounds';
 import { evaluateReport, newRun, shotFor, type FinalReport, type RewardRun } from './engine/model';
 import { argumentNote } from './engine/evidence';
 import { clearRun, inspectRun, saveRun } from './engine/persistence';
@@ -55,6 +56,31 @@ export default function RewardDecisionGame() {
   const [storageOk, setStorageOk] = useState(true);
   const runRef = useRef(run); runRef.current = run;
   const saveTimer = useRef<number>();
+
+  // ---- Admin statistics: observers only; the run, dialogue and calls are untouched ----
+  const statsRunning = run.phase !== 'cover' && !run.paused && !otherTab;
+  useEffect(() => {
+    if (!statsRunning || !uid) return;
+    const id = run.runId; let last = performance.now();
+    const tick = () => { const now = performance.now(); if (document.visibilityState === 'visible') addActiveMs(uid, id, now - last); last = now; };
+    const t = window.setInterval(tick, 5000);
+    const onVis = () => { if (document.visibilityState === 'hidden') tick(); else last = performance.now(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { tick(); window.clearInterval(t); document.removeEventListener('visibilitychange', onVis); };
+  }, [statsRunning, uid, run.runId]);
+  useEffect(() => {
+    if (run.phase === 'cover' || !uid) return;
+    trackRound(uid, { game: 'reward-decision', round_id: run.runId, type: 'stage', stage: run.phase, active_ms: readActiveMs(uid, run.runId) });
+  }, [uid, run.runId, run.phase]);
+  useEffect(() => {
+    const s = run.submitted; if (!s || !uid) return;
+    trackRound(uid, { game: 'reward-decision', round_id: run.runId, type: 'submit', stage: 'meeting', active_ms: readActiveMs(uid, run.runId),
+      payload: { teamId: s.teamId, documentId: s.documentId, arguments: s.arguments, usedTools: run.usedTools, docs: run.collectedDocs } });
+  }, [uid, run.runId, run.submitted?.submittedAt]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (run.phase !== 'debrief' || !uid) return;
+    trackRound(uid, { game: 'reward-decision', round_id: run.runId, type: 'complete', stage: 'debrief', active_ms: readActiveMs(uid, run.runId), payload: { outcome: run.evaluation?.outcome } });
+  }, [uid, run.runId, run.phase]); // eslint-disable-line react-hooks/exhaustive-deps
   const lastAct = useRef(0);
 
   const persist = useCallback((r: RewardRun) => { if (r.phase === 'cover' || !mayWrite()) return; const result = saveRun(r); if (result === 'unavailable') setStorageOk(false); if (result === 'stale') { setOtherTab(true); setRun(x => ({ ...x, paused: true })); } }, []);
@@ -72,7 +98,7 @@ export default function RewardDecisionGame() {
   const line = lines && run.dialogueIndex < lines.length ? lines[run.dialogueIndex] : null;
   useEffect(() => { const id = line?.documentId; if (!id || runRef.current.collectedDocs.includes(id)) return; setFlyingDoc(id); commit(r => ({ ...r, collectedDocs: r.collectedDocs.includes(id) ? r.collectedDocs : [...r.collectedDocs, id] })); }, [line?.id, line?.documentId, commit]);
 
-  const start = () => { const next = { ...newRun(uid), phase: 'celebration' as const, stage: 'intro', revision: 1 }; setCorrupt(false); setOtherTab(false); runRef.current = next; setRun(next); claimOwnership(uid, next.runId, onLost); persist(next); };
+  const start = () => { const next = { ...newRun(uid), phase: 'celebration' as const, stage: 'intro', revision: 1 }; trackRound(uid, { game: 'reward-decision', round_id: next.runId, type: 'start', stage: 'celebration', active_ms: 0, payload: { version: next.caseVersion } }); setCorrupt(false); setOtherTab(false); runRef.current = next; setRun(next); claimOwnership(uid, next.runId, onLost); persist(next); };
   const advance = () => commit(r => {
     const active = r.phase === 'resolution' && r.stage === 'talking' ? calls?.[r.endingCall]?.lines ?? null : dialogueFor(r);
     if (!active) return r;

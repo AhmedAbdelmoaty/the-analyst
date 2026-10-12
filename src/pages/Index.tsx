@@ -31,7 +31,9 @@ import {
   freezeAfterReload,
   adoptLegacyRound,
   remainingMs,
+  TIME_CHALLENGE_DURATION_MS,
 } from "@/lib/pf-time-challenge";
+import { trackRound } from "@/lib/analytics/rounds";
 import { claimRound, releaseRound } from "@/lib/pf-round-owner";
 import { isUpdatePending, subscribeUpdate, applyPendingUpdate } from "@/lib/registerAppWorker";
 import { stopSceneAmbience } from "@/hooks/useSceneAudio";
@@ -97,6 +99,27 @@ const GameContent = () => {
   );
   const challenge = challengeRaw ? readTimeChallenge(uid) : null;
   const expired = challenge?.status === "expired";
+
+  // ---- Admin statistics: read-only observers that never change the round ----
+  const statRound = challenge?.roundId;
+  const pfActiveMs = useCallback(() => {
+    const c = readTimeChallenge(uid);
+    return c ? TIME_CHALLENGE_DURATION_MS - remainingMs(c) : undefined;
+  }, [uid]);
+  useEffect(() => {
+    if (!statRound || showBrandIntro || expired || currentScreen === "replay-briefing") return;
+    trackRound(uid, { game: "problem-framing", round_id: statRound, type: "stage", stage: currentScreen, active_ms: pfActiveMs() });
+  }, [uid, statRound, currentScreen, showBrandIntro, expired, pfActiveMs]);
+  useEffect(() => {
+    if (expired && statRound) trackRound(uid, { game: "problem-framing", round_id: statRound, type: "timeout", stage: "time-up", active_ms: pfActiveMs() });
+  }, [uid, expired, statRound, pfActiveMs]);
+  useEffect(() => {
+    if (currentScreen !== "result" || !pfState.outcome || !statRound) return;
+    trackRound(uid, { game: "problem-framing", round_id: statRound, type: "complete", stage: "result", active_ms: pfActiveMs(), payload: { outcome: pfState.outcome } });
+  }, [uid, currentScreen, pfState.outcome, statRound, pfActiveMs]);
+  const trackStart = useCallback((roundId: string) => {
+    trackRound(uid, { game: "problem-framing", round_id: roundId, type: "start", stage: "company-briefing", active_ms: 0, payload: { version: "pf-v1" } });
+  }, [uid]);
   const expiredRef = useRef(expired);
   expiredRef.current = expired;
   const running = challenge?.status === "active" && challenge.runningSince != null;
@@ -147,10 +170,14 @@ const GameContent = () => {
   const handleSubmitReport = useCallback(() => {
     const ok = submitTimeChallenge(uid, Date.now());
     if (!ok) { expiredRef.current = true; return false; }
+    const st = latest.current.pfState;
+    const rid = readTimeChallenge(uid)?.roundId;
+    if (rid) trackRound(uid, { game: "problem-framing", round_id: rid, type: "submit", stage: "email-send", active_ms: pfActiveMs(),
+      payload: { framing: st.framing, history: st.history.map((h) => h.choice), trackEntered: !!st.trackEntered } });
     // Persist the accepted send immediately so a reload continues past the email.
     writePFGameSnapshot(uid, "mansour-receives", latest.current.pfState, readTimeChallenge(uid)?.roundId);
     return true;
-  }, [uid]);
+  }, [uid, pfActiveMs]);
   const [resetVersion, setResetVersion] = useState(0);
 
   useEffect(() => { saveNow(); }, [currentScreen, showBrandIntro, pfState, expired, saveNow]);
@@ -271,9 +298,9 @@ const GameContent = () => {
 
   const handleBrandIntroComplete = useCallback(() => {
     localStorage.setItem(introStorageKey, "1");
-    startTimeChallenge(uid);
+    trackStart(startTimeChallenge(uid).roundId);
     setShowBrandIntro(false);
-  }, [introStorageKey, uid]);
+  }, [introStorageKey, uid, trackStart]);
 
   const handleTimeUpRetry = useCallback(() => {
     resetGame();
@@ -283,8 +310,8 @@ const GameContent = () => {
     localStorage.setItem(introStorageKey, "1");
     setShowBrandIntro(false);
     setCurrentScreen("company-briefing");
-    startTimeChallenge(uid);
-  }, [introStorageKey, resetGame, uid]);
+    trackStart(startTimeChallenge(uid).roundId);
+  }, [introStorageKey, resetGame, uid, trackStart]);
 
   const handleTimeUpBack = useCallback(() => {
     resetGame();
