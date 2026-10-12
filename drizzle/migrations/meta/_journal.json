@@ -22,6 +22,13 @@
       "when": 1791201195745,
       "tag": "0002_completed_players_round_id",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791795861080,
+      "tag": "0003_admin_analytics",
+      "breakpoints": true
     }
   ]
 }
