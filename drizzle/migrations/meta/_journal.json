@@ -36,6 +36,13 @@
       "when": 1791795973793,
       "tag": "0004_admin_analytics_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791796277607,
+      "tag": "0005_analytics_revoke_client_table_access",
+      "breakpoints": true
     }
   ]
 }
