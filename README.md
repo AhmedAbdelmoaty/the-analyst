@@ -30,7 +30,7 @@ Vite is configured for `http://localhost:8080`; use the address it prints if the
 
 Use ignored `.env.local` for local overrides. Never put a Chakra token, OTP HMAC secret, Supabase service-role key, database migration credential, or future Fawaterak secret in a `VITE_` variable. The local frontend uses the configured cloud backend. Do not run migrations, send OTPs, or modify real accounts merely to check that the UI starts.
 
-Lovable metadata in `*.asset.json` gives `__l5e` URLs rather than image bytes. The five PWA icons in this change are under `public/__l5e`. This working tree also has 15 pre-existing, untracked Reward Decision WebPs at their matching paths; a clean clone needs those assets added separately to display that game's images locally. Keep asset paths and portrait/landscape pairs intact.
+Lovable metadata in `*.asset.json` gives `__l5e` URLs rather than image bytes. The five PWA icons and 15 verified Reward Decision WebPs are under `public/__l5e` at their matching paths for local builds. Keep asset paths and portrait/landscape pairs intact.
 
 ## Verification commands
 
