@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import "@/styles/auth.css";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type Filters = { from: string; to: string; game: string; status: string; include: boolean };
+type Filters = { from: string; to: string; game: string; include: boolean };
 type Tab = "overview" | "users" | "games";
 const PAGE = 25;
 const rpc = async (fn: string, args: Record<string, unknown>) => {
@@ -48,7 +48,7 @@ const State = ({ q, empty, children }: { q: { isLoading: boolean; error: unknown
 const Dist = ({ data, label }: { data: Record<string, number>; label: (k: string) => string }) => {
   const entries = Object.entries(data ?? {}).sort((a, b) => b[1] - a[1]);
   const total = entries.reduce((s, [, v]) => s + v, 0);
-  if (!entries.length) return <p className="text-sm text-muted-foreground">لا توجد بيانات.</p>;
+  if (!total) return <p className="text-sm text-muted-foreground">لا توجد نتائج مسجلة.</p>;
   return <ul className="space-y-2">{entries.map(([k, v]) => (
     <li key={k}>
       <div className="flex justify-between text-sm"><span>{label(k)}</span><span dir="ltr">{v} ({pct(v, total)})</span></div>
@@ -63,7 +63,7 @@ export default function AdminStats() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("overview");
   const [preset, setPreset] = useState<Preset>("7");
-  const [f, setF] = useState<Filters>(() => ({ ...presetRange("7"), game: "", status: "", include: false }));
+  const [f, setF] = useState<Filters>(() => ({ ...presetRange("7"), game: "", include: false }));
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "created_at", dir: "desc" });
@@ -76,17 +76,16 @@ export default function AdminStats() {
   useEffect(() => { const t = setTimeout(() => setDebounced(search), 350); return () => clearTimeout(t); }, [search]);
   useEffect(() => setPage(0), [debounced, sort, f]);
 
-  const game = f.game || null, status = f.status || null;
+  const game = f.game || null, status = null;
   const opts = { enabled: ok, refetchInterval: 5 * 60 * 1000, refetchOnWindowFocus: false } as const;
   const overview = useQuery({ ...opts, queryKey: ["adm-overview", f], queryFn: () => rpc("admin_overview", { ...base(f), _game: game, _status: status }), enabled: ok && tab === "overview" });
   const users = useQuery({ ...opts, queryKey: ["adm-users", f, debounced, sort, page], queryFn: () => rpc("admin_users", { ...base(f), _game: game, _status: status, _search: debounced || null, _sort: sort.key, _dir: sort.dir, _limit: PAGE, _offset: page * PAGE }), enabled: ok && tab === "users" });
-  const games = useQuery({ ...opts, queryKey: ["adm-games", f], queryFn: () => rpc("admin_games", { ...base(f), _status: status }), enabled: ok && tab === "games" });
   const activity = useQuery({ ...opts, queryKey: ["adm-activity", f], queryFn: () => rpc("admin_activity_summary", { ...base(f), _game: game }) });
   const metrics = activity.data?.games ?? [];
   const totals = (key: string) => metrics.reduce((sum: number, g: any) => sum + (g[key] ?? 0), 0);
   const mergedUser = (r: any) => ({ ...r, ...(activity.data?.users?.[r.user_id] ?? {}) });
   const detail = useQuery({ queryKey: ["adm-user", selected], queryFn: () => rpc("admin_user_detail", { _user_id: selected }), enabled: ok && !!selected });
-  const active = tab === "overview" ? overview : tab === "users" ? users : games;
+  const active = tab === "overview" ? overview : tab === "users" ? users : activity;
   const updatedAt = active.dataUpdatedAt ? cairoDateTime(new Date(active.dataUpdatedAt)) : "—";
 
   const since = activity.data?.tracking_since;
@@ -186,11 +185,11 @@ export default function AdminStats() {
             <Button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold ${tab === k ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{l}</Button>))}
         </nav>
 
-        {tab === "overview" && <State q={overview}>{o && <div className="space-y-4">
+        {tab === "overview" && <State q={{ isLoading: overview.isLoading || activity.isLoading, error: overview.error || activity.error }}>{o && <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
             <Card title="إجمالي الحسابات" value={n(o.accounts_total)} note={`حتى الآن · مؤكد ${o.accounts_confirmed} · غير مؤكد ${o.accounts_unconfirmed} · لا يتأثر بفلتر اللعبة`} />
             <Card title="حسابات جديدة" value={n(o.accounts_new)} note="خلال الفترة · لا يتأثر بفلتر اللعبة" />
-            {f.game ? <Card title="لاعبو هذه اللعبة" value={n(metrics[0]?.players)} note="لديهم بداية جولة أو نشاط فيها خلال الفترة" />
+            {f.game ? <Card title="لاعبو هذه اللعبة" value={n(metrics[0]?.players)} note="حسابات مرتبطة بمحاولات مسجلة خلال الفترة" />
               : <Card title="المستخدمون النشطون" value={n(o.active_users)} note="لاعبون مختلفون لهم نشاط خلال الفترة" />}
             <Card title="الزيارات" value={n(o.visits)} note={beforeTracking("visits_since") ?? `منها بحساب مسجل ${o.visits_signed_in} · لا يتأثر بفلتر اللعبة`} />
             <Card title="المحاولات المسجلة" value={n(totals("attempts"))} note={totals("legacy") ? `منها ${totals("legacy")} محاولة قديمة مكتملة؛ تاريخ البداية غير متاح` : "خلال الفترة المختارة"} />
@@ -215,7 +214,7 @@ export default function AdminStats() {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث بالاسم أو الهاتف" className="w-full max-w-xs rounded-md border border-border bg-input px-3 py-1.5 text-sm" />
             <span className="text-xs text-muted-foreground">الأعداد خلال الفترة المختارة؛ «غير متاح» تعني أن الزيارات القديمة لم تُسجّل.</span>
           </div>
-          <State q={users} empty={users.data && !users.data.rows?.length}>
+          <State q={{ isLoading: users.isLoading || activity.isLoading, error: users.error || activity.error }} empty={users.data && !users.data.rows?.length}>
             <div className="overflow-x-auto"><table className="w-full min-w-[820px] text-sm">
               <thead><tr className="border-b border-border text-muted-foreground">{([["name", "الاسم"], [null, "الهاتف"], ["created_at", "التسجيل"], [null, "التحقق"], ["last_activity", "آخر نشاط"], ["visits", "الزيارات"], ["attempts", "المحاولات"], ["completed", "المكتملة"]] as const).map(([k, l]) => (
                 <th key={l} className="px-2 py-2 text-right font-semibold">{k ? <Button onClick={() => toggleSort(k)} className="inline-flex items-center gap-1">{l}<ArrowUpDown className="h-3 w-3" /></Button> : l}</th>))}</tr></thead>
@@ -236,7 +235,7 @@ export default function AdminStats() {
           </State>
         </Section>}
 
-        {tab === "games" && <State q={games}>
+        {tab === "games" && <State q={activity}>
           <div className="flex justify-end"><ExportBtns kind="rounds" /></div>
           <div className="mt-3 space-y-6">{metrics.map((g: any) => (
             <Section key={g.game} title={gameLabel(g.game)} action={<ExportBtns kind="games" />}>
