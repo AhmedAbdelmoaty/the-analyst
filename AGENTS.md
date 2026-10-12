@@ -26,3 +26,5 @@
 - Server evaluators (`pf_evaluate`, `rd_evaluate`) mirror the in-game rules and are covered by a parity test; any rule change must update both.
 - Legacy results are copied into `game_rounds` as `source = 'legacy'` with `legacy_ref` (re-runnable via `backfill_legacy_results`), never given a start time or active play time.
 - The admin dashboard (`/admin/stats`) is a lazily loaded route; Excel export loads its library on demand only there.
+
+- Simplified admin reporting uses the protected `admin_activity_summary` RPC alongside existing reports; legacy completed rows count as known attempts without inventing starts or visits.

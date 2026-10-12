@@ -1,4 +1,5 @@
 # Current tasks
+- [x] Simplify admin reporting, explain missing historical activity, preserve failed visits for retry, and default admin login to statistics (20 small tests; authenticated dashboard review).
 - [x] Admin analytics dashboard: visit/round tracking for both games, server-side evaluation, automatic leaderboard qualification, admin stats page with filters, CSV/XLSX export, privacy line, tests.
 - [x] Replace Reward Decision's month-later ending with two saved, pausable phone calls and verify all three outcomes without changing the original game.
 - [x] Simplify Reward Decision into the approved short narrative flow with dialogue handoffs, unified analysis, report-based evaluation, conditional meeting/endings, save migration, and responsive/E2E verification.

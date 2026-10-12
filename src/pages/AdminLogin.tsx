@@ -15,7 +15,7 @@ const AdminLogin = () => {
 
   useEffect(() => {
     if (!authLoading && session && isAdmin) {
-      navigate("/admin/board-9k2x", { replace: true });
+      navigate("/admin/stats", { replace: true });
     }
   }, [session, isAdmin, authLoading, navigate]);
 
