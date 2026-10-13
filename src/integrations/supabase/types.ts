@@ -270,41 +270,56 @@ export type Database = {
         Row: {
           avatar_choice: string | null
           created_at: string
+          department: string | null
+          department_other: string | null
           display_name: string | null
           email: string | null
           first_name: string | null
           gender: string | null
           id: string
+          industry: string | null
+          industry_other: string | null
           last_name: string | null
           phone: string | null
           updated_at: string
           user_id: string
+          work_details_prompt_dismissed_at: string | null
         }
         Insert: {
           avatar_choice?: string | null
           created_at?: string
+          department?: string | null
+          department_other?: string | null
           display_name?: string | null
           email?: string | null
           first_name?: string | null
           gender?: string | null
           id?: string
+          industry?: string | null
+          industry_other?: string | null
           last_name?: string | null
           phone?: string | null
           updated_at?: string
           user_id: string
+          work_details_prompt_dismissed_at?: string | null
         }
         Update: {
           avatar_choice?: string | null
           created_at?: string
+          department?: string | null
+          department_other?: string | null
           display_name?: string | null
           email?: string | null
           first_name?: string | null
           gender?: string | null
           id?: string
+          industry?: string | null
+          industry_other?: string | null
           last_name?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string
+          work_details_prompt_dismissed_at?: string | null
         }
         Relationships: []
       }
@@ -457,10 +472,14 @@ export type Database = {
       admin_user_detail: { Args: { _user_id: string }; Returns: Json }
       admin_users: {
         Args: {
+          _country?: string
+          _department?: string
           _dir?: string
           _from: string
           _game?: string
+          _gender?: string
           _include?: boolean
+          _industry?: string
           _limit?: number
           _offset?: number
           _search?: string
@@ -510,6 +529,7 @@ export type Database = {
           outcome: string
         }[]
       }
+      profile_country_from_phone: { Args: { _phone: string }; Returns: string }
       rd_argument_check: {
         Args: { _arg: string; _docs: string[]; _tools: string[] }
         Returns: {

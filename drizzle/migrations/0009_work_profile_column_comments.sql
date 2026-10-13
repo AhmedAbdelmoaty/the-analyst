@@ -1,0 +1,2 @@
+COMMENT ON COLUMN public.profiles.department IS 'Stable department ID chosen by the player; other requires department_other.';
+COMMENT ON COLUMN public.profiles.industry IS 'Stable industry ID chosen by the player; other requires industry_other.';
