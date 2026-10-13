@@ -33,7 +33,9 @@ interface AuthContextType {
   isProfileComplete: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Keep one context instance across hot reloads so already-mounted consumers never lose the provider.
+const g = globalThis as { __taAuthContext?: React.Context<AuthContextType | undefined> };
+const AuthContext = g.__taAuthContext ?? (g.__taAuthContext = createContext<AuthContextType | undefined>(undefined));
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
