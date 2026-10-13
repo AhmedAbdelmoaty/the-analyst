@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { readTimeChallenge } from "@/lib/pf-time-challenge";
 import { nativeSetTimeout, nativeClearTimeout } from "@/lib/pf-pause";
 import { motion } from "framer-motion";
-import { Brain, CircleCheck, RotateCcw, ScanSearch, Sparkles } from "lucide-react";
+import { ArrowLeft, Brain, CircleCheck, RotateCcw, ScanSearch, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePFGame } from "@/contexts/PFGameContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -186,10 +186,10 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
           ))}
       </div>
 
-      <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col items-center justify-start gap-3 px-3 py-4 sm:px-5 sm:py-5">
+      <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col items-center justify-center px-3 py-3 sm:px-5 sm:py-4">
         <section
           className={cn(
-            "relative grid min-h-[min(760px,96dvh)] w-full grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-md border p-3 shadow-xl sm:p-5",
+            "relative grid min-h-[min(700px,82dvh)] w-full grid-rows-[auto_minmax(0,1fr)_auto_auto] gap-3 overflow-hidden rounded-md border p-3 shadow-xl sm:gap-4 sm:p-5",
             view.stage
           )}
         >
@@ -226,7 +226,7 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
               <motion.img
                 src={mascot}
                 alt=""
-                className="relative z-10 max-h-[min(52vh,520px)] w-auto max-w-[92%] object-contain drop-shadow-[0_28px_38px_rgba(15,23,42,.22)] sm:max-h-[min(60vh,560px)]"
+                className="relative z-10 max-h-[min(36vh,370px)] w-auto max-w-[92%] object-contain drop-shadow-[0_24px_32px_rgba(15,23,42,.18)] sm:max-h-[min(42vh,440px)]"
                 initial={{ opacity: 0, y: 42, scale: 0.74, rotate: outcome === "weak" ? -4 : 4 }}
                 animate={{
                   opacity: 1,
@@ -335,62 +335,60 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
             </div>
           </div>
 
+          <motion.section
+            aria-labelledby="full-experience-title"
+            className="mx-auto grid w-full max-w-5xl gap-3 rounded-md border border-game-line border-r-4 border-r-primary bg-white/80 p-3 text-start sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-5 sm:px-5 sm:py-3"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.18, duration: 0.32 }}
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold tracking-[0.12em] text-primary sm:text-xs">تجارب أخرى من The Analyst</p>
+              <h2 id="full-experience-title" className="mt-0.5 text-base font-bold leading-snug text-game-ink sm:text-lg">
+                اللعبة خلصت… وتجارب التفكير لسه مستمرة.
+              </h2>
+              <p className="mt-1 text-xs leading-5 text-game-muted sm:text-sm sm:leading-6">
+                جرّب ألعابًا تفاعلية أخرى؛ كل لعبة تضعك في موقف مختلف لتسأل، تحلّل، وتختار قرارك.
+              </p>
+              <ul className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold text-game-ink sm:text-xs" aria-label="اسأل، حلّل، قرّر">
+                <li className="inline-flex items-center gap-1"><Brain aria-hidden="true" className="h-3.5 w-3.5 text-primary" />اسأل</li>
+                <li className="inline-flex items-center gap-1"><ScanSearch aria-hidden="true" className="h-3.5 w-3.5 text-primary" />حلّل</li>
+                <li className="inline-flex items-center gap-1"><CircleCheck aria-hidden="true" className="h-3.5 w-3.5 text-primary" />قرّر</li>
+              </ul>
+            </div>
+            <div className="flex flex-col items-stretch gap-1.5 sm:min-w-48 sm:items-center">
+              <Link
+                to="/plans"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                استكشف الألعاب والخطط
+                <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+              </Link>
+              <Link to="/app" className="inline-flex min-h-7 items-center justify-center px-2 text-xs font-semibold text-game-muted underline-offset-4 hover:text-game-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                العودة للألعاب
+              </Link>
+            </div>
+          </motion.section>
+
           <motion.div
-            className="mx-auto flex w-full max-w-[360px] justify-center"
+            className="mx-auto flex w-full max-w-[320px] justify-center"
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.12, duration: 0.35 }}
+            transition={{ delay: 1.25, duration: 0.35 }}
           >
             <motion.button
               onClick={() => onNavigate("company-briefing")}
               className={cn(
-                "flex h-12 w-full items-center justify-center gap-2 rounded-md px-6 text-base font-bold shadow-lg outline-none ring-offset-2 transition-transform focus-visible:ring-2 focus-visible:ring-primary sm:h-14",
+                "flex h-11 w-full items-center justify-center gap-2 rounded-md px-5 text-sm font-bold shadow-lg outline-none ring-offset-2 transition-transform focus-visible:ring-2 focus-visible:ring-primary sm:h-12 sm:text-base",
                 view.button
               )}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.035 }}
+              whileTap={{ scale: 0.97 }}
             >
-              <RotateCcw className="h-5 w-5" />
+              <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5" />
               {replayCopy[playerGender]}
             </motion.button>
           </motion.div>
-        </section>
-
-        {/* Show only while the player has no server-verified paid entitlement. */}
-        <section
-          aria-labelledby="full-experience-title"
-          className="w-full rounded-md border border-game-line bg-game-paper px-4 py-4 shadow-sm sm:px-6 sm:py-5"
-        >
-          <div className="mx-auto flex max-w-4xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-            <div className="min-w-0 text-center sm:text-start">
-              <p className="text-[10px] font-bold tracking-[0.16em] text-primary sm:text-xs" dir="ltr">THE FULL EXPERIENCE</p>
-              <h2 id="full-experience-title" className="mt-1 text-lg font-bold leading-snug text-game-ink sm:text-xl">
-                دي كانت البداية… لسه فيه تحديات أكتر.
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-game-muted sm:text-base">
-                كل تحدٍّ بيختبر جانب مختلف من تفكيرك وتحليلك وقراراتك.
-              </p>
-              <ul className="mt-3 flex items-center justify-center gap-3 text-xs font-semibold text-game-ink sm:justify-start sm:text-sm" aria-label="فكّر، حلّل، قرّر">
-                <li className="inline-flex items-center gap-1.5"><Brain aria-hidden="true" className="h-4 w-4 text-primary" />فكّر</li>
-                <li aria-hidden="true" className="text-game-line">|</li>
-                <li className="inline-flex items-center gap-1.5"><ScanSearch aria-hidden="true" className="h-4 w-4 text-primary" />حلّل</li>
-                <li aria-hidden="true" className="text-game-line">|</li>
-                <li className="inline-flex items-center gap-1.5"><CircleCheck aria-hidden="true" className="h-4 w-4 text-primary" />قرّر</li>
-              </ul>
-              <p className="mt-2 text-xs text-game-muted sm:text-sm">وصول إلى كل الألعاب المشمولة بالخطة السنوية</p>
-            </div>
-            <div className="flex shrink-0 flex-col items-center gap-2 sm:items-end">
-              <Link
-                to="/plans"
-                className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:w-auto sm:text-base"
-              >
-                استكشف التجربة الكاملة
-              </Link>
-              <Link to="/app" className="inline-flex min-h-8 items-center px-2 text-xs font-semibold text-game-muted underline-offset-4 hover:text-game-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm">
-                العودة للألعاب
-              </Link>
-            </div>
-          </div>
         </section>
       </main>
     </div>
