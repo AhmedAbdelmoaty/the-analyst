@@ -11,7 +11,11 @@
 
 ## Database migration and safe activation
 
-`drizzle/migrations/0008_user_profiling_audience.sql` is an unapplied forward migration. It adds nullable work fields and a prompt-dismissal timestamp, adds category/Other constraints, grants only the new own-profile update columns, adds a phone-country mapping function, and replaces the latest `admin_users` and `admin_user_detail` report definitions. Existing owner RLS and protected phone/role columns remain the boundary.
+**Status (2026-10-13): APPLIED to the live Lovable Cloud database** together with `0009_work_profile_column_comments`. Do not re-run or edit 0008; pull the latest repository state before further work. Verified: columns and constraints exist, players can update only their own work columns (phone stays protected), invalid IDs are rejected, and `admin_users` returns audience aggregates.
+
+Known data note: two email-only accounts (including the admin) carry legacy local-format phone values that fail the existing `profiles_phone_format` check, so updates to those two profile rows are rejected until their phone values are normalized. Player phone accounts are unaffected.
+
+`drizzle/migrations/0008_user_profiling_audience.sql` adds nullable work fields and a prompt-dismissal timestamp, adds category/Other constraints, grants only the new own-profile update columns, adds a phone-country mapping function, and replaces the latest `admin_users` and `admin_user_detail` report definitions. Existing owner RLS and protected phone/role columns remain the boundary.
 
 The repository has two migration histories. The Drizzle history contains the current protected analytics RPCs and ends at `0007_simple_admin_activity`; the older `supabase/migrations` history does not contain those latest RPC definitions. Do not replay either history wholesale or run this against production merely because the file exists.
 
