@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, Re
 import { supabase } from "@/lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
 import { clearPlanIntent } from "@/features/subscription/planIntent";
+import { buildProfileUpdatePatch, isIdentityProfileComplete, isWorkProfileSchemaUnavailable } from "@/features/profile/workProfile";
 
 export interface PlayerProfile {
   display_name: string | null; // Equals firstName — used everywhere in-game
@@ -10,6 +11,11 @@ export interface PlayerProfile {
   gender: "male" | "female" | null;
   avatar_choice: string | null;
   phone?: string | null;
+  department?: string | null;
+  department_other?: string | null;
+  industry?: string | null;
+  industry_other?: string | null;
+  work_details_prompt_dismissed_at?: string | null;
 }
 
 interface AuthContextType {
@@ -45,10 +51,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loadUserData = useCallback(async (uid: string, background = false) => {
     const token = ++requestRef.current;
     if (!background) setProfileLoading(true);
-    const [{ data: prof }, { data: role }] = await Promise.all([
-      supabase.from("profiles").select("first_name,last_name,display_name,gender,avatar_choice,phone").eq("user_id", uid).maybeSingle(),
+    const [profileResult, { data: role }] = await Promise.all([
+      supabase.from("profiles").select("first_name,last_name,display_name,gender,avatar_choice,phone,department,department_other,industry,industry_other,work_details_prompt_dismissed_at").eq("user_id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle(),
     ]);
+    let prof = profileResult.data;
+    // Keep legacy accounts usable while the additive work-profile migration is pending.
+    if (profileResult.error && isWorkProfileSchemaUnavailable(profileResult.error)) {
+      const fallback = await supabase.from("profiles").select("first_name,last_name,display_name,gender,avatar_choice,phone").eq("user_id", uid).maybeSingle();
+      if (!fallback.error) prof = fallback.data ? {
+        ...fallback.data,
+        department: null,
+        department_other: null,
+        industry: null,
+        industry_other: null,
+        work_details_prompt_dismissed_at: null,
+      } : null;
+    }
     if (token !== requestRef.current || currentUidRef.current !== uid) return;
     if (prof || !background) setProfile(prof ? { ...prof, gender: (prof.gender as "male" | "female" | null) ?? null } : null);
     setIsAdmin(!!role);
@@ -120,17 +139,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateProfile = async (data: Partial<PlayerProfile>) => {
     if (!user) return { error: new Error("not_signed_in") };
-    const patch: { first_name?: string | null; display_name?: string | null; last_name?: string | null; gender?: string | null; avatar_choice?: string | null } = {};
-    if (data.first_name !== undefined) { patch.first_name = data.first_name; patch.display_name = data.first_name; }
-    if (data.last_name !== undefined) patch.last_name = data.last_name;
-    if (data.gender !== undefined) patch.gender = data.gender;
-    if (data.avatar_choice !== undefined) patch.avatar_choice = data.avatar_choice;
+    const input = { ...data };
+    if (data.first_name !== undefined) input.display_name = data.first_name;
+    const { patch, error: validationError } = buildProfileUpdatePatch(profile, input);
+    if (validationError) return { error: new Error(validationError) };
     const { error } = await supabase.from("profiles").update(patch).eq("user_id", user.id);
-    if (!error) setProfile((p) => ({ ...(p ?? { display_name: null, gender: null, avatar_choice: null }), ...(patch as any) }));
+    if (!error) setProfile((p) => ({ ...(p ?? { display_name: null, gender: null, avatar_choice: null }), ...patch }));
     return { error };
   };
 
-  const isProfileComplete = !!(user && profile?.first_name && profile?.last_name && profile?.gender);
+  const isProfileComplete = !!user && isIdentityProfileComplete(profile);
   const loading = sessionLoading || profileLoading;
 
   return (

@@ -1,4 +1,5 @@
 import { ARGUMENTS, type ArgumentId, type DocumentId, type Outcome, type TeamId, type ToolId } from '../data/case';
+import { randomUuid } from '../../../lib/random-uuid';
 
 export type Phase = 'cover' | 'celebration' | 'debate' | 'briefing' | 'hub' | 'sales' | 'hr' | 'workbench' | 'recommendation' | 'meeting' | 'resolution' | 'debrief';
 export interface DraftReport { teamId: TeamId | null; documentId: DocumentId | null; arguments: [ArgumentId | null, ArgumentId | null] }
@@ -17,7 +18,7 @@ export interface RewardRun {
 
 export const emptyDraft = (): DraftReport => ({ teamId: null, documentId: null, arguments: [null, null] });
 export const newRun = (userId: string): RewardRun => ({
-  schemaVersion: 4, gameId: 'reward-decision', caseVersion: 'rowad-v2', userId, runId: crypto.randomUUID(), revision: 0,
+  schemaVersion: 4, gameId: 'reward-decision', caseVersion: 'rowad-v2', userId, runId: randomUuid(), revision: 0,
   phase: 'cover', stage: '', dialogueIndex: 0, visibleGraphemes: 0, visited: [], collectedDocs: [],
   usedTools: [], visibleTools: [], activeTeamChart: 'marwan', draft: emptyDraft(), submitted: null, evaluation: null, endingCall: 0, callAnswered: false,
   meetingIndex: 0, debriefStep: 0, paused: false, savedAt: new Date().toISOString(),

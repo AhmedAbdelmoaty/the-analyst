@@ -1,4 +1,5 @@
 /** Pure statistics helpers (no network), shared by the trackers and tests. */
+import { randomUuid } from "@/lib/random-uuid";
 export const VISIT_IDLE_MS = 30 * 60 * 1000;
 export const VISIT_PING_MS = 60 * 1000;
 
@@ -13,7 +14,7 @@ export interface VisitState {
   sentAt: number;
 }
 
-const rand = () => crypto.randomUUID();
+const rand = () => randomUuid();
 const secret = () => `${rand()}${rand()}`.replace(/-/g, "");
 
 /** Pure transition: decides whether activity continues the visit/segment or opens new ones. */

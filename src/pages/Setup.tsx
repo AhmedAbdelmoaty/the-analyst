@@ -6,12 +6,16 @@ import analystImg from "@/assets/characters/analyst.webp";
 import saraImg from "@/assets/characters/sara.webp";
 import { AuthShell, ErrorBox, Field, LinkButton, PrimaryButton, TextInput } from "@/components/auth/AuthUI";
 import { destinationForPlan, takePlanIntent } from "@/features/subscription/planIntent";
+import WorkProfileFields from "@/features/profile/WorkProfileFields";
+import { hasWorkProfile, isWorkProfileSchemaUnavailable, validateWorkProfile, type WorkProfile } from "@/features/profile/workProfile";
 
 const Setup = () => {
   const { user, profile, loading: authLoading, updateProfile, isProfileComplete, signOut } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState<"male" | "female" | null>(null);
+  const [work, setWork] = useState<WorkProfile>({ department: null, department_other: null, industry: null, industry_other: null });
+  const [workErrors, setWorkErrors] = useState<Partial<Record<keyof WorkProfile, string>>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -20,30 +24,47 @@ const Setup = () => {
     if (profile) {
       setFirstName((v) => v || profile.first_name || "");
       setLastName((v) => v || profile.last_name || "");
+      setGender((v) => v || profile.gender || null);
+      setWork((v) => ({ department: v.department || profile.department || null, department_other: v.department_other || profile.department_other || null, industry: v.industry || profile.industry || null, industry_other: v.industry_other || profile.industry_other || null }));
     }
   }, [profile]);
 
   useEffect(() => {
-    if (isProfileComplete) navigate(destinationForPlan(takePlanIntent(), true), { replace: true });
-  }, [isProfileComplete, navigate]);
+    if (isProfileComplete && hasWorkProfile(profile)) navigate(destinationForPlan(takePlanIntent(), true), { replace: true });
+  }, [isProfileComplete, profile, navigate]);
 
   if (authLoading) return <div className="min-h-screen bg-background" />;
   if (!user) return <Navigate to="/" replace />;
-  if (isProfileComplete) return null;
+  if (isProfileComplete && hasWorkProfile(profile)) return null;
 
   const needsName = !profile?.first_name || !profile?.last_name;
 
   const handleSubmit = async () => {
-    if (!firstName.trim() || !lastName.trim() || !gender || loading) return;
+    if (loading || (!isProfileComplete && (!firstName.trim() || !lastName.trim() || !gender))) return;
+    const checked = validateWorkProfile(work);
+    setWorkErrors(checked.errors);
+    if (Object.keys(checked.errors).length) return;
     setLoading(true); setError(null);
-    const { error } = await updateProfile({
-      first_name: firstName.trim().slice(0, 50),
-      last_name: lastName.trim().slice(0, 50),
-      gender,
-      avatar_choice: gender === "male" ? "analyst" : "sara",
-    });
+    const identity = isProfileComplete ? {} : {
+      first_name: firstName.trim().slice(0, 50), last_name: lastName.trim().slice(0, 50), gender: gender!, avatar_choice: gender === "male" ? "analyst" : "sara",
+    };
+    const { error } = await updateProfile({ ...identity, ...checked.value });
+    if (error && isWorkProfileSchemaUnavailable(error) && !isProfileComplete) {
+      // The additive work columns may not be deployed yet. Do not trap a returning
+      // player in setup: save only the existing identity fields and invite later.
+      const fallback = await updateProfile(identity);
+      setLoading(false);
+      if (!fallback.error) {
+        navigate(destinationForPlan(takePlanIntent(), true), { replace: true });
+        return;
+      }
+      setError("ماقدرناش نحفظ اختيارك. جرّب تاني.");
+      return;
+    }
     setLoading(false);
-    if (error) setError("ماقدرناش نحفظ اختيارك. جرّب تاني.");
+    if (error) setError(isWorkProfileSchemaUnavailable(error)
+      ? "حفظ بيانات القسم والقطاع غير مفعّل حاليًا. استخدم «تخطي الآن» للدخول للألعاب."
+      : "ماقدرناش نحفظ اختيارك. جرّب تاني.");
   };
 
   const characters = [
@@ -85,10 +106,12 @@ const Setup = () => {
             </motion.button>
           ))}
         </div>
+        <WorkProfileFields value={work} onChange={setWork} errors={workErrors} />
         {error && <ErrorBox>{error}</ErrorBox>}
-        <PrimaryButton type="button" onClick={handleSubmit} loading={loading} disabled={!firstName.trim() || !lastName.trim() || !gender}>
+        <PrimaryButton type="button" onClick={handleSubmit} loading={loading} disabled={!isProfileComplete && (!firstName.trim() || !lastName.trim() || !gender)}>
           يلا نبدأ
         </PrimaryButton>
+        {isProfileComplete && <LinkButton className="w-full text-muted-foreground" onClick={() => navigate("/app", { replace: true })}>تخطي الآن</LinkButton>}
         <div className="text-center">
           <LinkButton className="text-muted-foreground" onClick={async () => { await signOut(); navigate("/", { replace: true }); }}>تسجيل الخروج</LinkButton>
         </div>

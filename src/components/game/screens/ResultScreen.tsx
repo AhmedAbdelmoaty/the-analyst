@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { readTimeChallenge } from "@/lib/pf-time-challenge";
 import { nativeSetTimeout, nativeClearTimeout } from "@/lib/pf-pause";
 import { motion } from "framer-motion";
-import { RotateCcw, Sparkles } from "lucide-react";
+import { Brain, CircleCheck, RotateCcw, ScanSearch, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import { usePFGame } from "@/contexts/PFGameContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSound } from "@/hooks/useSoundEffects";
@@ -159,7 +160,7 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
   }, [outcome]);
 
   return (
-    <div className={cn("relative min-h-[100dvh] overflow-y-auto text-game-ink", view.page)} dir="rtl">
+    <div className={cn("relative min-h-[100dvh] overflow-x-hidden overflow-y-auto text-game-ink", view.page)} dir="rtl">
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {outcome !== "weak" &&
@@ -185,10 +186,10 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
           ))}
       </div>
 
-      <main className="relative z-10 flex min-h-[100dvh] items-center justify-center px-3 py-3 sm:px-5 sm:py-4">
+      <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col items-center justify-start gap-3 px-3 py-4 sm:px-5 sm:py-5">
         <section
           className={cn(
-            "relative grid min-h-[min(760px,96dvh)] w-full max-w-6xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-md border p-3 shadow-xl sm:p-5",
+            "relative grid min-h-[min(760px,96dvh)] w-full grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-md border p-3 shadow-xl sm:p-5",
             view.stage
           )}
         >
@@ -353,6 +354,43 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
               {replayCopy[playerGender]}
             </motion.button>
           </motion.div>
+        </section>
+
+        {/* Show only while the player has no server-verified paid entitlement. */}
+        <section
+          aria-labelledby="full-experience-title"
+          className="w-full rounded-md border border-game-line bg-game-paper px-4 py-4 shadow-sm sm:px-6 sm:py-5"
+        >
+          <div className="mx-auto flex max-w-4xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+            <div className="min-w-0 text-center sm:text-start">
+              <p className="text-[10px] font-bold tracking-[0.16em] text-primary sm:text-xs" dir="ltr">THE FULL EXPERIENCE</p>
+              <h2 id="full-experience-title" className="mt-1 text-lg font-bold leading-snug text-game-ink sm:text-xl">
+                دي كانت البداية… لسه فيه تحديات أكتر.
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-game-muted sm:text-base">
+                كل تحدٍّ بيختبر جانب مختلف من تفكيرك وتحليلك وقراراتك.
+              </p>
+              <ul className="mt-3 flex items-center justify-center gap-3 text-xs font-semibold text-game-ink sm:justify-start sm:text-sm" aria-label="فكّر، حلّل، قرّر">
+                <li className="inline-flex items-center gap-1.5"><Brain aria-hidden="true" className="h-4 w-4 text-primary" />فكّر</li>
+                <li aria-hidden="true" className="text-game-line">|</li>
+                <li className="inline-flex items-center gap-1.5"><ScanSearch aria-hidden="true" className="h-4 w-4 text-primary" />حلّل</li>
+                <li aria-hidden="true" className="text-game-line">|</li>
+                <li className="inline-flex items-center gap-1.5"><CircleCheck aria-hidden="true" className="h-4 w-4 text-primary" />قرّر</li>
+              </ul>
+              <p className="mt-2 text-xs text-game-muted sm:text-sm">وصول إلى كل الألعاب المشمولة بالخطة السنوية</p>
+            </div>
+            <div className="flex shrink-0 flex-col items-center gap-2 sm:items-end">
+              <Link
+                to="/plans"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:w-auto sm:text-base"
+              >
+                استكشف التجربة الكاملة
+              </Link>
+              <Link to="/app" className="inline-flex min-h-8 items-center px-2 text-xs font-semibold text-game-muted underline-offset-4 hover:text-game-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm">
+                العودة للألعاب
+              </Link>
+            </div>
+          </div>
         </section>
       </main>
     </div>

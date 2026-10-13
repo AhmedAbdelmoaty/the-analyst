@@ -11,6 +11,8 @@ import { presetRange, type Preset } from "@/features/admin-stats/dates";
 import { cairoDateTime, downloadCsv, downloadXlsx, type Sheet } from "@/lib/analytics/export";
 import { resultLabel, roundResult, completionRate } from "@/features/admin-stats/results";
 import { Button } from "@/components/ui/button";
+import { DEPARTMENTS, INDUSTRIES, KNOWN_COUNTRIES } from "@/features/profile/workProfile";
+import { audienceLabel, audienceRows, EMPTY_AUDIENCE_FILTERS, userReportArgs, type AudienceFilters } from "@/features/admin-stats/audience";
 import "@/styles/auth.css";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -56,6 +58,13 @@ const Dist = ({ data, label }: { data: Record<string, number>; label: (k: string
     </li>))}</ul>;
 };
 const Btn = (p: React.ButtonHTMLAttributes<HTMLButtonElement>) => <Button {...p} />;
+function AudienceCard({ kind, title, data }: { kind: "country" | "gender" | "department" | "industry"; title: string; data?: Record<string, number> }) {
+  const rows = audienceRows(data);
+  return <section className="rounded-lg border border-border bg-card p-4"><h3 className="mb-3 font-semibold">{title}</h3>{rows.length ? <ul className="max-h-60 space-y-2 overflow-y-auto">{rows.map(({ key, count, percent }) => <li key={key}><div className="flex justify-between gap-2 text-sm"><span className="truncate">{audienceLabel(kind, key)}</span><span className="shrink-0" dir="ltr">{n(count)} ({percent}%)</span></div><div className="mt-1 h-1.5 rounded bg-muted"><div className="h-1.5 rounded bg-[#A61E25]" style={{ width: `${percent}%` }}/></div></li>)}</ul> : <p className="text-sm text-muted-foreground">لا توجد حسابات ضمن الاختيارات الحالية.</p>}</section>;
+}
+function AudienceInsights({ audience }: { audience?: { total: number; country: Record<string, number>; gender: Record<string, number>; department: Record<string, number>; industry: Record<string, number> } }) {
+  return <section className="mb-5 rounded-lg border border-border bg-muted/30 p-3 md:p-4"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="font-bold">ملامح الجمهور</h2><span className="text-sm text-muted-foreground">{n(audience?.total ?? 0)} حسابًا مطابقًا</span></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><AudienceCard kind="country" title="توزيع البلدان" data={audience?.country}/><AudienceCard kind="gender" title="الشخصية المختارة" data={audience?.gender}/><AudienceCard kind="department" title="الأقسام" data={audience?.department}/><AudienceCard kind="industry" title="القطاعات" data={audience?.industry}/></div></section>;
+}
 
 export default function AdminStats() {
   const { session, isAdmin, loading: authLoading, signOut } = useAuth();
@@ -68,18 +77,19 @@ export default function AdminStats() {
   const [debounced, setDebounced] = useState("");
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "created_at", dir: "desc" });
   const [page, setPage] = useState(0);
+  const [userFilters, setUserFilters] = useState<AudienceFilters>(EMPTY_AUDIENCE_FILTERS);
   const [selected, setSelected] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const ok = !!session && isAdmin;
 
   useEffect(() => { if (!authLoading && !ok) navigate("/admin/login", { replace: true }); }, [authLoading, ok, navigate]);
   useEffect(() => { const t = setTimeout(() => setDebounced(search), 350); return () => clearTimeout(t); }, [search]);
-  useEffect(() => setPage(0), [debounced, sort, f]);
+  useEffect(() => setPage(0), [debounced, sort, f, userFilters]);
 
   const game = f.game || null, status = null;
   const opts = { enabled: ok, refetchInterval: 5 * 60 * 1000, refetchOnWindowFocus: false } as const;
   const overview = useQuery({ ...opts, queryKey: ["adm-overview", f], queryFn: () => rpc("admin_overview", { ...base(f), _game: game, _status: status }), enabled: ok && tab === "overview" });
-  const users = useQuery({ ...opts, queryKey: ["adm-users", f, debounced, sort, page], queryFn: () => rpc("admin_users", { ...base(f), _game: game, _status: status, _search: debounced || null, _sort: sort.key, _dir: sort.dir, _limit: PAGE, _offset: page * PAGE }), enabled: ok && tab === "users" });
+  const users = useQuery({ ...opts, queryKey: ["adm-users", f, debounced, sort, page, userFilters], queryFn: () => rpc("admin_users", userReportArgs({ ...base(f), _game: game, _status: status }, userFilters, debounced, sort, PAGE, page * PAGE)), enabled: ok && tab === "users" });
   const activity = useQuery({ ...opts, queryKey: ["adm-activity", f], queryFn: () => rpc("admin_activity_summary", { ...base(f), _game: game }) });
   const metrics = activity.data?.games ?? [];
   const totals = (key: string) => metrics.reduce((sum: number, g: any) => sum + (g[key] ?? 0), 0);
@@ -99,14 +109,15 @@ export default function AdminStats() {
   if (authLoading || !ok) return <div className="auth-theme flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">جاري التحميل...</div>;
 
   // ---------- Export ----------
-  const filtersMeta = { from: f.from, to: f.to, game: f.game || "all", include: f.include };
+  const filtersMeta = { from: f.from, to: f.to, game: f.game || "all", include: f.include, ...userFilters };
   const userSheet = async (): Promise<Sheet> => {
-    const d = await rpc("admin_users", { ...base(f), _game: game, _status: status, _search: debounced || null, _sort: sort.key, _dir: sort.dir, _limit: 100000, _offset: 0 });
+    const d = await rpc("admin_users", userReportArgs({ ...base(f), _game: game, _status: status }, userFilters, debounced, sort, 100000, 0));
     return { name: "المستخدمون", columns: [
-      { key: "first_name", header: "الاسم الأول" }, { key: "last_name", header: "اسم العائلة" }, { key: "phone", header: "الهاتف", text: true },
+      { key: "first_name", header: "الاسم الأول" }, { key: "last_name", header: "اسم العائلة" }, { key: "phone", header: "الهاتف", text: true }, { key: "country", header: "البلد" },
+      { key: "gender", header: "الشخصية" }, { key: "department", header: "القسم" }, { key: "department_other", header: "القسم - أخرى", text: true }, { key: "industry", header: "القطاع" }, { key: "industry_other", header: "القطاع - أخرى", text: true },
       { key: "created_at", header: "تاريخ التسجيل (القاهرة)", date: true }, { key: "confirmed", header: "مؤكد" }, { key: "last_activity", header: "آخر نشاط (كل الوقت)", date: true },
       { key: "visits", header: "الزيارات (الفترة)" }, { key: "attempts", header: "المحاولات (الفترة)" }, { key: "completed", header: "المكتملة (الفترة)" }, { key: "is_test", header: "حساب اختبار" }, { key: "is_admin", header: "إدارة" },
-    ], rows: (d.rows ?? []).map((row: any) => { const r = mergedUser(row); return ({ ...r, confirmed: r.confirmed ? "نعم" : "لا", is_test: r.is_test ? "نعم" : "لا", is_admin: r.is_admin ? "نعم" : "لا" }); }) };
+    ], rows: (d.rows ?? []).map((row: any) => { const r = mergedUser(row); return ({ ...r, country: audienceLabel("country", r.country), gender: audienceLabel("gender", r.gender), department: audienceLabel("department", r.department), industry: audienceLabel("industry", r.industry), confirmed: r.confirmed ? "نعم" : "لا", is_test: r.is_test ? "نعم" : "لا", is_admin: r.is_admin ? "نعم" : "لا" }); }) };
   };
   const roundsSheet = async (): Promise<Sheet> => {
     const rows = await rpc("admin_export_rounds", { ...base(f), _game: game, _status: status });
@@ -214,22 +225,29 @@ export default function AdminStats() {
         </div>}</State>}
 
         {tab === "users" && <Section title="المستخدمون" action={<ExportBtns kind="users" />}>
+          {users.data?.audience && <AudienceInsights audience={users.data.audience}/>}
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث بالاسم أو الهاتف" className="w-full max-w-xs rounded-md border border-border bg-input px-3 py-1.5 text-sm" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث بالاسم أو الهاتف" aria-label="بحث بالاسم أو الهاتف" className="w-full max-w-xs rounded-md border border-border bg-input px-3 py-1.5 text-sm" />
             <span className="text-xs text-muted-foreground">الأعداد خلال الفترة المختارة؛ «غير متاح» تعني أن الزيارات القديمة لم تُسجّل.</span>
+            <select aria-label="البلد" value={userFilters.country} onChange={e => setUserFilters(x => ({ ...x, country: e.target.value }))} className="rounded-md border border-border bg-input px-2 py-1.5 text-sm"><option value="">كل البلدان</option><option value="unknown">غير معروف / غير مقدّم</option><option value="ambiguous">رمز مشترك غير محسوم</option>{KNOWN_COUNTRIES.map(code => <option key={code} value={code}>{audienceLabel("country", code)}</option>)}</select>
+            <select aria-label="الشخصية المختارة" value={userFilters.gender} onChange={e => setUserFilters(x => ({ ...x, gender: e.target.value }))} className="rounded-md border border-border bg-input px-2 py-1.5 text-sm"><option value="">كل الشخصيات</option><option value="male">ذكر</option><option value="female">أنثى</option><option value="unknown">غير معروف</option></select>
+            <select aria-label="القسم" value={userFilters.department} onChange={e => setUserFilters(x => ({ ...x, department: e.target.value }))} className="rounded-md border border-border bg-input px-2 py-1.5 text-sm"><option value="">كل الأقسام</option><option value="unknown">غير مقدّم</option>{DEPARTMENTS.map(([id, text]) => <option key={id} value={id}>{text}</option>)}</select>
+            <select aria-label="القطاع" value={userFilters.industry} onChange={e => setUserFilters(x => ({ ...x, industry: e.target.value }))} className="rounded-md border border-border bg-input px-2 py-1.5 text-sm"><option value="">كل القطاعات</option><option value="unknown">غير مقدّم</option>{INDUSTRIES.map(([id, text]) => <option key={id} value={id}>{text}</option>)}</select>
+            {(userFilters.country || userFilters.gender || userFilters.department || userFilters.industry) && <Btn onClick={() => setUserFilters({ ...EMPTY_AUDIENCE_FILTERS })}>مسح فلاتر الجمهور</Btn>}
           </div>
           <State q={{ isLoading: users.isLoading || activity.isLoading, error: users.error || activity.error }} empty={users.data && !users.data.rows?.length}>
-            <div className="overflow-x-auto"><table className="w-full min-w-[820px] text-sm">
-              <thead><tr className="border-b border-border text-muted-foreground">{([["name", "الاسم"], [null, "الهاتف"], ["created_at", "التسجيل"], [null, "التحقق"], ["last_activity", "آخر نشاط"], ["visits", "الزيارات"], ["attempts", "المحاولات"], ["completed", "المكتملة"]] as const).map(([k, l]) => (
+            <div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-sm">
+              <thead><tr className="border-b border-border text-muted-foreground">{([["name", "الاسم"], [null, "الهاتف"], [null, "البلد"], [null, "القسم"], [null, "القطاع"], ["last_activity", "آخر نشاط"], ["attempts", "المحاولات"], ["completed", "الجولات المكتملة"], ["visits", "الزيارات"], ["created_at", "التسجيل"]] as const).map(([k, l]) => (
                 <th key={l} className="px-2 py-2 text-right font-semibold">{k ? <Button onClick={() => toggleSort(k)} className="inline-flex items-center gap-1">{l}<ArrowUpDown className="h-3 w-3" /></Button> : l}</th>))}</tr></thead>
               <tbody>{(users.data?.rows ?? []).map(mergedUser).map((r: any) => (
                 <tr key={r.user_id} onClick={() => setSelected(r.user_id)} className="cursor-pointer border-b border-border/60 hover:bg-muted">
                   <td className="px-2 py-2">{[r.first_name, r.last_name].filter(Boolean).join(" ") || "—"}{r.is_test && <span className="ms-2 rounded bg-muted px-1 text-xs">اختبار</span>}{r.is_admin && <span className="ms-2 rounded bg-muted px-1 text-xs">إدارة</span>}</td>
                   <td className="px-2 py-2" dir="ltr" style={{ textAlign: "right" }}>{r.phone ?? "—"}</td>
-                  <td className="px-2 py-2" dir="ltr" style={{ textAlign: "right" }}>{cairoDateTime(r.created_at)}</td>
-                  <td className="px-2 py-2">{r.confirmed ? "مؤكد" : "غير مؤكد"}</td>
+                  <td className="px-2 py-2">{audienceLabel("country", r.country)}</td>
+                  <td className="px-2 py-2">{audienceLabel("department", r.department)}{r.department === "other" && r.department_other ? `: ${r.department_other}` : ""}</td>
+                  <td className="px-2 py-2">{audienceLabel("industry", r.industry)}{r.industry === "other" && r.industry_other ? `: ${r.industry_other}` : ""}</td>
                   <td className="px-2 py-2" dir="ltr" style={{ textAlign: "right" }}>{cairoDateTime(r.last_activity) || "—"}</td>
-                  <td className="px-2 py-2">{r.visits == null ? "غير متاح" : r.visits}</td><td className="px-2 py-2">{r.attempts == null ? "غير متاح" : r.attempts}</td><td className="px-2 py-2">{r.completed}</td>
+                  <td className="px-2 py-2">{r.attempts == null ? "غير مسجل" : r.attempts}</td><td className="px-2 py-2">{r.completed ?? 0}</td><td className="px-2 py-2">{r.visits == null ? "غير مسجل" : r.visits}</td><td className="px-2 py-2" dir="ltr" style={{ textAlign: "right" }}>{cairoDateTime(r.created_at)}</td>
                 </tr>))}</tbody>
             </table></div>
             <div className="mt-3 flex items-center justify-between text-sm">
@@ -272,6 +290,10 @@ function UserDetail({ data, q, onClose, onFlag }: { data: any; q: { isLoading: b
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>الاسم: <b>{[data.first_name, data.last_name].filter(Boolean).join(" ") || "—"}</b></div>
             <div>الهاتف: <b dir="ltr">{data.phone ?? "—"}</b></div>
+            <div>البلد: <b>{audienceLabel("country", data.country)}</b></div>
+            <div>الشخصية المختارة: <b>{audienceLabel("gender", data.gender_choice ?? "unknown")}</b></div>
+            <div>القسم: <b>{audienceLabel("department", data.department ?? "unknown")}{data.department_other ? `: ${data.department_other}` : ""}</b></div>
+            <div>القطاع: <b>{audienceLabel("industry", data.industry ?? "unknown")}{data.industry_other ? `: ${data.industry_other}` : ""}</b></div>
             <div>التسجيل: <span dir="ltr">{cairoDateTime(data.created_at)}</span></div>
             <div>الحالة: {data.confirmed ? "مؤكد" : "غير مؤكد"}</div>
             <div>الزيارات المسجلة: {data.visits_total || "لا توجد زيارات مسجلة منذ بدء التتبع"}</div>

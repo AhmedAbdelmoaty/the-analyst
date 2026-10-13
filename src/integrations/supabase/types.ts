@@ -270,41 +270,56 @@ export type Database = {
         Row: {
           avatar_choice: string | null
           created_at: string
+          department: string | null
+          department_other: string | null
           display_name: string | null
           email: string | null
           first_name: string | null
           gender: string | null
+          industry: string | null
+          industry_other: string | null
           id: string
           last_name: string | null
           phone: string | null
           updated_at: string
           user_id: string
+          work_details_prompt_dismissed_at: string | null
         }
         Insert: {
           avatar_choice?: string | null
           created_at?: string
+          department?: string | null
+          department_other?: string | null
           display_name?: string | null
           email?: string | null
           first_name?: string | null
           gender?: string | null
+          industry?: string | null
+          industry_other?: string | null
           id?: string
           last_name?: string | null
           phone?: string | null
           updated_at?: string
           user_id: string
+          work_details_prompt_dismissed_at?: string | null
         }
         Update: {
           avatar_choice?: string | null
           created_at?: string
+          department?: string | null
+          department_other?: string | null
           display_name?: string | null
           email?: string | null
           first_name?: string | null
           gender?: string | null
+          industry?: string | null
+          industry_other?: string | null
           id?: string
           last_name?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string
+          work_details_prompt_dismissed_at?: string | null
         }
         Relationships: []
       }
@@ -467,6 +482,10 @@ export type Database = {
           _sort?: string
           _status?: string
           _to: string
+          _country?: string
+          _gender?: string
+          _department?: string
+          _industry?: string
         }
         Returns: Json
       }

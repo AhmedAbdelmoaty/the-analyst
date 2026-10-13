@@ -3,7 +3,7 @@
 - Player accounts use native phone/password auth with SMS auto-confirm off; the `phone-auth` edge function is the only path that confirms phones or resets passwords (after OTP check) — keeps sessions/passwords in managed auth.
 - OTP codes are delivered by ChakraHQ WhatsApp from `phone-auth`, stored only as HMACs (OTP_HMAC_SECRET) in `otp_challenges`, and consumed via the row-locking `otp_attempt` SQL function — guarantees single use under concurrency.
 - `otp_challenges` and `otp_rate_events` have no client grants; server-only data.
-- `profiles.phone` is written only by the server (users can update just name/gender/avatar columns) — phone is verified identity used for admin leads.
+- `profiles.phone` is written only by the server (players can update the name/gender/avatar allowlist and validated work-detail columns on their own row; phone and roles remain protected) — phone is verified identity used for admin leads.
 - `completed_players` inserts require an authenticated user with `user_id = auth.uid()`; admins alone read results; `qualified` is set only by the server from the matching `game_rounds` evaluation (strong, submitted, not timed out) — the client never decides it.
 - Admins sign in with email at `/admin/login`; roles live in `user_roles`.
 - Account screens use scoped auth-theme tokens and local Cairo fonts so the light account surface never changes the dark game theme.
@@ -28,6 +28,7 @@
 - The admin dashboard (`/admin/stats`) is a lazily loaded route; Excel export loads its library on demand only there.
 
 - Simplified admin reporting uses the protected `admin_activity_summary` RPC alongside existing reports; legacy completed rows count as known attempts without inventing starts or visits.
+- Work profile department/industry use stable IDs; Other text is validated and constrained in the database. Existing game access remains based only on the original identity profile fields. Audience summaries and user filters use protected `admin_users` database aggregation; do not calculate cohort counts from paginated browser rows.
 
 ## Review and deployment
 

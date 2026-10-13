@@ -4,6 +4,7 @@
  * that is only sent while that same account is signed in — activity never moves between accounts.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { randomUuid } from "@/lib/random-uuid";
 
 import { enqueue, type GameKey, type RoundEvent, type RoundEventType } from "./core";
 export { enqueue, type GameKey, type RoundEvent, type RoundEventType } from "./core";
@@ -22,7 +23,7 @@ function writeQueue(uid: string, q: RoundEvent[]) {
 export function trackRound(uid: string, ev: Omit<RoundEvent, "event_id" | "revision">) {
   if (!uid || !ev.round_id) return;
   const active = ev.active_ms == null || !Number.isFinite(ev.active_ms) ? undefined : Math.max(0, Math.round(ev.active_ms));
-  writeQueue(uid, enqueue(readQueue(uid), { ...ev, active_ms: active, event_id: crypto.randomUUID(), revision: nextRevision() }));
+  writeQueue(uid, enqueue(readQueue(uid), { ...ev, active_ms: active, event_id: randomUuid(), revision: nextRevision() }));
   void flushRounds(uid);
 }
 

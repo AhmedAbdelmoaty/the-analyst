@@ -2,11 +2,12 @@
  * One owning tab per (user, run): BroadcastChannel announcements + a renewed localStorage lease.
  * The tab that loses ownership stops writing immediately; taking control renews the lease.
  */
+import { randomUuid } from '../../../lib/random-uuid';
 const LEASE_MS = 5000;
 const RENEW_MS = 2000;
 const leaseKey = (u: string, r: string) => `the-analyst:reward-decision:owner:${u}:${r}`;
 
-export function createOwnership(tabId: string = crypto.randomUUID(), storage: Storage = globalThis.localStorage) {
+export function createOwnership(tabId: string = randomUuid(), storage: Storage = globalThis.localStorage) {
   let owned = false;
   let key = '';
   let channel: BroadcastChannel | null = null;

@@ -297,9 +297,11 @@ const GameContent = () => {
   );
 
   const handleBrandIntroComplete = useCallback(() => {
-    localStorage.setItem(introStorageKey, "1");
-    trackStart(startTimeChallenge(uid).roundId);
+    try { localStorage.setItem(introStorageKey, "1"); } catch { /* storage may be unavailable */ }
+    const roundId = startTimeChallenge(uid).roundId;
     setShowBrandIntro(false);
+    // Statistics must never leave the exit animation covering the playable screen.
+    try { trackStart(roundId); } catch { /* analytics must not block play */ }
   }, [introStorageKey, uid, trackStart]);
 
   const handleTimeUpRetry = useCallback(() => {
@@ -310,7 +312,8 @@ const GameContent = () => {
     localStorage.setItem(introStorageKey, "1");
     setShowBrandIntro(false);
     setCurrentScreen("company-briefing");
-    trackStart(startTimeChallenge(uid).roundId);
+    const roundId = startTimeChallenge(uid).roundId;
+    try { trackStart(roundId); } catch { /* analytics must not block play */ }
   }, [introStorageKey, resetGame, uid, trackStart]);
 
   const handleTimeUpBack = useCallback(() => {
