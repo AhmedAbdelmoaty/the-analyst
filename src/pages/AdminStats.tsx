@@ -103,8 +103,6 @@ export default function AdminStats() {
   const updatedAt = active.dataUpdatedAt ? cairoDateTime(new Date(active.dataUpdatedAt)) : "—";
 
   const since = activity.data?.tracking_since;
-  const trackDay = (k: string) => (since?.[k] ? String(since[k]).slice(0, 10) : null);
-  const beforeTracking = (k: string) => { const d = trackDay(k); return d && f.from < d ? `بدأ التتبع ${d}؛ ما قبله غير متاح` : undefined; };
 
   if (authLoading || !ok) return <div className="auth-theme flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">جاري التحميل...</div>;
 
@@ -130,7 +128,7 @@ export default function AdminStats() {
     const d = await rpc("admin_activity_summary", { ...base(f), _game: game });
     return { name: "ملخص الألعاب", columns: [
       { key: "game", header: "اللعبة" }, { key: "players", header: "اللاعبون" }, { key: "attempts", header: "المحاولات المسجلة" }, { key: "completed", header: "المكتملة" }, { key: "legacy", header: "محاولات قديمة" },
-      { key: "rate", header: "نسبة الإكمال منذ التتبع" }, { key: "wins", header: "كسب" }, { key: "losses", header: "خسر" },
+      { key: "rate", header: "نسبة الإكمال" }, { key: "wins", header: "كسب" }, { key: "losses", header: "خسر" },
     ], rows: (d.games ?? []).map((g: any) => ({ ...g, game: gameLabel(g.game), rate: completionRate(g.tracked_finished, g.tracked_starts) })) };
   };
   const summarySheet = async (): Promise<Sheet> => {
@@ -202,21 +200,20 @@ export default function AdminStats() {
 
         {tab === "overview" && <State q={{ isLoading: overview.isLoading || activity.isLoading, error: overview.error || activity.error }}>{o && <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            <Card title="إجمالي الحسابات" value={n(o.accounts_total)} note={`حتى الآن · مؤكد ${o.accounts_confirmed} · غير مؤكد ${o.accounts_unconfirmed} · لا يتأثر بفلتر اللعبة`} />
-            <Card title="حسابات جديدة" value={n(o.accounts_new)} note="خلال الفترة · لا يتأثر بفلتر اللعبة" />
-            {f.game ? <Card title="لاعبو هذه اللعبة" value={n(metrics[0]?.players)} note="حسابات مرتبطة بمحاولات مسجلة خلال الفترة" />
-              : <Card title="المستخدمون النشطون" value={n(o.active_users)} note="لاعبون مختلفون لهم نشاط خلال الفترة" />}
-            <Card title="الزيارات" value={n(o.visits)} note={beforeTracking("visits_since") ?? `منها بحساب مسجل ${o.visits_signed_in} · لا يتأثر بفلتر اللعبة`} />
-            <Card title="المحاولات المسجلة" value={n(totals("attempts"))} note={totals("legacy") ? `منها ${totals("legacy")} محاولة قديمة مكتملة؛ تاريخ البداية غير متاح` : "خلال الفترة المختارة"} />
-            <Card title="جولات اكتملت" value={n(totals("completed"))} note="تشمل النهاية بالخسارة عند انتهاء الوقت" />
+            <Card title="إجمالي الحسابات" value={n(o.accounts_total)} note={`مؤكد ${o.accounts_confirmed} · غير مؤكد ${o.accounts_unconfirmed}`} />
+            <Card title="حسابات جديدة" value={n(o.accounts_new)} />
+            {f.game ? <Card title="لاعبو هذه اللعبة" value={n(metrics[0]?.players)} />
+              : <Card title="المستخدمون النشطون" value={n(o.active_users)} />}
+            <Card title="الزيارات" value={n(o.visits)} note={`منها بحساب مسجل ${o.visits_signed_in}`} />
+            <Card title="الجولات التي بدأت" value={n(totals("attempts"))} />
+            <Card title="جولات اكتملت" value={n(totals("completed"))} />
           </div>
-          <p className="text-sm text-muted-foreground">بدأ تسجيل الزيارات والبدايات {trackDay("rounds_since") ?? "—"}. النتائج القديمة تثبت اللعب والإكمال فقط، ولا تكشف عدد الزيارات أو المحاولات غير المكتملة؛ بعضها بلا حساب مرتبط.</p>
           <Section title="النشاط اليومي">
             <div className="h-64" dir="ltr"><ResponsiveContainer><BarChart data={(o.daily ?? []).filter((d: any) => d.visits || d.starts || d.completions)} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" /><XAxis dataKey="day" fontSize={11} tickFormatter={v => v.slice(5)} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip /><Legend />
-              <Bar dataKey="visits" name="زيارات منذ التتبع" fill="hsl(var(--muted-foreground))" radius={[4,4,0,0]} />
-              <Bar dataKey="starts" name="بدايات منذ التتبع" fill="hsl(var(--foreground))" radius={[4,4,0,0]} />
-              <Bar dataKey="completions" name="إكمالات تشمل القديمة" fill="hsl(var(--primary))" radius={[4,4,0,0]} />
+              <Bar dataKey="visits" name="زيارات" fill="hsl(var(--muted-foreground))" radius={[4,4,0,0]} />
+              <Bar dataKey="starts" name="بدايات" fill="hsl(var(--foreground))" radius={[4,4,0,0]} />
+              <Bar dataKey="completions" name="إكمالات" fill="hsl(var(--primary))" radius={[4,4,0,0]} />
             </BarChart></ResponsiveContainer></div>
           </Section>
           <Section title="مقارنة الألعاب">
@@ -228,7 +225,6 @@ export default function AdminStats() {
           {users.data?.audience && <AudienceInsights audience={users.data.audience}/>}
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث بالاسم أو الهاتف" aria-label="بحث بالاسم أو الهاتف" className="w-full max-w-xs rounded-md border border-border bg-input px-3 py-1.5 text-sm" />
-            <span className="text-xs text-muted-foreground">الأعداد خلال الفترة المختارة؛ «غير متاح» تعني أن الزيارات القديمة لم تُسجّل.</span>
             <select aria-label="البلد" value={userFilters.country} onChange={e => setUserFilters(x => ({ ...x, country: e.target.value }))} className="rounded-md border border-border bg-input px-2 py-1.5 text-sm"><option value="">كل البلدان</option><option value="unknown">غير معروف / غير مقدّم</option><option value="ambiguous">رمز مشترك غير محسوم</option>{KNOWN_COUNTRIES.map(code => <option key={code} value={code}>{audienceLabel("country", code)}</option>)}</select>
             <select aria-label="الشخصية المختارة" value={userFilters.gender} onChange={e => setUserFilters(x => ({ ...x, gender: e.target.value }))} className="rounded-md border border-border bg-input px-2 py-1.5 text-sm"><option value="">كل الشخصيات</option><option value="male">ذكر</option><option value="female">أنثى</option><option value="unknown">غير معروف</option></select>
             <select aria-label="القسم" value={userFilters.department} onChange={e => setUserFilters(x => ({ ...x, department: e.target.value }))} className="rounded-md border border-border bg-input px-2 py-1.5 text-sm"><option value="">كل الأقسام</option><option value="unknown">غير مقدّم</option>{DEPARTMENTS.map(([id, text]) => <option key={id} value={id}>{text}</option>)}</select>
@@ -262,7 +258,7 @@ export default function AdminStats() {
           <div className="mt-3 space-y-6">{metrics.map((g: any) => (
             <Section key={g.game} title={gameLabel(g.game)} action={<ExportBtns kind="games" />}>
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Card title="لاعبون معروفون" value={n(g.players)} /><Card title="محاولات مسجلة" value={n(g.attempts)} note={`${g.tracked_starts} بداية مسجلة منذ التتبع${g.legacy ? ` · ${g.legacy} قديمة مكتملة` : ""}`} />
+                <Card title="لاعبون معروفون" value={n(g.players)} /><Card title="محاولات مسجلة" value={n(g.attempts)}  />
                 <Card title="مكتملة" value={n(g.completed)} /><Card title="نسبة الإكمال" value={completionRate(g.tracked_finished, g.tracked_starts)} note="الجولات معروفة البداية فقط؛ تشمل انتهاء الوقت" />
               </div>
               <div className="mt-5"><h3 className="mb-3 font-semibold">نتيجة اللعبة</h3><Dist data={{ win: g.wins, loss: g.losses }} label={resultLabel} /></div>
@@ -296,7 +292,7 @@ function UserDetail({ data, q, onClose, onFlag }: { data: any; q: { isLoading: b
             <div>القطاع: <b>{audienceLabel("industry", data.industry ?? "unknown")}{data.industry_other ? `: ${data.industry_other}` : ""}</b></div>
             <div>التسجيل: <span dir="ltr">{cairoDateTime(data.created_at)}</span></div>
             <div>الحالة: {data.confirmed ? "مؤكد" : "غير مؤكد"}</div>
-            <div>الزيارات المسجلة: {data.visits_total || "لا توجد زيارات مسجلة منذ بدء التتبع"}</div>
+            <div>الزيارات المسجلة: {data.visits_total || "0"}</div>
             <div>آخر زيارة: <span dir="ltr">{cairoDateTime(data.last_visit) || "—"}</span></div>
           </div>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!data.is_test} onChange={e => onFlag(e.target.checked)} />حساب اختبار (يُستبعد من الإحصائيات افتراضيًا)</label>
@@ -309,7 +305,7 @@ function UserDetail({ data, q, onClose, onFlag }: { data: any; q: { isLoading: b
               <div className="mt-2 overflow-x-auto"><table className="w-full text-xs">
                 <thead><tr className="border-b border-border text-muted-foreground"><th className="p-2 text-right">البداية</th><th className="p-2 text-right">النهاية</th><th className="p-2 text-right">النتيجة</th></tr></thead>
                 <tbody>{rounds.map(r => <tr key={r.round_id} className="border-b border-border/60">
-                  <td className="p-2">{r.started_at ? cairoDateTime(r.started_at) : r.source === "legacy" ? "قديمة؛ البداية غير متاحة" : "غير مسجلة"}</td>
+                  <td className="p-2">{r.started_at ? cairoDateTime(r.started_at) : "—"}</td>
                   <td className="p-2">{cairoDateTime(r.completed_at ?? r.timed_out_at) || "—"}</td><td className="p-2">{resultLabel(roundResult(r))}</td>
                 </tr>)}</tbody>
               </table></div>
