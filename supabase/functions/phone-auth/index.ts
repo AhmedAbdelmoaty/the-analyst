@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
         if (error || !created.user) {
           console.warn("create_user_failed", error?.status);
           if (/already|exists|registered/i.test(error?.message ?? "")) return fail("account_exists");
-          if (/password/i.test(error?.message ?? "")) return fail("weak_password");
+          if (/password/i.test(error?.message ?? "")) return fail(password.length >= 8 ? "pwned_password" : "weak_password");
           return fail("server_error");
         }
         await admin.from("profiles").update({ first_name, last_name, display_name: first_name, phone })
@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
         if (!row) return fail("reset_expired");
         // Owning the phone proves it, so it is also confirmed here
         const { error } = await admin.auth.admin.updateUserById(row.user_id, { password: p.data.password, phone_confirm: true });
-        if (error) return fail(/password/i.test(error.message) ? "weak_password" : "server_error");
+        if (error) return fail(/password/i.test(error.message) ? (p.data.password.length >= 8 ? "pwned_password" : "weak_password") : "server_error");
         return json({ ok: true });
       }
 
