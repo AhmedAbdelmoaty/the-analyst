@@ -104,7 +104,6 @@ export default function AdminStats() {
 
   const since = activity.data?.tracking_since;
   const trackDay = (k: string) => (since?.[k] ? String(since[k]).slice(0, 10) : null);
-  const beforeTracking = (k: string) => { const d = trackDay(k); return d && f.from < d ? `بدأ التتبع ${d}؛ ما قبله غير متاح` : undefined; };
 
   if (authLoading || !ok) return <div className="auth-theme flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">جاري التحميل...</div>;
 
@@ -130,7 +129,7 @@ export default function AdminStats() {
     const d = await rpc("admin_activity_summary", { ...base(f), _game: game });
     return { name: "ملخص الألعاب", columns: [
       { key: "game", header: "اللعبة" }, { key: "players", header: "اللاعبون" }, { key: "attempts", header: "المحاولات المسجلة" }, { key: "completed", header: "المكتملة" }, { key: "legacy", header: "محاولات قديمة" },
-      { key: "rate", header: "نسبة الإكمال منذ التتبع" }, { key: "wins", header: "كسب" }, { key: "losses", header: "خسر" },
+      { key: "rate", header: "نسبة الإكمال" }, { key: "wins", header: "كسب" }, { key: "losses", header: "خسر" },
     ], rows: (d.games ?? []).map((g: any) => ({ ...g, game: gameLabel(g.game), rate: completionRate(g.tracked_finished, g.tracked_starts) })) };
   };
   const summarySheet = async (): Promise<Sheet> => {
@@ -260,7 +259,7 @@ export default function AdminStats() {
           <div className="mt-3 space-y-6">{metrics.map((g: any) => (
             <Section key={g.game} title={gameLabel(g.game)} action={<ExportBtns kind="games" />}>
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Card title="لاعبون معروفون" value={n(g.players)} /><Card title="محاولات مسجلة" value={n(g.attempts)} note={`${g.tracked_starts} بداية مسجلة منذ التتبع${g.legacy ? ` · ${g.legacy} قديمة مكتملة` : ""}`} />
+                <Card title="لاعبون معروفون" value={n(g.players)} /><Card title="محاولات مسجلة" value={n(g.attempts)}  />
                 <Card title="مكتملة" value={n(g.completed)} /><Card title="نسبة الإكمال" value={completionRate(g.tracked_finished, g.tracked_starts)} note="الجولات معروفة البداية فقط؛ تشمل انتهاء الوقت" />
               </div>
               <div className="mt-5"><h3 className="mb-3 font-semibold">نتيجة اللعبة</h3><Dist data={{ win: g.wins, loss: g.losses }} label={resultLabel} /></div>
@@ -294,7 +293,7 @@ function UserDetail({ data, q, onClose, onFlag }: { data: any; q: { isLoading: b
             <div>القطاع: <b>{audienceLabel("industry", data.industry ?? "unknown")}{data.industry_other ? `: ${data.industry_other}` : ""}</b></div>
             <div>التسجيل: <span dir="ltr">{cairoDateTime(data.created_at)}</span></div>
             <div>الحالة: {data.confirmed ? "مؤكد" : "غير مؤكد"}</div>
-            <div>الزيارات المسجلة: {data.visits_total || "لا توجد زيارات مسجلة منذ بدء التتبع"}</div>
+            <div>الزيارات المسجلة: {data.visits_total || "0"}</div>
             <div>آخر زيارة: <span dir="ltr">{cairoDateTime(data.last_visit) || "—"}</span></div>
           </div>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!data.is_test} onChange={e => onFlag(e.target.checked)} />حساب اختبار (يُستبعد من الإحصائيات افتراضيًا)</label>
@@ -307,7 +306,7 @@ function UserDetail({ data, q, onClose, onFlag }: { data: any; q: { isLoading: b
               <div className="mt-2 overflow-x-auto"><table className="w-full text-xs">
                 <thead><tr className="border-b border-border text-muted-foreground"><th className="p-2 text-right">البداية</th><th className="p-2 text-right">النهاية</th><th className="p-2 text-right">النتيجة</th></tr></thead>
                 <tbody>{rounds.map(r => <tr key={r.round_id} className="border-b border-border/60">
-                  <td className="p-2">{r.started_at ? cairoDateTime(r.started_at) : r.source === "legacy" ? "قديمة؛ البداية غير متاحة" : "غير مسجلة"}</td>
+                  <td className="p-2">{r.started_at ? cairoDateTime(r.started_at) : "—"}</td>
                   <td className="p-2">{cairoDateTime(r.completed_at ?? r.timed_out_at) || "—"}</td><td className="p-2">{resultLabel(roundResult(r))}</td>
                 </tr>)}</tbody>
               </table></div>
