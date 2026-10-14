@@ -1,6 +1,6 @@
 # The Analyst
 
-The Analyst is IMP's platform for analytical thinking games. It currently includes **Problem Framing** ("أقل من المتوقع.. مقارنة بإيه؟") and **Reward Decision** ("قرار التكريم"). Both games use the same player account and game selection page. Subscription screens show a free “اسأل صح” plan and a $10 annual plan, but payment and paid access are **not implemented**.
+The Analyst is IMP's platform for analytical thinking games. It currently includes **Problem Framing** ("أقل من المتوقع.. مقارنة بإيه؟") and **Reward Decision** ("قرار التكريم"). Both games use the same player account and game selection page. Subscription screens show a free “اسأل صح” plan and an annual display price of 1200 EGP, or 400 EGP for accounts with a confirmed Egyptian mobile number. Payment and paid access are **not implemented**.
 
 ## Architecture
 
@@ -14,7 +14,7 @@ The Analyst is IMP's platform for analytical thinking games. It currently includ
 - Problem Framing's time challenge, pause state, and checkpoints live in the browser; its completion is submitted to the backend. Reward Decision has a separate local save. Analytics visit and round events go through SQL RPCs. A local run using this project's `.env` can contact the configured live backend.
 - PWA installation is optional. The worker is disabled in development and guarded in previews; account requests are not cached.
 
-More detail: [project context](docs/PROJECT_CONTEXT.md) and [security review](docs/SECURITY_REVIEW.md). An older Arabic handoff is preserved as a separate local user file; it may predate current analytics work.
+More detail: [project context](docs/PROJECT_CONTEXT.md), [current state](docs/CURRENT_STATE.md), and [security review](docs/SECURITY_REVIEW.md). The [comprehensive Arabic reference](docs/THE_ANALYST_PROJECT_CONTEXT_AR.md) preserves historical decisions separately from current status.
 
 ## Local setup
 
@@ -43,6 +43,7 @@ npx tsc -p tsconfig.node.json --noEmit
 npm run lint
 npm run build
 bun test tests/reward-decision.test.ts tests/round-persistence.test.ts tests/admin-results.test.ts tests/admin-analytics.test.ts
+bun test tests/subscription-ui.test.ts tests/subscription-pricing-ui.test.tsx
 ```
 
 The unit tests use Bun, which must be installed separately if you want to run them. At the reviewed commit, lint has pre-existing errors; see the [security review](docs/SECURITY_REVIEW.md) for the check result. `npm run preview` serves a local production build. Build success does not verify live authentication, OTP delivery, database permissions, or the deployed site.
@@ -53,4 +54,4 @@ Editing locally or committing changes does not deploy them. Pushing the Git bran
 
 ## Subscription UI and planned payments
 
-The UI presents a free “اسأل صح” tier and $10 for one year of all available games. The paid plan leads to an authenticated summary with a disabled payment button. The current games remain accessible as before. Fawaterak is the prospective provider, pending merchant confirmation. There is no checkout, subscription record, or entitlement enforcement in this repository today. Any eventual checkout must require an authenticated account, use provider-hosted payment, and grant access only after verified server-side confirmation. See [subscription handoff](docs/SUBSCRIPTION_UI_HANDOFF.md) for the required server data and states.
+The UI presents a free “اسأل صح” tier and an annual plan for all available games. Its display price is 1200 EGP, reduced to 400 EGP only when the current Auth account has a confirmed Egyptian mobile number. The paid plan leads to an authenticated summary with a disabled payment button. Both games remain accessible under their current sign-in checks. Fawaterak is the prospective provider; EGP collection and enabled methods still need merchant confirmation. There is no checkout, subscription record, or entitlement enforcement in this repository today. A future server checkout must calculate the amount again from the verified account and grant access only after verified payment confirmation. See [subscription handoff](docs/SUBSCRIPTION_UI_HANDOFF.md) for integration points.

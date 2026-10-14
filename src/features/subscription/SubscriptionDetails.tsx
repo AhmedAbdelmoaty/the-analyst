@@ -2,10 +2,11 @@ import { Link } from "react-router-dom";
 import { subscriptionDisplay, type SubscriptionSnapshot } from "./model";
 
 /** Presentation only; snapshot must come from a future authenticated server read. */
-export default function SubscriptionDetails({ snapshot }: { snapshot: SubscriptionSnapshot | null }) {
-  const view = subscriptionDisplay(snapshot);
+export default function SubscriptionDetails({ snapshot, verificationError = false }: { snapshot: SubscriptionSnapshot | null; verificationError?: boolean }) {
+  const view = subscriptionDisplay(snapshot, verificationError);
   const action = {
     unavailable: { to: "/plans", label: "استعرض الخطط" },
+    verification_error: { to: "/app", label: "العودة للألعاب" },
     free: { to: "/plans", label: "اكتشف التجربة الكاملة" },
     pending: { to: "/app", label: "العودة للألعاب" },
     active: { to: "/app", label: "العودة للألعاب" },

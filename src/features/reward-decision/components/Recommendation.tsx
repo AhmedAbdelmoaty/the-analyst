@@ -1,12 +1,24 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { FileText, Pin, X } from 'lucide-react';
 import { ARGUMENTS, DOCUMENTS, TEAMS, type ArgumentId, type DocumentId, type TeamId, type ToolId } from '../data/case';
 import type { DraftReport } from '../engine/model';
 import { ActionButton, Panel } from './Ui';
-export function Recommendation({draft,docs,tools,onChange,onSubmit,onBack}:{draft:DraftReport;docs:DocumentId[];tools:ToolId[];onChange:(d:DraftReport)=>void;onSubmit:()=>void;onBack:()=>void}){
- const options=(Object.entries(ARGUMENTS) as [ArgumentId,typeof ARGUMENTS[ArgumentId]][]).filter(([,a])=>(!a.tool||tools.includes(a.tool))&&(!a.document||docs.includes(a.document)));
- const complete=Boolean(draft.teamId&&draft.documentId&&draft.arguments[0]&&draft.arguments[1]);
- return <Panel title="لوحة التوصية" onBack={onBack}><div className="rd-recommendation-board">
-  <section><span>1</span><h3>الفريق المرشح</h3><div className="rd-team-pick">{(['marwan','mahmoud'] as TeamId[]).map(t=><button data-team={t} className={draft.teamId===t?'selected':''} onClick={()=>onChange({...draft,teamId:t})} key={t}>{TEAMS[t].name}</button>)}</div></section>
-  <section><span>2</span><h3>المستند المرجعي</h3><select aria-label="المستند المرجعي" value={draft.documentId??''} onChange={e=>onChange({...draft,documentId:e.target.value as DocumentId})}><option value="">اختر مستندًا</option>{docs.map(id=><option key={id} value={id}>{DOCUMENTS[id].title}</option>)}</select></section>
-  <section><span>3</span><h3>الحجتان التحليليتان</h3>{[0,1].map(i=><select key={i} aria-label={`الحجة ${i+1}`} value={draft.arguments[i]??''} onChange={e=>{const args=[...draft.arguments] as DraftReport['arguments'];args[i]=e.target.value as ArgumentId;onChange({...draft,arguments:args})}}><option value="">اختر الحجة {i+1}</option>{options.map(([id,a])=><option key={id} value={id}>{a.text}</option>)}</select>)}</section>
- </div><div className="rd-actions"><ActionButton disabled={!complete} onClick={onSubmit}>تقديم التوصية</ActionButton></div></Panel>;
+
+export function Recommendation({ draft, docs, tools, onChange, onSubmit, onBack }: { draft: DraftReport; docs: DocumentId[]; tools: ToolId[]; onChange: (draft: DraftReport) => void; onSubmit: () => void; onBack: () => void }) {
+  const [slot, setSlot] = useState<0 | 1>(0);
+  const options = (Object.entries(ARGUMENTS) as [ArgumentId, typeof ARGUMENTS[ArgumentId]][]).filter(([, argument]) => (!argument.tool || tools.includes(argument.tool)) && (!argument.document || docs.includes(argument.document)));
+  const complete = Boolean(draft.teamId && draft.documentId && draft.arguments[0] && draft.arguments[1]);
+  const setArgument = (id: ArgumentId | null, index: 0 | 1) => { const args = [...draft.arguments] as DraftReport['arguments']; args[index] = id; onChange({ ...draft, arguments: args }); };
+  return <Panel title="لوحة التوصية" onBack={onBack}>
+    <p className="rd-panel-intro">رتّب ما وصلت إليه قبل الاجتماع.</p>
+    <div className="rd-recommendation-board">
+      <section className="rd-recommendation-sheet"><div className="rd-recommendation-heading"><Pin aria-hidden="true" /><h3>الفريق المرشح</h3></div><div className="rd-team-pick">{(['marwan','mahmoud'] as TeamId[]).map(team => <button data-team={team} className={draft.teamId === team ? 'selected' : ''} aria-pressed={draft.teamId === team} onClick={() => onChange({ ...draft, teamId: team })} key={team}>{TEAMS[team].name}</button>)}</div></section>
+      <section className="rd-recommendation-sheet"><div className="rd-recommendation-heading"><FileText aria-hidden="true" /><h3>المستند المرجعي</h3></div><div className="rd-document-pick">{docs.map(id => <button key={id} className={draft.documentId === id ? 'selected' : ''} aria-pressed={draft.documentId === id} onClick={() => onChange({ ...draft, documentId: draft.documentId === id ? null : id })}>{DOCUMENTS[id].title}</button>)}</div>{!docs.length && <p className="rd-hint">اجمع المستندات من المكاتب أولًا.</p>}</section>
+      <section className="rd-recommendation-arguments"><div className="rd-recommendation-heading"><Pin aria-hidden="true" /><h3>حجتان تحليليتان</h3></div><div className="rd-argument-slots">{([0,1] as const).map(index => <motion.div layout key={index} className={`rd-argument-slot ${slot === index ? 'active' : ''}`}><button className="rd-slot-select" onClick={() => setSlot(index)} aria-pressed={slot === index}><small>الحجة {index + 1}</small><span>{draft.arguments[index] ? ARGUMENTS[draft.arguments[index]].text : 'اختَر حجة من البطاقات'}</span></button>{draft.arguments[index] && <button className="rd-slot-remove" aria-label={`إزالة الحجة ${index + 1}`} onClick={() => setArgument(null,index)}><X aria-hidden="true" /></button>}</motion.div>)}</div>
+        <div className="rd-argument-options" aria-label={`بطاقات الحجة ${slot + 1}`}>{options.map(([id,argument]) => <button key={id} className={draft.arguments[slot] === id ? 'selected' : ''} onClick={() => setArgument(id,slot)} aria-pressed={draft.arguments[slot] === id}><span>{argument.text}</span><small>{draft.arguments[slot] === id ? 'مُثبتة' : 'اختيار'}</small></button>)}</div>
+      </section>
+    </div>
+    <div className="rd-actions"><ActionButton disabled={!complete} onClick={onSubmit}>تقديم التوصية</ActionButton></div>
+  </Panel>;
 }

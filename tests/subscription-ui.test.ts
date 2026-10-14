@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { readPlanIntent, setPlanIntent, takePlanIntent, destinationForPlan, routeForPlanChoice } from "../src/features/subscription/planIntent";
 import { subscriptionDisplay } from "../src/features/subscription/model";
+import { annualPriceForUser } from "../src/features/subscription/pricing";
 
 function memoryStorage() {
   const values = new Map<string, string>();
@@ -56,5 +57,44 @@ describe("subscription display", () => {
     expect(subscriptionDisplay({ tier: "annual", status: "pending", expiresAt: null }).state).toBe("pending");
     expect(subscriptionDisplay({ tier: "annual", status: "failed", expiresAt: null }).state).toBe("failed");
     expect(subscriptionDisplay({ tier: "annual", status: "expired", expiresAt: null }).state).toBe("expired");
+  });
+  it("treats a temporary verification failure separately from an absent subscription", () => {
+    expect(subscriptionDisplay(null, true).state).toBe("verification_error");
+    expect(subscriptionDisplay(null).state).toBe("unavailable");
+    const active = subscriptionDisplay({ tier: "annual", status: "active", expiresAt: "2027-10-13T00:00:00Z" });
+    expect(active.title).toBe("تم تفعيل اشتراكك");
+    expect(active.expires).not.toBeNull();
+  });
+});
+
+describe("annual display pricing", () => {
+  it("waits for the current session before showing any account price", () => {
+    expect(annualPriceForUser({ phone: "201012345678", phone_confirmed_at: "2026-10-13T00:00:00Z" }, true)).toBeNull();
+  });
+
+  it("shows the base EGP price for guests and unconfirmed accounts", () => {
+    expect(annualPriceForUser(null, false)).toMatchObject({ amount: 1200, currency: "EGP", discounted: false });
+    expect(annualPriceForUser({ phone: "+201012345678", phone_confirmed_at: null }, false)?.amount).toBe(1200);
+    expect(annualPriceForUser({ phone: "+201012345678" }, false)?.amount).toBe(1200);
+  });
+
+  it("discounts only valid confirmed Egyptian mobile numbers, with or without +", () => {
+    for (const phone of ["+201012345678", "201112345678", "201212345678", "201512345678"]) {
+      expect(annualPriceForUser({ phone, phone_confirmed_at: "2026-10-13T00:00:00Z" }, false)).toMatchObject({ amount: 400, baseAmount: 1200, discounted: true });
+    }
+  });
+
+  it("rejects prefixes, malformed numbers, and email-only confirmation", () => {
+    for (const phone of ["+20", "201312345678", "20101234567", "2010123456789", "01012345678", "+201012345678x", "+966501234567"]) {
+      expect(annualPriceForUser({ phone, phone_confirmed_at: "2026-10-13T00:00:00Z" }, false)?.amount).toBe(1200);
+    }
+    expect(annualPriceForUser({ phone: "+201012345678", phone_confirmed_at: null, email_confirmed_at: "2026-10-13T00:00:00Z" }, false)?.amount).toBe(1200);
+  });
+
+  it("recomputes from the next account without retaining a previous discount", () => {
+    const confirmedEgyptian = { phone: "201012345678", phone_confirmed_at: "2026-10-13T00:00:00Z" };
+    expect(annualPriceForUser(confirmedEgyptian, false)?.amount).toBe(400);
+    expect(annualPriceForUser(null, true)).toBeNull();
+    expect(annualPriceForUser({ phone: "966501234567", phone_confirmed_at: "2026-10-13T00:00:00Z" }, false)?.amount).toBe(1200);
   });
 });

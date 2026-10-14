@@ -1,38 +1,21 @@
-# Project rules
+# The Analyst — project rules
 
-- Player accounts use native phone/password auth with SMS auto-confirm off; the `phone-auth` edge function is the only path that confirms phones or resets passwords (after OTP check) — keeps sessions/passwords in managed auth.
-- OTP codes are delivered by ChakraHQ WhatsApp from `phone-auth`, stored only as HMACs (OTP_HMAC_SECRET) in `otp_challenges`, and consumed via the row-locking `otp_attempt` SQL function — guarantees single use under concurrency.
-- `otp_challenges` and `otp_rate_events` have no client grants; server-only data.
-- `profiles.phone` is written only by the server (players can update the name/gender/avatar allowlist and validated work-detail columns on their own row; phone and roles remain protected) — phone is verified identity used for admin leads.
-- `completed_players` inserts require an authenticated user with `user_id = auth.uid()`; admins alone read results; `qualified` is set only by the server from the matching `game_rounds` evaluation (strong, submitted, not timed out) — the client never decides it.
-- Admins sign in with email at `/admin/login`; roles live in `user_roles`.
-- Account screens use scoped auth-theme tokens and local Cairo fonts so the light account surface never changes the dark game theme.
-- Gameplay surfaces use scoped game-paper/ink/charcoal tokens while photographic scenes retain their original dark overlays; this keeps text readable without altering scene media or dialogue timing.
-- The public landing and reused account forms are independent of the lazily loaded `/play` route; `/app` is the authenticated entry so marketing and OTP never preload game media.
-- `/plans` is public. A plan click stores only a validated navigation intent in session storage, carried through phone auth and `/setup`, then consumed for `/app` (free) or `/subscription/summary` (annual); it is never an entitlement. Sign-ins without a choice continue to `/app`. Free routing to game selection is temporary until server-side subscription access is implemented.
-- PWA installation is optional and the worker is guarded against previews; account/network requests are never cached.
-- Game checkpoints use a versioned per-user browser key and restore engine state only alongside a safe screen, not from the old shared guest screen key.
-- The round time challenge lives in `pf-time-challenge` as a per-user active-play clock (remaining ms + runningSince, heartbeat-checkpointed); submission vs expiry compares active time left at acceptance, so pauses and reloads neither deduct nor grant time.
-- Pausing is global and in place via `pf-pause` (virtualised timers, media and AudioContexts frozen) instead of unmounting or deactivating screens; restored rounds start paused until the player taps continue.
-- Saves carry the challenge `roundId`; per-screen progress lives in a scene store scoped to `roundId|screen`, and only the tab that last claimed the round (`pf-round-owner`) may write.
-- Result rows are upserted by `(user_id, round_id)` and marked done locally only after the server confirms.
-- Installed-app updates stay pending during /play and are applied on any route outside it or via the pause overlay's update action.
-- Reward Decision is an isolated local-save game under `/games/reward-decision`; it shares player identity but never the original game engine, timer, saves, or leaderboard.
-- Reward Decision derives analysis values from its single team dataset and freezes one submitted report before conditional meeting feedback — keeps displayed statistics, evaluation, and restored outcomes consistent.
-- Admin statistics live in `visit_segments`, `game_rounds` and `round_events` with no client table grants; players write only through `track_visit`/`track_round_event` (owner from the session, anonymous segments proven by a hashed secret) and admins read only through `admin_*` functions — keeps PII and cross-player data server-side.
-- Round events carry stable ids and merge order-independently (earliest start, write-once submit/complete/timeout, stage by higher revision, max active time); the client queue is per account and sends only for the signed-in owner — so retries, reloads and account switches never duplicate or misattribute activity.
-- A visit is one browser-wide session ending after 30 idle minutes, split into fixed-owner segments (anonymous or per account); counts use distinct visit ids — avoids double counting on sign-in or account switch.
-- Game trackers only observe: Problem Framing derives active time from the existing time challenge; Reward Decision uses a separate stats-only counter — gameplay timing, saves and dialogue stay untouched.
-- Server evaluators (`pf_evaluate`, `rd_evaluate`) mirror the in-game rules and are covered by a parity test; any rule change must update both.
-- Legacy results are copied into `game_rounds` as `source = 'legacy'` with `legacy_ref` (re-runnable via `backfill_legacy_results`), never given a start time or active play time.
-- The admin dashboard (`/admin/stats`) is a lazily loaded route; Excel export loads its library on demand only there.
+## Start with the relevant context
 
-- Simplified admin reporting uses the protected `admin_activity_summary` RPC alongside existing reports; legacy completed rows count as known attempts without inventing starts or visits.
-- Work profile department/industry use stable IDs; Other text is validated and constrained in the database. Existing game access remains based only on the original identity profile fields. Audience summaries and user filters use protected `admin_users` database aggregation; do not calculate cohort counts from paginated browser rows.
+- Check `git status`, branch, and HEAD before editing; preserve local and untracked files.
+- Read [README.md](README.md) for setup and commands, [CURRENT_STATE.md](docs/CURRENT_STATE.md) for the latest recorded status, and [PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) for the architecture map.
+- For task details, consult only the relevant reference: [security review](docs/SECURITY_REVIEW.md), [user profiling](docs/USER_PROFILING_HANDOFF.md), [subscription UI and payment boundary](docs/SUBSCRIPTION_UI_HANDOFF.md), or the [comprehensive Arabic context](docs/THE_ANALYST_PROJECT_CONTEXT_AR.md). [The older Arabic handoff](docs/The-Analyst_Codex_Handoff_AR.md) is historical.
+- Do not scan or read the whole repository for a narrow task; follow the affected code path and its dependencies.
 
-## Review and deployment
+## Safety and behavior boundaries
 
-- Read `docs/PROJECT_CONTEXT.md` and `docs/SECURITY_REVIEW.md` for the current checkout; the older Arabic handoff is historical context.
-- Treat the configured backend as live unless separately verified. Repository migrations and Edge Function source do not prove deployed policy or settings.
-- `server_outcome` is computed server-side from client-supplied game payloads; it is not independent proof of gameplay. Do not use game outcomes or browser state as payment entitlement.
-- Subscription screens are UI only: they show free “اسأل صح” and $10 for one year of available games without checkout, subscription records, or access restrictions. `/subscription` must not infer a tier from missing server data. Future Fawaterak secrets, callbacks, and access grants belong on the server after merchant terms are confirmed; never put secrets in `VITE_` variables or use browser storage as entitlement.
+- Treat configured Supabase/Lovable services as production unless an isolated test environment is verified. Local frontend runs can still contact live services.
+- Do not expose credentials. Phone confirmation, WhatsApp OTP and password recovery belong to `phone-auth`; `profiles.phone` and roles remain protected. Never put Chakra, OTP-HMAC, service-role, or payment secrets in `VITE_` variables.
+- Database migrations, Edge Function deployment, cloud settings, frontend publication, and Git push are separate actions. Never infer deployment from a commit or build. Do not mutate production data or deploy without explicit authorization.
+- Preserve game dialogue, rules, scoring, timing, saves, and PWA behavior unless the task explicitly authorizes a scoped change. Server evaluators use client-submitted evidence; they do not independently attest gameplay.
+- Analytics writes must remain owner-bound through approved RPCs; admin reporting and exports must retain server-side role checks. Do not aggregate private user data from paginated browser rows.
+- Subscription UI is not an entitlement. Both games currently retain existing authentication access; never grant paid access from browser state, plan intent, scores, or URL parameters.
+
+## Documentation maintenance
+
+When a significant feature, product decision, or deployment state changes, update the relevant documentation as part of that task. Minor edits do not require broad documentation rewrites. Keep `docs/CURRENT_STATE.md` short and dated; preserve historical context in its reference without presenting it as current behavior.

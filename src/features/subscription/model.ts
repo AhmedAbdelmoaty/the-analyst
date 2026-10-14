@@ -3,14 +3,18 @@ export type SubscriptionSnapshot =
   | { tier: "free" }
   | { tier: "annual"; status: "pending" | "active" | "failed" | "expired"; expiresAt: string | null };
 
-export type SubscriptionState = "unavailable" | "free" | "pending" | "active" | "failed" | "expired";
+export type SubscriptionState = "unavailable" | "verification_error" | "free" | "pending" | "active" | "failed" | "expired";
 
-export function subscriptionDisplay(snapshot: SubscriptionSnapshot | null): {
+export function subscriptionDisplay(snapshot: SubscriptionSnapshot | null, verificationError = false): {
   state: SubscriptionState;
   title: string;
   expires: string | null;
   message: string;
 } {
+  if (verificationError) return {
+    state: "verification_error", title: "تعذر عرض الاشتراك الآن", expires: null,
+    message: "حاول مرة أخرى لاحقًا، أو عُد إلى الألعاب.",
+  };
   if (!snapshot) return {
     state: "unavailable", title: "اكتشف خطط اللعب", expires: null,
     message: "اختر التجربة التي تناسبك وابدأ اللعب.",
@@ -21,7 +25,7 @@ export function subscriptionDisplay(snapshot: SubscriptionSnapshot | null): {
   };
   const title = {
     pending: "بانتظار تأكيد الدفع",
-    active: "التجربة الكاملة",
+    active: "تم تفعيل اشتراكك",
     failed: "لم يكتمل الدفع",
     expired: "انتهى الاشتراك",
   }[snapshot.status];

@@ -9,9 +9,9 @@
 - The Users tab uses the protected `admin_users` RPC for database-side filtering, page rows, and audience aggregates. Audience counts are unique profile accounts after the visible user filters and search, independent of pagination; current activity date/game filters keep their existing activity-count semantics.
 - User detail retains registration, verification, visits, flags, and rounds, with gender and work details added. CSV/XLSX user export uses the existing spreadsheet-safe text handling for Other values.
 
-## Database migration and safe activation
+## Database migration and activation record
 
-**Status (2026-10-13): APPLIED to the live Lovable Cloud database** together with `0009_work_profile_column_comments`. Do not re-run or edit 0008; pull the latest repository state before further work. Verified: columns and constraints exist, players can update only their own work columns (phone stays protected), invalid IDs are rejected, and `admin_users` returns audience aggregates.
+**Status recorded 2026-10-13: APPLIED to the live Lovable Cloud database** together with `0009_work_profile_column_comments`. Do not re-run or edit `0008` against that database. The task handoff reports that columns and constraints exist, players can update only their own work columns (phone stays protected), invalid IDs are rejected, and `admin_users` returns audience aggregates. These observations were not independently rechecked during the current documentation review.
 
 Known data note: two email-only accounts (including the admin) carry legacy local-format phone values that fail the existing `profiles_phone_format` check, so updates to those two profile rows are rejected until their phone values are normalized. Player phone accounts are unaffected.
 
@@ -19,7 +19,7 @@ Known data note: two email-only accounts (including the admin) carry legacy loca
 
 The repository has two migration histories. The Drizzle history contains the current protected analytics RPCs and ends at `0007_simple_admin_activity`; the older `supabase/migrations` history does not contain those latest RPC definitions. Do not replay either history wholesale or run this against production merely because the file exists.
 
-Before backend activation:
+For a different isolated environment, or if the recorded deployment state needs revalidation:
 
 1. Back up the intended database and verify its applied migration ledger and that `admin_users` currently matches the `0007_simple_admin_activity` Drizzle lineage.
 2. On an isolated clone/staging database, set `LOVABLE_DB_MIGRATION_URL` through the approved secret store and run `npx drizzle-kit migrate` only after confirming the Drizzle migration ledger is already at `0007_simple_admin_activity`. This applies the next journal entry only. If that prerequisite is not true, stop and reconcile the actual schema rather than replaying historical migrations.
