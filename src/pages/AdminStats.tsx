@@ -103,7 +103,6 @@ export default function AdminStats() {
   const updatedAt = active.dataUpdatedAt ? cairoDateTime(new Date(active.dataUpdatedAt)) : "—";
 
   const since = activity.data?.tracking_since;
-  const trackDay = (k: string) => (since?.[k] ? String(since[k]).slice(0, 10) : null);
 
   if (authLoading || !ok) return <div className="auth-theme flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">جاري التحميل...</div>;
 
