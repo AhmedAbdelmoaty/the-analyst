@@ -1,15 +1,5 @@
-# Current tasks
-- [x] Simplify admin reporting, explain missing historical activity, preserve failed visits for retry, and default admin login to statistics (20 small tests; authenticated dashboard review).
-- [x] Admin analytics dashboard: visit/round tracking for both games, server-side evaluation, automatic leaderboard qualification, admin stats page with filters, CSV/XLSX export, privacy line, tests.
-- [x] Replace Reward Decision's month-later ending with two saved, pausable phone calls and verify all three outcomes without changing the original game.
-- [x] Simplify Reward Decision into the approved short narrative flow with dialogue handoffs, unified analysis, report-based evaluation, conditional meeting/endings, save migration, and responsive/E2E verification.
-- [x] Add the complete Reward Decision game, game picker, isolated persistence, temporary responsive assets, and regression checks (authenticated full play-through still needs a signed-in preview account).
-- [x] Fix Reward Decision dialogue contract crash, add error boundary, real tool interactions, scripted meeting/endings (A18–A24), optional questions, saved figures in case file, pause-bound motion, tab-ownership renewal; e2e covers all three endings (real-account run and scene images on hosted preview still to check).
-- [x] Fit the landing footer into typical desktop viewports and place all introductory copy above the form on mobile.
-- [x] Send newly authenticated players directly into `/app`, reserving the welcome card for returning signed-in visitors (authenticated end-to-end check needs a signed-in preview account).
-- [x] Implement public landing and reuse existing phone account flows inside it.
-- [x] Add stable app entry and defer game loading until protected play route.
-- [x] Add optional PWA install flow, manifest, icons, guarded worker and safe updates.
-- [x] Isolate game save per player and restore only safe checkpoints.
-- [x] Review public routes and layout on phone and desktop; game/account end-to-end tests require a signed-in test account and real WhatsApp/device access.
-- [x] Round continuity: in-place pause/resume, active-play timer, per-screen restore, report/inquiry/send recovery, single-tab ownership, idempotent result save, safe installed-app updates, mobile timer placement (full play-through needs a signed-in player account and real devices).
+# Task Roadmap
+
+- [ ] Enable Stripe payments (Lovable built-in) — user approved via "Enable Stripe for this project"
+- [ ] Set up product/price (annual subscription 400/1200 EGP display) after enablement
+- [ ] Implement checkout + webhook (after products exist)
