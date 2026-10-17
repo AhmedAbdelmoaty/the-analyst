@@ -1,4 +1,6 @@
 import { SPEAKERS, type Line, type Speaker } from './data/script';
+import { stats } from './engine/statistics';
+import type { TeamId } from './data/case';
 
 export type Tone = 'light' | 'dark';
 export const CHART_MIN = 60;
@@ -32,4 +34,17 @@ export function smoothDistributionPath(bins: ReturnType<typeof distributionBins>
     const mid = (previous.x + point.x) / 2;
     return `${path} C ${mid} ${previous.y}, ${mid} ${point.y}, ${point.x} ${point.y}`;
   }, '');
+}
+
+const fmtShort = (v: number) => Number.isInteger(v) ? String(v) : v.toFixed(1);
+/** Short on-chart label such as «Mean 88%» or «IQR 34», computed from the approved statistics. */
+export function shortToolLabel(tool: 'mean' | 'median' | 'range' | 'sd' | 'iqr', team: TeamId): string {
+  const s = stats(team);
+  switch (tool) {
+    case 'mean': return `Mean ${fmtShort(s.mean)}%`;
+    case 'median': return `Median ${fmtShort(s.median)}%`;
+    case 'range': return `Range ${fmtShort(s.range)}`;
+    case 'sd': return `SD ${s.sd.toFixed(1)}`;
+    case 'iqr': return `IQR ${fmtShort(s.iqr)}`;
+  }
 }

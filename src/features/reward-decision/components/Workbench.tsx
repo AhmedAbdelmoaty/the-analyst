@@ -54,8 +54,6 @@ function Distribution({ team, visible, leaving }: { team: TeamId; visible: ToolI
         {shown('median') && <line className={cls('median', 'marker')} x1={x(s.median)} x2={x(s.median)} y1={P.top + 22} y2={base} stroke={TOOL_ACCENT.median} strokeWidth="4" strokeDasharray="6 6" aria-label={`الوسيط ${toolValue('median', team)}`} />}
         {shown('mean') && tag('mean', Math.min(W - 60, Math.max(60, x(s.mean) + (s.mean >= s.median ? 54 : -54))), P.top + 6)}
         {shown('median') && tag('median', Math.min(W - 60, Math.max(60, x(s.median) + (s.mean >= s.median ? -54 : 54))), P.top + 6)}
-        {/* each bin also exposes an accessible label */}
-        {bins.map(b => b.count > 0 && <desc key={`d${b.start}`}>{`${b.start} إلى أقل من ${b.end} بالمئة: ${b.count} أفراد`}</desc>)}
       </svg>
     </div>
     <div className="rd-hist-metrics" aria-live="polite">{marks.map(id => <span key={id} className="rd-hist-chip" style={{ '--tool-accent': TOOL_ACCENT[id] } as CSSProperties}><i />{shortToolLabel(id, team)}</span>)}</div>
