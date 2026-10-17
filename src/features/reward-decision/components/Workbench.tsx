@@ -40,8 +40,8 @@ function Distribution({ team, visible, leaving }: { team: TeamId; visible: ToolI
   const marks = TOOL_ORDER.filter(id => visible.includes(id));
   return <article className="rd-game-card rd-hist-card" data-chart={team} style={{ '--team-accent': skin.accent, '--team-soft': skin.soft } as CSSProperties} aria-label={`توزيع نتائج ${TEAMS[team].name}`}>
     <header className="rd-hist-head"><div><small>نتائج الأفراد · نفس المقياس</small><h3>{TEAMS[team].name}</h3></div><span className="rd-hist-badge">10 أفراد</span></header>
-    <div className="rd-hist-stage">
-      <svg viewBox={`0 0 ${W} ${H}`} role="group" dir="ltr" aria-label={`توزيع 10 أفراد من ${CHART_MIN} إلى ${CHART_MAX} بالمئة`}>
+    <div className="rd-hist-stage" dir="ltr">
+      <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label={`توزيع 10 أفراد من ${CHART_MIN} إلى ${CHART_MAX} بالمئة`}>
         <defs><linearGradient id={`rd-fill-${team}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={skin.accent} stopOpacity=".88" /><stop offset="100%" stopColor={skin.accent} stopOpacity=".45" /></linearGradient></defs>
         {[60, 80, 100, 120, 140, 150].map(t => <g key={t}><line x1={x(t)} x2={x(t)} y1={P.top} y2={base} stroke="#202442" strokeOpacity=".09" strokeDasharray="4 6" /><text x={x(t)} y={H - 18} textAnchor="middle" className="rd-hist-axis">{t}%</text></g>)}
         {shown('sd') && <rect className={cls('sd', 'band')} x={x(s.mean - s.sd)} y={P.top + 34} width={Math.max(3, x(s.mean + s.sd) - x(s.mean - s.sd))} height={ph - 44} rx="12" fill={TOOL_ACCENT.sd} fillOpacity=".16" stroke={TOOL_ACCENT.sd} strokeOpacity=".75" strokeWidth="2" aria-label={`المتوسط ± الانحراف المعياري، ${toolValue('sd', team)}`} />}
