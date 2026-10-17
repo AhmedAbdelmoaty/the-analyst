@@ -64,3 +64,16 @@ describe('Reward Decision presentation', () => {
     expect(html).toContain('disabled=""');
   });
 });
+
+describe('Analysis room short labels', () => {
+  test('on-chart labels use the approved statistics', async () => {
+    const { shortToolLabel } = await import('../src/features/reward-decision/presentation');
+    expect(shortToolLabel('mean','marwan')).toBe('Mean 95%');
+    expect(shortToolLabel('mean','mahmoud')).toBe('Mean 88%');
+    expect(shortToolLabel('median','marwan')).toBe('Median 83%');
+    expect(shortToolLabel('range','marwan')).toBe('Range 77');
+    expect(shortToolLabel('range','mahmoud')).toBe('Range 6');
+    expect(shortToolLabel('iqr','marwan')).toBe('IQR 34');
+    expect(shortToolLabel('sd','marwan')).toBe('SD 23.5');
+  });
+});

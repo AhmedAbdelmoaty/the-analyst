@@ -23,6 +23,8 @@ import impLogo from '@/assets/brand/imp-logo.webp';
 import analystMark from '@/assets/brand/the-analyst-mark.png';
 import './reward-decision.css';
 import './reward-decision.polish.css';
+import './reward-decision.stage.css';
+import { useSound } from '@/hooks/useSoundEffects';
 
 const at = (r: RewardRun, phase: RewardRun['phase'], stage = ''): RewardRun => ({ ...r, phase, stage, dialogueIndex: 0, visibleGraphemes: 0 });
 function dialogueFor(r: RewardRun): Line[] | null {
@@ -45,6 +47,7 @@ function afterDialogue(r: RewardRun): RewardRun {
 
 export default function RewardDecisionGame() {
   const { user, profile } = useAuth();
+  const { playSound } = useSound();
   const navigate = useNavigate();
   const uid = user?.id ?? '';
   const initial = useRef(inspectRun(uid));
@@ -174,7 +177,7 @@ export default function RewardDecisionGame() {
           <button data-dest="hr" onClick={() => visit('hr')}><Building2/><b>مكتب الموارد البشرية</b><small>{run.collectedDocs.includes('policy')?'السياسة متاحة':'داليا'}</small></button>
           <button data-dest="workbench" onClick={() => act(r => at(r,'workbench'))}><FileSpreadsheet/><b>مكتب المحلل</b><small>{run.usedTools.length?`${run.usedTools.length} مقارنات محفوظة`:'شاشة التحليل'}</small></button>
         </div></Panel>}
-        {run.phase === 'workbench' && <Workbench used={run.usedTools} visible={run.visibleTools} activeTeam={run.activeTeamChart} onToggle={toggleTool} onTeam={activeTeamChart => commit(r => ({...r,activeTeamChart}))} onBack={toHub} onRecommendation={() => act(r => at(r,'recommendation'))}/>} 
+        {run.phase === 'workbench' && <Workbench used={run.usedTools} visible={run.visibleTools} activeTeam={run.activeTeamChart} onToggle={toggleTool} onTeam={activeTeamChart => commit(r => ({...r,activeTeamChart}))} onBack={toHub} onRecommendation={() => act(r => at(r,'recommendation'))} playSound={playSound}/>} 
         {run.phase === 'recommendation' && <Recommendation draft={run.draft} docs={run.collectedDocs} tools={run.usedTools} onChange={draft => commit(r => ({...r,draft}))} onSubmit={submit} onBack={() => act(r => at(r,'workbench'))}/>} 
         {run.phase === 'resolution' && run.stage === 'office' && <section className="rd-office-return" aria-label="العودة إلى مكتب المحلل"><p>بعد الاجتماع</p><h2>مكتب المحلل</h2></section>}
         {run.phase === 'resolution' && run.stage === 'gap' && <section className="rd-call-gap" aria-label="انتهت المكالمة"><span>انتهت المكالمة</span></section>}
