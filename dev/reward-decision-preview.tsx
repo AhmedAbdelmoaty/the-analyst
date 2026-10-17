@@ -16,6 +16,7 @@ import { emptyDraft, type DraftReport } from '../src/features/reward-decision/en
 import type { TeamId, ToolId } from '../src/features/reward-decision/data/case';
 import '../src/features/reward-decision/reward-decision.css';
 import '../src/features/reward-decision/reward-decision.polish.css';
+import '../src/features/reward-decision/reward-decision.stage.css';
 
 // Isolated visual fixture: it never mounts Auth, analytics, saves, or the game controller.
 const pages = ['dialogue','file','analysis','recommendation','call','offices','debrief'] as const;
