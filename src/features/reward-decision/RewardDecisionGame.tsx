@@ -47,6 +47,7 @@ function afterDialogue(r: RewardRun): RewardRun {
 
 export default function RewardDecisionGame() {
   const { user, profile } = useAuth();
+  const { playSound } = useSound();
   const navigate = useNavigate();
   const uid = user?.id ?? '';
   const initial = useRef(inspectRun(uid));
