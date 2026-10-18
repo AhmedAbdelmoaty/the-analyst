@@ -18,4 +18,7 @@
 
 ## Documentation maintenance
 
+- Keep Reward Decision presentation styles and reference-adapted components scoped to its feature; reuse its existing data, save controller and sound provider so other games and platform features remain unchanged.
+- Dialogue documents use an independent reader; the HUD opens the separate case-file index, while the controller persists collection before visual feedback so animations cannot gate saving.
+
 When a significant feature, product decision, or deployment state changes, update the relevant documentation as part of that task. Minor edits do not require broad documentation rewrites. Keep `docs/CURRENT_STATE.md` short and dated; preserve historical context in its reference without presenting it as current behavior.
