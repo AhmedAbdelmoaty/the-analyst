@@ -113,11 +113,6 @@ export default function RewardDecisionGame() {
   const lines = useMemo(() => run.phase === 'resolution' && run.stage === 'talking' ? calls?.[run.endingCall]?.lines ?? null : dialogueFor(run), [run, calls]);
   const line = lines && run.dialogueIndex < lines.length ? lines[run.dialogueIndex] : null;
   useEffect(() => { const id = line?.documentId; if (!id || runRef.current.collectedDocs.includes(id)) return; pendingDoc.current = id; commit(r => ({ ...r, collectedDocs: r.collectedDocs.includes(id) ? r.collectedDocs : [...r.collectedDocs, id] })); }, [line?.id, line?.documentId, commit]);
-  const start = source.getBoundingClientRect(), end = target?.getBoundingClientRect();
-    if (!end || !start.width || start.bottom < 0 || start.top > window.innerHeight || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setDocumentNotice(true); window.setTimeout(() => setDocumentNotice(false), 1800); return; }
-    setFlyingDoc({ id, start, end });
-  }, [otherTab]);
-  useEffect(() => { const id = run.submitted?.submittedAt; if (!id || id === lastSubmitted.current) return; lastSubmitted.current = id; setSubmittedStamp(true); const timer = window.setTimeout(() => setSubmittedStamp(false), 1100); return () => window.clearTimeout(timer); }, [run.submitted?.submittedAt]);
 
   const start = () => { const next = { ...newRun(uid), phase: 'celebration' as const, stage: 'intro', revision: 1 }; trackRound(uid, { game: 'reward-decision', round_id: next.runId, type: 'start', stage: 'celebration', active_ms: 0, payload: { version: next.caseVersion } }); setCorrupt(false); setOtherTab(false); runRef.current = next; setRun(next); claimOwnership(uid, next.runId, onLost); persist(next); };
   const advance = () => { if (fileOpen || focusDoc || presenting) return; commit(r => {
