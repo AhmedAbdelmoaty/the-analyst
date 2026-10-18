@@ -1,4 +1,8 @@
 # Current tasks
+- [ ] Phase 2: reference-adapted recommendation board, confirmation and presentation; regression tests.
+- [ ] Phase 3: independent department documents, stamp/collection feedback; regression tests.
+- [ ] Phase 4: scene-based offices, HUD and transitions; regression tests.
+- [ ] Phase 5: reduced motion, responsive/interaction verification and final documentation (no publication).
 - [x] Simplify admin reporting, explain missing historical activity, preserve failed visits for retry, and default admin login to statistics (20 small tests; authenticated dashboard review).
 - [x] Admin analytics dashboard: visit/round tracking for both games, server-side evaluation, automatic leaderboard qualification, admin stats page with filters, CSV/XLSX export, privacy line, tests.
 - [x] Replace Reward Decision's month-later ending with two saved, pausable phone calls and verify all three outcomes without changing the original game.
