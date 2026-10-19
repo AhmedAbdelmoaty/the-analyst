@@ -96,15 +96,29 @@ async function sendWhatsApp(phone: string, code: string): Promise<boolean> {
         body: JSON.stringify({
           whatsappPhoneNumberId: CHAKRA_SENDER_ID,
           templateName: CHAKRA_TEMPLATE,
-          languageCode: "en",
-          mapping: [{ schemaPropertyName: "1", schemaPropertyValue: code }],
+          otpCode: code,
+          language: "en",
         }),
       },
     );
     const ok = res.ok;
-    // Log status only — never the body (it can echo the code)
-    if (!ok) console.warn("whatsapp_send_failed status", res.status);
-    await res.body?.cancel().catch(() => {});
+    if (!ok) {
+      // Log status plus the provider's numeric error code/subcode only — never the body
+      try {
+        const parsed = JSON.parse(await res.text()) as { error?: { code?: unknown; error_subcode?: unknown } };
+        const providerCode = typeof parsed.error?.code === "number" ? parsed.error.code : undefined;
+        const providerSubcode = typeof parsed.error?.error_subcode === "number" ? parsed.error.error_subcode : undefined;
+        console.warn(
+          "whatsapp_send_failed status", res.status,
+          ...(providerCode !== undefined ? ["code", providerCode] : []),
+          ...(providerSubcode !== undefined ? ["subcode", providerSubcode] : []),
+        );
+      } catch {
+        console.warn("whatsapp_send_failed status", res.status);
+      }
+    } else {
+      await res.body?.cancel().catch(() => {});
+    }
     return ok;
   } catch {
     console.warn("whatsapp_send_failed network");
