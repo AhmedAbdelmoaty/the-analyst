@@ -35,6 +35,8 @@ Use ignored `.env.local` for local overrides. Never put a Chakra token, OTP HMAC
 
 Lovable metadata in `*.asset.json` gives `__l5e` URLs rather than image bytes. The five PWA icons and 15 verified Reward Decision WebPs are under `public/__l5e` at their matching paths for local builds. Keep asset paths and portrait/landscape pairs intact.
 
+Reward Decision's newer local cinematic scene set lives in `src/features/reward-decision/assets/scenes/` (34 landscape/portrait pairs plus seven character masters). See [the scoped integration record](docs/REWARD_DECISION_CINEMATIC_INTEGRATION.md) for the semantic line mapping and asset-name exception. These files and code must be included together in a future commit/deployment; local presence alone does not mean they are published.
+
 ## Verification commands
 
 ```sh

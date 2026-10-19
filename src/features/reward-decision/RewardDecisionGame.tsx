@@ -7,7 +7,9 @@ import { DOCUMENTS, TEAMS, type DocumentId, type ToolId } from './data/case';
 import { SCRIPT, type Line } from './data/script';
 import { endingCalls } from './data/endingCalls';
 import { addActiveMs, readActiveMs, trackRound } from '@/lib/analytics/rounds';
-import { evaluateReport, newRun, shotFor, type FinalReport, type RewardRun } from './engine/model';
+import { evaluateReport, newRun, type FinalReport, type RewardRun } from './engine/model';
+import { narrativeSpec, useNarrativeClock } from './engine/narrativeClock';
+import { resolveScene } from './engine/resolveScene';
 import { argumentNote } from './engine/evidence';
 import { clearRun, inspectRun, saveRun } from './engine/persistence';
 import { claimOwnership, mayWrite, releaseOwnership, takeOwnership } from './engine/ownership';
@@ -115,15 +117,32 @@ export default function RewardDecisionGame() {
   useEffect(() => { const id = line?.documentId; if (!id || runRef.current.collectedDocs.includes(id)) return; pendingDoc.current = id; commit(r => ({ ...r, collectedDocs: r.collectedDocs.includes(id) ? r.collectedDocs : [...r.collectedDocs, id] })); }, [line?.id, line?.documentId, commit]);
 
   const start = () => { const next = { ...newRun(uid), phase: 'celebration' as const, stage: 'intro', revision: 1 }; trackRound(uid, { game: 'reward-decision', round_id: next.runId, type: 'start', stage: 'celebration', active_ms: 0, payload: { version: next.caseVersion } }); setCorrupt(false); setOtherTab(false); runRef.current = next; setRun(next); claimOwnership(uid, next.runId, onLost); persist(next); };
-  const advance = () => { if (fileOpen || focusDoc || presenting) return; commit(r => {
-    const active = r.phase === 'resolution' && r.stage === 'talking' ? calls?.[r.endingCall]?.lines ?? null : dialogueFor(r);
-    if (!active) return r;
-    if (r.dialogueIndex + 1 < active.length) return { ...r, dialogueIndex: r.dialogueIndex + 1, visibleGraphemes: 0 };
-    if (r.phase === 'resolution') return r.endingCall === 0
-      ? { ...at(r, 'resolution', 'gap'), endingCall: 1, callAnswered: false }
-      : at(r, 'debrief', 'notes');
-    return afterDialogue(r);
-  }); };
+  const advanceNarrative = useCallback((expectedKey: string) => {
+    const current = runRef.current;
+    const currentLines = current.phase === 'resolution' && current.stage === 'talking'
+      ? calls?.[current.endingCall]?.lines ?? null : dialogueFor(current);
+    const currentLine = currentLines && current.dialogueIndex < currentLines.length ? currentLines[current.dialogueIndex] : null;
+    const spec = narrativeSpec(current, currentLine);
+    if (!spec || spec.key !== expectedKey || current.paused || otherTab || fileOpen || focusDoc || presenting) return false;
+    commit(r => {
+      if (r.runId !== current.runId || r.phase !== current.phase || r.stage !== current.stage || r.dialogueIndex !== current.dialogueIndex) return r;
+      if (!currentLine) {
+        if (r.phase === 'resolution' && r.stage === 'office') return at(r, 'resolution', 'incoming');
+        if (r.phase === 'resolution' && r.stage === 'gap') return { ...at(r, 'resolution', 'incoming'), endingCall: 1, callAnswered: false };
+        if (r.phase === 'celebration' && r.stage === 'intro') return at(r, 'celebration', 'talk');
+        if (r.phase === 'celebration' && r.stage === 'draft') return at(r, 'debate', 'talk');
+        if (r.phase === 'debate' && r.stage === 'door') return at(r, 'briefing', 'talk');
+        if (r.phase === 'briefing' && r.stage === 'done') return at(r, 'hub');
+        return r;
+      }
+      if (r.dialogueIndex + 1 < (currentLines?.length ?? 0)) return { ...r, dialogueIndex: r.dialogueIndex + 1, visibleGraphemes: 0 };
+      if (r.phase === 'resolution') return r.endingCall === 0
+        ? { ...at(r, 'resolution', 'gap'), endingCall: 1, callAnswered: false }
+        : at(r, 'debrief', 'notes');
+      return afterDialogue(r);
+    });
+    return true;
+  }, [calls, commit, fileOpen, focusDoc, otherTab, presenting]);
   const onVisible = useCallback((n: number) => commit(r => ({ ...r, visibleGraphemes: n }), true), [commit]);
   const visit = (place: 'sales' | 'hr') => act(r => at({ ...r, visited: r.visited.includes(place) ? r.visited : [...r.visited, place] }, place, 'talk'));
   const toHub = () => act(r => at(r, 'hub'));
@@ -150,40 +169,27 @@ export default function RewardDecisionGame() {
   const exit = () => { commit(r => ({ ...r, paused: r.phase !== 'cover' })); releaseOwnership(); navigate('/app'); };
   const frozen = run.paused || otherTab;
   useEffect(() => { if (frozen) setFlyingDoc(null); }, [frozen]);
-  const shot = shotFor(run);
-  useEffect(() => {
-    if (run.phase !== 'resolution' || (run.stage !== 'office' && run.stage !== 'gap')) return;
-    const delay = run.stage === 'office' ? 1000 : 700;
-    let remaining = delay;
-    let startedAt = 0;
-    let timer: number | undefined;
-    const clear = () => { if (timer !== undefined) window.clearTimeout(timer); timer = undefined; };
-    const schedule = () => {
-      if (runRef.current.paused || otherTab || timer !== undefined) return;
-      startedAt = performance.now();
-      timer = window.setTimeout(() => commit(r => r.phase === 'resolution' && (r.stage === 'office' || r.stage === 'gap') ? { ...at(r, 'resolution', 'incoming'), callAnswered: false } : r), remaining);
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') { if (timer !== undefined) remaining = Math.max(0, remaining - (performance.now() - startedAt)); clear(); }
-      else schedule();
-    };
-    schedule();
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => { clear(); document.removeEventListener('visibilitychange', onVisibility); };
-  }, [run.phase, run.stage, run.paused, otherTab, commit]);
-
-  return <MotionConfig reducedMotion={frozen ? 'always' : 'user'}><main className={`rd-root ${frozen ? 'rd-paused' : ''}`} dir="rtl" data-phase={run.phase} data-stage={run.stage} data-shot={shot}>
-    <ScenePlayer shotId={shot}>
+  const sceneKey = resolveScene(run, gender, line);
+  // Keep the timer spec stable during each grapheme update; its identity is semantic, not visual.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const spec = useMemo(() => narrativeSpec(run, line), [run.runId, run.phase, run.stage, run.endingCall, run.dialogueIndex, line?.id, line?.text]);
+  const onClockVisible = useCallback((n: number, key: string) => {
+    const current = runRef.current;
+    const active = current.phase === 'resolution' && current.stage === 'talking'
+      ? calls?.[current.endingCall]?.lines ?? null : dialogueFor(current);
+    if (narrativeSpec(current, active && current.dialogueIndex < active.length ? active[current.dialogueIndex] : null)?.key === key) onVisible(n);
+  }, [calls, onVisible]);
+  const onClockDone = useCallback((key: string) => advanceNarrative(key), [advanceNarrative]);
+  useNarrativeClock(spec, run.visibleGraphemes, !frozen && !fileOpen && !focusDoc && !presenting, onClockVisible, onClockDone);
+  return <MotionConfig reducedMotion={frozen ? 'always' : 'user'}><main className={`rd-root ${frozen ? 'rd-paused' : ''}`} dir="rtl" data-phase={run.phase} data-stage={run.stage} data-scene={sceneKey}>
+    <ScenePlayer sceneKey={sceneKey}>
       {run.phase !== 'cover' && <GameHud count={run.collectedDocs.length} pulse={filePulse} phase={run.phase} onFile={openFile} onPause={() => { gameSound('click'); commit(r => ({ ...r, paused: true })); }} onExit={() => { gameSound('click'); exit(); }}/>}
-      <div className="rd-content"><AnimatePresence mode="wait"><motion.div key={`${run.phase}-${run.stage}-${run.endingCall}-${shot}`} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:.35}}>
+      <div className="rd-content"><AnimatePresence mode="wait"><motion.div key={`${run.phase}-${run.stage}-${run.endingCall}-${sceneKey}`} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:.35}}>
         {corrupt && run.phase === 'cover' && <section className="rd-cover"><h1>تعذر استعادة هذه الجولة</h1><span>يمكنك بدء جولة جديدة دون التأثير على حسابك أو اللعبة الأخرى.</span><ActionButton onClick={start}>بداية جديدة</ActionButton></section>}
         {!corrupt && run.phase === 'cover' && <section className="rd-cover"><img src={analystMark} alt="The Analyst"/><p>شركة روّاد للأجهزة الكهربائية</p><h1>قرار التكريم</h1><span>اقرأ المستندات، حلّل النتائج، وابنِ توصيتك.</span><ActionButton onClick={start}>ابدأ الآن</ActionButton><img className="rd-imp" src={impLogo} alt="IMP"/></section>}
-        {run.phase === 'celebration' && run.stage === 'intro' && <div className="rd-bottom-action"><ActionButton onClick={() => act(r => at(r,'celebration','talk'))}>متابعة</ActionButton></div>}
-        {run.phase === 'celebration' && run.stage === 'draft' && <div className="rd-document-card"><p>ترشيح تكريم فريق المبيعات</p><b>بانتظار الاعتماد</b><ActionButton onClick={() => act(r => at(r,'debate','talk'))}>متابعة</ActionButton></div>}
-        {run.phase === 'debate' && run.stage === 'door' && <div className="rd-bottom-action"><ActionButton onClick={() => act(r => at(r,'briefing','talk'))}>دخول مكتب شريف</ActionButton></div>}
-        {run.phase === 'briefing' && run.stage === 'done' && <div className="rd-bottom-action"><ActionButton onClick={() => act(r => at(r,'hub'))}>الذهاب إلى المكاتب</ActionButton></div>}
-        {line && <DialoguePanel line={line} lines={lines ?? []} index={run.dialogueIndex} total={lines?.length ?? 0} visible={run.visibleGraphemes} paused={frozen || fileOpen || Boolean(focusDoc) || Boolean(presenting)} gender={profile?.gender ?? null} delivered={line.documentId ? run.collectedDocs.includes(line.documentId) : false} onVisible={onVisible} onAdvance={advance} onOpenDocument={openDocument}/>}
-        {run.phase === 'hub' && <OfficeCorridor visited={run.visited} docs={run.collectedDocs} playSound={gameSound} onVisit={place => place==='workbench'?act(r=>at(r,'workbench')):visit(place)}/>}
+        {run.phase === 'celebration' && run.stage === 'draft' && <div className="rd-document-card"><p>ترشيح تكريم فريق المبيعات</p><b>بانتظار الاعتماد</b></div>}
+        {line && <DialoguePanel line={line} lines={lines ?? []} index={run.dialogueIndex} total={lines?.length ?? 0} visible={run.visibleGraphemes} paused={frozen || fileOpen || Boolean(focusDoc) || Boolean(presenting)} gender={profile?.gender ?? null} delivered={line.documentId ? run.collectedDocs.includes(line.documentId) : false} onVisible={onVisible} onOpenDocument={openDocument}/>}
+        {run.phase === 'hub' && <OfficeCorridor visited={run.visited} docs={run.collectedDocs} gender={gender} playSound={gameSound} onVisit={place => place==='workbench'?act(r=>at(r,'workbench')):visit(place)}/>}
         {run.phase === 'workbench' && <Workbench used={run.usedTools} visible={run.visibleTools} activeTeam={run.activeTeamChart} onToggle={toggleTool} onTeam={activeTeamChart => commit(r => ({...r,activeTeamChart}))} onBack={toHub} onRecommendation={() => act(r => at(r,'recommendation'))} playSound={gameSound}/>} 
         {run.phase === 'recommendation' && <Recommendation draft={run.draft} docs={run.collectedDocs} tools={run.usedTools} onChange={draft => commit(r => ({...r,draft}))} onSubmit={submit} onBack={() => act(r => at(r,'workbench'))} playSound={gameSound}/>} 
         {run.phase === 'resolution' && run.stage === 'office' && <section className="rd-office-return" aria-label="العودة إلى مكتب المحلل"><p>بعد الاجتماع</p><h2>مكتب المحلل</h2></section>}

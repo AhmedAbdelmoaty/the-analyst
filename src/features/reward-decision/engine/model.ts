@@ -34,15 +34,3 @@ export function evaluateReport(report: FinalReport, usedTools: ToolId[], docs: D
   else if (!validArgs.some(a => a.kind === 'spread')) reason = valid.every(Boolean) ? 'missing_spread' : 'weak_arguments';
   return { outcome: reason === 'complete' ? 'supported' : reason === 'wrong_team' ? 'criterion_mismatch' : 'insufficient', reason, argumentValidity: valid };
 }
-
-export function shotFor(r: RewardRun): string {
-  switch (r.phase) {
-    case 'cover': return 'A00'; case 'celebration': return r.stage === 'intro' ? 'A01' : 'A02';
-    case 'debate': return r.dialogueIndex < 2 ? 'A04' : 'A05'; case 'briefing': return 'A07';
-    case 'hub': return 'A09'; case 'sales': return 'A11'; case 'hr': return 'A13';
-    case 'workbench': return 'A15'; case 'recommendation': return 'A17';
-    case 'meeting': return r.dialogueIndex < 2 ? 'A18' : r.submitted?.teamId === 'mahmoud' ? 'A19' : 'A20';
-    case 'resolution': return 'A21';
-    case 'debrief': return 'A25';
-  }
-}

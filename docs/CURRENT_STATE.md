@@ -1,8 +1,10 @@
 # Current state
 
+**Scoped local update — 2026-10-19:** The checkout was fast-forwarded to `origin/main` HEAD `25cb296639879ede73414466911768e79b7ddd65` (31 commits ahead of the prior local base). Reward Decision scene integration and automatic narration are reapplied as uncommitted local changes on that current base; `npm run build`, `npx tsc --noEmit`, targeted ESLint, and the isolated Playwright smoke passed. A safety stash `stash@{0}` preserves the pre-fast-forward working tree. No commit, push, or deployment was made. See [the integration record](REWARD_DECISION_CINEMATIC_INTEGRATION.md) and [acceptance brief](Reward_Decision_Final_Implementation_Brief_AR.md). The earlier review below remains historical for other surfaces; no database, Edge Function, or payment state was reverified here.
+
 **Reviewed:** 2026-10-13 (Africa/Cairo)
 
-**Local checkout:** `main` at `23e7ee99be1fe522ecb9b37a2dc2990bd38b2457` (`Improve post-game subscription invitation`).
+**Historical local checkout review:** `main` at `23e7ee99be1fe522ecb9b37a2dc2990bd38b2457` (`Improve post-game subscription invitation`), reviewed 2026-10-13. Current checkout is recorded above.
 **Evidence note:** repository state was inspected locally; no cloud console, deployed site, or live database was queried for this review.
 
 ## Confirmed in the checkout
