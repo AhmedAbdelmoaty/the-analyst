@@ -9,7 +9,7 @@ const HMAC_SECRET = Deno.env.get("OTP_HMAC_SECRET")!;
 const CHAKRA_TOKEN = Deno.env.get("CHAKRA_ACCESS_TOKEN")!;
 
 const CHAKRA_PLUGIN_ID = "176a71cc-6f86-4e29-b2cf-ec39b75c9dff";
-const CHAKRA_SENDER_ID = "109395537714594";
+const CHAKRA_SENDER_ID = "1093955377144594";
 const CHAKRA_TEMPLATE = "analyst_otp_imp";
 
 const OTP_TTL_MS = 5 * 60 * 1000;
