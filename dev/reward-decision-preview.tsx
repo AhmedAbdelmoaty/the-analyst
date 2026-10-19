@@ -37,9 +37,9 @@ function Preview() {
   const [draft,setDraft] = useState<DraftReport>(emptyDraft());
   const [caller,setCaller] = useState<'mahmoud'|'marwan'>('mahmoud');
   const switchPage = (next:Page) => { setPage(next); setFileOpen(false); };
-  const shot = page === 'analysis' ? 'A15' : page === 'recommendation' ? 'A17' : page === 'call' ? 'A21' : page === 'offices' ? 'A09' : page === 'debrief' ? 'A25' : 'A13';
+  const shot = page === 'analysis' ? 'analyst-male' : page === 'recommendation' ? 'report-female' : page === 'offices' ? 'corridor' : 'hr-female';
   const line = SCRIPT.hr[lineIndex % SCRIPT.hr.length];
-  return <main className="rd-root rd-preview" dir="rtl"><ScenePlayer shotId={shot}>
+  return <main className="rd-root rd-preview" dir="rtl"><ScenePlayer sceneKey={shot}>
     <GameHud count={8} onFile={() => { setFocusDoc(null); setFileOpen(true); }} onPause={() => {}} onExit={() => {}} />
     <div className="rd-preview-menu" aria-label="شاشات المعاينة">{pages.map(id => <button key={id} onClick={() => switchPage(id)} aria-pressed={page===id}>{id}</button>)}</div>
     <div className="rd-content"><div>
