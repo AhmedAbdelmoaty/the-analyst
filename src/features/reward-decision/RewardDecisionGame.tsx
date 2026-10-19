@@ -123,7 +123,7 @@ export default function RewardDecisionGame() {
       ? calls?.[current.endingCall]?.lines ?? null : dialogueFor(current);
     const currentLine = currentLines && current.dialogueIndex < currentLines.length ? currentLines[current.dialogueIndex] : null;
     const spec = narrativeSpec(current, currentLine);
-    if (!spec || spec.key !== expectedKey || current.paused || otherTab || fileOpen || focusDoc || presenting) return false;
+    if (!spec || spec.key !== expectedKey || current.paused || otherTab || fileOpen || focusDoc || flyingDoc || presenting) return false;
     commit(r => {
       if (r.runId !== current.runId || r.phase !== current.phase || r.stage !== current.stage || r.dialogueIndex !== current.dialogueIndex) return r;
       if (!currentLine) {
@@ -142,7 +142,7 @@ export default function RewardDecisionGame() {
       return afterDialogue(r);
     });
     return true;
-  }, [calls, commit, fileOpen, focusDoc, otherTab, presenting]);
+  }, [calls, commit, fileOpen, focusDoc, flyingDoc, otherTab, presenting]);
   const onVisible = useCallback((n: number) => commit(r => ({ ...r, visibleGraphemes: n }), true), [commit]);
   const visit = (place: 'sales' | 'hr') => act(r => at({ ...r, visited: r.visited.includes(place) ? r.visited : [...r.visited, place] }, place, 'talk'));
   const toHub = () => act(r => at(r, 'hub'));
@@ -152,14 +152,17 @@ export default function RewardDecisionGame() {
   const closeDocument = (source: HTMLElement | null) => {
     const id = focusDoc;
     if (!id) return;
-    // Collection already persisted on the scripted handoff, never waits for this animation.
+    // Collection already persisted on the scripted handoff; the flight is only presentation.
+    const fresh = pendingDoc.current === id;
     const start = source?.getBoundingClientRect();
     const end = document.querySelector<HTMLElement>('[data-rd-file-target]')?.getBoundingClientRect();
     setFocusDoc(null);
     pendingDoc.current = null;
-    gameSound('stamp');
-    if (start?.width && end && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) setFlyingDoc({id,start,end});
-    else { setDocumentNotice(true); setFilePulse(true); }
+    if (fresh) {
+      gameSound('stamp');
+      if (start?.width && end && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) setFlyingDoc({id,start,end});
+      else { setDocumentNotice(true); setFilePulse(true); }
+    }
     window.requestAnimationFrame(() => fileReturnFocus.current?.focus());
   };
   useEffect(() => { if (!documentNotice && !filePulse) return; const timer=window.setTimeout(()=>{setDocumentNotice(false);setFilePulse(false);},1800); return()=>clearTimeout(timer); },[documentNotice,filePulse]);
@@ -180,7 +183,7 @@ export default function RewardDecisionGame() {
     if (narrativeSpec(current, active && current.dialogueIndex < active.length ? active[current.dialogueIndex] : null)?.key === key) onVisible(n);
   }, [calls, onVisible]);
   const onClockDone = useCallback((key: string) => advanceNarrative(key), [advanceNarrative]);
-  useNarrativeClock(spec, run.visibleGraphemes, !frozen && !fileOpen && !focusDoc && !presenting, onClockVisible, onClockDone);
+  useNarrativeClock(spec, run.visibleGraphemes, !frozen && !fileOpen && !focusDoc && !flyingDoc && !presenting, onClockVisible, onClockDone);
   return <MotionConfig reducedMotion={frozen ? 'always' : 'user'}><main className={`rd-root ${frozen ? 'rd-paused' : ''}`} dir="rtl" data-phase={run.phase} data-stage={run.stage} data-scene={sceneKey}>
     <ScenePlayer sceneKey={sceneKey}>
       {run.phase !== 'cover' && <GameHud count={run.collectedDocs.length} pulse={filePulse} phase={run.phase} onFile={openFile} onPause={() => { gameSound('click'); commit(r => ({ ...r, paused: true })); }} onExit={() => { gameSound('click'); exit(); }}/>}
@@ -198,8 +201,8 @@ export default function RewardDecisionGame() {
         {run.phase === 'debrief' && run.submitted && run.evaluation && <Panel title="خلاصة قرارك"><div className="rd-final-report"><small className="rd-final-label">التقرير المقدّم</small><b>{TEAMS[run.submitted.teamId].name}</b><span>{DOCUMENTS[run.submitted.documentId].title}</span><p className={run.evaluation.outcome==='supported'?'valid':'weak'}>{run.evaluation.reason==='complete'?'التوصية تجمع دليلًا صحيحًا على انتشار مستوى الأداء ودليلًا صحيحًا على تقارب النتائج.':run.evaluation.reason==='wrong_team'?'التوصية لا تحقق معيار التكريم الجماعي في بيانات الفترة.':run.evaluation.reason==='wrong_document'?'التقرير لم يستند إلى سياسة التكريم المعتمدة.':run.evaluation.reason==='missing_performance'?'حجتا التشتت لا تثبتان انتشار مستوى الأداء المقبول.':run.evaluation.reason==='missing_spread'?'التقرير لا يثبت تقارب نتائج الفريق.':'واحدة أو أكثر من الحجج لا تثبت المطلوب بالتفسير المختار.'}</p>{run.submitted.arguments.map((id,i)=><p key={id} className={run.evaluation?.argumentValidity[i]?'valid':'weak'}>{argumentNote(id,run.evaluation?.argumentValidity[i]??false)}</p>)}<span className="rd-final-stamp">تم تقديم التوصية</span></div><div className="rd-actions"><ReplayButton onClick={() => { clearRun(uid); start(); }}/><ActionButton onClick={exit}>الألعاب</ActionButton></div></Panel>}
       </motion.div></AnimatePresence></div>
     </ScenePlayer>
-    {flyingDoc && <motion.div className="rd-document-flight" key={flyingDoc.id} initial={{ x: flyingDoc.start.left, y: flyingDoc.start.top, width: flyingDoc.start.width, height: flyingDoc.start.height, opacity: 1 }} animate={{ x: flyingDoc.end.left, y: flyingDoc.end.top, width: flyingDoc.end.width, height: flyingDoc.end.height, opacity: .4 }} transition={{ duration: .65, delay: .3, ease: 'easeInOut' }} onAnimationStart={() => gameSound('whoosh')} onAnimationComplete={() => { setFlyingDoc(null); gameSound('collect'); setFilePulse(true); }}><FileText aria-hidden="true"/><span>{DOCUMENTS[flyingDoc.id].title}</span><i className="rd-flight-seal">محفوظ</i></motion.div>}
-    {documentNotice && <div className="rd-document-notice" role="status">المستند في ملف التحليل</div>}
+    {flyingDoc && (() => { const w = 150, h = 96; const sx = flyingDoc.start.left + flyingDoc.start.width/2 - w/2, sy = flyingDoc.start.top + Math.min(flyingDoc.start.height, 300)/2 - h/2; const ex = flyingDoc.end.left + flyingDoc.end.width/2 - w/2, ey = flyingDoc.end.top + flyingDoc.end.height/2 - h/2; return <motion.div className="rd-document-flight" key={flyingDoc.id} style={{ width: w, height: h }} initial={{ x: sx, y: sy, scale: 1, opacity: 1 }} animate={{ x: [sx, (sx+ex)/2 - 40, ex], y: [sy, Math.min(sy, ey) - 90, ey], scale: [1, .7, .18], opacity: [1, 1, .6], rotate: [0, -8, 0] }} transition={{ duration: .6, delay: .15, ease: 'easeInOut', times: [0, .45, 1] }} onAnimationStart={() => gameSound('whoosh')} onAnimationComplete={() => { setFlyingDoc(null); gameSound('collect'); setFilePulse(true); setDocumentNotice(true); }}><FileText aria-hidden="true"/><span>{DOCUMENTS[flyingDoc.id].title}</span><i className="rd-flight-seal">✓</i></motion.div>; })()}
+    {documentNotice && <div className="rd-document-notice" role="status">تم حفظ المستند</div>}
     {fileOpen && <CaseFile docs={run.collectedDocs} tools={run.usedTools} submitted={run.submitted} onClose={closeFile}/>}
     {focusDoc && <DocumentReader id={focusDoc} onClose={closeDocument}/>}
     {presenting && <PresentationSequence report={presenting} paused={frozen} onComplete={finishPresentation} playSound={gameSound}/>}
