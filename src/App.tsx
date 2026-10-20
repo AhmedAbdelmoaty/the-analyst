@@ -22,6 +22,7 @@ import WorkDetails from "@/pages/WorkDetails";
 const Setup = lazy(() => import('./pages/Setup'));
 const GameRoute = lazy(() => import('./pages/GameRoute'));
 const RewardDecisionRoute = lazy(() => import('./pages/RewardDecisionRoute'));
+const BehindTheDotsRoute = lazy(() => import('./pages/BehindTheDotsRoute'));
 const AdminStats = lazy(() => import('./pages/AdminStats'));
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/profile/work" element={<RequireProfile><WorkDetails /></RequireProfile>} />
             <Route path="/play" element={<RequireProfile><GameRoute /></RequireProfile>} />
             <Route path="/games/reward-decision" element={<RequireProfile><RewardDecisionRoute /></RequireProfile>} />
+            <Route path="/games/behind-the-dots" element={<RequireProfile><BehindTheDotsRoute /></RequireProfile>} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/board-9k2x" element={<AdminBoard />} />
             <Route path="/admin/stats" element={<AdminStats />} />

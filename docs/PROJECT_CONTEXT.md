@@ -1,6 +1,6 @@
 # The Analyst — project overview
 
-The Analyst is IMP’s shared platform for story-led practice in analytical thinking and business decisions. It currently contains two games: **Problem Framing** (`/play`, “اسأل صح”) and **Reward Decision** (`/games/reward-decision`, “قرار التكريم”). Both are selected from the authenticated `/app` page and use a shared player account. Preserve approved game content and behavior unless a task explicitly changes it.
+The Analyst is IMP’s shared platform for story-led practice in analytical thinking and business decisions. It contains **Problem Framing** (`/play`, “اسأل صح”), **Reward Decision** (`/games/reward-decision`, “قرار التكريم”), and **Behind the Dots** (`/games/behind-the-dots`, “ورا النقط”). They are selected from the authenticated `/app` page and use a shared player account. Behind the Dots keeps progress in a separate local storage namespace per authenticated user. Preserve approved game content and behavior unless a task explicitly changes it.
 
 ## Architecture map
 
@@ -10,6 +10,7 @@ The Analyst is IMP’s shared platform for story-led practice in analytical thin
 | Phone auth and WhatsApp OTP | `src/lib/phoneAuth.ts`, `supabase/functions/phone-auth/` |
 | Problem Framing | `src/components/game/`, `src/lib/pf-*` |
 | Reward Decision | `src/features/reward-decision/` |
+| Behind the Dots | `src/features/behind-the-dots/`, `src/pages/BehindTheDotsRoute.tsx` |
 | Work profiles and audience insights | `src/features/profile/`, `src/features/admin-stats/`, `src/pages/AdminStats.tsx` |
 | Visits, rounds, admin reporting | `src/lib/analytics/`, `src/components/analytics/`, `drizzle/migrations/` |
 | Subscription screens | `src/features/subscription/`, `src/pages/PlanChoice.tsx`, `src/pages/SubscriptionSummary.tsx`, `src/pages/MySubscription.tsx` |

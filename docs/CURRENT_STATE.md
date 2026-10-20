@@ -1,5 +1,7 @@
 # Current state
 
+**Scoped local update — 2026-10-20:** Behind the Dots from approved source commit `b552bf1` is integrated locally as the authenticated third game at `/games/behind-the-dots`, with a selection card and per-user browser save namespace. Production build and app TypeScript check pass. The focused game tests could not run because Bun is not installed. No commit, push, or deployment was made.
+
 **Scoped local update — 2026-10-19:** The checkout was fast-forwarded to `origin/main` HEAD `25cb296639879ede73414466911768e79b7ddd65` (31 commits ahead of the prior local base). Reward Decision scene integration and automatic narration are reapplied as uncommitted local changes on that current base; `npm run build`, `npx tsc --noEmit`, targeted ESLint, and the isolated Playwright smoke passed. A safety stash `stash@{0}` preserves the pre-fast-forward working tree. No commit, push, or deployment was made. See [the integration record](REWARD_DECISION_CINEMATIC_INTEGRATION.md) and [acceptance brief](Reward_Decision_Final_Implementation_Brief_AR.md). The earlier review below remains historical for other surfaces; no database, Edge Function, or payment state was reverified here.
 
 **Reviewed:** 2026-10-13 (Africa/Cairo)
