@@ -82,15 +82,16 @@ function useLeaving(visible: ToolId[]) {
 export function Histogram({ team, visible, leaving = [], compact = false, animateIn = true }: { team: TeamId; visible: ToolId[]; leaving?: ToolId[]; compact?: boolean; animateIn?: boolean }) {
   const s = stats(team);
   const bins = histogramBins(s.values);
-  const W = 640, H = compact ? 230 : 300, P = { left: 46, right: 16, top: compact ? 30 : 42, bottom: 44 };
+  const W = 640, H = compact ? 190 : 300, P = { left: 46, right: 16, top: compact ? 30 : 42, bottom: 44 };
   const pw = W - P.left - P.right, ph = H - P.top - P.bottom, base = P.top + ph, Y_MAX = 5;
   const x = (v: number) => P.left + ((Math.max(HIST_MIN, Math.min(HIST_MAX, v)) - HIST_MIN) / (HIST_MAX - HIST_MIN)) * pw;
   const y = (c: number) => base - (c / Y_MAX) * ph;
   const on = (id: ToolId) => visible.includes(id) || leaving.includes(id);
   const cls = (id: ToolId) => `rd2-ov ${leaving.includes(id) && !visible.includes(id) ? 'is-leaving' : ''}`;
   const min = Math.min(...s.values), max = Math.max(...s.values);
-  const label = (id: ToolId, value: number, dy: number) => { const cx = Math.min(W - 70, Math.max(P.left + 60, x(value))); return <g className={cls(id)}><text x={cx} y={P.top - 22 + dy} textAnchor="middle" className="rd2-ov-name" fill={OVERLAY[id]}>{TOOLS[id].title}</text><text x={cx} y={P.top - 8 + dy} textAnchor="middle" className="rd2-ov-val" fill={OVERLAY[id]}>{toolValue(id, team).replace(' نقطة مئوية', '')}</text></g>; };
-  const meanFirst = s.mean >= s.median;
+  const label = (id: ToolId, value: number, dx: number) => { const cx = Math.min(W - 70, Math.max(P.left + 60, x(value) + dx)); const dy = 0; return <g className={cls(id)}><text x={cx} y={P.top - 22 + dy} textAnchor="middle" className="rd2-ov-name" fill={OVERLAY[id]}>{TOOLS[id].title}</text><text x={cx} y={P.top - 8 + dy} textAnchor="middle" className="rd2-ov-val" fill={OVERLAY[id]}>{toolValue(id, team).replace(' نقطة مئوية', '')}</text></g>; };
+  const meanFirst = s.mean > s.median || (s.mean === s.median);
+  const close = on('mean') && on('median') && Math.abs(x(s.mean) - x(s.median)) < 110;
   return <div className={`rd2-hist rd2-hist-${team}`} dir="ltr">
     <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`توزيع نتائج ${TEAMS[team].name}: ${s.values.join('، ')} بالمئة`}>
       <defs><linearGradient id={`rd2-bar-${team}${compact ? '-c' : ''}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" className="rd2-bar-top" /><stop offset="100%" className="rd2-bar-bottom" /></linearGradient></defs>
@@ -105,8 +106,8 @@ export function Histogram({ team, visible, leaving = [], compact = false, animat
       {on('range') && <g className={cls('range')}><line x1={x(min)} x2={x(max)} y1={base - 12} y2={base - 12} stroke={OVERLAY.range} strokeWidth="4" strokeLinecap="round" /><line x1={x(min)} x2={x(min)} y1={base - 20} y2={base - 4} stroke={OVERLAY.range} strokeWidth="3" /><line x1={x(max)} x2={x(max)} y1={base - 20} y2={base - 4} stroke={OVERLAY.range} strokeWidth="3" /><text x={(x(min) + x(max)) / 2} y={base - 18} textAnchor="middle" className="rd2-ov-val" fill={OVERLAY.range}>{`${TOOLS.range.title} ${s.range}`}</text></g>}
       {on('mean') && <line className={cls('mean')} x1={x(s.mean)} x2={x(s.mean)} y1={P.top} y2={base} stroke={OVERLAY.mean} strokeWidth="2.5" strokeDasharray="6 4" />}
       {on('median') && <line className={cls('median')} x1={x(s.median)} x2={x(s.median)} y1={P.top} y2={base} stroke={OVERLAY.median} strokeWidth="2.5" strokeDasharray="6 4" />}
-      {on('mean') && label('mean', s.mean, meanFirst || !on('median') ? 0 : 0)}
-      {on('median') && label('median', s.median, on('mean') && Math.abs(x(s.mean) - x(s.median)) < 110 ? (meanFirst ? 26 : -0) : 0)}
+      {on('mean') && label('mean', s.mean, close ? (meanFirst ? 52 : -52) : 0)}
+      {on('median') && label('median', s.median, close ? (meanFirst ? -52 : 52) : 0)}
     </svg>
   </div>;
 }
