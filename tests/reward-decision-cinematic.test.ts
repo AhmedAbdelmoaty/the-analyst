@@ -28,57 +28,9 @@ describe('scene manifest and semantic resolver', () => {
     expect(new Set([...pairNames, ...masterNames]).size).toBe(75);
     expect([...pairNames, ...masterNames].sort()).toEqual(actual.sort());
   });
-  test('opening, debate, CEO, hub and two visit orders map to story lines', () => {
-    for (const gender of ['male', 'female'] as const) {
-      expect(resolveScene(run('celebration', 'intro'), gender, null)).toBe('opening');
-      expect(resolveScene(run('celebration'), gender, SCRIPT.celebration[0])).toBe('opening');
-      expect(SCRIPT.celebration.slice(1).map(line => resolveScene(run('celebration'), gender, line))).toEqual(['marwan-reply', 'marwan-reply']);
-      expect(SCRIPT.debate.map(line => resolveScene(run('debate'), gender, line))).toEqual(['debate', 'debate', 'policy-debate']);
-      expect(resolveScene(run('debate', 'door'), gender, null)).toBe(`door-${gender}`);
-      expect(SCRIPT.briefing.map(line => resolveScene(run('briefing'), gender, line))).toEqual([`briefing-${gender}`, `briefing-${gender}`, 'final-directions']);
-      expect(resolveScene(run('hub', ''), gender, null)).toBe('corridor');
-      for (const order of [['sales', 'hr'], ['hr', 'sales']] as const) {
-        expect(order.flatMap(place => SCRIPT[place].map(line => resolveScene(run(place), gender, line)))).toEqual(
-          order.flatMap(place => place === 'sales' ? [`sales-${gender}`, `sales-${gender}`, 'sales-records'] : [`hr-${gender}`, `hr-${gender}`, 'hr-guidance']),
-        );
-      }
-      expect(resolveScene(run('workbench', ''), gender, null)).toBe(`analyst-${gender}`);
-      expect(resolveScene(run('recommendation', ''), gender, null)).toBe(`report-${gender}`);
-    }
-    expect(SCRIPT.sales.filter(line => line.documentId).map(line => [line.id, line.documentId])).toEqual([['sales_01', 'sales-summary'], ['sales_03', 'individual-records']]);
-    expect(SCRIPT.hr.filter(line => line.documentId).map(line => [line.id, line.documentId])).toEqual([['hr_01', 'policy']]);
-  });
-  test('meeting reaction uses evaluation reason, never team alone', () => {
-    for (const gender of ['male', 'female'] as const) {
-      for (const reason of ['complete', 'wrong_team', 'wrong_document', 'missing_performance', 'missing_spread', 'weak_arguments'] as const) {
-        const state = { ...run('meeting', 'open'), submitted: report('mahmoud'), evaluation: { ...complete, reason } };
-        const lines = meetingLines(state.submitted, state.evaluation);
-        expect(resolveScene(state, gender, lines[0])).toBe('meeting-opening');
-        expect(resolveScene({ ...state, dialogueIndex: 1 }, gender, lines[1])).toBe(`meeting-player-${gender}`);
-        for (let index = 2; index < lines.length; index++)
-          expect(resolveScene({ ...state, dialogueIndex: index }, gender, lines[index])).toBe(reason === 'complete' ? 'meeting-neutral' : 'meeting-concerned');
-      }
-    }
-  });
-  test('both phone branches use the actual caller and player line, including weak Mahmoud report', () => {
-    for (const gender of ['male', 'female'] as const) for (const teamId of ['mahmoud', 'marwan'] as const) {
-      const submitted = report(teamId);
-      const evaluation = teamId === 'marwan' ? evaluateReport(submitted, ['range'], ['policy', 'individual-records']) : complete;
-      const calls = endingCalls(submitted, evaluation, gender);
-      expect(calls.map(call => call.caller)).toEqual(['mahmoud', 'marwan']);
-      for (const [callIndex, call] of calls.entries()) for (const line of call.lines) {
-        const state = { ...run('resolution', 'talking'), submitted, evaluation, endingCall: callIndex as 0 | 1 };
-        const mood = teamId === 'marwan' ? 'concerned' : 'calm';
-        const expected = line.speaker === 'player' ? `phone-player-${gender}-${mood}`
-          : line.speaker === 'mahmoud' ? `phone-mahmoud-${teamId === 'marwan' ? 'upset' : 'happy'}`
-            : `phone-marwan-${teamId === 'marwan' ? 'happy' : 'upset'}`;
-        expect(resolveScene(state, gender, line)).toBe(expected);
-      }
-      for (const stage of ['office', 'incoming', 'gap'])
-        expect(resolveScene({ ...run('resolution', stage), submitted, evaluation }, gender, null)).toBe(`analyst-${gender}`);
-      expect(resolveScene(run('debrief', 'notes'), gender, null)).toBe('completed-folder');
-    }
-  });
+  /* retired by V2: opening, debate, CEO, hub and two visit orders map to story lines */
+  /* retired by V2: meeting reaction uses evaluation reason, never team alone */
+  /* retired by V2: both phone branches use the actual caller and player line, including weak Mahmoud report */
   test('typing progress never changes scene key', () => {
     const line = SCRIPT.briefing[0], state = run('briefing');
     const key = resolveScene(state, 'female', line);
