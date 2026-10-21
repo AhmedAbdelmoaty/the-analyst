@@ -22,3 +22,5 @@
 - Dialogue documents use an independent reader; the HUD opens the separate case-file index, while the controller persists collection before visual feedback so animations cannot gate saving.
 
 When a significant feature, product decision, or deployment state changes, update the relevant documentation as part of that task. Minor edits do not require broad documentation rewrites. Keep `docs/CURRENT_STATE.md` short and dated; preserve historical context in its reference without presenting it as current behavior.
+
+- Reward Decision server evaluation for a new case version is enabled only via `SERVER_V3_EVALUATION_ENABLED` after its SQL is approved and applied, so client and server scoring never diverge.
