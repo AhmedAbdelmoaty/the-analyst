@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, BarChart3, Calculator, FolderOpen, Hourglass, Inbox, MoveHorizontal, NotebookPen, Sigma, SquareDashed } from 'lucide-react';
+import { ArrowLeft, BarChart3, Calculator, FolderOpen, Hourglass, Inbox, MoveHorizontal, NotebookPen, Sigma, SquareDashed, Users } from 'lucide-react';
 import { TEAMS, TOOLS, TOOL_ORDER, type TeamId, type ToolId } from '../data/case';
 import { stats, toolValue } from '../engine/statistics';
 import { HIST_MAX, HIST_MIN, histogramBins } from '../presentation';
@@ -114,7 +114,7 @@ export function Histogram({ team, visible, leaving = [], compact = false, animat
 
 export function TeamPanel({ team, visible, leaving }: { team: TeamId; visible: ToolId[]; leaving: ToolId[] }) {
   return <motion.article className={`rd2-team rd2-team-${team}`} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35, delay: team === 'mahmoud' ? .05 : .15 }}>
-    <header><span className="rd2-team-icon" aria-hidden="true">👥</span><h3>{TEAMS[team].name}</h3><span className="rd2-count">10 مندوبين</span></header>
+    <header><span className="rd2-team-icon" aria-hidden="true"><Users /></span><h3>{TEAMS[team].name}</h3><span className="rd2-count">10 مندوبين</span></header>
     <div className="rd2-team-chart"><Histogram team={team} visible={visible} leaving={leaving} /></div>
     {visible.length > 0 && <footer className="rd2-team-values" aria-live="polite">{TOOL_ORDER.filter(t => visible.includes(t)).map(t => <span key={t} style={{ '--ov': OVERLAY[t] } as CSSProperties}><i />{TOOLS[t].title}: <b dir="ltr">{toolValue(t, team).replace(' نقطة مئوية', '')}</b></span>)}</footer>}
   </motion.article>;
@@ -134,7 +134,7 @@ export function ChartBoard({ ready, used, visible, active, onToggle, onBack, pla
     <motion.section className="rd2-summary" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
       <span className="rd2-ribbon">المقياس النشط</span>
       <div className="rd2-summary-tool"><span className="rd2-summary-icon"><ActiveIcon aria-hidden="true" /></span><div><b>{shownActive ? TOOLS[shownActive].title : 'اختار أداة'}</b><small>{shownActive ? TOOL_HINT[shownActive] : 'شغّل أداة عشان تشوف قيمتها للفريقين.'}</small></div></div>
-      {TEAM_SIDE.map(team => <div key={team} className={`rd2-summary-team rd2-tint-${team}`}><span className="rd2-team-icon" aria-hidden="true">👥</span><div><small>{TEAMS[team].name}</small><motion.b key={`${shownActive}-${team}`} initial={{ scale: .8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} dir="ltr">{shownActive ? toolValue(shownActive, team).replace(' نقطة مئوية', '') : '—'}</motion.b></div></div>)}
+      {TEAM_SIDE.map(team => <div key={team} className={`rd2-summary-team rd2-tint-${team}`}><span className="rd2-team-icon" aria-hidden="true"><Users /></span><div><small>{TEAMS[team].name}</small><motion.b key={`${shownActive}-${team}`} initial={{ scale: .8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} dir="ltr">{shownActive ? toolValue(shownActive, team).replace(' نقطة مئوية', '') : '—'}</motion.b></div></div>)}
     </motion.section>
     <div className="rd2-tools" role="group" aria-label="أدوات التحليل">{TOOL_ORDER.map((id, i) => { const isOn = visible.includes(id); const Icon = TOOL_ICON[id]; return <motion.button key={id} type="button" data-tool-toggle={id} aria-pressed={isOn} className={`rd2-tool ${isOn ? 'is-on' : ''} ${used.includes(id) ? 'is-used' : ''}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .04 * i }} whileTap={{ scale: .94, y: 2 }} onClick={() => { playSound?.(isOn ? 'click' : 'tick'); onToggle(id); }}><Icon aria-hidden="true" />{TOOLS[id].title}</motion.button>; })}</div>
     <div className="rd2-teams">{TEAM_SIDE.map(team => <TeamPanel key={team} team={team} visible={visible} leaving={leaving} />)}</div>
