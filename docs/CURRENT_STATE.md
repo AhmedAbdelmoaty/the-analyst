@@ -41,3 +41,8 @@
 - The Arabic historical reference records outstanding Reward Decision narrative/visual follow-up. Recheck relevant code and approved production assets before treating those older items as current blockers.
 
 See [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) for the architecture map and [THE_ANALYST_PROJECT_CONTEXT_AR.md](THE_ANALYST_PROJECT_CONTEXT_AR.md) for detailed history and product rationale.
+
+## 2026-10-21 — Reward Decision V2 (not published)
+- New flow: story → Sales (two separate documents) and HR («ملف معيار الأداء») → Analysis Room (5 tools, real-data histograms) → two-question Deduction Notebook → Final Report → Mahmoud then Marwan calls → Game Results. Meeting and recommendation board retired from play.
+- Outcome: both answers correct → Mahmoud/success (2/2); otherwise Marwan/failure (1/2 or 0/2). Saves are schema v5 (`rowad-v3`); older saves migrate without granting success.
+- Server evaluator for `rowad-v3` is prepared in `docs/sql/reward-decision-v3-evaluation.sql` but NOT applied; `SERVER_V3_EVALUATION_ENABLED` stays false until the owner approves it. Admin win/loss still comes from the `complete` event outcome.
