@@ -1,73 +1,52 @@
-import { renderGenderText, v, type Gender } from '@/lib/genderText';
-import type { Evaluation, FinalReport } from '../engine/model';
-import type { Line, Speaker } from './script';
+import { v, type Gender, type GenderText } from '@/lib/genderText';
+import { renderLines, type Line, type SourceLine, type Speaker } from './script';
 
 export interface EndingCall {
   caller: Extract<Speaker, 'mahmoud' | 'marwan'>;
   lines: Line[];
 }
 
-const line = (id: string, speaker: Speaker, text: string): Line => ({ id, speaker, text });
-const playerLine = (id: string, parts: Parameters<typeof renderGenderText>[0], gender: Gender): Line =>
-  line(id, 'player', renderGenderText(parts, gender));
+const L = (id: string, speaker: Speaker, text: GenderText): SourceLine => ({ id, speaker, text });
 
-export function endingCalls(report: FinalReport, evaluation: Evaluation, gender: Gender): [EndingCall, EndingCall] {
-  if (report.teamId === 'marwan') {
-    return [
-      {
-        caller: 'mahmoud',
-        lines: [
-          line('call_marwan_mahmoud_01', 'mahmoud', 'هو إيه اللي حصل ده؟! إنت رشّحت فريق مروان؟ أمال كشوف الناس اللي كانت قدامك دي عملت بيها إيه؟'),
-          playerLine('call_marwan_mahmoud_02', ['يا محمود، استنى بس، أنا ', v('راجعت', 'راجعت'), ' النتائج قبل ما أقدم التقرير.'], gender),
-          line('call_marwan_mahmoud_03', 'mahmoud', renderGenderText(['راجعت إيه؟! فريقي كله عامل المطلوب منه، وفي الآخر يطلع كأنه ما عملش حاجة! لو كام واحد شايلين نتيجة فريق كامل وإنت مش ', v('شايف', 'شايفة'), ' ده، يبقى إنت ', v('فاهم', 'فاهمة'), ' الإحصاء غلط. وقرارك ده ناس تعبت هي اللي هتدفع تمنه!'], gender)),
-        ],
-      },
-      {
-        caller: 'marwan',
-        lines: [
-          line('call_marwan_marwan_01', 'marwan', 'يا سلام عليك! حسام قالّي القرار خلاص اتعتمد. إنت كده ظبطتني، أنا كنت قلقان الموضوع يقف عند داليا.'),
-          playerLine('call_marwan_marwan_02', [v('ظبطتك؟', 'ظبطتك؟'), ' أنا قدمت توصية، مش بعمل خدمة لحد.'], gender),
-          line('call_marwan_marwan_03', 'marwan', 'يا عم توصية، خدمة… المهم المكافأة جت! بس حكاية إن كام واحد شايلين الباقي دي خلّيها بينّا. مش ناقصين حد يفتح الكلام ده دلوقتي. تسلم لي!'),
-        ],
-      },
-    ];
-  }
+/** Approved V2 endings: Mahmoud always calls first, Marwan second; five turns each. */
+const SUCCESS = {
+  mahmoud: [
+    L('success_mahmoud_01', 'mahmoud', 'إنت فين يا بني آدم؟! التكريم اتعتمد والناس عندي قالبين المكتب فرح! والله مش مصدقين نفسهم!'),
+    L('success_mahmoud_02', 'player', 'ألف مبروك يا محمود، تستاهلوا كل خير.'),
+    L('success_mahmoud_03', 'mahmoud', [v('الله يبارك فيك يا غالي. بجد تسلم إيدك، إنت ما استسهلتش ولا مشيت ورا الكلام الجاهز.', 'الله يبارك فيكِ يا غالية. بجد تسلم إيدك، إنتِ ما استسهلتيش ولا مشيتي ورا الكلام الجاهز.'), ' الناس دي تعبت، والنهارده حسّوا إن تعبهم ما راحش على الفاضي.']),
+    L('success_mahmoud_04', 'player', 'المهم إنهم فرحانين، سلّم لي عليهم كلهم.'),
+    L('success_mahmoud_05', 'mahmoud', ['ده أنا مش عارف أسكّتهم أصلًا! هقفل بقى قبل ما يعملوا زفة في المكتب. ', v('تسلم يا نجم!', 'تسلمي يا نجمة!')]),
+  ],
+  marwan: [
+    L('success_marwan_01', 'marwan', ['معلش، ', v('فهمني', 'فهميني'), ' بقى… إحنا نجيب أعلى متوسط، وفي الآخر التكريم يروح لمحمود؟! طب الـ95% دي أعمل بيها إيه، أعلّقها برواز في المكتب؟!']),
+    L('success_marwan_02', 'player', 'أنا قدمت المراجعة بالأسباب اللي وصلت لها، والقرار اتبنى عليها.'),
+    L('success_marwan_03', 'marwan', 'ما هو ده اللي مجنني! أنا عندي فريق مستني مني خبر حلو، وفجأة ألاقي نفسي لازم أشرح لهم ليه التكريم راح لغيرنا. هو أنا اللي مش فاهم، ولا فيه حاجة في التقرير فاتتني؟'),
+    L('success_marwan_04', 'player', 'التقرير موجود يا مروان، ومن حقك تراجعه وتطلب توضيح.'),
+    L('success_marwan_05', 'marwan', ['هراجعه وهتكلم مع حسام كمان. بس بصراحة… ', v('إنت قلبتلي اليوم كله على دماغي. ماشي يا سيدي، سلام!', 'إنتِ قلبتيلي اليوم كله على دماغي. ماشي يا ستي، سلام!')]),
+  ],
+};
 
-  const supported = evaluation.outcome === 'supported';
+const FAILURE = {
+  mahmoud: [
+    L('failure_mahmoud_01', 'mahmoud', ['إيه اللي أنا سمعته ده؟! مروان اتكرّم؟! ', v('قولّي', 'قولي'), ' إن دي إشاعة، عشان أنا مش ناقص!']),
+    L('failure_mahmoud_02', 'player', 'للأسف يا محمود، القرار اتعتمد وأنا بعت تقرير المراجعة.'),
+    L('failure_mahmoud_03', 'mahmoud', [v('مراجعة إيه بس؟! هو إنت كنت بتقرأ الأرقام ولا بتتفرج عليها؟! إنت فاهم إحصاء أصلًا، ولا أي رقم شكله حلو تصدقه وخلاص؟!', 'مراجعة إيه بس؟! هو إنتِ كنتِ بتقري الأرقام ولا بتتفرجي عليها؟! إنتِ فاهمة إحصاء أصلًا، ولا أي رقم شكله حلو تصدقيه وخلاص؟!'), ' عندي فريق شغال طول الشهر، وفي الآخر حقه يضيع بمراجعة زي دي؟!']),
+    L('failure_mahmoud_04', 'player', 'يا محمود، أنا راجعت التقرير وقدمت اللي وصلت له—'),
+    L('failure_mahmoud_05', 'mahmoud', [v('طب يا ريت المرة الجاية تبقى فاهم إنت قارنت إيه بإيه قبل ما تقرر في حق ناس!', 'طب يا ريت المرة الجاية تبقي فاهمة إنتِ قارنتي إيه بإيه قبل ما تقرري في حق ناس!'), ' والله كان أسهل تعملوا قرعة وتوفروا علينا وجع الدماغ ده. سلام!']),
+  ],
+  marwan: [
+    L('failure_marwan_01', 'marwan', [v('يا باشااا! أخيرًا رديت! إنت مش متخيل أنا اتبسطت قد إيه لما الاعتماد وصل. تسلم يا كبير، الجميل ده مش هيتنسي!', 'يا باشااا! أخيرًا رديتي! إنتِ مش متخيلة أنا اتبسطت قد إيه لما الاعتماد وصل. تسلمي يا كبيرة، الجميل ده مش هيتنسي!')]),
+    L('failure_marwan_02', 'player', 'ألف مبروك يا مروان، بس جميل إيه؟ أنا قدمت مراجعة مش بعمل خدمة لحد.'),
+    L('failure_marwan_03', 'marwan', [v('يا عم ماشي، مراجعة، خدمة، سميها اللي تسميها! إنت ظبطت الدنيا على الآخر. بصراحة أنا كنت قلقان الموضوع يتعطل، بس طلعت قدها يا نجم!', 'يا ستي ماشي، مراجعة، خدمة، سميها اللي تسميها! إنتِ ظبطتي الدنيا على الآخر. بصراحة أنا كنت قلقان الموضوع يتعطل، بس طلعتي قدها يا نجمة!')]),
+    L('failure_marwan_04', 'player', 'يا مروان، الموضوع مش بالمنظر ده، أنا عملت شغلي.'),
+    L('failure_marwan_05', 'marwan', [v('عارف عارف… وإنت كمان متواضع! خلاص يا سيدي، مش هنتكلم كتير.', 'عارف عارف… وإنتِ كمان متواضعة! خلاص يا ستي، مش هنتكلم كتير.'), ' هروح أبشّر الشباب، والجميلة محفوظة! سلام يا باشا!']),
+  ],
+};
+
+export function endingCalls(success: boolean, gender: Gender): [EndingCall, EndingCall] {
+  const set = success ? SUCCESS : FAILURE;
   return [
-    {
-      caller: 'mahmoud',
-      lines: [
-        line('call_mahmoud_mahmoud_01', 'mahmoud', 'إنت لو شفت الناس هنا دلوقتي! أول ما عرفوا القرار المكتب كله قلب. أخيرًا حسّوا إن تعبهم اتشاف.'),
-        playerLine('call_mahmoud_mahmoud_02', ['مبروك يا محمود. سلّم لي عليهم، يستاهلوا يفرحوا.'], gender),
-        line(
-          supported ? 'call_mahmoud_supported_03' : 'call_mahmoud_unsupported_03',
-          'mahmoud',
-          supported
-            ? 'الله يبارك فيك. أنا كنت خايف الرقم الكبير يخطف عينك زي ما خطف عين الكل. بس إنت بصّيت كويس، وما ضيّعتش حق الناس. شكرًا بجد.'
-            : 'الله يبارك فيك. الناس كانت مستنية القرار ده من زمان. هسيبك دلوقتي وأروح أقول لهم بنفسي.',
-        ),
-      ],
-    },
-    {
-      caller: 'marwan',
-      lines: [
-        line('call_mahmoud_marwan_01', 'marwan', 'يعني إيه التكريم يروح لمحمود؟! إحنا أعلى متوسط، والناس كانت مستنية القرار. أنا أروح أقول لهم إيه دلوقتي؟'),
-        playerLine(
-          supported ? 'call_mahmoud_supported_marwan_02' : 'call_mahmoud_unsupported_marwan_02',
-          supported
-            ? ['قول لهم إن شغلهم اتراجع كله، مش الرقم الكبير بس. وأنا قدمت اللي شفته.']
-            : ['ده اللي وصلت له من المقارنة، وكتبته في التقرير.'],
-          gender,
-        ),
-        line(
-          supported ? 'call_mahmoud_supported_marwan_03' : 'call_mahmoud_unsupported_marwan_03',
-          'marwan',
-          supported
-            ? 'ماشي… واضح إن التقرير المختصر ما عدّاش معاك. أنا كنت فاكر الموضوع خلص من بدري. كده لازم أقعد مع حسام وأشوف هنعمل إيه مع باقي الفريق.'
-            : 'طب أنا شفت التقرير، ولسه مش فاهم إيه اللي حسم الاختيار. إنت رشّحت فريق محمود، بس الكلام اللي كاتبه مش موضّح لي ليه. وأنا لازم أرجع للناس برد واضح.',
-        ),
-      ],
-    },
+    { caller: 'mahmoud', lines: renderLines(set.mahmoud, gender) },
+    { caller: 'marwan', lines: renderLines(set.marwan, gender) },
   ];
 }

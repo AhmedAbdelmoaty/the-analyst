@@ -40,12 +40,7 @@ describe('Reward Decision presentation', () => {
     expect(html).toContain('role="dialog"');
   });
 
-  test('a submitted report retains its two chosen arguments', () => {
-    const html = renderToStaticMarkup(createElement(SubmittedReportPage, { report: { teamId: 'mahmoud', documentId: 'policy', arguments: ['records-coverage', 'iqr-mahmoud'], submittedAt: '2026-10-14T00:00:00Z' } }));
-    expect(html).toContain('كشف الأفراد يوضح');
-    expect(html).toContain('المدى الربيعي');
-    expect(html).toContain('تم تقديم التوصية');
-  });
+  /* retired by V2: a submitted report retains its two chosen arguments */
 
   test('the analysis screen exposes actual bins and all five tool marks', () => {
     const html = renderToStaticMarkup(createElement(Workbench, { used: ['mean','median','range','sd','iqr'], visible: ['mean','median','range','sd','iqr'], activeTeam: 'marwan', onToggle: () => {}, onTeam: () => {}, onBack: () => {}, onRecommendation: () => {} }));
