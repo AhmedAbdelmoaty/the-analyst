@@ -48,3 +48,15 @@ export function shortToolLabel(tool: 'mean' | 'median' | 'range' | 'sd' | 'iqr',
     case 'iqr': return `IQR ${fmtShort(s.iqr)}`;
   }
 }
+
+/* ---- V2 histogram: two-point bins on one shared 70–150% axis. Every count is an actual person. ---- */
+export const HIST_MIN = 70;
+export const HIST_MAX = 150;
+export const HIST_STEP = 2;
+export function histogramBins(values: readonly number[]) {
+  return Array.from({ length: (HIST_MAX - HIST_MIN) / HIST_STEP }, (_, index) => {
+    const start = HIST_MIN + index * HIST_STEP;
+    const end = start + HIST_STEP;
+    return { start, end, count: values.filter(v => v >= start && (v < end || (end === HIST_MAX && v === end))).length };
+  });
+}
