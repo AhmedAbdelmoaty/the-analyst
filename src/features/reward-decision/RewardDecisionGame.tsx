@@ -194,9 +194,10 @@ export default function RewardDecisionGame() {
   const onClockDone = useCallback((key: string) => advanceNarrative(key), [advanceNarrative]);
   useNarrativeClock(spec, run.visibleGraphemes, !frozen && !fileOpen && !focusDoc && !flyingDoc, onClockVisible, onClockDone);
 
+  const readTimer = useCallback(() => readActiveMs(uid, run.runId), [uid, run.runId]);
   const inRoom = ROOM_PHASES.includes(run.phase);
   const ready = salesReady(run.collectedDocs);
-  const timer = <CaseTimer uid={uid} runId={run.runId} running={!frozen && inRoom} />;
+  const timer = <CaseTimer read={readTimer} running={!frozen && inRoom} />;
   const roomTabs = run.phase !== 'report' && <RoomTabs active={run.phase === 'notebook' ? 'notebook' : 'charts'} notebookLocked={!ready} onCharts={() => { gameSound('click'); commit(r => at(r, 'workbench')); }} onNotebook={() => { gameSound('pageFlip'); commit(r => at(r, 'notebook')); }} />;
   return <MotionConfig reducedMotion={frozen ? 'always' : 'user'}><main className={`rd-root ${frozen ? 'rd-paused' : ''}`} dir="rtl" data-phase={run.phase} data-stage={run.stage} data-scene={sceneKey}>
     <ScenePlayer sceneKey={sceneKey}>

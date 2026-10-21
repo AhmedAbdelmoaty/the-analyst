@@ -4,7 +4,6 @@ import { ArrowLeft, BarChart3, Calculator, FolderOpen, Hourglass, Inbox, MoveHor
 import { TEAMS, TOOLS, TOOL_ORDER, type TeamId, type ToolId } from '../data/case';
 import { stats, toolValue } from '../engine/statistics';
 import { HIST_MAX, HIST_MIN, histogramBins } from '../presentation';
-import { readActiveMs } from '@/lib/analytics/rounds';
 
 /** Overlay colours deliberately avoid both team colours so no marker reads as a team hint. */
 export const OVERLAY: Record<ToolId, string> = { mean: '#1f2a5a', median: '#2a8f74', range: '#8a4fd1', sd: '#e07a2e', iqr: '#3c7fd8' };
@@ -22,9 +21,9 @@ const LEAVE_MS = 220;
 export function formatClock(ms: number) { const s = Math.max(0, Math.floor(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; }
 
 /** Counts up actual active play time; frozen while paused. */
-export function CaseTimer({ uid, runId, running }: { uid: string; runId: string; running: boolean }) {
-  const [ms, setMs] = useState(() => readActiveMs(uid, runId));
-  useEffect(() => { if (!running) return; const t = window.setInterval(() => setMs(m => Math.max(m + 1000, readActiveMs(uid, runId))), 1000); return () => clearInterval(t); }, [running, uid, runId]);
+export function CaseTimer({ read, running }: { read: () => number; running: boolean }) {
+  const [ms, setMs] = useState(read);
+  useEffect(() => { if (!running) return; const t = window.setInterval(() => setMs(m => Math.max(m + 1000, read())), 1000); return () => clearInterval(t); }, [running, read]);
   return <div className="rd2-timer" aria-label="وقت القضية"><Hourglass aria-hidden="true" /><b dir="ltr">{formatClock(ms)}</b><small>وقت القضية</small></div>;
 }
 
