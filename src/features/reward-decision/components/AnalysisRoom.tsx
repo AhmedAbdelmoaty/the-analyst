@@ -27,20 +27,19 @@ export function CaseTimer({ read, running }: { read: () => number; running: bool
   return <div className="rd2-timer" aria-label="وقت القضية"><Hourglass aria-hidden="true" /><b dir="ltr">{formatClock(ms)}</b><small>وقت القضية</small></div>;
 }
 
-export function RoomFrame({ kicker, title, subtitle, icon, onBack, onFile, timer, tabs, children, className = '' }: {
-  kicker: string; title: string; subtitle: string; icon: ReactNode; onBack: () => void; onFile: () => void; timer: ReactNode; tabs?: ReactNode; children: ReactNode; className?: string;
+export function RoomFrame({ kicker, title, subtitle, icon, onBack, onFile, tabs, children, className = '' }: {
+  kicker: string; title: string; subtitle: string; icon: ReactNode; onBack: () => void; onFile: () => void; tabs?: ReactNode; children: ReactNode; className?: string;
 }) {
   return <section className={`rd2-room ${className}`} dir="rtl">
     <Props />
     <header className="rd2-top">
       <div className="rd2-title"><span className="rd2-title-icon">{icon}</span><div><small>{kicker}</small><h2>{title}</h2><p>{subtitle}</p></div></div>
-      {timer}
       <div className="rd2-top-actions">
         <button className="rd2-btn rd2-btn-gold" onClick={onFile}><FolderOpen aria-hidden="true" />ملف القضية</button>
         <button className="rd2-btn rd2-btn-gold" onClick={onBack}>رجوع للمكتب<ArrowLeft aria-hidden="true" /></button>
       </div>
+      {tabs}
     </header>
-    {tabs}
     {children}
   </section>;
 }

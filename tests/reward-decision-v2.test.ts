@@ -12,8 +12,9 @@ import { inspectRun, storageKey } from '../src/features/reward-decision/engine/p
 import { resolveScene } from '../src/features/reward-decision/engine/resolveScene';
 import { FinalReport } from '../src/features/reward-decision/components/FinalReport';
 import { DeductionNotebook } from '../src/features/reward-decision/components/DeductionNotebook';
-import { ChartBoard } from '../src/features/reward-decision/components/AnalysisRoom';
+import { CaseTimer, ChartBoard } from '../src/features/reward-decision/components/AnalysisRoom';
 import { GameResults } from '../src/features/reward-decision/components/GameResults';
+import { GameHud } from '../src/features/reward-decision/components/Ui';
 
 const mem = new Map<string, string>();
 (globalThis as any).localStorage = { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => mem.set(k, v), removeItem: (k: string) => mem.delete(k) };
@@ -124,9 +125,21 @@ describe('no spoilers before submission', () => {
     for (const score of [0, 1, 2] as const) {
       const html = renderToStaticMarkup(createElement(GameResults, { score, activeMs: 61000, onReplay() {}, onExit() {} }));
       expect(html).toContain(`${score}/2`);
+      expect(html).toContain(score === 2 ? 'is-win' : score === 1 ? 'is-partial' : 'is-retry');
       expect(html).not.toContain('المركز');
       expect(html).not.toContain('center_');
     }
+  });
+});
+
+describe('persistent case timer HUD', () => {
+  test('keeps the live case clock in the game HUD across active phases', () => {
+    const html = renderToStaticMarkup(createElement(GameHud, {
+      count: 2, onFile() {}, onPause() {}, onExit() {}, hideFile: true,
+      timer: createElement(CaseTimer, { read: () => 125000, running: true }),
+    }));
+    expect(html).toContain('وقت القضية');
+    expect(html).toContain('02:05');
   });
 });
 

@@ -1,435 +1,387 @@
-import { ArrowLeft, ChevronLeft, ChevronRight, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, Clock3, Heart, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useReducer, useRef, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
-import { CASES, TUTORIAL } from "./data/cases";
-import { BRIEFING, CHOICES, ENDING_LINE, MEETING_LINE, SKILLS, TUTORIAL_LINES } from "./data/dialogue";
-import { EvidenceCard, EvidenceTray } from "./components/EvidenceFile";
-import { ScatterGuess } from "./components/ScatterGuess";
+import analystMark from "@/assets/brand/the-analyst-mark.png";
+import { CASES, TUTORIAL, type Pattern } from "./data/cases";
+import { BRIEFING, CASE_LINES, CHOICES, ENDING_COPY, MEETING_LINE, REACTION_LINES, RELATION_LABELS, TUTORIAL_LINES } from "./data/dialogue";
 import { ScatterPlot } from "./components/ScatterPlot";
-import { StoryCard } from "./components/StoryCard";
+import { currentCase, initialState, reducer, ROUND_SECONDS, totalScore, type Action, type Ending, type GameState } from "./engine/gameState";
+import { createRunSeed } from "./engine/datasets";
+import { hasLegacyProgress, loadMeta, loadState, saveMeta, saveState, type Meta } from "./engine/persistence";
 import { patternFor, pearson } from "./engine/correlation";
-import { ChaseTimer } from "./components/Mascot";
-import { currentCase, ROUND_SECONDS, initialState, reducer, type Action, type GameState } from "./engine/gameState";
-import { loadMeta, loadState, saveMeta, saveState, type Meta } from "./engine/persistence";
 import { playTone } from "./engine/sound";
-import { createRunSeed, generateRunCases } from "./engine/datasets";
-import { GuideIllustration } from "./components/GuideIllustration";
-import { RoundOutcome } from "./components/RoundOutcome";
-import { OutcomeAnimation } from "./components/OutcomeAnimation";
 
-function Brand() {
+const patternChoices: { id: Pattern; symbol: string; label: string; detail: string }[] = [
+  { id: "up", symbol: "↗", label: "علاقة طردية", detail: "بيزيدوا مع بعض" },
+  { id: "down", symbol: "↘", label: "علاقة عكسية", detail: "واحد يزيد والتاني يقل" },
+  { id: "none", symbol: "•••", label: "مفيش اتجاه واضح", detail: "النقط متبعثرة" },
+];
+
+function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return <button className="btd-icon-button" type="button" aria-label={label} title={label} onClick={onClick}>{children}</button>;
+}
+
+function GameHeader({ state, time, paused, muted, onPause, onMute }: { state: GameState; time?: number; paused: boolean; muted: boolean; onPause: () => void; onMute: () => void }) {
+  const timed = state.phase === "puzzle" || state.phase === "reveal";
   return (
-    <header dir="ltr" className="flex items-center justify-between border-b bg-card px-4 py-3">
-      <div className="flex items-center gap-2">
-        <span className="rounded-md bg-primary px-2 py-1 font-latin text-sm font-black tracking-widest text-primary-foreground">IMP</span>
+    <header className="btd-hud" aria-label="حالة اللعبة">
+      <div className="btd-hud-lives" aria-label={`${state.hearts} من 3 قلوب`}>
+        {[0, 1, 2].map((i) => <Heart key={i} aria-hidden="true" className={i < state.hearts ? "is-alive" : "is-broken"} fill="currentColor" />)}
       </div>
-      <div className="font-latin text-sm font-bold tracking-tight">
-        The <span className="text-primary">Analyst</span>
+        {timed && <div className="btd-hud-case">التحدي <b dir="ltr">{state.caseIndex + 1} / 3</b></div>}
+      {timed && <div className={`btd-hud-clock ${time !== undefined && time <= 5 ? "is-urgent" : ""}`} aria-live="polite">
+        <Clock3 aria-hidden="true" /><b dir="ltr">{time ?? "20"}</b><span>ثانية</span>
+      </div>}
+      <img className="btd-brand-mark" src={analystMark} alt="The Analyst" />
+      <div className="btd-hud-tools">
+        {timed && state.phase === "puzzle" && <IconButton label={paused ? "كمّل اللعبة" : "إيقاف مؤقت"} onClick={onPause}>{paused ? <Play /> : <Pause />}</IconButton>}
+        <IconButton label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</IconButton>
       </div>
     </header>
   );
 }
 
-const Btn = ({ children, onClick, variant = "primary", className = "" }: { children: React.ReactNode; onClick?: () => void; variant?: "primary" | "ghost"; className?: string }) => (
-  <button
-    onClick={onClick}
-    className={`inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6 text-base font-bold transition active:scale-[0.99] ${
-      variant === "primary" ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border bg-card text-foreground hover:bg-muted"
-    } ${className}`}
-  >
-    {children}
-  </button>
-);
+function Actor({ name, state, className = "" }: { name: "leila" | "glitch" | "dotty"; state: string; className?: string }) {
+  const labels = { leila: "ليلى صاحبة عربية الآيس كريم", glitch: "جليتش الشرير البنفسجي", dotty: "دوتّي صاحبة الجسم الوردي" };
+  return <div className={`btd-actor btd-actor-${name} ${className} ${state ? `act-${state}` : ""}`} aria-hidden="true"><img src={`/assets/behind-dots/${name}-v5.png`} alt={labels[name]} draggable="false" /></div>;
+}
+
+function MarketStage({ mood = "calm", className = "", speaker }: { mood?: string; className?: string; speaker?: "leila" | "glitch" }) {
+  return (
+    <div className={`btd-market-stage mood-${mood} ${className}`} data-speaker={speaker} aria-hidden="true">
+      <div className="btd-market-sky" />
+      <img className="btd-market-art" src="/assets/behind-dots/market-v5.png" alt="" draggable="false" />
+      <div className="btd-market-glow" />
+      <Actor name="glitch" state={mood} />
+      <Actor name="dotty" state={mood} />
+      <Actor name="leila" state={mood} />
+      <div className="btd-counter-front" />
+      <div className="btd-confetti" />
+      {mood === "timeout" && <div className="btd-capture-bubble">دوتّي بأمان!<span>🫧</span></div>}
+    </div>
+  );
+}
+
+function useCountdown(active: boolean, paused: boolean, onTimeout: () => void) {
+  const [seconds, setSeconds] = useState(ROUND_SECONDS);
+  const callback = useRef(onTimeout);
+  callback.current = onTimeout;
+  useEffect(() => {
+    if (!active) {
+      setSeconds(ROUND_SECONDS);
+      return;
+    }
+  }, [active]);
+  useEffect(() => {
+    if (!active || paused) return;
+    const id = window.setInterval(() => {
+      setSeconds((left) => {
+        if (left <= 1) {
+          window.clearInterval(id);
+          return 0;
+        }
+        return left - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [active, paused]);
+  useEffect(() => { if (active && !paused && seconds === 0) callback.current(); }, [active, paused, seconds]);
+  return active ? seconds : undefined;
+}
+
+function HeartsBadge({ count }: { count: number }) {
+  return <span className="btd-hearts-inline" aria-label={`${count} قلوب متبقية`}>{[0, 1, 2].map((i) => <Heart key={i} aria-hidden="true" fill="currentColor" className={i < count ? "is-alive" : "is-broken"} />)}</span>;
+}
+
+function ChaseLane({ seconds, paused }: { seconds: number; paused: boolean }) {
+  const progress = Math.min(1, Math.max(0, (ROUND_SECONDS - seconds) / ROUND_SECONDS));
+  return <div className={`btd-chase-lane ${seconds <= 5 ? "is-urgent" : ""} ${paused ? "is-paused" : ""}`} aria-label={`جليتش يقترب من دوتّي، باقي ${seconds} ثانية`} style={{ "--chase-progress": progress } as CSSProperties}>
+    <div className="btd-chase-track"><span /></div>
+    <div className="btd-chase-glitch" style={{ left: `${3 + progress * 55}%` }} aria-hidden="true"><img src="/assets/behind-dots/glitch-v5.png" alt="" /></div>
+    <div className="btd-chase-dotty" aria-hidden="true"><img src="/assets/behind-dots/dotty-v5.png" alt="" /></div>
+    <span className="btd-chase-callout">{seconds <= 5 ? "جليتش قرب!" : "دوتّي بتجري!"}</span>
+  </div>;
+}
+
+function ReactionCinema({ kind, onSkip }: { kind: "win" | "wrong" | "timeout"; onSkip: () => void }) {
+  return <div className={`btd-reaction-cinema cinema-${kind}`} aria-live="assertive">
+    <div className="btd-cinema-speed" aria-hidden="true" />
+    <div className="btd-cinema-prop" aria-hidden="true">🍦</div>
+    <div className="btd-cinema-glitch" aria-hidden="true"><img src="/assets/behind-dots/glitch-v5.png" alt="" /></div>
+    <div className="btd-cinema-dotty" aria-hidden="true"><img src="/assets/behind-dots/dotty-v5.png" alt="" /></div>
+    {kind === "timeout" && <div className="btd-cinema-net" aria-hidden="true" />}
+    <div className="btd-cinema-stamp">{kind === "win" ? "صح جدًا!" : kind === "wrong" ? "جليتش قرب!" : "خلص الوقت!"}</div>
+    <div className="btd-cinema-impact">{kind === "win" ? "+3 ✦" : "قلب واحد اتكسر ♡"}</div>
+    <button type="button" className="btd-cinema-skip" onClick={onSkip}>كمّل ←</button>
+  </div>;
+}
 
 export function BehindTheDotsGame({ userId }: { userId: string }) {
   const [loaded, setLoaded] = useState(false);
   const [state, rawDispatch] = useReducer(reducer, initialState);
   const [meta, setMeta] = useState<Meta>({ tutorialDone: false, bestScore: 0, muted: false });
-  const stateRef = useRef<GameState>(state);
+  const [legacyNotice, setLegacyNotice] = useState(false);
+  const [spokenChars, setSpokenChars] = useState(0);
+  const [readyCase, setReadyCase] = useState<number | null>(null);
+  const [reactionVisible, setReactionVisible] = useState(false);
+  const [settledTime, setSettledTime] = useState(ROUND_SECONDS);
+  const timeRef = useRef<number | undefined>(ROUND_SECONDS);
+  const stateRef = useRef(state);
   stateRef.current = state;
 
   useEffect(() => {
-    const s = loadState(window.localStorage, userId);
-    rawDispatch({ type: "__hydrate", s });
-    setMeta(loadMeta(window.localStorage, userId));
+    const storage = window.localStorage;
+    setLegacyNotice(hasLegacyProgress(storage, userId));
+    rawDispatch({ type: "__hydrate", s: loadState(storage, userId) });
+    setMeta(loadMeta(storage, userId));
     setLoaded(true);
   }, [userId]);
 
+  useEffect(() => { if (loaded) saveState(window.localStorage, userId, state); }, [state, loaded, userId]);
   useEffect(() => {
-    if (loaded) saveState(window.localStorage, userId, state);
-  }, [state, loaded, userId]);
-
-  useEffect(() => {
-    const onVis = () => document.hidden && rawDispatch({ type: "pause" });
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
+    const onVisibility = () => { if (document.hidden) rawDispatch({ type: "pause" }); };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
-
-  const updateMeta = (m: Partial<Meta>) =>
-    setMeta((prev) => {
-      const next = { ...prev, ...m };
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); }, [state.phase, state.caseIndex]);
+  useEffect(() => {
+    if (state.phase !== "briefing") return;
+    setSpokenChars(0);
+    const length = Array.from(BRIEFING[state.briefingStep]!.text).length;
+    const id = window.setInterval(() => setSpokenChars((count) => {
+      if (count >= length) { window.clearInterval(id); return count; }
+      return count + 1;
+    }), 24);
+    return () => window.clearInterval(id);
+  }, [state.phase, state.briefingStep]);
+  useEffect(() => {
+    if (state.phase !== "puzzle") { setReadyCase(null); return; }
+    setReadyCase(null);
+    const id = window.setTimeout(() => setReadyCase(state.caseIndex), 700);
+    return () => window.clearTimeout(id);
+  }, [state.phase, state.caseIndex]);
+  useEffect(() => {
+    if (state.phase !== "reveal" || !reactionVisible) return;
+    const result = state.results[currentCase(state).id];
+    const id = window.setTimeout(() => setReactionVisible(false), result?.timedOut ? 2900 : 2450);
+    return () => window.clearTimeout(id);
+  }, [state.phase, state.caseIndex, state.results, reactionVisible]);
+  useEffect(() => {
+    if (state.completed && totalScore(state) > meta.bestScore) {
+      const next = { ...meta, bestScore: totalScore(state) };
+      setMeta(next);
       saveMeta(window.localStorage, userId, next);
-      return next;
-    });
+    }
+  }, [state, meta, userId]);
 
-  const dispatch = (a: Action) => {
-    const previous = stateRef.current;
-    const guessIsRight = a.type === "submitTutorial"
-      ? previous.guess === patternFor(pearson(TUTORIAL.xs, TUTORIAL.ys)!)
-      : a.type === "submit"
-        ? previous.guess === patternFor(pearson(currentCase(previous).xs, currentCase(previous).ys)!)
-        : false;
-    const selectedChoice = CHOICES.find((c) => c.id === previous.choice);
-    const tone = a.type === "submit" && previous.phase === "puzzle" && previous.guess ? (guessIsRight ? "win" : "lose")
-      : a.type === "submitTutorial" && previous.phase === "tutorial" && previous.guess ? (guessIsRight ? "win" : "lose")
-      : a.type === "timeout" && previous.phase === "puzzle" && !previous.paused ? "lose"
-      : a.type === "submitChoice" && previous.phase === "meeting" && selectedChoice ? (selectedChoice.supported ? "win" : "lose")
-      : a.type === "attach" && previous.phase === "reveal" ? "save" : undefined;
-    if (tone) playTone(tone, meta.muted);
-    if (a.type === "finishTutorial" && !meta.tutorialDone) updateMeta({ tutorialDone: true });
-    rawDispatch(a);
+  const updateMeta = (update: Partial<Meta>) => setMeta((previous) => {
+    const next = { ...previous, ...update };
+    saveMeta(window.localStorage, userId, next);
+    return next;
+  });
+  const dispatch = (action: Action) => {
+    const before = stateRef.current;
+    const after = reducer(before, action);
+    if (action.type === "answer" || action.type === "timeout") {
+      const result = after.phase === "reveal" ? after.results[currentCase(before).id] : undefined;
+      if (result && before.phase === "puzzle") {
+        setSettledTime(action.type === "timeout" ? 0 : timeRef.current ?? ROUND_SECONDS);
+        setReactionVisible(true);
+        playTone(result.points === 3 ? "win" : "lose", meta.muted);
+      }
+    } else if (action.type === "recommendationAnswer") {
+      const choice = CHOICES.find((item) => item.id === action.choice);
+      if (choice) playTone(choice.supported ? "win" : "lose", meta.muted);
+    } else if (action.type === "start" || action.type === "advanceBriefing" || action.type === "showTutorialDays" || action.type === "attach") {
+      playTone("tap", meta.muted);
+    }
+    if (action.type === "submitTutorial" && after.phase === "tutorialReady" && !meta.tutorialDone) updateMeta({ tutorialDone: true });
+    if (action.type === "skipTutorial" && after.phase === "puzzle" && !meta.tutorialDone) updateMeta({ tutorialDone: true });
+    rawDispatch(action);
   };
 
-  useEffect(() => {
-    if (typeof window !== "undefined") window.scrollTo({ top: 0 });
-  }, [state.phase, state.caseIndex]);
+  const challengeReady = state.phase === "puzzle" && readyCase === state.caseIndex;
+  const time = useCountdown(challengeReady, state.paused, () => dispatch({ type: "timeout" }));
+  timeRef.current = time;
+  if (!loaded) return <div className="btd-loading" />;
 
-  if (!loaded) return <div className="min-h-screen bg-background" />;
-
-  const inGame = state.phase !== "cover";
+  const activeResult = state.phase === "reveal" ? state.results[currentCase(state).id] : undefined;
+  const resultMood = activeResult ? activeResult.points === 3 ? "win" : activeResult.timedOut ? "timeout" : "wrong" : null;
+  const shot = state.phase === "briefing" ? "dialogue" : state.phase === "tutorial" ? "notebook" : state.phase === "puzzle" ? "chart" : state.phase === "reveal" ? reactionVisible ? "reaction" : "chart" : state.phase === "debrief" ? "ending" : state.phase === "cover" ? "cover" : "plan";
+  const speaker = state.phase === "briefing" ? state.briefingStep === 1 ? "glitch" : "leila" : undefined;
+  const worldMood = resultMood ?? (state.phase === "debrief" ? state.ending === "glitch" ? "ending-glitch" : state.ending === "perfect" ? "ending-win" : "ending-saved" : state.phase === "puzzle" && (time ?? ROUND_SECONDS) <= 5 ? "urgent" : state.phase === "tutorialReady" ? "win" : "calm");
 
   return (
-    <div dir="rtl" lang="ar" className="behind-dots min-h-screen overflow-x-hidden bg-background text-foreground">
-      <Brand />
-      <div className={`mx-auto max-w-2xl px-4 pt-4 ${state.phase === "puzzle" ? "pb-48 pr-20" : "pb-16"}`}>
-        <div className="mb-4 flex items-center justify-between gap-2">
-          {inGame && state.phase !== "debrief" ? <EvidenceTray evidence={state.evidence} /> : <span />}
-          <div className="flex items-center gap-1">
-            {inGame && state.phase !== "debrief" && (
-              <IconBtn label="إيقاف مؤقت" onClick={() => dispatch({ type: "pause" })}>
-                <Pause className="h-4 w-4" />
-              </IconBtn>
-            )}
-            <IconBtn label={meta.muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={() => updateMeta({ muted: !meta.muted })}>
-              {meta.muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </IconBtn>
-          </div>
-        </div>
-
-        <main key={`${state.phase}-${state.caseIndex}`} className="animate-rise">
-          <Scene state={state} meta={meta} dispatch={dispatch} />
-        </main>
-        {state.phase === "puzzle" && <ChaseTimer key={state.caseIndex} seconds={ROUND_SECONDS} paused={state.paused} onTimeout={() => dispatch({ type: "timeout" })} />}
-        {state.phase === "puzzle" && (
-          <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-card backdrop-blur">
-            <div className="mx-auto max-w-2xl">
-              <button onClick={() => dispatch({ type: "submit" })} disabled={state.guess === null} className="h-14 w-full rounded-xl bg-primary text-lg font-black text-primary-foreground shadow-card disabled:opacity-50">
-                {state.guess === null ? "اختار شكل النقط الأول ↑" : "ثبّت اختياري!"}
-              </button>
-            </div>
-          </div>
+    <div className={`behind-dots btd-app shot-${shot} ${state.paused ? "is-paused" : ""} ${resultMood ? `outcome-${resultMood}` : ""}`} dir="rtl" lang="ar">
+      <div className="btd-app-backdrop" />
+      <div className="btd-shell">
+        <MarketStage mood={worldMood} speaker={speaker} className="btd-world" />
+        {(state.phase === "puzzle" || state.phase === "reveal" || state.phase === "tutorial" || state.phase === "tutorialReady" || state.phase === "recommendation" || state.phase === "recommendationFeedback") && (
+          <GameHeader state={state} time={state.phase === "reveal" ? settledTime : time} paused={state.paused} muted={meta.muted} onPause={() => dispatch({ type: "pause" })} onMute={() => updateMeta({ muted: !meta.muted })} />
         )}
-      </div>
 
-      {state.paused && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm animate-pop rounded-2xl bg-card p-6 text-center shadow-card">
-            <h2 className="mb-2 text-xl font-bold">وقفنا اللعبة شوية</h2>
-            <p className="mb-5 text-base text-muted-foreground">خد نفسك. كل حاجة محفوظة.</p>
-            <Btn onClick={() => dispatch({ type: "resume" })} className="w-full">
-              <Play className="h-4 w-4" /> يلا نكمّل
-            </Btn>
-          </div>
-        </div>
-      )}
+        {state.phase === "cover" && (
+          <section className="btd-cover screen-enter">
+            <div className="btd-cover-copy">
+              <span className="btd-eyebrow">THE ANALYST · مغامرة تحليلية</span>
+              <h1>ورا النقط</h1>
+              <p>ساعد ليلى تقرأ دفتر الأيام، وتختار خطة صغيرة تستاهل التجربة.</p>
+              {legacyNotice && <div className="btd-legacy-note" role="status">اتحدّثت قواعد اللعبة. تقدم جولتك القديمة لسه محفوظ زي ما هو؛ ابدأ جولة جديدة بالقواعد الحالية.</div>}
+              <button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "start", seed: createRunSeed(state.runSeed) })}>افتح الحكاية <ArrowLeft /></button>
+              {meta.tutorialDone && <button className="btd-button btd-button-quiet" onClick={() => { dispatch({ type: "start", seed: createRunSeed(state.runSeed) }); window.setTimeout(() => dispatch({ type: "skipTutorial", tutorialEverDone: true }), 0); }}>ابدأ التحديات مباشرة <ArrowLeft /></button>}
+              <a className="btd-return-link" href="/app"><ArrowRight /> ارجع للألعاب</a>
+            </div>
+          </section>
+        )}
+
+        {state.phase === "briefing" && (() => {
+          const beat = BRIEFING[state.briefingStep]!;
+          const finalBeat = state.briefingStep === BRIEFING.length - 1;
+          const speakerName = speaker === "glitch" ? "جليتش" : "ليلى";
+          const lineLength = Array.from(beat.text).length;
+          const isSpeaking = spokenChars < lineLength;
+          const advance = () => isSpeaking ? setSpokenChars(lineLength) : dispatch({ type: finalBeat ? "openCase" : "advanceBriefing" });
+          return (
+            <section className={`btd-story speaker-${speaker} screen-enter`}>
+              <div className="btd-story-bubble" key={state.briefingStep}>
+                <img className="btd-speaker-portrait" src={`/assets/behind-dots/${speaker}-v5.png`} alt="" />
+                <div className="btd-speech-copy">
+                  <span className="btd-speaker-name">{speakerName} بتتكلم</span>
+                  <span className="btd-eyebrow">{beat.kicker}</span>
+                  <h1>{beat.title}</h1>
+                  <p aria-label={beat.text}>{Array.from(beat.text).slice(0, spokenChars).join("")}{isSpeaking && <span className="btd-type-caret" aria-hidden="true" />}</p>
+                </div>
+              </div>
+              <div className="btd-story-actions">
+                <button className="btd-button btd-button-primary" onClick={advance}>{isSpeaking ? "كمّل الكلام" : finalBeat ? "افتح الدفتر" : "كمّل الحكاية"} <ArrowLeft /></button>
+                <button className="btd-button btd-button-quiet" onClick={() => dispatch({ type: "skipStory" })}>تخطّي الحكاية</button>
+                {meta.tutorialDone && <button className="btd-button btd-button-quiet" onClick={() => dispatch({ type: "skipTutorial", tutorialEverDone: true })}>تخطّي التدريب</button>}
+              </div>
+              <div className="btd-story-progress" aria-label={`مشهد ${state.briefingStep + 1} من ${BRIEFING.length}`}>{BRIEFING.map((_, i) => <span key={i} className={i <= state.briefingStep ? "is-active" : ""} />)}</div>
+            </section>
+          );
+        })()}
+
+        {state.phase === "tutorial" && (
+          <section className="btd-tutorial screen-enter">
+            <div className="btd-section-heading"><span className="btd-eyebrow">تدريب من غير وقت</span><h1>كل نقطة بتحكي يوم</h1><p>{TUTORIAL_LINES[0]}</p></div>
+            <div className="btd-tutorial-sheet">
+              <div className="btd-tutorial-step"><span>الخطوة {state.tutorialStep === 0 ? "1" : "2"} من 2</span><b>{state.tutorialStep === 0 ? "اضغط النقطة الحمرا أو ورّيني النقطة" : "أظهر باقي الأيام"}</b></div>
+              <div className="btd-plot-frame btd-tutorial-plot">
+                <ScatterPlot xs={TUTORIAL.xs} ys={TUTORIAL.ys} xLabel={TUTORIAL.xLabel} yLabel={TUTORIAL.yLabel} highlight={state.tutorialStep === 0 ? 5 : null} interactiveDot={state.tutorialStep === 0 ? 5 : undefined} onDotClick={() => dispatch({ type: "revealTutorialPoint" })} visiblePointIndices={state.tutorialStep < 2 ? [5] : undefined} showGuide={state.tutorialStep > 0} />
+              </div>
+              {state.tutorialStep === 0 && <button className="btd-button btd-button-sun btd-tutorial-action" onClick={() => dispatch({ type: "revealTutorialPoint" })}>ورّيني النقطة الحمرا <ArrowLeft /></button>}
+              {state.tutorialStep === 1 && <div className="btd-tutorial-coordinate" role="status">{TUTORIAL_LINES[1]} <b>الزوار: {TUTORIAL.xs[5]} · الكوبايات: {TUTORIAL.ys[5]}</b></div>}
+              {state.tutorialStep === 1 && <button className="btd-button btd-button-primary btd-tutorial-action" onClick={() => dispatch({ type: "showTutorialDays" })}>أظهر باقي الأيام <ArrowLeft /></button>}
+              {state.tutorialStep === 2 && <>
+                <p className="btd-tutorial-question">{TUTORIAL_LINES[2]}</p>
+                <div className="btd-pattern-options btd-tutorial-options">
+                  {patternChoices.map((choice) => <button key={choice.id} type="button" className={`btd-pattern-button ${state.tutorialGuess === choice.id ? "is-selected" : ""}`} aria-pressed={state.tutorialGuess === choice.id} onClick={() => dispatch({ type: "setGuess", value: choice.id })}><span className="btd-pattern-symbol">{choice.symbol}</span><span><strong>{choice.label}</strong><small>{choice.detail}</small></span></button>)}
+                </div>
+                {state.tutorialAttempts > 0 && <p className="btd-tutorial-hint" role="status">بص للنقط كلها مع بعض، مش لنقطة واحدة. المحاولة دي من غير خصم قلوب.</p>}
+                <button className="btd-button btd-button-primary btd-tutorial-action" disabled={!state.tutorialGuess} onClick={() => dispatch({ type: "submitTutorial" })}>{state.tutorialAttempts > 0 ? "جرّب تاني" : "ابدأ التحديات"} <ArrowLeft /></button>
+                {meta.tutorialDone && <button className="btd-button btd-button-quiet" onClick={() => dispatch({ type: "skipTutorial", tutorialEverDone: true })}>تخطّي التدريب</button>}
+              </>}
+            </div>
+          </section>
+        )}
+
+        {state.phase === "tutorialReady" && (
+          <section className="btd-ready screen-enter">
+            <div className="btd-ready-card">
+              <span className="btd-eyebrow">الدفتر اتفتح · التدريب من غير وقت</span>
+              <h1>{state.tutorialAttempts > 1 ? "دلوقتي عرفنا الاتجاه" : "بالضبط!"}</h1>
+              <p>{state.tutorialAttempts > 1 ? `النقط طالعة لفوق: ${RELATION_LABELS.up}. دلوقتي نقرأ الحالات التلاتة براحتنا.` : "المهم الاتجاه العام، مش إن كل نقطة تبقى على نفس الخط."}</p>
+              <div className="btd-ready-rules"><HeartsBadge count={3} /><span>٣ قلوب</span><i /><Clock3 /><span>٢٠ ثانية لكل تحدي</span></div>
+              <p>جليتش: «تقدر تلحق دوتّي قبل ما أوصلها؟»</p>
+              <button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "startChallenges" })}>ابدأ التحديات <ArrowLeft /></button>
+            </div>
+          </section>
+        )}
+
+        {(state.phase === "puzzle" || state.phase === "reveal") && (() => {
+          const storyCase = currentCase(state);
+          const result = state.phase === "reveal" ? state.results[storyCase.id] : undefined;
+          const mood = result ? (result.points === 3 ? "win" : result.timedOut ? "timeout" : "wrong") : time !== undefined && time <= 5 ? "urgent" : "calm";
+          return (
+            <section className={`btd-challenge screen-enter ${result ? `is-${mood}` : ""}`}>
+              <div className="btd-challenge-content">
+                <div className="btd-case-heading"><span className="btd-eyebrow">صفحة {state.caseIndex + 1} من 3 · {storyCase.title}</span>{!result && <p>{CASE_LINES[storyCase.id]}</p>}</div>
+                {result && reactionVisible ? <ReactionCinema kind={mood as "win" | "wrong" | "timeout"} onSkip={() => setReactionVisible(false)} /> : <div className="btd-chart-sheet" key={`page-${state.caseIndex}`}>
+                  <div className="btd-sheet-topline"><span className="btd-sticker">دفتر ليلى</span><span className="btd-chart-label">Scatter Plot</span></div>
+                  <div className="btd-plot-frame btd-main-plot">
+                    <ScatterPlot xs={storyCase.xs} ys={storyCase.ys} xLabel={storyCase.xLabel} yLabel={storyCase.yLabel} showFit={Boolean(result && result.actual !== "none")} />
+                  </div>
+                  <div className="btd-challenge-side">
+                    <h1 className="btd-case-question">{storyCase.question}</h1>
+                    {result ? (
+                      <div className={`btd-result-reaction reaction-${mood}`} aria-live="polite">
+                        <div className="btd-reaction-stamp">{result.timedOut ? "خلص الوقت!" : result.points === 3 ? "صح جدًا!" : "الاختيار اتقفل"}</div>
+                        <p>{REACTION_LINES[storyCase.id][result.timedOut ? "timeout" : result.points === 3 ? "win" : "wrong"]}</p>
+                        <div className="btd-reaction-footer"><strong className="btd-relation-reveal">{RELATION_LABELS[result.actual]}</strong><HeartsBadge count={state.hearts} />{result.points === 3 && <b className="btd-score-pop">+3</b>}</div>
+                        <button className="btd-button btd-button-primary btd-next-button" onClick={() => dispatch({ type: "attach" })}>{state.caseIndex === 2 ? "ساعد ليلى تختار خطة بكرة" : "اقلب الصفحة"} <ArrowLeft /></button>
+                      </div>
+                    ) : (
+                      <div className="btd-pattern-options" aria-label="اختار اتجاه العلاقة">
+                        {patternChoices.map((choice) => <button key={choice.id} type="button" className="btd-pattern-button" disabled={!challengeReady} onClick={() => dispatch({ type: "answer", value: choice.id })}><span className="btd-pattern-symbol">{choice.symbol}</span><span><strong>{choice.label}</strong></span></button>)}
+                      </div>
+                    )}
+                  </div>
+                </div>}
+                {state.phase === "puzzle" && <ChaseLane seconds={time ?? ROUND_SECONDS} paused={state.paused} />}
+              </div>
+            </section>
+          );
+        })()}
+
+        {(state.phase === "recommendation" || state.phase === "recommendationFeedback") && (
+          <section className="btd-recommendation screen-enter">
+            <div className="btd-recommend-card">
+              <span className="btd-eyebrow">دفتر ليلى · خطوة واحدة أخيرة</span>
+              <h1>خطة بكرة</h1>
+              <div className="btd-plan-speech"><img src="/assets/behind-dots/leila-v5.png" alt="" /><p className="btd-recommend-intro"><b>ليلى</b> {state.phase === "recommendationFeedback" ? "اختيارنا محتاج دليل أقوى. بص على العلاقات الثلاثة وجرب تاني." : MEETING_LINE}</p></div>
+              <div className="btd-evidence-strip" aria-label="ملخص العلاقات">
+                {state.evidence.map((id) => {
+                  const c = CASES.find((item) => item.id === id)!;
+                  const trend = state.results[id]?.actual;
+                  return <div className="btd-evidence-chip" key={id}><b>{c.title}</b><span>{trend ? RELATION_LABELS[trend] : ""}</span></div>;
+                })}
+              </div>
+              <h2>أنهي خطة أنسب نبدأ نجربها بناءً على البيانات اللي شفناها؟</h2>
+              {state.phase === "recommendation" ? <div className="btd-recommend-options">
+                {CHOICES.map((choice) => <button type="button" key={choice.id} onClick={() => dispatch({ type: "recommendationAnswer", choice: choice.id })} className="btd-recommend-option"><span>{choice.id}</span>{choice.text}<ArrowLeft /></button>)}
+              </div> : <button type="button" className="btd-button btd-button-primary btd-retry-plan" onClick={() => dispatch({ type: "retryRecommendation" })}>راجع العلاقات وجرب مرة تانية <ArrowLeft /></button>}
+              <div className="btd-attempts" aria-label={`المحاولات المستخدمة ${state.recommendationAttempts.length} من 2`}>{[0, 1].map((i) => <span key={i} className={i < state.recommendationAttempts.length ? "is-used" : ""} />)}<small>محاولتان</small></div>
+            </div>
+          </section>
+        )}
+
+        {state.phase === "debrief" && state.ending && <Results state={state} onReplay={() => dispatch({ type: "replay" })} />}
+
+        {state.paused && <div className="btd-pause-overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title"><div className="btd-pause-card"><span className="btd-eyebrow">وقفة صغيرة</span><h2 id="pause-title">دوتّي مستنية</h2><p>الوقت وقف. كل حاجة محفوظة.</p><button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "resume" })}><Play /> كمّل اللعب</button></div></div>}
+      </div>
     </div>
   );
 }
 
-function IconBtn({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button aria-label={label} title={label} onClick={onClick} className="grid h-11 w-11 place-items-center rounded-full border bg-card hover:bg-muted">
-      {children}
-    </button>
-  );
-}
-
-function BackToGames({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Results({ state, onReplay }: { state: GameState; onReplay: () => void }) {
   const navigate = useNavigate();
-  return <button type="button" onClick={() => navigate("/app")} className={`inline-flex items-center justify-center ${className}`}>{children}</button>;
-}
-
-function Scene({ state, meta, dispatch }: { state: GameState; meta: Meta; dispatch: (a: Action) => void }) {
-  switch (state.phase) {
-    case "cover":
-      return <Cover onStart={() => dispatch({ type: "start", seed: createRunSeed(state.runSeed) })} />;
-    case "briefing":
-      return <Briefing state={state} meta={meta} dispatch={dispatch} />;
-    case "tutorial":
-    case "tutorialReveal":
-      return <Tutorial state={state} meta={meta} dispatch={dispatch} />;
-    case "puzzle":
-    case "reveal":
-      return <Puzzle state={state} dispatch={dispatch} />;
-    case "meeting":
-    case "challenge":
-      return <Meeting state={state} dispatch={dispatch} />;
-    case "debrief":
-      return <Debrief state={state} dispatch={dispatch} />;
-  }
-}
-
-function Cover({ onStart }: { onStart: () => void }) {
+  const ending: Ending = state.ending ?? "glitch";
+  const copy = ENDING_COPY[ending];
   return (
-    <section className="story-cover py-5 text-center sm:py-8">
-      <div className="mx-auto mb-5 max-w-lg rounded-3xl border bg-card p-2 shadow-card sm:p-3">
-        <GuideIllustration scene="welcome" />
-      </div>
-      <div className="mb-3 inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-bold text-primary shadow-card">
-        <span className="animate-pulse">✦</span> مغامرة عربية الآيس كريم <span className="animate-pulse">✦</span>
-      </div>
-      <p className="mb-2 font-latin text-xs font-semibold uppercase tracking-[0.3em] text-primary">Behind the Dots</p>
-      <h1 className="mb-3 text-5xl font-black">ورا النقط</h1>
-      <p className="mx-auto mb-6 max-w-md text-lg leading-relaxed text-muted-foreground">
-        ليلى عندها عربية آيس كريم ودفتر مليان أيام ونقط. افهم معاها النقط بتقول إيه، وساعدها تجهّز لبكرة قبل ما جليتش يلحق دوتّي!
-      </p>
-      <div className="mx-auto mb-6 max-w-md rounded-2xl border bg-card p-4 text-right shadow-card">
-        <strong className="text-xl">هدفنا: نكسب وننقذ دوتّي! 🏁</strong>
-        <p className="mt-1 text-base leading-relaxed">اقرأ ٣ صفحات من دفتر ليلى، وبعدها ساعدها تختار خطة بكرة. كل ما تفهم النقط، دوتّي تقرب من النجاة!</p>
-      </div>
-      <div className="flex flex-col items-center gap-3">
-        <Btn onClick={onStart} className="w-full max-w-xs">يلا نعرف الحكاية <ChevronLeft className="h-5 w-5" /></Btn>
-        <BackToGames className="h-11 gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4 rotate-180" /> ارجع للألعاب</BackToGames>
-      </div>
-    </section>
-  );
-}
-
-function Briefing({ state, meta, dispatch }: { state: GameState; meta: Meta; dispatch: (a: Action) => void }) {
-  const done = state.briefingStep >= BRIEFING.length - 1;
-  const scene = BRIEFING[state.briefingStep]!;
-  return (
-    <section className="space-y-4">
-      <div className="story-intro-grid" key={state.briefingStep}>
-        <div className="story-art-wrap">
-          <GuideIllustration scene={scene.scene} />
-        </div>
-        <article className="story-narration">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <span className="rounded-full bg-primary-soft px-3 py-1.5 text-sm font-bold text-primary">{scene.kicker}</span>
-            <span dir="ltr" className="font-latin text-sm font-bold text-muted-foreground">{state.briefingStep + 1} / {BRIEFING.length}</span>
-          </div>
-          <h1 className="mb-3 text-3xl font-black leading-tight">{scene.title}</h1>
-          <p className="text-lg leading-[1.9]">{scene.text}</p>
-          {(scene.scene === "axes" || scene.scene === "point") && (
-            <div className="mt-4 flex flex-wrap gap-2 text-sm font-bold">
-              <span className="rounded-full bg-sky-100 px-3 py-2 text-sky-900">← تحت: حرارة اليوم</span>
-              <span className="rounded-full bg-rose-100 px-3 py-2 text-rose-900">↑ على الجنب: كوبايات اتباعت</span>
-            </div>
-          )}
-        </article>
-      </div>
-      {(scene.scene === "axes" || scene.scene === "point") && <TeachingPlot showPoint={scene.scene === "point"} />}
-      <div className="story-progress" aria-label={`مشهد ${state.briefingStep + 1} من ${BRIEFING.length}`}>
-        {BRIEFING.map((_, i) => <span key={i} className={i <= state.briefingStep ? "is-active" : ""} />)}
-      </div>
-      <div className="flex flex-wrap gap-2 pt-1">
-        {state.briefingStep > 0 && <Btn variant="ghost" onClick={() => dispatch({ type: "backBriefing" })}><ChevronRight className="h-4 w-4" /> اللي فات</Btn>}
-        <Btn onClick={() => dispatch({ type: done ? "openCase" : "advanceBriefing" })} className="flex-1">
-          {done ? "جرّب بنفسك من غير وقت" : "كمّل الحكاية"} <ChevronLeft className="h-5 w-5" />
-        </Btn>
-        {meta.tutorialDone && done && (
-          <Btn variant="ghost" onClick={() => dispatch({ type: "skipTutorial", tutorialEverDone: true })}>أنا فاهم اللعبة</Btn>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function TeachingPlot({ showPoint }: { showPoint: boolean }) {
-  return (
-    <div className="teaching-plot rounded-2xl border bg-card p-4 shadow-card" dir="rtl">
-      <h2 className="mb-2 text-xl font-black">{showPoint ? "تعالى نحط يوم الثلاثاء على الرسم" : "اقرأ الخطين الأول"}</h2>
-      <svg viewBox="0 0 400 275" className="mx-auto block w-full max-w-xl" role="img" aria-label={showPoint ? "نقطة يوم الثلاثاء عند حرارة ٢٤ درجة و١٨ كوباية" : "المحور الأفقي للحرارة والمحور الرأسي للكوبايات"}>
-        <path d="M52 24 V218 H370" fill="none" stroke="#526675" strokeWidth="3" />
-        {[0, 10, 20, 30, 40].map((n) => <g key={n}><path d={`M${52 + n * 7.5} 218 v6`} stroke="#526675" strokeWidth="2" /><text x={52 + n * 7.5} y="241" textAnchor="middle">{n}</text></g>)}
-        {[0, 10, 20, 30].map((n) => <g key={n}><path d={`M46 ${218 - n * 6} h6`} stroke="#526675" strokeWidth="2" /><text x="38" y={223 - n * 6} textAnchor="end">{n}</text></g>)}
-        <text x="210" y="268" textAnchor="middle">🌡️ درجة الحرارة ←</text>
-        <text x="18" y="100" transform="rotate(-90 18 100)" textAnchor="middle">🍦 كوبايات اتباعت</text>
-        {showPoint && <g className="teaching-point"><path d="M232 218 V110 H52" fill="none" stroke="#e78272" strokeWidth="2.5" strokeDasharray="6 5" /><circle cx="232" cy="110" r="11" fill="#e78272" stroke="#fff" strokeWidth="3" /><text x="245" y="101">الثلاثاء</text></g>}
-      </svg>
-      <p className="text-center text-lg font-bold">{showPoint ? "نروح لـ٢٤ درجة تحت، ونطلع لـ١٨ كوباية. التقاطع ده هو نقطة الثلاثاء!" : "كل يوم له رقم تحت ورقم على الجنب. مكان تقابلهم هيبقى نقطته."}</p>
-    </div>
-  );
-}
-
-function MiniPattern({ kind }: { kind: "up" | "down" | "none" }) {
-  const xs = [1, 2, 3, 4, 5, 6, 7, 8];
-  const ys = kind === "up" ? [2, 3, 3, 5, 5, 6, 8, 8] : kind === "down" ? [8, 7, 7, 5, 5, 4, 2, 2] : [5, 2, 7, 4, 8, 3, 6, 4];
-  const label = kind === "up" ? "طالعة لفوق ↗" : kind === "down" ? "نازلة لتحت ↘" : "متبعثرة";
-  return (
-    <div className="rounded-xl border bg-card p-2 text-center">
-      <ScatterPlot compact xs={xs} ys={ys} xLabel="" yLabel="" />
-      <div className="mt-1 text-sm font-semibold">{label}</div>
-    </div>
-  );
-}
-
-function Tutorial({ state, meta, dispatch }: { state: GameState; meta: Meta; dispatch: (a: Action) => void }) {
-  const [dot, setDot] = useState<number | null>(5);
-  const revealed = state.phase === "tutorialReveal";
-  const actual = patternFor(pearson(TUTORIAL.xs, TUTORIAL.ys)!);
-  if (revealed && state.tutorialGuess !== null) {
-    return <RoundOutcome c={TUTORIAL} result={{ guess: state.tutorialGuess, actual, points: 0 }} nextLabel="افتح دفتر ليلى" onNext={() => dispatch({ type: "finishTutorial" })} onRetry={() => dispatch({ type: "retryTutorial" })} />;
-  }
-  return (
-    <section className="space-y-4">
-      <div className="tutorial-coach">
-        <div className="tutorial-coach-art"><GuideIllustration scene="axes" /></div>
-        <div className="tutorial-coach-copy">
-          <span>ليلى معاك · مفيش تايمر</span>
-          <p>{TUTORIAL_LINES[0]}</p>
-        </div>
-      </div>
-      <p className="text-center text-lg font-bold">دوس على نقطة عشان تشوف اليوم ده</p>
-      <div className="rounded-2xl border bg-card p-3 shadow-card">
-        <ScatterPlot xs={TUTORIAL.xs} ys={TUTORIAL.ys} xLabel={TUTORIAL.xLabel} yLabel={TUTORIAL.yLabel} highlight={dot} onDotClick={setDot} />
-        {dot !== null && (
-          <p className="mt-1 text-center text-sm">
-            اليوم ده: {TUTORIAL.xLabel} = <b className="font-latin">{TUTORIAL.xs[dot]}</b> · {TUTORIAL.yLabel} = <b className="font-latin">{TUTORIAL.ys[dot]}</b>
-          </p>
-        )}
-      </div>
-      <StoryCard delay={150}>{TUTORIAL_LINES[1]}</StoryCard>
-      <div className="grid grid-cols-3 gap-2">
-        <MiniPattern kind="up" />
-        <MiniPattern kind="down" />
-        <MiniPattern kind="none" />
-      </div>
-      <h2 className="pt-2 text-center text-xl font-bold">دلوقتي اختار شكل النقط</h2>
-      <ScatterGuess
-        c={TUTORIAL}
-        guess={state.guess}
-        onGuess={(v) => dispatch({ type: "setGuess", value: v })}
-        onSubmit={() => dispatch({ type: "submitTutorial" })}
-        showPlot={false}
-      />
-      {!revealed && meta.tutorialDone && (
-        <button onClick={() => dispatch({ type: "skipTutorial", tutorialEverDone: true })} className="mx-auto block h-11 text-sm text-muted-foreground underline">
-          تخطّى التمرين
-        </button>
-      )}
-    </section>
-  );
-}
-
-function Puzzle({ state, dispatch }: { state: GameState; dispatch: (a: Action) => void }) {
-  const c = currentCase(state);
-  const result = state.phase === "reveal" ? state.results[c.id] : undefined;
-  if (result) return <RoundOutcome c={c} result={result} nextLabel={state.caseIndex === CASES.length - 1 ? "ساعد ليلى تختار خطة بكرة" : "اقلب الصفحة"} onNext={() => dispatch({ type: "attach" })} />;
-  return (
-    <section className="space-y-4">
-      <div className="text-xs font-semibold text-primary">
-        صفحة <span className="font-latin">{state.caseIndex + 1}</span> من <span className="font-latin">{CASES.length}</span> · {c.title}
-      </div>
-      <StoryCard>{c.question}</StoryCard>
-      <ScatterGuess
-        c={c}
-        guess={state.guess}
-        onGuess={(v) => dispatch({ type: "setGuess", value: v })}
-        hintsUsed={state.hintsUsed}
-        onHint={() => dispatch({ type: "hint" })}
-        onSubmit={() => dispatch({ type: "submit" })}
-        submitInDock={state.phase === "puzzle"}
-      />
-    </section>
-  );
-}
-
-function Meeting({ state, dispatch }: { state: GameState; dispatch: (a: Action) => void }) {
-  const challenge = state.phase === "challenge" ? CHOICES.find((c) => c.id === state.choice) : null;
-  if (challenge) return (
-    <section className="space-y-4" aria-live="polite">
-      <div className="rounded-2xl border bg-amber-50 p-4 shadow-card">
-        <h1 className="text-3xl font-black">جليتش خطف الخطة! 😅</h1>
-        <OutcomeAnimation kind="lose" />
-        <div className="flex items-start gap-3 rounded-xl bg-card p-3">
-          <p className="text-xl font-black leading-relaxed">ليلى: {challenge.quip}</p>
-        </div>
-      </div>
-      <div className="rounded-2xl border bg-card p-4 shadow-card">
-        <p className="text-sm font-bold text-muted-foreground">اختيارك</p>
-        <p className="mt-1 text-lg font-bold">{challenge.text}</p>
-        <p className="mt-3 rounded-xl bg-emerald-50 p-3 text-lg leading-relaxed">💡 {challenge.challenge}</p>
-      </div>
-      <Btn onClick={() => dispatch({ type: "revise" })} className="w-full">يلا نرجع وننقذ الخطة</Btn>
-    </section>
-  );
-  return (
-    <section className="space-y-4">
-      <h1 className="text-2xl font-bold">ليلى بتجهّز لبكرة</h1>
-      <StoryCard>{MEETING_LINE}</StoryCard>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {state.evidence.map((id) => (
-          <EvidenceCard key={id} id={id} result={state.results[id]} storyCase={state.runSeed === null ? undefined : generateRunCases(state.runSeed).find((c) => c.id === id)} />
-        ))}
-      </div>
-        <div className="space-y-2">
-          <h2 className="pt-2 text-xl font-bold">هتقول لليلى تعمل إيه؟</h2>
-          {CHOICES.map((ch) => (
-            <button
-              key={ch.id}
-              onClick={() => dispatch({ type: "choose", choice: ch.id })}
-              aria-pressed={state.choice === ch.id}
-              className={`flex w-full items-start gap-3 rounded-xl border bg-card p-4 text-right text-[15px] leading-relaxed transition hover:bg-muted ${
-                state.choice === ch.id ? "border-primary ring-2 ring-primary/30" : ""
-              }`}
-            >
-              <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border font-latin text-sm font-bold ${state.choice === ch.id ? "bg-primary text-primary-foreground" : ""}`}>
-                {ch.id}
-              </span>
-              {ch.text}
-            </button>
-          ))}
-          <Btn onClick={() => state.choice && dispatch({ type: "submitChoice" })} className={`w-full ${state.choice ? "" : "pointer-events-none opacity-40"}`}>
-            ثبّت الاختيار
-          </Btn>
-        </div>
-    </section>
-  );
-}
-
-function Debrief({ state, dispatch }: { state: GameState; dispatch: (a: Action) => void }) {
-  return (
-    <section className="space-y-5">
-      <div className="animate-pop rounded-2xl border bg-emerald-50 p-4 text-center shadow-card">
-        <h1 className="text-3xl font-black">{ENDING_LINE}</h1>
-        <OutcomeAnimation kind="win" />
-        <p className="mt-3 text-lg font-bold">دوتّي بترقص، وليلى بتحتفل! دلوقتي العربية جاهزة للتجربة بكرة.</p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {state.evidence.map((id) => (
-          <EvidenceCard key={id} id={id} result={state.results[id]} storyCase={state.runSeed === null ? undefined : generateRunCases(state.runSeed).find((c) => c.id === id)} />
-        ))}
-      </div>
-      <div className="rounded-2xl border bg-card p-4">
-        <h2 className="mb-2 text-xl font-bold">إيه اللي اتعلمناه؟</h2>
-        <ul className="list-disc space-y-1 pr-5 text-sm">
-          {SKILLS.map((s) => <li key={s}>{s}</li>)}
-        </ul>
-        <p className="mt-3 text-sm text-muted-foreground">
-          الرسم ورّانا أيام حصل فيها حاجتين مع بعض. عشان نعرف السبب بجد، ليلى لازم تجرّب وتراقب أيام تانية.
-        </p>
-      </div>
-      <div className="rounded-2xl bg-foreground p-5 text-center text-background">
-        <p className="text-xl font-black">كل نقطة يوم. والأيام بتحكي قصة!</p>
-        <p className="mt-1 text-base opacity-80">بس لازم نجرب قبل ما نقول عرفنا السبب.</p>
-      </div>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Btn onClick={() => dispatch({ type: "replay" })} className="flex-1">
-          <RotateCcw className="h-4 w-4" /> العب مرة تانية
-        </Btn>
-        <BackToGames className="h-12 flex-1 rounded-xl border bg-card font-bold hover:bg-muted">ارجع للألعاب</BackToGames>
+    <section className={`btd-results screen-enter ending-${ending}`}>
+      <div className="btd-results-card">
+        <span className="btd-eyebrow">{ending === "perfect" ? "٣ نجوم · جولة كاملة" : ending === "saved" ? "دوتّي رجعت بأمان" : "لسه نقدر نجرب تاني"}</span>
+        <h1>{copy.title}</h1>
+        <p>{copy.line}</p>
+        <div className="btd-results-score"><strong>{totalScore(state)}<small>/ 9</small></strong><span>النقاط</span><HeartsBadge count={state.hearts} /></div>
+        <div className="btd-results-dialogue"><img src="/assets/behind-dots/glitch-v5.png" alt="" /><span>جليتش:</span> {copy.glitch}</div>
+        <div className="btd-results-relations">{state.evidence.map((id) => {
+          const c = CASES.find((item) => item.id === id)!;
+          return <div key={id}><b>{c.title}</b><span>{state.results[id] ? RELATION_LABELS[state.results[id]!.actual] : ""}</span></div>;
+        })}</div>
+        <p className="btd-causality-note">النقط بتوضح ارتباط في الأيام اللي سجلناها؛ التجربة والقياس يساعدوا نعرف أكتر.</p>
+        <div className="btd-results-actions"><button className="btd-button btd-button-primary" onClick={onReplay}><RotateCcw /> العب مرة تانية</button><button className="btd-button btd-button-quiet" onClick={() => navigate("/app")}>ارجع للألعاب <ArrowRight /></button></div>
       </div>
     </section>
   );

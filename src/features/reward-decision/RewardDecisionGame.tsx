@@ -197,25 +197,25 @@ export default function RewardDecisionGame() {
   const readTimer = useCallback(() => readActiveMs(uid, run.runId), [uid, run.runId]);
   const inRoom = ROOM_PHASES.includes(run.phase);
   const ready = salesReady(run.collectedDocs);
-  const timer = <CaseTimer read={readTimer} running={!frozen && inRoom} />;
+  const timer = <CaseTimer read={readTimer} running={!frozen && run.phase !== 'cover' && run.phase !== 'debrief'} />;
   const roomTabs = run.phase !== 'report' && <RoomTabs active={run.phase === 'notebook' ? 'notebook' : 'charts'} notebookLocked={!ready} onCharts={() => { gameSound('click'); commit(r => at(r, 'workbench')); }} onNotebook={() => { gameSound('pageFlip'); commit(r => at(r, 'notebook')); }} />;
   return <MotionConfig reducedMotion={frozen ? 'always' : 'user'}><main className={`rd-root ${frozen ? 'rd-paused' : ''}`} dir="rtl" data-phase={run.phase} data-stage={run.stage} data-scene={sceneKey}>
     <ScenePlayer sceneKey={sceneKey}>
-      {run.phase !== 'cover' && run.phase !== 'debrief' && <GameHud count={run.collectedDocs.length} pulse={filePulse} phase={run.phase} hideFile={inRoom} onFile={openFile} onPause={() => { gameSound('click'); commit(r => ({ ...r, paused: true })); }} onExit={() => { gameSound('click'); exit(); }} />}
+      {run.phase !== 'cover' && run.phase !== 'debrief' && <GameHud count={run.collectedDocs.length} pulse={filePulse} phase={run.phase} hideFile={inRoom} timer={timer} onFile={openFile} onPause={() => { gameSound('click'); commit(r => ({ ...r, paused: true })); }} onExit={() => { gameSound('click'); exit(); }} />}
       <div className="rd-content"><AnimatePresence mode="wait"><motion.div key={`${inRoom ? 'room' : run.phase}-${inRoom ? '' : run.stage}-${run.endingCall}-${inRoom ? '' : sceneKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35 }}>
         {corrupt && run.phase === 'cover' && <section className="rd-cover"><h1>تعذر استعادة هذه الجولة</h1><span>يمكنك بدء جولة جديدة دون التأثير على حسابك أو اللعبة الأخرى.</span><ActionButton onClick={start}>بداية جديدة</ActionButton></section>}
         {!corrupt && run.phase === 'cover' && <section className="rd-cover"><img src={analystMark} alt="The Analyst" /><p>شركة روّاد للأجهزة الكهربائية</p><h1>قرار التكريم</h1><span>اقرأ المستندات، حلّل النتائج، وابعت تقريرك.</span><ActionButton onClick={start}>ابدأ الآن</ActionButton><img className="rd-imp" src={impLogo} alt="IMP" /></section>}
         {run.phase === 'celebration' && run.stage === 'draft' && <div className="rd-document-card"><p>ترشيح تكريم فريق المبيعات</p><b>بانتظار الاعتماد</b></div>}
         {line && <DialoguePanel line={line} lines={lines ?? []} index={run.dialogueIndex} total={lines?.length ?? 0} visible={run.visibleGraphemes} paused={frozen || fileOpen || Boolean(focusDoc)} gender={profile?.gender ?? null} delivered={line.documentId ? run.collectedDocs.includes(line.documentId) : false} onVisible={onVisible} onOpenDocument={openDocument} />}
         {run.phase === 'hub' && <OfficeCorridor visited={run.visited} docs={run.collectedDocs} gender={gender} playSound={gameSound} onVisit={place => place === 'workbench' ? act(r => at(r, 'workbench')) : visit(place)} />}
-        {run.phase === 'workbench' && <RoomFrame kicker="محطة فحص البيانات" title="غرفة التحليل" subtitle="شغّل أدواتك عشان تقرأ شكل التوزيع لكل فريق." icon={<BarChart3 aria-hidden="true" />} onBack={toHub} onFile={openFile} timer={timer} tabs={roomTabs}>
+        {run.phase === 'workbench' && <RoomFrame kicker="محطة فحص البيانات" title="غرفة التحليل" subtitle="شغّل أدواتك عشان تقرأ شكل التوزيع لكل فريق." icon={<BarChart3 aria-hidden="true" />} onBack={toHub} onFile={openFile} tabs={roomTabs}>
           <ChartBoard ready={ready} used={run.usedTools} visible={run.visibleTools} active={run.activeTool} onToggle={toggleTool} onBack={toHub} playSound={gameSound} />
         </RoomFrame>}
-        {run.phase === 'notebook' && <RoomFrame kicker="محطة فحص البيانات" title="دفتر الاستنتاجات" subtitle="سجّل ملاحظاتك التحليلية قبل تثبيت المراجعة." icon={<NotebookPen aria-hidden="true" />} onBack={toHub} onFile={openFile} timer={timer} tabs={roomTabs}>
+        {run.phase === 'notebook' && <RoomFrame kicker="محطة فحص البيانات" title="دفتر الاستنتاجات" subtitle="سجّل ملاحظاتك التحليلية قبل تثبيت المراجعة." icon={<NotebookPen aria-hidden="true" />} onBack={toHub} onFile={openFile} tabs={roomTabs}>
           {ready ? <DeductionNotebook answers={run.answers} order={run.choiceOrder} page={run.notebookPage} used={run.usedTools} locked={Boolean(run.submitted)} onAnswer={answer} onPage={p => commit(r => ({ ...r, notebookPage: p }))} onCharts={() => commit(r => at(r, 'workbench'))} onReview={() => act(r => at(r, 'report'))} playSound={gameSound} />
             : <ChartBoard ready={false} used={[]} visible={[]} active={null} onToggle={() => undefined} onBack={toHub} />}
         </RoomFrame>}
-        {run.phase === 'report' && <RoomFrame kicker="محطة فحص البيانات" title="تقديم التقرير النهائي" subtitle="راجع الاستنتاجات وبعدين ابعت التقرير لشريف." icon={<ClipboardList aria-hidden="true" />} onBack={toHub} onFile={openFile} timer={timer} className="rd2-room-report">
+        {run.phase === 'report' && <RoomFrame kicker="محطة فحص البيانات" title="تقديم التقرير النهائي" subtitle="راجع الاستنتاجات وبعدين ابعت التقرير لشريف." icon={<ClipboardList aria-hidden="true" />} onBack={toHub} onFile={openFile} className="rd2-room-report">
           <FinalReport runId={run.runId} answers={run.answers} docs={run.collectedDocs} sending={run.stage === 'sending'} onReview={() => act(r => r.submitted ? r : { ...at(r, 'notebook'), notebookPage: 0 })} onSubmit={submit} onSent={sent} playSound={gameSound} />
         </RoomFrame>}
         {run.phase === 'resolution' && run.stage === 'office' && <section className="rd-office-return" aria-label="العودة إلى مكتب المحلل"><p>بعد إرسال التقرير</p><h2>مكتب المحلل</h2></section>}

@@ -17,12 +17,12 @@ export const SPEAKERS: Record<Speaker, { name: string; role: string; tone: 'ligh
 };
 const L = (id: string, speaker: Speaker, text: GenderText, documentId?: DocumentId): SourceLine => ({ id, speaker, text, documentId });
 
-/** Approved V2 script — exact owner-supplied wording. Only gendered fragments use v(male, female). */
+/** Reward Decision V2 script. Only gendered fragments use v(male, female). */
 export const SOURCE_SCRIPT = {
   celebration: [
-    L('celebration_01', 'hossam', 'بص يا مروان، أنا رفعت ترشيح فريقك للتكريم. الأرقام قوية، بس متجريش تقول للناس مبروك… لسه شريف ما اعتمدش حاجة.'),
-    L('celebration_02', 'marwan', 'طب أعمل إيه دلوقتي؟ أقول للشباب يستنوا المفاجأة ولا أعمل نفسي مش عارف حاجة؟'),
-    L('celebration_03', 'hossam', 'اعمل نفسك مش عارف، أحسن ما نرجع نوزع اعتذارات بدل المكافآت!'),
+    L('celebration_01', 'hossam', 'مبروك يا مروان! متوسط فريقك 95% وأعلى من فريق محمود، يعني في التقييم الأولي أنتم كسبتوا بجدارة. الأرقام المرة دي قالت كلمتها!'),
+    L('celebration_02', 'marwan', 'الله يبارك فيك يا حسام! مبروك للشباب، تعبهم باين في النتايج. أخيرًا المتوسط جابلنا خبر حلو بدل ما نقعد نحسبه طول اليوم!'),
+    L('celebration_03', 'hossam', 'تستاهلوا يا رجالة. نتيجة التقييم الأولي واضحة، بس استنوا إعلان شريف والتكريم الرسمي؛ الكأس لسه ما وصلش، ما تسبقوش التصوير!'),
   ],
   debate: [
     L('debate_01', 'dalia', 'يا حسام، ترشيح مروان وصلني، بس محتاجين نتأكد إن ملف المراجعة كامل قبل الاعتماد.'),

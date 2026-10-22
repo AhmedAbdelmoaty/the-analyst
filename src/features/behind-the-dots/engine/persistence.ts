@@ -1,12 +1,16 @@
 import { ALL_CASE_IDS } from "../data/cases";
 import { initialState, type GameState, type Phase } from "./gameState";
 
-// Keep the previous story's save untouched; its guesses use a different format.
-const PREFIX = "the-analyst:behind-dots:v3";
-const PHASES: Phase[] = ["cover", "briefing", "tutorial", "tutorialReveal", "puzzle", "reveal", "meeting", "challenge", "debrief"];
+const PREFIX = "the-analyst:behind-dots:v5";
+const LEGACY_PREFIX = "the-analyst:behind-dots:v3";
+const PHASES: Phase[] = ["cover", "briefing", "tutorial", "tutorialReady", "puzzle", "reveal", "recommendation", "recommendationFeedback", "debrief"];
 
 export const sessionKey = (userId: string) => `${PREFIX}:${userId}`;
 export const metaKey = (userId: string) => `${PREFIX}:meta:${userId}`;
+export const legacySessionKey = (userId: string) => `${LEGACY_PREFIX}:${userId}`;
+export const hasLegacyProgress = (storage: Pick<Storage, "getItem">, userId: string) => {
+  try { return storage.getItem(legacySessionKey(userId)) !== null; } catch { return false; }
+};
 
 export interface Meta {
   tutorialDone: boolean;
@@ -14,53 +18,46 @@ export interface Meta {
   muted: boolean;
 }
 const defaultMeta: Meta = { tutorialDone: false, bestScore: 0, muted: false };
-
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 export function loadState(storage: StorageLike, userId: string): GameState {
   try {
     const raw = storage.getItem(sessionKey(userId));
     if (!raw) return { ...initialState };
-    const p = JSON.parse(raw) as Partial<GameState>;
-    if (p.v !== 3 || !p.phase || !PHASES.includes(p.phase)) return { ...initialState };
-    const evidence = Array.from(new Set((p.evidence ?? []).filter((id) => ALL_CASE_IDS.includes(id))));
-    // Tutorial state is transient: resume at a clean tutorial.
-    const phase: Phase = p.phase === "tutorialReveal" ? "tutorial" : p.phase;
+    const saved = JSON.parse(raw) as Partial<GameState>;
+    if (saved.v !== 5 || !saved.phase || !PHASES.includes(saved.phase)) return { ...initialState };
+    const evidence = Array.from(new Set((saved.evidence ?? []).filter((id) => ALL_CASE_IDS.includes(id))));
+    const phase: Phase = saved.phase === "recommendationFeedback" ? "recommendation" : saved.phase;
+    const results = Object.fromEntries(Object.entries(saved.results ?? {}).filter(([id]) => ALL_CASE_IDS.includes(id as never)));
     return {
       ...initialState,
-      ...p,
+      ...saved,
       phase,
       evidence,
+      results,
+      hearts: Math.max(0, Math.min(3, Number.isInteger(saved.hearts) ? saved.hearts! : 3)),
+      tutorialStep: saved.tutorialStep === 1 || saved.tutorialStep === 2 ? saved.tutorialStep : 0,
+      tutorialAttempts: Math.max(0, Math.min(2, saved.tutorialAttempts ?? 0)),
+      recommendationAttempts: (saved.recommendationAttempts ?? []).filter((id) => id === "A" || id === "B" || id === "C").slice(0, 2),
       paused: false,
-      guess: p.guess === "up" || p.guess === "down" || p.guess === "none" ? p.guess : null,
-      runSeed: typeof p.runSeed === "number" && Number.isFinite(p.runSeed) ? p.runSeed >>> 0 : null,
+      runSeed: typeof saved.runSeed === "number" && Number.isFinite(saved.runSeed) ? saved.runSeed >>> 0 : null,
     };
   } catch {
     return { ...initialState };
   }
 }
 
-export function saveState(storage: StorageLike, userId: string, s: GameState) {
-  try {
-    storage.setItem(sessionKey(userId), JSON.stringify(s));
-  } catch {
-    /* storage full / disabled */
-  }
+export function saveState(storage: StorageLike, userId: string, state: GameState) {
+  try { storage.setItem(sessionKey(userId), JSON.stringify(state)); } catch { /* storage full / disabled */ }
 }
 
 export function loadMeta(storage: StorageLike, userId: string): Meta {
   try {
     const raw = storage.getItem(metaKey(userId));
     return raw ? { ...defaultMeta, ...JSON.parse(raw) } : { ...defaultMeta };
-  } catch {
-    return { ...defaultMeta };
-  }
+  } catch { return { ...defaultMeta }; }
 }
 
-export function saveMeta(storage: StorageLike, userId: string, m: Meta) {
-  try {
-    storage.setItem(metaKey(userId), JSON.stringify(m));
-  } catch {
-    /* ignore */
-  }
+export function saveMeta(storage: StorageLike, userId: string, meta: Meta) {
+  try { storage.setItem(metaKey(userId), JSON.stringify(meta)); } catch { /* ignore */ }
 }

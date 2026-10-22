@@ -21,10 +21,13 @@ interface Props {
   showFit?: boolean | undefined;
   highlight?: number | null | undefined;
   onDotClick?: ((i: number) => void) | undefined;
+  interactiveDot?: number | undefined;
+  visiblePointIndices?: readonly number[] | undefined;
+  showGuide?: boolean | undefined;
   compact?: boolean;
 }
 
-export function ScatterPlot({ xs, ys, xLabel, yLabel, showFit, highlight, onDotClick, compact }: Props) {
+export function ScatterPlot({ xs, ys, xLabel, yLabel, showFit, highlight, onDotClick, interactiveDot, visiblePointIndices, showGuide = true, compact }: Props) {
   const W = 400;
   const H = compact ? 140 : 300;
   const m = compact ? { l: 14, r: 10, t: 10, b: 14 } : { l: 46, r: 16, t: 16, b: 48 };
@@ -41,7 +44,8 @@ export function ScatterPlot({ xs, ys, xLabel, yLabel, showFit, highlight, onDotC
     <svg
       style={{ direction: "ltr" }}
       viewBox={`0 0 ${W} ${H}`}
-      className="h-auto w-full select-none"
+      className="btd-scatter-svg h-auto w-full select-none"
+      preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label={`مخطط نقط: ${xLabel} مقابل ${yLabel}، ${xs.length} يوم`}
     >
@@ -97,10 +101,12 @@ export function ScatterPlot({ xs, ys, xLabel, yLabel, showFit, highlight, onDotC
         </clipPath>
       </defs>
       {xs.map((x, i) => {
+        if (visiblePointIndices && !visiblePointIndices.includes(i)) return null;
         const hi = highlight === i;
+        const isInteractive = interactiveDot === i && Boolean(onDotClick);
         return (
           <g key={i}>
-            {hi && !compact && (
+            {hi && !compact && showGuide && (
               <>
                 <line x1={sx(x)} x2={sx(x)} y1={sy(ys[i]!)} y2={H - m.b} className="stroke-primary" strokeDasharray="4 3" />
                 <line x1={m.l} x2={sx(x)} y1={sy(ys[i]!)} y2={sy(ys[i]!)} className="stroke-primary" strokeDasharray="4 3" />
@@ -113,11 +119,15 @@ export function ScatterPlot({ xs, ys, xLabel, yLabel, showFit, highlight, onDotC
               cx={sx(x)}
               cy={sy(ys[i]!)}
               r={compact ? 4 : hi ? 8 : 6.5}
-              className={`animate-dot ${hi ? "fill-primary" : "fill-chart-dot"} ${onDotClick ? "cursor-pointer" : ""}`}
+              className={`animate-dot ${hi ? "fill-primary btd-target-dot" : "fill-chart-dot"} ${isInteractive ? "cursor-pointer" : "pointer-events-none"}`}
               style={{ animationDelay: `${i * 25}ms`, opacity: 0.88 }}
-              onClick={onDotClick ? () => onDotClick(i) : undefined}
+              tabIndex={isInteractive ? 0 : undefined}
+              role={isInteractive ? "button" : undefined}
+              aria-label={isInteractive ? `يوم: ${xLabel} ${x}، ${yLabel} ${ys[i]}` : undefined}
+              onClick={isInteractive ? () => onDotClick?.(i) : undefined}
+              onKeyDown={isInteractive ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onDotClick?.(i); } } : undefined}
             />
-            {onDotClick && (
+            {isInteractive && (
               <circle cx={sx(x)} cy={sy(ys[i]!)} r={16} fill="transparent" className="cursor-pointer" onClick={() => onDotClick(i)} />
             )}
           </g>

@@ -15,7 +15,7 @@ export function GameResults({ score, activeMs, onReplay, onExit, playSound }: { 
   const copy = RESULT_COPY[score];
   useEffect(() => { playSound?.(win ? 'fanfare' : 'somber'); const t = window.setTimeout(() => playSound?.(win ? 'confetti' : 'sparkle'), 900); return () => clearTimeout(t); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const confetti = useMemo(() => win ? Array.from({ length: 26 }, (_, i) => ({ i, x: (i * 37) % 100, d: 2.6 + (i % 5) * .45, delay: (i % 7) * .18, r: (i * 53) % 360, c: i % 3 })) : [], [win]);
-  return <section className={`rd2-results ${win ? 'is-win' : 'is-loss'}`} data-testid="rd-results" data-score={score} dir="rtl">
+  return <section className={`rd2-results ${win ? 'is-win' : score === 1 ? 'is-partial' : 'is-retry'}`} data-testid="rd-results" data-score={score} dir="rtl">
     {confetti.map(p => <motion.i key={p.i} className={`rd2-confetti c${p.c}`} style={{ left: `${p.x}%` } as CSSProperties} initial={{ y: -40, rotate: p.r, opacity: 0 }} animate={{ y: '105vh', rotate: p.r + 540, opacity: [0, 1, 1, 0] }} transition={{ duration: p.d, delay: p.delay, ease: 'easeIn' }} aria-hidden="true" />)}
     <motion.h2 initial={{ scale: .4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 14 }}>{copy.title}</motion.h2>
     <motion.p className="rd2-results-sub" initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .25 }}>{copy.subtitle}</motion.p>
