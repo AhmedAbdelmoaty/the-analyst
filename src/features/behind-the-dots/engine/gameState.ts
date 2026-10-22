@@ -137,19 +137,16 @@ export function reducer(s: GameState, a: Action): GameState {
       if (s.phase !== "reveal") return s;
       const c = currentCase(s);
       const evidence = s.evidence.includes(c.id) ? s.evidence : [...s.evidence, c.id];
+      if (s.hearts === 0) return { ...s, evidence, phase: "debrief", ending: "glitch", completed: true, paused: false };
       const next = s.caseIndex + 1;
       if (next >= CASES.length) return { ...s, evidence, phase: "recommendation", recommendationAttempts: [] };
       return { ...s, evidence, caseIndex: next, phase: "puzzle" };
     }
     case "recommendationAnswer": {
-      if (s.phase !== "recommendation" || s.recommendationAttempts.length >= 2 || s.evidence.length !== CASES.length) return s;
+      if (s.phase !== "recommendation" || s.recommendationAttempts.length !== 0 || s.hearts === 0 || s.evidence.length !== CASES.length) return s;
       const attempts = [...s.recommendationAttempts, a.choice];
-      if (a.choice === "A") {
-        const ending: Ending = totalScore(s) === 9 && attempts.length === 1 ? "perfect" : "saved";
-        return { ...s, phase: "debrief", recommendationAttempts: attempts, ending, completed: true };
-      }
-      if (attempts.length === 2) return { ...s, phase: "debrief", recommendationAttempts: attempts, ending: "glitch", completed: true };
-      return { ...s, phase: "recommendationFeedback", recommendationAttempts: attempts };
+      const ending: Ending = a.choice !== "A" ? "glitch" : totalScore(s) === 9 ? "perfect" : "saved";
+      return { ...s, phase: "debrief", recommendationAttempts: attempts, ending, completed: true, paused: false };
     }
     case "retryRecommendation":
       return s.phase === "recommendationFeedback" && s.recommendationAttempts.length === 1 ? { ...s, phase: "recommendation" } : s;

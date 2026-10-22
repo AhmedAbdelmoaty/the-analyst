@@ -103,15 +103,15 @@ function ChaseLane({ seconds, paused }: { seconds: number; paused: boolean }) {
   </div>;
 }
 
-function ReactionCinema({ kind, onSkip }: { kind: "win" | "wrong" | "timeout"; onSkip: () => void }) {
-  return <div className={`btd-reaction-cinema cinema-${kind}`} aria-live="assertive">
+function ReactionCinema({ kind, finalLoss, onSkip }: { kind: "win" | "wrong" | "timeout"; finalLoss: boolean; onSkip: () => void }) {
+  return <div className={`btd-reaction-cinema cinema-${kind} ${finalLoss ? "cinema-final-loss" : ""}`} aria-live="assertive">
     <div className="btd-cinema-speed" aria-hidden="true" />
     <div className="btd-cinema-prop" aria-hidden="true">🍦</div>
     <div className="btd-cinema-glitch" aria-hidden="true"><img src="/assets/behind-dots/glitch-v5.png" alt="" /></div>
     <div className="btd-cinema-dotty" aria-hidden="true"><img src="/assets/behind-dots/dotty-v5.png" alt="" /></div>
-    {kind === "timeout" && <div className="btd-cinema-net" aria-hidden="true" />}
-    <div className="btd-cinema-stamp">{kind === "win" ? "صح جدًا!" : kind === "wrong" ? "جليتش قرب!" : "خلص الوقت!"}</div>
-    <div className="btd-cinema-impact">{kind === "win" ? "+3 ✦" : "قلب واحد اتكسر ♡"}</div>
+    {(kind === "timeout" || finalLoss) && <div className="btd-cinema-net" aria-hidden="true" />}
+    <div className="btd-cinema-stamp">{finalLoss ? "انتهت الجولة!" : kind === "win" ? "صح جدًا!" : kind === "wrong" ? "جليتش قرب!" : "خلص الوقت!"}</div>
+    <div className="btd-cinema-impact">{finalLoss ? "جليتش كسب الجولة" : kind === "win" ? "+3 نجوم ✦" : kind === "timeout" ? "لقطتها! 💥" : "قلب اتكسر ♡"}</div>
     <button type="button" className="btd-cinema-skip" onClick={onSkip}>كمّل ←</button>
   </div>;
 }
@@ -163,9 +163,12 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   useEffect(() => {
     if (state.phase !== "reveal" || !reactionVisible) return;
     const result = state.results[currentCase(state).id];
-    const id = window.setTimeout(() => setReactionVisible(false), result?.timedOut ? 2900 : 2450);
+    const id = window.setTimeout(() => {
+      if (state.hearts === 0) dispatch({ type: "attach" });
+      else setReactionVisible(false);
+    }, result?.timedOut ? 2900 : 2450);
     return () => window.clearTimeout(id);
-  }, [state.phase, state.caseIndex, state.results, reactionVisible]);
+  }, [state.phase, state.caseIndex, state.results, state.hearts, reactionVisible]);
   useEffect(() => {
     if (state.completed && totalScore(state) > meta.bestScore) {
       const next = { ...meta, bestScore: totalScore(state) };
@@ -187,12 +190,14 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
       if (result && before.phase === "puzzle") {
         setSettledTime(action.type === "timeout" ? 0 : timeRef.current ?? ROUND_SECONDS);
         setReactionVisible(true);
-        playTone(result.points === 3 ? "win" : "lose", meta.muted);
+        playTone(result.points === 3 ? "win" : result.timedOut ? "timeout" : "heart", meta.muted);
       }
     } else if (action.type === "recommendationAnswer") {
       const choice = CHOICES.find((item) => item.id === action.choice);
       if (choice) playTone(choice.supported ? "win" : "lose", meta.muted);
-    } else if (action.type === "start" || action.type === "advanceBriefing" || action.type === "showTutorialDays" || action.type === "attach") {
+    } else if (action.type === "attach") {
+      playTone(before.hearts === 0 ? "lose" : "tap", meta.muted);
+    } else if (action.type === "start" || action.type === "advanceBriefing" || action.type === "showTutorialDays") {
       playTone("tap", meta.muted);
     }
     if (action.type === "submitTutorial" && after.phase === "tutorialReady" && !meta.tutorialDone) updateMeta({ tutorialDone: true });
@@ -216,7 +221,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
       <div className="btd-app-backdrop" />
       <div className="btd-shell">
         <MarketStage mood={worldMood} speaker={speaker} className="btd-world" />
-        {(state.phase === "puzzle" || state.phase === "reveal" || state.phase === "tutorial" || state.phase === "tutorialReady" || state.phase === "recommendation" || state.phase === "recommendationFeedback") && (
+        {(state.phase === "puzzle" || state.phase === "reveal" || state.phase === "tutorial" || state.phase === "tutorialReady" || state.phase === "recommendation") && (
           <GameHeader state={state} time={state.phase === "reveal" ? settledTime : time} paused={state.paused} muted={meta.muted} onPause={() => dispatch({ type: "pause" })} onMute={() => updateMeta({ muted: !meta.muted })} />
         )}
 
@@ -307,7 +312,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
             <section className={`btd-challenge screen-enter ${result ? `is-${mood}` : ""}`}>
               <div className="btd-challenge-content">
                 <div className="btd-case-heading"><span className="btd-eyebrow">صفحة {state.caseIndex + 1} من 3 · {storyCase.title}</span>{!result && <p>{CASE_LINES[storyCase.id]}</p>}</div>
-                {result && reactionVisible ? <ReactionCinema kind={mood as "win" | "wrong" | "timeout"} onSkip={() => setReactionVisible(false)} /> : <div className="btd-chart-sheet" key={`page-${state.caseIndex}`}>
+                <div className="btd-chart-sheet" key={`page-${state.caseIndex}`}>
                   <div className="btd-sheet-topline"><span className="btd-sticker">دفتر ليلى</span><span className="btd-chart-label">Scatter Plot</span></div>
                   <div className="btd-plot-frame btd-main-plot">
                     <ScatterPlot xs={storyCase.xs} ys={storyCase.ys} xLabel={storyCase.xLabel} yLabel={storyCase.yLabel} showFit={Boolean(result && result.actual !== "none")} />
@@ -327,19 +332,20 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
                       </div>
                     )}
                   </div>
-                </div>}
+                </div>
+                {result && reactionVisible && <ReactionCinema kind={mood as "win" | "wrong" | "timeout"} finalLoss={state.hearts === 0} onSkip={() => state.hearts === 0 ? dispatch({ type: "attach" }) : setReactionVisible(false)} />}
                 {state.phase === "puzzle" && <ChaseLane seconds={time ?? ROUND_SECONDS} paused={state.paused} />}
               </div>
             </section>
           );
         })()}
 
-        {(state.phase === "recommendation" || state.phase === "recommendationFeedback") && (
+        {state.phase === "recommendation" && (
           <section className="btd-recommendation screen-enter">
             <div className="btd-recommend-card">
               <span className="btd-eyebrow">دفتر ليلى · خطوة واحدة أخيرة</span>
               <h1>خطة بكرة</h1>
-              <div className="btd-plan-speech"><img src="/assets/behind-dots/leila-v5.png" alt="" /><p className="btd-recommend-intro"><b>ليلى</b> {state.phase === "recommendationFeedback" ? "اختيارنا محتاج دليل أقوى. بص على العلاقات الثلاثة وجرب تاني." : MEETING_LINE}</p></div>
+              <div className="btd-plan-speech"><img src="/assets/behind-dots/leila-v5.png" alt="" /><p className="btd-recommend-intro"><b>ليلى بتسأل مرة واحدة</b> {MEETING_LINE}</p></div>
               <div className="btd-evidence-strip" aria-label="ملخص العلاقات">
                 {state.evidence.map((id) => {
                   const c = CASES.find((item) => item.id === id)!;
@@ -348,10 +354,10 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
                 })}
               </div>
               <h2>أنهي خطة أنسب نبدأ نجربها بناءً على البيانات اللي شفناها؟</h2>
-              {state.phase === "recommendation" ? <div className="btd-recommend-options">
+              <div className="btd-recommend-once">اختيار واحد بس · ركّز في الدليل وخد قرارك</div>
+              <div className="btd-recommend-options">
                 {CHOICES.map((choice) => <button type="button" key={choice.id} onClick={() => dispatch({ type: "recommendationAnswer", choice: choice.id })} className="btd-recommend-option"><span>{choice.id}</span>{choice.text}<ArrowLeft /></button>)}
-              </div> : <button type="button" className="btd-button btd-button-primary btd-retry-plan" onClick={() => dispatch({ type: "retryRecommendation" })}>راجع العلاقات وجرب مرة تانية <ArrowLeft /></button>}
-              <div className="btd-attempts" aria-label={`المحاولات المستخدمة ${state.recommendationAttempts.length} من 2`}>{[0, 1].map((i) => <span key={i} className={i < state.recommendationAttempts.length ? "is-used" : ""} />)}<small>محاولتان</small></div>
+              </div>
             </div>
           </section>
         )}
@@ -368,14 +374,21 @@ function Results({ state, onReplay }: { state: GameState; onReplay: () => void }
   const navigate = useNavigate();
   const ending: Ending = state.ending ?? "glitch";
   const copy = ENDING_COPY[ending];
+  const correctCount = Object.values(state.results).filter((result) => result?.points === 3).length;
+  const recommendation = CHOICES.find((choice) => choice.id === state.recommendationAttempts[0]);
   return (
     <section className={`btd-results screen-enter ending-${ending}`}>
       <div className="btd-results-card">
-        <span className="btd-eyebrow">{ending === "perfect" ? "٣ نجوم · جولة كاملة" : ending === "saved" ? "دوتّي رجعت بأمان" : "لسه نقدر نجرب تاني"}</span>
+        <span className="btd-eyebrow">{ending === "perfect" ? "٣ نجوم · جولة كاملة" : ending === "saved" ? "فوز · دوتّي نجت" : "انتهت الجولة · جليتش كسب"}</span>
         <h1>{copy.title}</h1>
         <p>{copy.line}</p>
+        <div className="btd-ending-medals" role="img" aria-label={`${correctCount} نجوم من 3 لإجابات الشارت`}>
+          {[0, 1, 2].map((star) => <span key={star} className={star < correctCount ? "is-earned" : ""} style={{ "--medal-order": star } as CSSProperties}>★</span>)}
+          <small>{correctCount} من 3 إجابات صح</small>
+        </div>
         <div className="btd-results-score"><strong>{totalScore(state)}<small>/ 9</small></strong><span>النقاط</span><HeartsBadge count={state.hearts} /></div>
         <div className="btd-results-dialogue"><img src="/assets/behind-dots/glitch-v5.png" alt="" /><span>جليتش:</span> {copy.glitch}</div>
+        <div className="btd-ending-choice"><b>التوصية النهائية</b><p>{recommendation ? <>{recommendation.supported ? "اختيار مدعوم: " : "اختيار غير مدعوم: "}{recommendation.text}</> : "انتهت القلوب قبل ما ليلى تختار التوصية."}</p></div>
         <div className="btd-results-relations">{state.evidence.map((id) => {
           const c = CASES.find((item) => item.id === id)!;
           return <div key={id}><b>{c.title}</b><span>{state.results[id] ? RELATION_LABELS[state.results[id]!.actual] : ""}</span></div>;

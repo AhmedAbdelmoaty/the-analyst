@@ -27,18 +27,26 @@ export function loadState(storage: StorageLike, userId: string): GameState {
     const saved = JSON.parse(raw) as Partial<GameState>;
     if (saved.v !== 5 || !saved.phase || !PHASES.includes(saved.phase)) return { ...initialState };
     const evidence = Array.from(new Set((saved.evidence ?? []).filter((id) => ALL_CASE_IDS.includes(id))));
-    const phase: Phase = saved.phase === "recommendationFeedback" ? "recommendation" : saved.phase;
     const results = Object.fromEntries(Object.entries(saved.results ?? {}).filter(([id]) => ALL_CASE_IDS.includes(id as never)));
+    const savedChoices = (saved.recommendationAttempts ?? []).filter((id) => id === "A" || id === "B" || id === "C");
+    const legacyRejectedRecommendation = saved.phase === "recommendationFeedback" || (saved.phase === "recommendation" && savedChoices.length > 0);
+    const recommendationAttempts = savedChoices.length === 0 ? [] : [
+      saved.phase === "debrief" ? savedChoices[savedChoices.length - 1]! : savedChoices[0]!,
+    ];
+    const phase: Phase = legacyRejectedRecommendation ? "debrief" : saved.phase;
+    const migratedEnding = legacyRejectedRecommendation ? "glitch" : saved.ending;
     return {
       ...initialState,
       ...saved,
       phase,
+      ending: migratedEnding,
+      completed: legacyRejectedRecommendation ? true : Boolean(saved.completed),
       evidence,
       results,
       hearts: Math.max(0, Math.min(3, Number.isInteger(saved.hearts) ? saved.hearts! : 3)),
       tutorialStep: saved.tutorialStep === 1 || saved.tutorialStep === 2 ? saved.tutorialStep : 0,
       tutorialAttempts: Math.max(0, Math.min(2, saved.tutorialAttempts ?? 0)),
-      recommendationAttempts: (saved.recommendationAttempts ?? []).filter((id) => id === "A" || id === "B" || id === "C").slice(0, 2),
+      recommendationAttempts,
       paused: false,
       runSeed: typeof saved.runSeed === "number" && Number.isFinite(saved.runSeed) ? saved.runSeed >>> 0 : null,
     };
