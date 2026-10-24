@@ -1,8 +1,9 @@
-import { describe, expect, it } from "bun:test";
-import { handler as checkout } from "../docs/paymob/functions/paymob-checkout/index";
-import { handler as status } from "../docs/paymob/functions/paymob-subscription/index";
-import { handler as reconcile } from "../docs/paymob/functions/paymob-reconcile/index";
-import { handler as webhook } from "../docs/paymob/functions/paymob-webhook/index";
+import { describe, it } from "jsr:@std/testing/bdd";
+import { expect } from "jsr:@std/expect";
+import { handler as checkout } from "../docs/paymob/functions/paymob-checkout/index.ts";
+import { handler as status } from "../docs/paymob/functions/paymob-subscription/index.ts";
+import { handler as reconcile } from "../docs/paymob/functions/paymob-reconcile/index.ts";
+import { handler as webhook } from "../docs/paymob/functions/paymob-webhook/index.ts";
 
 describe("actual server handler disabled/authorization boundary", () => {
   for (const [name, handler] of [["checkout", checkout], ["status", status], ["reconcile", reconcile]] as const) {
