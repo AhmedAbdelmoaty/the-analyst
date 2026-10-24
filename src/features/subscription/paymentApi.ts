@@ -18,6 +18,12 @@ export async function readPaymentStatus(orderId?: string): Promise<PaymentStatus
   return { snapshot, orderState: data.orderState };
 }
 
+export async function reconcilePayment(orderId: string) {
+  if (!PAYMENT_UI_ENABLED) throw new Error("payment_disabled");
+  const { error } = await supabase.functions.invoke("paymob-reconcile", { body: { orderId } });
+  if (error) throw new Error("verification_unavailable");
+}
+
 export function safeCheckoutUrl(value: unknown): string {
   if (typeof value !== "string") throw new Error("invalid_checkout");
   const url = new URL(value);

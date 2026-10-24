@@ -56,10 +56,17 @@ export function failure(error: unknown) {
   const code = error instanceof Error ? error.message : "unavailable";
   if (code === "unauthorized") return json({ error: "unauthorized" }, 401);
   if (code === "payment_disabled" || code === "configuration_missing") return json({ error: "payment_disabled" }, 503);
+  if (["provider_unavailable", "read_failed"].includes(code)) return json({ error: "verification_pending" }, 503);
   return json({ error: "payment_unavailable" }, 400);
 }
 export async function inquire(configured: ReturnType<typeof config>, transactionId: number): Promise<Transaction> {
   const auth = await fetchJson("https://accept.paymob.com/api/auth/tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ api_key: configured.apiKey }) });
   if (typeof auth.token !== "string") throw new Error("provider_unavailable");
   return fetchJson("https://accept.paymob.com/api/acceptance/transactions/" + transactionId, { headers: { Authorization: "Bearer " + auth.token } });
+}
+
+export async function inquireOrder(configured: ReturnType<typeof config>, providerOrderId: number | null, reference: string): Promise<Transaction> {
+  const auth = await fetchJson("https://accept.paymob.com/api/auth/tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ api_key: configured.apiKey }) });
+  if (typeof auth.token !== "string") throw new Error("provider_unavailable");
+  return fetchJson("https://accept.paymob.com/api/ecommerce/orders/transaction_inquiry", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ auth_token: auth.token, ...(providerOrderId === null ? { merchant_order_id: reference } : { order_id: String(providerOrderId) }) }) });
 }

@@ -15,12 +15,13 @@ ALTER TABLE public.payment_orders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY payment_orders_owner ON public.payment_orders FOR SELECT TO authenticated USING(user_id=auth.uid());
 
 CREATE TABLE public.payment_attempts (
- id uuid PRIMARY KEY DEFAULT gen_random_uuid(), order_id uuid NOT NULL REFERENCES public.payment_orders(id),
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), order_id uuid NOT NULL,
  environment text NOT NULL CHECK(environment IN ('test','live')),
- request_key uuid NOT NULL, status text NOT NULL DEFAULT 'creating',
+ request_key uuid NOT NULL, status text NOT NULL DEFAULT 'creating' CHECK(status IN ('creating','sending','unknown','pending','failed','paid','refunded','voided','review')),
  provider_intention_id text, provider_order_id bigint, integration_ids bigint[] NOT NULL,
  created_at timestamptz NOT NULL DEFAULT now(),
- UNIQUE(order_id,request_key), UNIQUE(environment,provider_order_id), UNIQUE(environment,provider_intention_id)
+ UNIQUE(order_id,request_key), UNIQUE(environment,provider_order_id), UNIQUE(environment,provider_intention_id),
+ FOREIGN KEY(order_id,environment) REFERENCES public.payment_orders(id,environment)
 );
 GRANT ALL ON public.payment_attempts TO service_role;
 ALTER TABLE public.payment_attempts ENABLE ROW LEVEL SECURITY;
@@ -73,7 +74,8 @@ BEGIN
  SELECT * INTO o FROM payment_orders WHERE user_id=_uid AND environment=_environment AND status='pending'
  AND amount_minor=_amount AND created_at>now()-interval '1 day' ORDER BY created_at DESC LIMIT 1 FOR UPDATE;
  IF NOT FOUND THEN INSERT INTO payment_orders(user_id,environment,amount_minor) VALUES(_uid,_environment,_amount) RETURNING * INTO o; END IF;
- IF EXISTS(SELECT 1 FROM payment_attempts WHERE order_id=o.id AND status IN ('creating','unknown','pending')) THEN RAISE EXCEPTION 'payment_attempt_pending'; END IF;
+ IF EXISTS(SELECT 1 FROM payment_attempts WHERE order_id=o.id AND status IN ('creating','sending','unknown','pending')) THEN RAISE EXCEPTION 'payment_attempt_pending'; END IF;
+ IF (SELECT count(*) FROM payment_attempts pa JOIN payment_orders po ON po.id=pa.order_id WHERE po.user_id=_uid AND po.environment=_environment AND pa.created_at>now()-interval '1 hour')>=5 THEN RAISE EXCEPTION 'rate_limited'; END IF;
  INSERT INTO payment_attempts(order_id,environment,request_key,integration_ids) VALUES(o.id,_environment,_request,_integrations) RETURNING * INTO a;
  RETURN jsonb_build_object('orderId',o.id,'attemptId',a.id,'status',a.status);
 END $$;
@@ -99,6 +101,8 @@ BEGIN
   IF existing_transaction IS NOT NULL AND existing_transaction<>_transaction THEN next_status:=o.status;
   ELSE UPDATE annual_entitlements SET revoked_at=COALESCE(revoked_at,now()),revocation_reason=_state WHERE order_id=o.id; END IF;
  ELSIF o.status IN ('refunded','voided','review') THEN next_status:=o.status;
+ ELSIF _state='review' THEN
+  UPDATE annual_entitlements SET revoked_at=COALESCE(revoked_at,now()),revocation_reason='review' WHERE order_id=o.id;
  ELSIF _state='paid' THEN
   IF _confirmed_at IS NULL OR _confirmed_at>now()+interval '5 minutes' THEN RAISE EXCEPTION 'invalid_confirmation_time'; END IF;
   IF EXISTS(SELECT 1 FROM annual_entitlements WHERE environment=_environment AND transaction_id=_transaction AND order_id<>o.id) THEN RAISE EXCEPTION 'transaction_already_bound'; END IF;
