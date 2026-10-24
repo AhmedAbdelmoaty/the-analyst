@@ -13,6 +13,10 @@ export async function handler(req: Request): Promise<Response> {
       if (error) throw new Error("read_failed");
       if (!order) return json({ error: "not_found" }, 404);
       orderState = order.status;
+    } else {
+      const { data: latest, error } = await db.from("payment_orders").select("status").eq("user_id", user.id).eq("environment", settings.environment).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (error) throw new Error("read_failed");
+      orderState = latest?.status ?? null;
     }
     const { data: entitlement, error } = await db.from("annual_entitlements").select("starts_at,expires_at,revoked_at").eq("user_id", user.id).eq("environment", settings.environment).is("revoked_at", null).order("expires_at", { ascending: false }).limit(1).maybeSingle();
     if (error) throw new Error("read_failed");

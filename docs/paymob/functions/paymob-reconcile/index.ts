@@ -21,6 +21,7 @@ export async function handler(req: Request): Promise<Response> {
       // Lookup by signed saved provider order, or trusted reference for an uncertain create.
       const verified = await inquireOrder(settings, attempt.provider_order_id, attempt.id);
       canonicalTransaction(verified);
+      if (!matchesPayment(verified, { providerOrderId: attempt.provider_order_id ?? verified.order.id, amount: order.amount_minor, currency: order.currency, integrations: attempt.integration_ids })) throw new Error("payment_mismatch");
       if (attempt.provider_order_id === null) {
         if ((verified.order as unknown as { merchant_order_id?: string }).merchant_order_id !== attempt.id) throw new Error("reference_mismatch");
         const { error: saved } = await db.from("payment_attempts").update({ provider_order_id: verified.order.id }).eq("id", attempt.id).is("provider_order_id", null);
@@ -28,8 +29,8 @@ export async function handler(req: Request): Promise<Response> {
       }
       if (!matchesPayment(verified, { providerOrderId: attempt.provider_order_id ?? verified.order.id, amount: order.amount_minor, currency: order.currency, integrations: attempt.integration_ids })) throw new Error("payment_mismatch");
       const state = transactionState(verified);
-      const { error: applied } = await db.rpc("payment_apply_event", { _environment: settings.environment, _fingerprint: await eventFingerprint(verified), _transaction: verified.id, _provider_order: verified.order.id, _integration: verified.integration_id, _amount: verified.amount_cents, _currency: verified.currency, _state: state, _confirmed_at: state === "paid" ? confirmedTime(verified, settings.utcConfirmed) : null });
-      if (applied) throw new Error("read_failed");
+      const { data: outcome, error: applied } = await db.rpc("payment_apply_event", { _environment: settings.environment, _fingerprint: await eventFingerprint(verified), _transaction: verified.id, _provider_order: verified.order.id, _integration: verified.integration_id, _amount: verified.amount_cents, _currency: verified.currency, _state: state, _confirmed_at: state === "paid" ? confirmedTime(verified, settings.utcConfirmed) : null });
+      if (applied || ["unmatched", "mismatch", "unexpected"].includes(outcome)) throw new Error("read_failed");
     }
     return json({ checked: true });
   } catch (error) { return failure(error); }

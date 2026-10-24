@@ -6,6 +6,10 @@ BEGIN
  oid:=(begun->>'orderId')::uuid;
  IF (public.payment_begin(uid,'test',40000,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',ARRAY[200]::bigint[])->>'orderId')::uuid<>oid THEN RAISE EXCEPTION 'retry duplicated order'; END IF;
  UPDATE public.payment_attempts SET provider_order_id=300,status='pending' WHERE id=(begun->>'attemptId')::uuid;
+ BEGIN
+  PERFORM public.payment_begin(uid,'test',120000,gen_random_uuid(),ARRAY[200]::bigint[]);
+  RAISE EXCEPTION 'unresolved order allowed another charge';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'payment_attempt_pending' THEN RAISE; END IF; END;
  result:=public.payment_apply_event('test','wrong-amount',100,300,200,120000,'EGP','paid',now());
  IF result<>'mismatch' OR EXISTS(SELECT 1 FROM annual_entitlements) THEN RAISE EXCEPTION 'wrong amount activated'; END IF;
  IF public.payment_apply_event('test','wrong-currency',100,300,200,40000,'USD','paid',now())<>'mismatch' THEN RAISE EXCEPTION 'wrong currency accepted'; END IF;

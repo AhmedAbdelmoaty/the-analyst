@@ -1,5 +1,6 @@
 # Current tasks
-- [ ] Paymob: disabled server foundation, review-only SQL, subscription UI, synthetic security tests and merchant handoff; no cloud changes.
+- [x] Paymob: disabled server foundation, review-only SQL, subscription UI, synthetic security tests and merchant handoff; no cloud changes.
+- [ ] Paymob activation: blocked by merchant Test credentials, explicit isolated SQL/function deployment approval, webhook setup and sandbox E2E sign-off; no Live checkout or game restrictions authorized.
 - [ ] Phase 2: reference-adapted recommendation board, confirmation and presentation; regression tests.
 - [ ] Phase 3: independent department documents, stamp/collection feedback; regression tests.
 - [ ] Phase 4: scene-based offices, HUD and transitions; regression tests.

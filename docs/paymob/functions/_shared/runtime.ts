@@ -20,7 +20,7 @@ export function config() {
   if (!ids.length || ids.some(id => !Number.isSafeInteger(id) || id <= 0)) throw new Error("invalid_integrations");
   const appUrl = new URL(required("PAYMOB_APP_ORIGIN"));
   const webhookUrl = new URL(required("PAYMOB_WEBHOOK_URL"));
-  if (appUrl.protocol !== "https:" || webhookUrl.protocol !== "https:" || appUrl.username || webhookUrl.username) throw new Error("invalid_urls");
+  if (appUrl.protocol !== "https:" || webhookUrl.protocol !== "https:" || appUrl.username || webhookUrl.username || appUrl.password || webhookUrl.password) throw new Error("invalid_urls");
   return { environment, ids, utcConfirmed: Deno.env.get("PAYMOB_NAIVE_TIMESTAMP_UTC_VERIFIED") === "true", secret: required(prefix + "SECRET_KEY"), publicKey: required(prefix + "PUBLIC_KEY"), hmac: required(prefix + "HMAC_SECRET"), apiKey: required(prefix + "API_KEY"), appOrigin: appUrl.origin, webhookUrl: webhookUrl.toString() };
 }
 export function adminClient() {

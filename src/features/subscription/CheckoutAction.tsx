@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
 import { CreditCard, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { initiateCheckout, PAYMENT_UI_ENABLED } from "./paymentApi";
+import { useNavigate } from "react-router-dom";
+import { CheckoutPendingError, initiateCheckout, PAYMENT_UI_ENABLED } from "./paymentApi";
 
 export default function CheckoutAction() {
+  const navigate = useNavigate();
   const key = useRef<string | null>(null);
   const busy = useRef(false);
   const [loading, setLoading] = useState(false);
@@ -18,7 +20,10 @@ export default function CheckoutAction() {
     try {
       const url = await initiateCheckout(key.current, { email: String(form.get("email")), city: String(form.get("city")), country: String(form.get("country")), street: String(form.get("street")) });
       window.location.assign(url);
-    } catch { setError(true); }
+    } catch (cause) {
+      if (cause instanceof CheckoutPendingError) navigate("/subscription/return?order=" + cause.orderId);
+      else setError(true);
+    }
     finally { busy.current = false; setLoading(false); }
   };
   return <form onSubmit={pay} className="mt-7">

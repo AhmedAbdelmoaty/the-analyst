@@ -3,6 +3,9 @@ import type { SubscriptionSnapshot } from "./model";
 
 // Change only after authorized schema/functions, merchant verification and test E2E sign-off.
 export const PAYMENT_UI_ENABLED = false;
+export class CheckoutPendingError extends Error {
+  constructor(public readonly orderId: string) { super("payment_pending"); }
+}
 export type PaymentStatusResponse = {
   snapshot: SubscriptionSnapshot | null;
   orderState: "pending" | "paid" | "failed" | "refunded" | "voided" | "review" | null;
@@ -34,6 +37,10 @@ export function safeCheckoutUrl(value: unknown): string {
 export async function initiateCheckout(requestKey: string, billing: { email: string; city: string; country: string; street: string }) {
   if (!PAYMENT_UI_ENABLED) throw new Error("payment_disabled");
   const { data, error } = await supabase.functions.invoke("paymob-checkout", { body: { requestKey, billing } });
+  if (error?.context instanceof Response) {
+    const payload = await error.context.clone().json().catch(() => null);
+    if (typeof payload?.orderId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.orderId)) throw new CheckoutPendingError(payload.orderId);
+  }
   if (error || !data?.checkoutUrl) throw new Error("checkout_unavailable");
   return safeCheckoutUrl(data.checkoutUrl);
 }
