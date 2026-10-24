@@ -10,10 +10,11 @@ BEGIN
  IF result<>'mismatch' OR EXISTS(SELECT 1 FROM annual_entitlements) THEN RAISE EXCEPTION 'wrong amount activated'; END IF;
  IF public.payment_apply_event('test','wrong-currency',100,300,200,40000,'USD','paid',now())<>'mismatch' THEN RAISE EXCEPTION 'wrong currency accepted'; END IF;
  IF public.payment_apply_event('test','wrong-order',100,999,200,40000,'EGP','paid',now())<>'unmatched' THEN RAISE EXCEPTION 'wrong order accepted'; END IF;
- IF public.payment_apply_event('test','wrong-env',100,300,200,40000,'EGP','paid',now())='paid' AND false THEN RAISE EXCEPTION 'unreachable'; END IF;
- -- Above matching callback activates once; repeat cannot extend it.
+ IF public.payment_apply_event('live','wrong-env',100,300,200,40000,'EGP','paid',now())<>'unmatched' THEN RAISE EXCEPTION 'environment mixed'; END IF;
+ IF public.payment_apply_event('test','confirmed',100,300,200,40000,'EGP','paid',now())<>'paid' THEN RAISE EXCEPTION 'confirmed payment not activated'; END IF;
+ -- Matching callback activates once; repeat cannot extend it.
  SELECT expires_at INTO original_expiry FROM annual_entitlements WHERE order_id=oid;
- IF public.payment_apply_event('test','wrong-env',100,300,200,40000,'EGP','paid',now())<>'duplicate' THEN RAISE EXCEPTION 'not deduplicated'; END IF;
+ IF public.payment_apply_event('test','confirmed',100,300,200,40000,'EGP','paid',now())<>'duplicate' THEN RAISE EXCEPTION 'not deduplicated'; END IF;
  PERFORM public.payment_apply_event('test','delayed-pending',100,300,200,40000,'EGP','pending',null);
  PERFORM public.payment_apply_event('test','delayed-failure',100,300,200,40000,'EGP','failed',null);
  IF (SELECT status FROM payment_orders WHERE id=oid)<>'paid' THEN RAISE EXCEPTION 'paid regressed'; END IF;
