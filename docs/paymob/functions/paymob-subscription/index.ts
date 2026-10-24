@@ -21,4 +21,4 @@ export async function handler(req: Request): Promise<Response> {
     return json({ snapshot, orderState });
   } catch (error) { return failure(error); }
 }
-Deno.serve(handler);
+if (import.meta.main) Deno.serve(handler);

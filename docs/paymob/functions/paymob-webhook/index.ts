@@ -1,5 +1,5 @@
 import { adminClient, body, config, failure, inquire, json } from "../_shared/runtime.ts";
-import { canonicalTransaction, confirmedTime, matchesPayment, signatureFor, transactionState, verifyTransaction, type Transaction } from "../_shared/paymob.ts";
+import { canonicalTransaction, confirmedTime, eventFingerprint, matchesPayment, transactionState, verifyTransaction, type Transaction } from "../_shared/paymob.ts";
 
 export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return json({});
@@ -21,12 +21,12 @@ export async function handler(req: Request): Promise<Response> {
     if (verified.id !== signed.id || !matchesPayment(verified, { providerOrderId: signed.order.id, amount: order.amount_minor, currency: order.currency, integrations: attempt.integration_ids })) return json({ error: "payment_mismatch" }, 409);
     const state = transactionState(verified);
     const { data: outcome, error: applyError } = await db.rpc("payment_apply_event", {
-      _environment: settings.environment, _fingerprint: await signatureFor(verified, settings.hmac),
+      _environment: settings.environment, _fingerprint: await eventFingerprint(verified),
       _transaction: verified.id, _provider_order: verified.order.id, _integration: verified.integration_id,
-      _amount: verified.amount_cents, _currency: verified.currency, _state: state, _confirmed_at: state === "paid" ? confirmedTime(verified) : null,
+      _amount: verified.amount_cents, _currency: verified.currency, _state: state, _confirmed_at: state === "paid" ? confirmedTime(verified, settings.utcConfirmed) : null,
     });
     if (applyError || ["unmatched", "mismatch", "unexpected"].includes(outcome)) return json({ error: "processing_pending" }, 503);
     return json({ received: true });
   } catch (error) { return failure(error); }
 }
-Deno.serve(handler);
+if (import.meta.main) Deno.serve(handler);
