@@ -1,4 +1,4 @@
-import { adminClient, body, config, failure, identity, json, uuid } from "../_shared/runtime.ts";
+import { adminClient, body, config, failure, identity, json, requireBearer, uuid } from "../_shared/runtime.ts";
 import { priceForIdentity } from "../_shared/domain.ts";
 import { checkoutUrl, fetchJson } from "../_shared/paymob.ts";
 
@@ -6,7 +6,7 @@ export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return json({});
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   try {
-    const db = adminClient(); const user = await identity(req, db); const settings = config();
+    requireBearer(req); const settings = config(); const db = adminClient(); const user = await identity(req, db);
     const input = await body(req);
     if (!uuid(input.requestKey) || Object.keys(input).some(key => !["requestKey", "billing"].includes(key))) throw new Error("invalid_body");
     const billing = input.billing as Record<string, unknown> | undefined;
@@ -41,4 +41,4 @@ export async function handler(req: Request): Promise<Response> {
     }
   } catch (error) { return failure(error); }
 }
-Deno.serve(handler);
+if (import.meta.main) Deno.serve(handler);

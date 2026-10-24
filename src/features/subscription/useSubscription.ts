@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { PAYMENT_UI_ENABLED, readPaymentStatus, type PaymentStatusResponse } from "./paymentApi";
+import { PAYMENT_UI_ENABLED, readPaymentStatus, reconcilePayment, type PaymentStatusResponse } from "./paymentApi";
 
 export function useSubscription(orderId?: string) {
   const { user, loading: authLoading } = useAuth();
   const generation = useRef(0);
   const [state, setState] = useState<{ owner: string | null; data: PaymentStatusResponse | null; loading: boolean; error: boolean }>({ owner: null, data: null, loading: false, error: false });
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (reconcile = false) => {
     const revision = ++generation.current;
     if (!PAYMENT_UI_ENABLED || !user || authLoading) return;
     setState({ owner: user.id, data: null, loading: true, error: false });
     try {
+      if (reconcile && orderId) await reconcilePayment(orderId);
       const data = await readPaymentStatus(orderId);
       if (revision === generation.current) setState({ owner: user.id, data, loading: false, error: false });
     } catch {

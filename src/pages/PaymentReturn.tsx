@@ -17,7 +17,7 @@ export default function PaymentReturn() {
       {data?.orderState === "pending" && <p className="mt-4">بانتظار تأكيد الدفع. لو دفعت بالفعل، انتظر قليلًا ثم حدّث الحالة.</p>}
       {data?.orderState === "failed" && <p className="mt-4">الدفع لم يكتمل أو تم إلغاؤه.</p>}
       {(data?.orderState === "refunded" || data?.orderState === "voided" || data?.orderState === "review") && <p className="mt-4">الدفع مسترد أو ملغي أو يحتاج مراجعة؛ لا يوجد تفعيل جديد.</p>}
-      <Button disabled={loading} onClick={() => void refresh()} className="mt-5"><RefreshCw className="h-4 w-4" />تحديث حالة الدفع</Button>
+      <Button disabled={loading} onClick={() => void refresh(true)} className="mt-5"><RefreshCw className="h-4 w-4" />تحديث حالة الدفع</Button>
     </>}
     <Link to="/subscription" className="mt-6 block font-bold text-primary underline">اشتراكي</Link>
   </SubscriptionLayout>;

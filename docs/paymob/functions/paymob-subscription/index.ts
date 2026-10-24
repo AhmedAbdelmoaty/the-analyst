@@ -1,11 +1,11 @@
-import { adminClient, body, config, failure, identity, json, uuid } from "../_shared/runtime.ts";
+import { adminClient, body, config, failure, identity, json, requireBearer, uuid } from "../_shared/runtime.ts";
 import { entitledAt } from "../_shared/domain.ts";
 
 export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return json({});
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   try {
-    const db = adminClient(); const user = await identity(req, db); const settings = config(); const input = await body(req);
+    requireBearer(req); const settings = config(); const db = adminClient(); const user = await identity(req, db); const input = await body(req);
     if (input.orderId !== undefined && !uuid(input.orderId)) throw new Error("invalid_order");
     let orderState = null;
     if (input.orderId) {

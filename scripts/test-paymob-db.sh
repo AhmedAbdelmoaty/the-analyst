@@ -3,7 +3,7 @@ set -euo pipefail
 # Explicit local ephemeral database only; never uses managed PG* environment.
 stage=$(mktemp -d /tmp/paymob-db.XXXXXX)
 user=$(id -un)
-if [ "$(id -u)" = 0 ]; then user=lovable; chown "$user" "$stage"; run=(runuser -u "$user" --); else run=(); fi
+if [ "$(id -u)" = 0 ]; then user=lovable; chown "$user" "$stage"; run=(setpriv --reuid=1000 --regid=1000 --clear-groups); else run=(); fi
 cleanup() { "${run[@]}" pg_ctl -D "$stage/data" -m immediate stop >/dev/null 2>&1 || true; rm -rf "$stage"; }
 trap cleanup EXIT
 "${run[@]}" initdb -D "$stage/data" -A trust --no-locale >/dev/null

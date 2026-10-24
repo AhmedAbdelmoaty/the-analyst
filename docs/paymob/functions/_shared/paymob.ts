@@ -31,7 +31,17 @@ export function timingSafeHex(a: string, b: string): boolean {
   return difference === 0;
 }
 export async function verifyTransaction(t: unknown, hmac: string, secret: string) {
-  try { return timingSafeHex(await signatureFor(t, secret), hmac); } catch { return false; }
+  if (!/^[a-f0-9]{128}$/i.test(hmac)) return false;
+  try {
+    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-512" }, false, ["verify"]);
+    const bytes = Uint8Array.from(hmac.match(/.{2}/g) ?? [], pair => parseInt(pair, 16));
+    // Runtime cryptographic verification rather than JavaScript string equality.
+    return await crypto.subtle.verify("HMAC", key, bytes, new TextEncoder().encode(canonicalTransaction(t)));
+  } catch { return false; }
+}
+export async function eventFingerprint(t: Transaction) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonicalTransaction(t)));
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
 }
 export function transactionState(t: Transaction): PaymentState {
   canonicalTransaction(t);
@@ -43,11 +53,13 @@ export function transactionState(t: Transaction): PaymentState {
   if (t.success === true && t.error_occured === false) return "paid";
   return "failed";
 }
-export function confirmedTime(t: Transaction): string {
+export function confirmedTime(t: Transaction, verifiedUtcContract = false): string {
   const input = String(t.created_at);
   // Paymob timestamps without suffix are treated as UTC only after merchant sandbox confirms this contract.
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})?$/.test(input)) throw new Error("invalid_time");
-  const iso = /Z$|[+-]\d{2}:\d{2}$/.test(input) ? input : input + "Z";
+  const zoned = /Z$|[+-]\d{2}:\d{2}$/.test(input);
+  if (!zoned && !verifiedUtcContract) throw new Error("timestamp_contract_unverified");
+  const iso = zoned ? input : input + "Z";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) throw new Error("invalid_time");
   return date.toISOString();

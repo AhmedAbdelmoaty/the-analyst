@@ -21,10 +21,13 @@ export function config() {
   const appUrl = new URL(required("PAYMOB_APP_ORIGIN"));
   const webhookUrl = new URL(required("PAYMOB_WEBHOOK_URL"));
   if (appUrl.protocol !== "https:" || webhookUrl.protocol !== "https:" || appUrl.username || webhookUrl.username) throw new Error("invalid_urls");
-  return { environment, ids, secret: required(prefix + "SECRET_KEY"), publicKey: required(prefix + "PUBLIC_KEY"), hmac: required(prefix + "HMAC_SECRET"), apiKey: required(prefix + "API_KEY"), appOrigin: appUrl.origin, webhookUrl: webhookUrl.toString() };
+  return { environment, ids, utcConfirmed: Deno.env.get("PAYMOB_NAIVE_TIMESTAMP_UTC_VERIFIED") === "true", secret: required(prefix + "SECRET_KEY"), publicKey: required(prefix + "PUBLIC_KEY"), hmac: required(prefix + "HMAC_SECRET"), apiKey: required(prefix + "API_KEY"), appOrigin: appUrl.origin, webhookUrl: webhookUrl.toString() };
 }
 export function adminClient() {
   return createClient(required("SUPABASE_URL"), required("SUPABASE_SERVICE_ROLE_KEY"), { auth: { persistSession: false, autoRefreshToken: false } });
+}
+export function requireBearer(req: Request) {
+  if (!req.headers.get("Authorization")?.startsWith("Bearer ")) throw new Error("unauthorized");
 }
 export async function identity(req: Request, db: ReturnType<typeof adminClient>) {
   const header = req.headers.get("Authorization");
