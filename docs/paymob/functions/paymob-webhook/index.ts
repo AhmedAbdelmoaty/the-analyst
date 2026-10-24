@@ -27,6 +27,10 @@ export async function handler(req: Request): Promise<Response> {
     });
     if (applyError || ["unmatched", "mismatch", "unexpected"].includes(outcome)) return json({ error: "processing_pending" }, 503);
     return json({ received: true });
-  } catch (error) { return failure(error); }
+  } catch (error) {
+    if (error instanceof Error && ["payment_disabled", "configuration_missing"].includes(error.message)) return failure(error);
+    // Never acknowledge lost work, even if provider lookup/JSON parsing fails.
+    return json({ error: "verification_pending" }, 503);
+  }
 }
 if (import.meta.main) Deno.serve(handler);

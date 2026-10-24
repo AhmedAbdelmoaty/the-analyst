@@ -19,6 +19,7 @@ CREATE TABLE public.payment_attempts (
  environment text NOT NULL CHECK(environment IN ('test','live')),
  request_key uuid NOT NULL, status text NOT NULL DEFAULT 'creating' CHECK(status IN ('creating','sending','unknown','pending','failed','paid','refunded','voided','review')),
  provider_intention_id text, provider_order_id bigint, integration_ids bigint[] NOT NULL,
+ last_reconciled_at timestamptz,
  created_at timestamptz NOT NULL DEFAULT now(),
  UNIQUE(order_id,request_key), UNIQUE(environment,provider_order_id), UNIQUE(environment,provider_intention_id),
  FOREIGN KEY(order_id,environment) REFERENCES public.payment_orders(id,environment)
@@ -71,6 +72,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM annual_entitlements WHERE user_id=_uid AND environment=_environment AND revoked_at IS NULL AND expires_at>now()) THEN
   RAISE EXCEPTION 'subscription_already_active';
  END IF;
+ IF EXISTS(SELECT 1 FROM payment_attempts pa JOIN payment_orders po ON po.id=pa.order_id WHERE po.user_id=_uid AND po.environment=_environment AND pa.status IN ('sending','unknown','pending','creating')) THEN RAISE EXCEPTION 'payment_attempt_pending'; END IF;
  SELECT * INTO o FROM payment_orders WHERE user_id=_uid AND environment=_environment AND status='pending'
  AND amount_minor=_amount AND created_at>now()-interval '1 day' ORDER BY created_at DESC LIMIT 1 FOR UPDATE;
  IF NOT FOUND THEN INSERT INTO payment_orders(user_id,environment,amount_minor) VALUES(_uid,_environment,_amount) RETURNING * INTO o; END IF;

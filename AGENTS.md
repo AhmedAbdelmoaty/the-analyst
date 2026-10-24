@@ -15,6 +15,8 @@
 - Preserve game dialogue, rules, scoring, timing, saves, and PWA behavior unless the task explicitly authorizes a scoped change. Server evaluators use client-submitted evidence; they do not independently attest gameplay.
 - Analytics writes must remain owner-bound through approved RPCs; admin reporting and exports must retain server-side role checks. Do not aggregate private user data from paginated browser rows.
 - Subscription UI is not an entitlement. Both games currently retain existing authentication access; never grant paid access from browser state, plan intent, scores, or URL parameters.
+- Stage unapproved payment Edge Functions and SQL under `docs/paymob/`, outside automatic deployment paths, so source preparation cannot mutate shared services; move/deploy/apply only with explicit approval.
+- Payment fulfillment must bind provider-verified transaction/order/amount/currency/integration to a server-priced owner order, with atomic service-role-only RPCs and environment-separated entitlements; redirects and unsigned callback metadata never grant access.
 
 ## Documentation maintenance
 

@@ -14,6 +14,10 @@ export async function handler(req: Request): Promise<Response> {
     const { data: attempts, error: attemptsError } = await db.from("payment_attempts").select("id,provider_order_id,integration_ids,status").eq("order_id", order.id).eq("environment", settings.environment).order("created_at", { ascending: false }).limit(5);
     if (attemptsError) throw new Error("read_failed");
     for (const attempt of attempts ?? []) {
+      const cutoff = new Date(Date.now() - 30000).toISOString();
+      const { data: lease, error: leaseError } = await db.from("payment_attempts").update({ last_reconciled_at: new Date().toISOString() }).eq("id", attempt.id).or("last_reconciled_at.is.null,last_reconciled_at.lt." + cutoff).select("id").maybeSingle();
+      if (leaseError) throw new Error("read_failed");
+      if (!lease) continue;
       // Lookup by signed saved provider order, or trusted reference for an uncertain create.
       const verified = await inquireOrder(settings, attempt.provider_order_id, attempt.id);
       canonicalTransaction(verified);

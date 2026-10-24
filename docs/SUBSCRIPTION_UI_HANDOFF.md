@@ -1,5 +1,9 @@
 # Subscription UI handoff
 
+## 2026-10-24 preparation update
+
+Paymob is now the requested provider. Disabled frontend checkout/status/return actions and staged server implementation are prepared; no payment schema/functions have been deployed. The source gates remain false and existing game access is unchanged. Follow [Paymob handoff](paymob/HANDOFF_AR.md), not the historical Fawaterak integration proposal below. New server status reads replace the placeholder only after approved activation; before that `/subscription` still shows discovery, not an entitlement.
+
 ## Current interface
 
 The public `/plans` page and authenticated `/subscription/summary` use `src/features/subscription/AnnualPrice.tsx` and `pricing.ts` for one **display estimate**. The annual base is **1200 EGP for one year**. An authenticated account with a confirmed Egyptian mobile number in managed Supabase Auth sees **400 EGP for one year** and the 1200 EGP base crossed out. A guest, an unconfirmed account, or an account without a valid Egyptian mobile number sees 1200 EGP. While AuthContext is loading, neither page shows a previous account's price.

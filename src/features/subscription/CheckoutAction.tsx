@@ -25,7 +25,7 @@ export default function CheckoutAction() {
     {PAYMENT_UI_ENABLED && <fieldset disabled={loading} className="mb-5 grid gap-3 sm:grid-cols-2">
       {([{ name: "email", label: "البريد الإلكتروني", type: "email" }, { name: "country", label: "كود دولة الفاتورة (مثال EG)", type: "text" }, { name: "city", label: "المدينة", type: "text" }, { name: "street", label: "العنوان", type: "text" }] as const).map(field => <label key={field.name} className="text-sm font-semibold">{field.label}<input required maxLength={200} name={field.name} type={field.type} className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 text-foreground" /></label>)}
     </fieldset>}
-    <Button type="submit" disabled={!PAYMENT_UI_ENABLED || loading} aria-describedby="payment-status" className="min-h-12 w-full bg-primary px-5 font-bold text-primary-foreground hover:bg-primary sm:w-auto">
+    <Button type="submit" disabled={!PAYMENT_UI_ENABLED || loading} aria-describedby="payment-status" className="min-h-12 w-full bg-primary px-5 font-bold text-primary-foreground hover:bg-primary disabled:bg-muted disabled:text-muted-foreground sm:w-auto">
       {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
       {loading ? "جاري تجهيز الدفع..." : error ? "إعادة المحاولة" : "المتابعة للدفع"}
     </Button>
