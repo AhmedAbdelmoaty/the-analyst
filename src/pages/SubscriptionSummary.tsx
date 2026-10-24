@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import SubscriptionLayout from "@/features/subscription/SubscriptionLayout";
 import AnnualPrice from "@/features/subscription/AnnualPrice";
+import CheckoutAction from "@/features/subscription/CheckoutAction";
 
 export function SubscriptionSummaryContent() {
   return <>
@@ -13,8 +14,7 @@ export function SubscriptionSummaryContent() {
         <li>الوصول إلى جميع الألعاب المتاحة على المنصة.</li>
         <li>مدة الوصول سنة تبدأ بعد تأكيد الدفع.</li>
       </ul>
-      <button type="button" disabled aria-describedby="payment-soon" className="mt-7 min-h-12 w-full cursor-not-allowed rounded-md bg-neutral-300 px-5 font-bold text-neutral-700 sm:w-auto">المتابعة للدفع</button>
-      <p id="payment-soon" role="status" className="mt-3 text-sm font-semibold text-[#A61E25]">الاشتراك المدفوع متاح قريبًا</p>
+      <CheckoutAction />
     </div>
     <Link to="/plans" className="mt-6 inline-flex min-h-11 items-center font-bold text-[#A61E25] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#A61E25]">الرجوع للخطط</Link>
   </>;

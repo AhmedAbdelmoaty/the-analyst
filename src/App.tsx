@@ -18,6 +18,7 @@ import PlanChoice from "@/pages/PlanChoice";
 import MySubscription from "@/pages/MySubscription";
 import SubscriptionSummary from "@/pages/SubscriptionSummary";
 import WorkDetails from "@/pages/WorkDetails";
+import PaymentReturn from "@/pages/PaymentReturn";
 
 const Setup = lazy(() => import('./pages/Setup'));
 const GameRoute = lazy(() => import('./pages/GameRoute'));
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/plans" element={<PlanChoice />} />
             <Route path="/plans/choose" element={<Navigate to="/plans" replace />} />
             <Route path="/subscription" element={<MySubscription />} />
+            <Route path="/subscription/return" element={<PaymentReturn />} />
             <Route path="/subscription/summary" element={<RequireProfile><SubscriptionSummary /></RequireProfile>} />
             <Route path="/setup" element={<Setup />} />
             <Route path="/profile/work" element={<RequireProfile><WorkDetails /></RequireProfile>} />
