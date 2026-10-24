@@ -80,6 +80,50 @@ export type Database = {
         }
         Relationships: []
       }
+      annual_entitlements: {
+        Row: {
+          environment: string
+          expires_at: string
+          id: string
+          order_id: string
+          revocation_reason: string | null
+          revoked_at: string | null
+          starts_at: string
+          transaction_id: number
+          user_id: string
+        }
+        Insert: {
+          environment: string
+          expires_at: string
+          id?: string
+          order_id: string
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          starts_at: string
+          transaction_id: number
+          user_id: string
+        }
+        Update: {
+          environment?: string
+          expires_at?: string
+          id?: string
+          order_id?: string
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          starts_at?: string
+          transaction_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_entitlements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "payment_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       completed_players: {
         Row: {
           completed_at: string
@@ -265,6 +309,169 @@ export type Database = {
           phone?: string | null
         }
         Relationships: []
+      }
+      payment_attempts: {
+        Row: {
+          created_at: string
+          environment: string
+          id: string
+          integration_ids: number[]
+          last_reconciled_at: string | null
+          order_id: string
+          provider_intention_id: string | null
+          provider_order_id: number | null
+          request_key: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          environment: string
+          id?: string
+          integration_ids: number[]
+          last_reconciled_at?: string | null
+          order_id: string
+          provider_intention_id?: string | null
+          provider_order_id?: number | null
+          request_key: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          environment?: string
+          id?: string
+          integration_ids?: number[]
+          last_reconciled_at?: string | null
+          order_id?: string
+          provider_intention_id?: string | null
+          provider_order_id?: number | null
+          request_key?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_attempts_order_id_environment_fkey"
+            columns: ["order_id", "environment"]
+            isOneToOne: false
+            referencedRelation: "payment_orders"
+            referencedColumns: ["id", "environment"]
+          },
+        ]
+      }
+      payment_orders: {
+        Row: {
+          amount_minor: number
+          created_at: string
+          currency: string
+          environment: string
+          id: string
+          paid_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_minor: number
+          created_at?: string
+          currency?: string
+          environment: string
+          id?: string
+          paid_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount_minor?: number
+          created_at?: string
+          currency?: string
+          environment?: string
+          id?: string
+          paid_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_status_audit: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          from_status: string
+          id: string
+          order_id: string
+          reason: string
+          to_status: string
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          from_status: string
+          id?: string
+          order_id: string
+          reason: string
+          to_status: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          from_status?: string
+          id?: string
+          order_id?: string
+          reason?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_status_audit_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "payment_webhook_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_status_audit_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "payment_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_webhook_events: {
+        Row: {
+          environment: string
+          fingerprint: string
+          id: string
+          order_id: string | null
+          received_at: string
+          state: string
+          transaction_id: number
+        }
+        Insert: {
+          environment: string
+          fingerprint: string
+          id?: string
+          order_id?: string | null
+          received_at?: string
+          state: string
+          transaction_id: number
+        }
+        Update: {
+          environment?: string
+          fingerprint?: string
+          id?: string
+          order_id?: string | null
+          received_at?: string
+          state?: string
+          transaction_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_webhook_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "payment_orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -520,6 +727,30 @@ export type Database = {
           status: string
           user_id: string
         }[]
+      }
+      payment_apply_event: {
+        Args: {
+          _amount: number
+          _confirmed_at: string
+          _currency: string
+          _environment: string
+          _fingerprint: string
+          _integration: number
+          _provider_order: number
+          _state: string
+          _transaction: number
+        }
+        Returns: string
+      }
+      payment_begin: {
+        Args: {
+          _amount: number
+          _environment: string
+          _integrations: number[]
+          _request: string
+          _uid: string
+        }
+        Returns: Json
       }
       pf_evaluate: {
         Args: { _framing: Json; _history: string[]; _track_entered: boolean }
