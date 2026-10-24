@@ -1,4 +1,5 @@
 # Current tasks
+- [ ] Paymob: disabled server foundation, review-only SQL, subscription UI, synthetic security tests and merchant handoff; no cloud changes.
 - [ ] Phase 2: reference-adapted recommendation board, confirmation and presentation; regression tests.
 - [ ] Phase 3: independent department documents, stamp/collection feedback; regression tests.
 - [ ] Phase 4: scene-based offices, HUD and transitions; regression tests.
