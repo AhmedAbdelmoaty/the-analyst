@@ -71,6 +71,13 @@
       "when": 1791901171209,
       "tag": "0009_work_profile_column_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792870629892,
+      "tag": "0010_paymob_payment_foundation",
+      "breakpoints": true
     }
   ]
 }
