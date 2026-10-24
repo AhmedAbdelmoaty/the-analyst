@@ -21,7 +21,7 @@ export async function readPaymentStatus(orderId?: string): Promise<PaymentStatus
 export function safeCheckoutUrl(value: unknown): string {
   if (typeof value !== "string") throw new Error("invalid_checkout");
   const url = new URL(value);
-  if (url.origin !== "https://accept.paymob.com" || url.pathname !== "/unifiedcheckout/" || url.username || url.password) throw new Error("invalid_checkout");
+  if (url.origin !== "https://eg.checkout.paymob.com" || url.pathname !== "/" || url.username || url.password) throw new Error("invalid_checkout");
   return url.toString();
 }
 
