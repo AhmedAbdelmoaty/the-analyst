@@ -19,6 +19,7 @@ import MySubscription from "@/pages/MySubscription";
 import SubscriptionSummary from "@/pages/SubscriptionSummary";
 import WorkDetails from "@/pages/WorkDetails";
 import PaymentReturn from "@/pages/PaymentReturn";
+import GameGate from "@/features/entitlement/GameGate";
 
 const Setup = lazy(() => import('./pages/Setup'));
 const GameRoute = lazy(() => import('./pages/GameRoute'));
@@ -27,6 +28,7 @@ const BehindTheDotsRoute = lazy(() => import('./pages/BehindTheDotsRoute'));
 const CrackTheCodeRoute = lazy(() => import('./pages/CrackTheCodeRoute'));
 const DecisionMatrixRoute = lazy(() => import('./pages/DecisionMatrixRoute'));
 const AdminStats = lazy(() => import('./pages/AdminStats'));
+const AdminPayments = lazy(() => import('./pages/AdminPayments'));
 const queryClient = new QueryClient();
 
 const RequireProfile = ({ children }: { children: React.ReactNode }) => {
@@ -64,13 +66,14 @@ const App = () => (
             <Route path="/setup" element={<Setup />} />
             <Route path="/profile/work" element={<RequireProfile><WorkDetails /></RequireProfile>} />
             <Route path="/play" element={<RequireProfile><GameRoute /></RequireProfile>} />
-            <Route path="/games/reward-decision" element={<RequireProfile><RewardDecisionRoute /></RequireProfile>} />
-            <Route path="/games/behind-the-dots" element={<RequireProfile><BehindTheDotsRoute /></RequireProfile>} />
-            <Route path="/games/crack-the-code" element={<RequireProfile><CrackTheCodeRoute /></RequireProfile>} />
+            <Route path="/games/reward-decision" element={<RequireProfile><GameGate game="reward-decision"><RewardDecisionRoute /></GameGate></RequireProfile>} />
+            <Route path="/games/behind-the-dots" element={<RequireProfile><GameGate game="behind-the-dots"><BehindTheDotsRoute /></GameGate></RequireProfile>} />
+            <Route path="/games/crack-the-code" element={<RequireProfile><GameGate game="crack-the-code"><CrackTheCodeRoute /></GameGate></RequireProfile>} />
             <Route path="/games/decision-matrix" element={<RequireProfile><DecisionMatrixRoute /></RequireProfile>} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/board-9k2x" element={<AdminBoard />} />
             <Route path="/admin/stats" element={<AdminStats />} />
+            <Route path="/admin/payments" element={<AdminPayments />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

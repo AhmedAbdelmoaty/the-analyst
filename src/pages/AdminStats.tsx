@@ -166,6 +166,7 @@ export default function AdminStats() {
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3"><img src={mark} alt="The Analyst" className="h-9 w-9 object-contain" /><div><h1 className="font-bold">لوحة الإحصائيات</h1><p className="text-xs text-muted-foreground">خاصة بالإدارة</p></div></div>
           <div className="flex flex-wrap items-center gap-2">
+            <Link to="/admin/payments" className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted"><Download className="h-4 w-4" />المدفوعات</Link>
             <Link to="/admin/board-9k2x" className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted"><Trophy className="h-4 w-4" />لوحة الفائزين</Link>
             <Btn onClick={() => doExport("full", "xlsx")} disabled={exporting}><Download className="h-4 w-4" />التقرير الكامل Excel</Btn>
             <Btn onClick={async () => { await signOut(); navigate("/admin/login"); }}><LogOut className="h-4 w-4" />خروج</Btn>
