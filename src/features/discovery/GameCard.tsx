@@ -12,7 +12,7 @@ export default function GameCard({ game, onChoose, continuing = false }: { game:
       <p className="text-xs font-bold text-primary">{game.category}</p>
       <h3 className="mt-2 text-2xl font-bold leading-normal">{game.title}</h3>
       <p className="mt-2 flex-1 text-sm leading-7 text-muted-foreground">{game.description}</p>
-      <Button onClick={onChoose} variant="outline" className="mt-5 min-h-11 w-full justify-between border-border bg-transparent text-foreground hover:border-primary hover:bg-primary hover:text-primary-foreground" aria-label={`${continuing ? 'متابعة' : 'ابدأ'} ${game.title}`}><span className="flex items-center gap-2"><Play className="h-4 w-4" />{continuing ? 'متابعة الجولة' : 'ابدأ المغامرة'}</span><ArrowLeft className="h-4 w-4" /></Button>
+      <Button onClick={onChoose} className="mt-5 min-h-11 w-full justify-between border-border bg-transparent text-foreground hover:border-primary hover:bg-primary hover:text-primary-foreground" aria-label={`${continuing ? 'متابعة' : 'ابدأ'} ${game.title}`}><span className="flex items-center gap-2"><Play className="h-4 w-4" />{continuing ? 'متابعة الجولة' : 'ابدأ المغامرة'}</span><ArrowLeft className="h-4 w-4" /></Button>
     </div>
   </article>;
 }
