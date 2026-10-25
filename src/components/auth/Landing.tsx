@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Gamepad2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import PlayerAuth from '@/pages/PlayerAuth';
 import analystLockup from '@/assets/brand/the-analyst-lockup.png';
-import heroArt from '@/assets/scenes/mansour-office-welcome-male.webp';
 import { Button } from '@/components/ui/button';
 import { LandingContext } from './LandingContext';
 import { GAME_CATALOG, type CatalogGame } from '@/features/discovery/catalog';
@@ -45,42 +44,43 @@ export default function Landing() {
     else scrollAuth();
   };
   return <div dir="rtl" className="auth-theme discovery min-h-[100dvh] bg-background text-foreground">
-    <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:px-8">
+    <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-2 sm:px-8">
       <Link to="/" aria-label="The Analyst"><img src={analystLockup} alt="The Analyst" className="h-14 w-auto object-contain" /></Link>
       <nav className="flex items-center gap-2 sm:gap-5" aria-label="القائمة الرئيسية">
         <a href="#games" className="text-sm font-bold">الألعاب</a><Link to="/plans" className="hidden text-sm font-bold sm:block">الخطط</Link>
         <Button className="min-h-10 border-primary px-4 font-bold text-primary" onClick={() => user ? navigate('/app') : (navigate('/login', { replace: true }), scrollAuth())}>{user ? 'ألعابي' : 'تسجيل الدخول'}</Button>
       </nav>
     </header>
-    <section className="discovery-hero">
-      <img src={heroArt} alt="المحلل في مكتب منصور" fetchPriority="high" />
-      <div className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8">
-        <div className="max-w-xl">
-          <span className="hero-tag inline-flex items-center gap-2 border-b pb-2 text-sm"><Gamepad2 className="h-4 w-4" />خمس مغامرات. أكتر من طريقة للتفكير.</span>
-          <h1 className="mt-5 text-5xl font-bold leading-tight sm:text-6xl" dir="ltr">The Analyst</h1>
-          <h2 className="mt-4 text-2xl font-bold leading-relaxed sm:text-3xl">متعة اللعب، وقيمة التعلّم.</h2>
-          <p className="mt-3 max-w-lg text-base leading-8">ادخل الحكاية، افحص الأدلة، وخد قرارك. مغامرات بتخلّيك تسأل أحسن، وتشوف اللي ورا الأرقام.</p>
-          <Button className="mt-6 min-h-12 border-primary bg-primary px-6 font-bold text-primary-foreground hover:bg-primary/90" onClick={() => document.getElementById('games')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })}>اكتشف الألعاب <ArrowLeft className="h-4 w-4" /></Button>
+    <section className="discovery-hero" aria-labelledby="landing-title">
+      <div className="discovery-hero-inner mx-auto grid w-full max-w-7xl items-center gap-7 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[1.1fr_.9fr] lg:gap-12">
+        <div className="discovery-hero-primary">
+          <h1 id="landing-title" className="max-w-3xl text-4xl font-bold leading-tight sm:text-5xl lg:text-[3.4rem]">متعة اللعب، وقيمة التعلّم.</h1>
+          <p className="mt-4 max-w-2xl text-base leading-8 sm:text-lg">تعلّم مهارات التحليل بالألعاب، من خلال تجارب تفاعلية تمنحك مساحة للاستكشاف وتجربة اختياراتك والتعلّم منها. تجربة تجمع بين متعة اللعب وممارسة التفكير التحليلي.</p>
+          <Button className="mt-5 min-h-11 border-primary bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90" onClick={() => document.getElementById('games')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })}>اكتشف الألعاب <ArrowLeft className="h-4 w-4" /></Button>
+        </div>
+        <div className="discovery-hero-secondary">
+          <h2 className="text-xl font-bold leading-relaxed sm:text-2xl">درّب طريقة تفكيرك… بتجربة تفاعلية.</h2>
+          <p className="mt-2 text-sm leading-7 sm:text-base sm:leading-8">استكشف مواقف وتحديات تدعوك إلى طرح أسئلة أفضل، وفحص الأدلة، ومراجعة افتراضاتك قبل الوصول إلى القرار.</p>
         </div>
       </div>
     </section>
-    <section id="games" className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14" aria-labelledby="games-heading">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-        <div><p className="text-xs font-bold text-primary">اختار أول مغامرة</p><h2 id="games-heading" className="mt-2 text-3xl font-bold sm:text-4xl">كل قضية… زاوية جديدة.</h2></div>
-        <p className="max-w-sm text-sm leading-7 text-muted-foreground">من سؤال صغير لقرار كبير. إنت المحلل، والحكاية بتتحرك باختياراتك.</p>
+    <section id="games" className="mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="games-heading">
+      <div className="border-b border-border pb-4">
+        <h2 id="games-heading" className="text-2xl font-bold sm:text-3xl">اختار مغامرتك</h2>
+        <p className="mt-1 text-sm leading-7 text-muted-foreground">استكشف تجارب تفاعلية مختلفة، واختار الحكاية اللي تحب تبدأ بيها.</p>
       </div>
-      <div className="discovery-grid mt-7 grid gap-5 md:grid-cols-2 lg:grid-cols-6">{GAME_CATALOG.map(game => <GameCard key={game.id} game={game} onChoose={() => choose(game)} />)}</div>
-      <p className="mt-5 text-sm leading-7 text-muted-foreground">المنصة حاليًا في مرحلة التطوير: الألعاب الخمسة متاحة لكل حساب مكتمل، والدفع السنوي لسه مش متاح.</p>
+      <div className="discovery-grid mt-5 grid">{GAME_CATALOG.map(game => <GameCard key={game.id} game={game} onChoose={() => choose(game)} />)}</div>
+      <p className="mt-4 text-sm leading-7 text-muted-foreground">المنصة حاليًا في مرحلة التطوير: كل الألعاب متاحة لكل حساب مكتمل، والدفع السنوي لسه مش متاح.</p>
     </section>
     <section ref={authArea} id="account" data-highlight={highlight} className="discovery-auth border-y border-border bg-card" aria-labelledby="account-heading">
-      <div className="mx-auto grid max-w-6xl items-center gap-8 px-5 py-10 sm:px-8 lg:grid-cols-[1fr_430px] lg:gap-20 lg:py-14">
-        <div><p className="text-sm font-bold text-primary">مغامرتك تبدأ هنا</p><h2 id="account-heading" className="mt-3 text-3xl font-bold leading-relaxed">{choice ? `جاهز تبدأ «${choice.title}»؟` : 'حساب واحد. خمس مغامرات.'}</h2><p role="status" className="mt-4 text-lg leading-8 text-muted-foreground">{choice ? `سجّل حسابك علشان تبدأ مغامرة ${choice.title}. عندك حساب؟ سجّل دخولك وكمّل من هنا.` : 'اعمل حسابك، اختار شخصيتك، وابدأ تكتشف. عندك حساب؟ مغامراتك مستنياك.'}</p><div className="mt-6 border-r-2 border-primary pr-4 text-sm leading-7 text-muted-foreground">تأكيد حسابك بيتم برمز على واتساب. بعد التسجيل لأول مرة هتشوف الخطط قبل ما تبدأ.</div></div>
+      <div className="mx-auto grid max-w-6xl items-center gap-5 px-5 py-7 sm:px-8 sm:py-8 lg:grid-cols-[1fr_430px] lg:gap-12">
+        <div><p className="text-sm font-bold text-primary">مغامرتك تبدأ هنا</p><h2 id="account-heading" className="mt-2 text-2xl font-bold leading-relaxed sm:text-3xl">{choice ? `جاهز تبدأ «${choice.title}»؟` : 'حساب واحد، وتجارب متنوعة.'}</h2><p role="status" className="mt-3 text-base leading-8 text-muted-foreground">{choice ? `سجّل حسابك علشان تبدأ مغامرة ${choice.title}. عندك حساب؟ سجّل دخولك وكمّل من هنا.` : 'اعمل حسابك، اختار شخصيتك، وابدأ تكتشف. عندك حساب؟ مغامراتك مستنياك.'}</p><div className="mt-4 border-r-2 border-primary pr-4 text-sm leading-7 text-muted-foreground">تأكيد حسابك بيتم برمز على واتساب. بعد التسجيل لأول مرة هتشوف الخطط قبل ما تبدأ.</div></div>
         <div className="flex min-w-0 justify-center">{loading || arrivedSignedOut === null || (user && arrivedSignedOut) ? <p role="status">جاري التحميل...</p> : user ? <div className="w-full border-t border-border py-8"><h3 className="text-2xl font-bold">أهلاً بيك من جديد</h3><Button className="mt-5 min-h-12 bg-primary px-6 text-primary-foreground" onClick={() => navigate('/app')}>متابعة اللعب <ArrowLeft className="h-4 w-4" /></Button></div> : <LandingContext.Provider value={true}><PlayerAuth /></LandingContext.Provider>}</div>
       </div>
     </section>
-    <footer className="mx-auto max-w-7xl px-5 py-7 sm:px-8">
-      <div className="flex flex-wrap items-center justify-between gap-5"><img src={analystLockup} alt="The Analyst" className="h-12 w-auto" /><Link to="/plans" className="text-sm font-bold text-primary">استعرض الخطط</Link><div dir="ltr" className="flex items-center gap-4"><span className="text-xs text-muted-foreground">An experience by IMP</span><img src="/imp-footer-logo.png" alt="IMP" className="h-10 w-auto" /></div></div>
-      <p className="mt-6 border-t border-border pt-4 text-xs leading-6 text-muted-foreground">نسجّل داخل المنصة أوقات الزيارات والجولات ونتائجها لتحسين التجربة ومتابعة التعلّم. لا نستخدم أدوات تتبع خارجية، ولا نشارك اسمك أو رقمك مع أي طرف ثالث.</p>
+    <footer className="mx-auto max-w-7xl px-5 py-5 sm:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-4"><img src={analystLockup} alt="The Analyst" className="h-10 w-auto" /><Link to="/plans" className="text-sm font-bold text-primary">استعرض الخطط</Link><div dir="ltr" className="flex items-center gap-3"><span className="text-xs text-muted-foreground">An experience by IMP</span><img src="/imp-footer-logo.png" alt="IMP" className="h-9 w-auto" /></div></div>
+      <p className="mt-4 border-t border-border pt-3 text-xs leading-6 text-muted-foreground">نسجّل داخل المنصة أوقات الزيارات والجولات ونتائجها لتحسين التجربة ومتابعة التعلّم. لا نستخدم أدوات تتبع خارجية، ولا نشارك اسمك أو رقمك مع أي طرف ثالث.</p>
     </footer>
   </div>;
 }

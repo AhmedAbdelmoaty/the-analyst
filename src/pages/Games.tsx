@@ -28,7 +28,7 @@ export default function Games() {
     <section className="mx-auto max-w-6xl px-5 py-10 md:py-14"><p className="text-sm font-bold text-primary">تجارب The Analyst</p><h1 className="mt-2 text-3xl font-bold md:text-5xl">اختار قضيتك</h1><p className="mt-3 max-w-xl leading-7 text-muted-foreground">كل لعبة بتدرّب زاوية مختلفة من طريقة التفكير التحليلي.</p>
       {needsWorkDetails && <aside className="mt-4 flex flex-wrap items-center justify-between gap-3 border-y border-border py-3 text-sm"><p>أضف القسم والقطاع المرتبطين بخبرتك.</p><div className="flex items-center gap-2"><Button onClick={() => navigate('/profile/work')} className="text-primary">استكمال البيانات</Button><Button onClick={dismiss} aria-label="إخفاء الدعوة" className="h-9 w-9 p-0"><X className="h-4 w-4" /></Button></div></aside>}
       <Button onClick={() => navigate('/plans')} className="mt-4 min-h-11 border-primary px-4 font-bold text-primary">استعرض الخطط</Button>
-      <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{GAME_CATALOG.map(game => <GameCard key={game.id} game={game} continuing={game.id === 'reward-decision' && Boolean(saved)} onChoose={() => navigate(game.route)} />)}</div>
+      <div className="discovery-grid mt-6 grid">{GAME_CATALOG.map(game => <GameCard key={game.id} game={game} continuing={game.id === 'reward-decision' && Boolean(saved)} onChoose={() => navigate(game.route)} />)}</div>
     </section>
   </main>;
 }

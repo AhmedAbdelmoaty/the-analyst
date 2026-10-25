@@ -47,6 +47,6 @@ export default function PlanChoice() {
       </section>
     </div>
     {disabled && <p role="status" className="mt-4 text-sm text-muted-foreground">جاري التحقق من الحساب وإتاحة الألعاب...</p>}
-    <section className="discovery mt-10 border-t border-border pt-7" aria-labelledby="current-games"><h2 id="current-games" className="text-xl font-bold">خمس مغامرات مستنياك</h2><div className="mt-4 grid gap-4 sm:grid-cols-2">{GAME_CATALOG.map(item => <GameCard key={item.id} game={item} onChoose={() => { selectGame(item.id); if (user) navigate(journeyDestination(isProfileComplete)); else navigate('/#account'); }} />)}</div></section>
+    <section className="discovery mt-8 border-t border-border pt-6" aria-labelledby="current-games"><h2 id="current-games" className="text-xl font-bold">اختار مغامرتك</h2><p className="mt-1 text-sm leading-7 text-muted-foreground">استكشف تجارب تفاعلية مختلفة، واختار الحكاية اللي تحب تبدأ بيها.</p><div className="discovery-grid mt-4 grid">{GAME_CATALOG.map(item => <GameCard key={item.id} game={item} onChoose={() => { selectGame(item.id); if (user) navigate(journeyDestination(isProfileComplete)); else navigate('/#account'); }} />)}</div></section>
   </SubscriptionLayout>;
 }
