@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { decideAccess, gameTier } from "./access";
 import { useGameAccess } from "./useGameAccess";
+import { selectGame } from "../discovery/journey";
+import { findGame } from "../discovery/catalog";
 
 /**
  * Future paid-game gate. While the server enforcement flag is OFF (the default and
@@ -15,7 +17,7 @@ export default function GameGate({ game, children }: { game: string; children: R
   const tier = gameTier(game);
 
   if (!snapshot) {
-    if (!loading || tier === "free") return <>{children}</>;
+    if (tier === "free") return <>{children}</>;
     return <div className="auth-theme flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">جاري التحميل...</div>;
   }
 
@@ -38,7 +40,7 @@ export default function GameGate({ game, children }: { game: string; children: R
           <h1 className="text-2xl font-bold">هذه اللعبة ضمن الاشتراك السنوي</h1>
           <p className="max-w-md text-game-muted">الخطة المجانية تشمل «اسأل صح». فعّل الاشتراك السنوي للوصول إلى بقية التجارب.</p>
           <div className="flex gap-3">
-            <button onClick={() => navigate("/plans")} className="min-h-11 rounded-md bg-primary px-5 font-bold text-primary-foreground">استعرض الخطط</button>
+            <button onClick={() => { const chosen = findGame(game); if (chosen) selectGame(chosen.id); navigate("/plans"); }} className="min-h-11 rounded-md bg-primary px-5 font-bold text-primary-foreground">استعرض الخطط</button>
             <button onClick={() => navigate("/app")} className="min-h-11 rounded-md border border-game-line px-5 font-bold text-game-muted">العودة إلى الألعاب</button>
           </div>
         </>

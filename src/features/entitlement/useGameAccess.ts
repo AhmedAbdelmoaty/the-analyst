@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type GameAccessSnapshot = {
-  enforcement: boolean;
+  enforcement: boolean | null;
   entitled: boolean | null;
   expiresAt: string | null;
 };
@@ -30,14 +30,14 @@ export function useGameAccess() {
       if (error) throw error;
       const d = data as { enforcement?: unknown; entitled?: unknown; expires_at?: unknown } | null;
       const snapshot: GameAccessSnapshot = {
-        enforcement: d?.enforcement === true,
+        enforcement: typeof d?.enforcement === 'boolean' ? d.enforcement : null,
         entitled: typeof d?.entitled === "boolean" ? d.entitled : null,
         expiresAt: typeof d?.expires_at === "string" ? d.expires_at : null,
       };
       if (revision === generation.current) setState({ owner: user.id, data: snapshot, loading: false });
     } catch {
       if (revision === generation.current) {
-        setState({ owner: user.id, data: { enforcement: false, entitled: null, expiresAt: null }, loading: false });
+        setState({ owner: user.id, data: { enforcement: null, entitled: null, expiresAt: null }, loading: false });
       }
     }
   }, [user?.id, authLoading]);

@@ -24,9 +24,10 @@ export type AccessDecision = "allow" | "deny" | "verify";
  * @param enforcement server flag; false/unknown → always allow (current development behavior).
  * @param entitled    null = server verification unavailable (never pretend the user is unpaid).
  */
-export function decideAccess(enforcement: boolean, tier: GameTier, entitled: boolean | null): AccessDecision {
-  if (!enforcement) return "allow";
+export function decideAccess(enforcement: boolean | null, tier: GameTier, entitled: boolean | null): AccessDecision {
+  if (enforcement === false) return "allow";
   if (tier === "free") return "allow";
+  if (enforcement === null) return "verify";
   if (entitled === null) return "verify";
   return entitled ? "allow" : "deny";
 }
