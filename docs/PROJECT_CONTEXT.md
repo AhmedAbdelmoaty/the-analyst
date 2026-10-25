@@ -1,6 +1,6 @@
 # The Analyst — project overview
 
-The Analyst is IMP’s shared platform for story-led practice in analytical thinking and business decisions. It contains **Problem Framing** (`/play`, “اسأل صح”), **Reward Decision** (`/games/reward-decision`, “قرار التكريم”), and **Behind the Dots** (`/games/behind-the-dots`, “ورا النقط”). They are selected from the authenticated `/app` page and use a shared player account. Behind the Dots keeps progress in a separate local storage namespace per authenticated user. Preserve approved game content and behavior unless a task explicitly changes it.
+The Analyst is IMP’s shared platform for story-led practice in analytical thinking and business decisions. It contains **Problem Framing** (`/play`, “اسأل صح”), **Reward Decision** (`/games/reward-decision`, “قرار التكريم”), **Behind the Dots** (`/games/behind-the-dots`, “ورا النقط”), **Crack the Code** (`/games/crack-the-code`), and **Decision Matrix** (`/games/decision-matrix`, “مصفوفة القرار — أول يوم في الشركة”). They are selected from the authenticated `/app` page and use a shared player account. Browser saves for Behind the Dots, Crack the Code, and Decision Matrix use separate per-user local storage namespaces; they do not sync between devices. Preserve approved game content and behavior unless a task explicitly changes it.
 
 ## Architecture map
 
@@ -11,6 +11,8 @@ The Analyst is IMP’s shared platform for story-led practice in analytical thin
 | Problem Framing | `src/components/game/`, `src/lib/pf-*` |
 | Reward Decision | `src/features/reward-decision/` |
 | Behind the Dots | `src/features/behind-the-dots/`, `src/pages/BehindTheDotsRoute.tsx` |
+| Crack the Code | `public/crack-the-code/`, `src/pages/CrackTheCodeRoute.tsx` |
+| Decision Matrix | `public/decision-matrix/`, `src/pages/DecisionMatrixRoute.tsx`, [handoff](DECISION_MATRIX_HANDOFF_AR.md) |
 | Work profiles and audience insights | `src/features/profile/`, `src/features/admin-stats/`, `src/pages/AdminStats.tsx` |
 | Visits, rounds, admin reporting | `src/lib/analytics/`, `src/components/analytics/`, `drizzle/migrations/` |
 | Subscription screens | `src/features/subscription/`, `src/pages/PlanChoice.tsx`, `src/pages/SubscriptionSummary.tsx`, `src/pages/MySubscription.tsx` |
@@ -23,7 +25,7 @@ The frontend is React, TypeScript, and Vite. Supabase/Lovable Cloud provides man
 - Player login is phone/password with WhatsApp OTP handled by the server-side `phone-auth` function. Admin access uses email auth and `user_roles`.
 - Admin statistics are served through protected `admin_*` RPCs; analytics tables are not directly writable by clients.
 - Work-profile fields and audience reporting are implemented in source. `docs/USER_PROFILING_HANDOFF.md` records that migrations `0008` and `0009` were applied to Lovable Cloud; treat that as reported evidence and independently verify the target environment before relying on it.
-- `/plans`, subscription summary, `/subscription`, and the post-game invitation are UI/navigation only. The annual display price is 1200 EGP, or 400 EGP for an Auth-confirmed Egyptian mobile number. The annual CTA is disabled for payment; no payment ledger, webhook, verified entitlement, or game restriction is implemented. Both games remain available behind existing authentication.
+- `/plans`, subscription summary, `/subscription`, and the post-game invitation are UI/navigation only. The annual display price is 1200 EGP, or 400 EGP for an Auth-confirmed Egyptian mobile number. The annual CTA is disabled for payment; no payment ledger, webhook, verified entitlement, or game restriction is implemented. All five games remain available behind the existing authentication and completed-profile checks.
 - A local frontend run may still contact the configured live backend. Git push, Lovable frontend publication, SQL migration, Edge Function deployment, and cloud configuration are separate.
 
 ## Read next

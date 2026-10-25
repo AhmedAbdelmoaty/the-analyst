@@ -1,6 +1,6 @@
 # The Analyst
 
-The Analyst is IMP's platform for analytical thinking games. It includes **Problem Framing** ("أقل من المتوقع.. مقارنة بإيه؟"), **Reward Decision** ("قرار التكريم"), and **Behind the Dots** ("ورا النقط"). The first two games use their existing saves; Behind the Dots stores progress in browser local storage under a separate key for each authenticated user. All games use the shared player account and game selection page. Subscription screens show a free “اسأل صح” plan and an annual display price of 1200 EGP, or 400 EGP for accounts with a confirmed Egyptian mobile number. Payment and paid access are **not implemented**.
+The Analyst is IMP's platform for analytical thinking games. It includes **Problem Framing** ("أقل من المتوقع.. مقارنة بإيه؟"), **Reward Decision** ("قرار التكريم"), **Behind the Dots** ("ورا النقط"), **Crack the Code** ("الشفرة الأخيرة"), and **Decision Matrix** ("مصفوفة القرار — أول يوم في الشركة"). The games use the shared player account and game selection page. Behind the Dots, Crack the Code, and Decision Matrix store progress in browser local storage under a separate namespace for each authenticated user; these saves do not sync between devices. Subscription screens show a free “اسأل صح” plan and an annual display price of 1200 EGP, or 400 EGP for accounts with a confirmed Egyptian mobile number. Payment and paid access are **not implemented**.
 
 ## Architecture
 
