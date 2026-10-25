@@ -124,6 +124,24 @@ export type Database = {
           },
         ]
       }
+      app_flags: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       completed_players: {
         Row: {
           completed_at: string
@@ -620,6 +638,10 @@ export type Database = {
         Args: { _from: string; _game?: string; _include?: boolean; _to: string }
         Returns: Json
       }
+      admin_entitlements: {
+        Args: { _limit?: number; _offset?: number }
+        Returns: Json
+      }
       admin_export_rounds: {
         Args: {
           _from: string
@@ -672,6 +694,16 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_payment_orders: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+        }
+        Returns: Json
+      }
+      admin_payments_overview: { Args: never; Returns: Json }
       admin_set_test_flag: {
         Args: { _is_test: boolean; _user_id: string }
         Returns: undefined
@@ -720,6 +752,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      my_game_access: { Args: never; Returns: Json }
       otp_attempt: {
         Args: { _challenge_id: string; _code_hmac: string }
         Returns: {
@@ -728,6 +761,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      paid_game_enforcement: { Args: never; Returns: boolean }
       payment_apply_event: {
         Args: {
           _amount: number
