@@ -1,0 +1,138 @@
+{
+  "button": {
+    "file": "audio/button.ogg",
+    "source": "kenney_ui-audio.zip :: Audio/click4.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.68,
+    "behavior": "single-shot; no loop"
+  },
+  "menu_open": {
+    "file": "audio/menu_open.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/open_002.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.72,
+    "behavior": "single-shot; no loop"
+  },
+  "answer_select": {
+    "file": "audio/answer_select.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/select_005.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.7,
+    "behavior": "single-shot; no loop"
+  },
+  "correct": {
+    "file": "audio/correct.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/confirmation_004.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.85,
+    "behavior": "single-shot; no loop"
+  },
+  "wrong": {
+    "file": "audio/wrong.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/error_002.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.8,
+    "behavior": "single-shot; no loop"
+  },
+  "heart_lost": {
+    "file": "audio/heart_lost.ogg",
+    "source": "kenney_impact-sounds.zip :: Audio/impactGlass_light_001.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.95,
+    "behavior": "single-shot; no loop"
+  },
+  "countdown_tick": {
+    "file": "audio/countdown_tick.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/tick_002.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.28,
+    "behavior": "event-triggered repeat; never loop the raw file indefinitely"
+  },
+  "notebook": {
+    "file": "audio/notebook.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/open_003.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.55,
+    "behavior": "single-shot; no loop"
+  },
+  "evidence": {
+    "file": "audio/evidence.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/glass_003.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.78,
+    "behavior": "single-shot; no loop"
+  },
+  "glitch_entrance": {
+    "file": "audio/glitch_entrance.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/glitch_004.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.75,
+    "behavior": "single-shot; no loop"
+  },
+  "jump_land": {
+    "file": "audio/jump_land.ogg",
+    "source": "kenney_impact-sounds.zip :: Audio/impactGeneric_light_003.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.6,
+    "behavior": "single-shot; no loop"
+  },
+  "stumble": {
+    "file": "audio/stumble.ogg",
+    "source": "kenney_impact-sounds.zip :: Audio/impactPunch_medium_002.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.8,
+    "behavior": "single-shot; no loop"
+  },
+  "cart_bell": {
+    "file": "audio/cart_bell.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/glass_001.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.45,
+    "behavior": "single-shot; no loop"
+  },
+  "footstep": {
+    "file": "audio/footstep.ogg",
+    "source": "kenney_impact-sounds.zip :: Audio/footstep_concrete_000.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.24,
+    "behavior": "event-triggered repeat; never loop the raw file indefinitely"
+  },
+  "perfect_win": {
+    "file": "audio/perfect_win.ogg",
+    "source": "kenney_music-jingles.zip :: Audio/Pizzicato jingles/jingles_PIZZI00.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "music",
+    "relativeVolume": 0.85,
+    "behavior": "single-shot; no loop"
+  },
+  "saved_win": {
+    "file": "audio/saved_win.ogg",
+    "source": "kenney_music-jingles.zip :: Audio/Pizzicato jingles/jingles_PIZZI03.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "music",
+    "relativeVolume": 0.78,
+    "behavior": "single-shot; no loop"
+  },
+  "defeat": {
+    "file": "audio/defeat.ogg",
+    "source": "kenney_music-jingles.zip :: Audio/8-Bit jingles/jingles_NES08.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "music",
+    "relativeVolume": 0.82,
+    "behavior": "single-shot; no loop"
+  }
+}

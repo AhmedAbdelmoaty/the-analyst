@@ -24,10 +24,12 @@ interface Props {
   interactiveDot?: number | undefined;
   visiblePointIndices?: readonly number[] | undefined;
   showGuide?: boolean | undefined;
+  plotTarget?: { x: number; y: number };
+  onPlotClick?: ((point: { x: number; y: number }) => void) | undefined;
   compact?: boolean;
 }
 
-export function ScatterPlot({ xs, ys, xLabel, yLabel, showFit, highlight, onDotClick, interactiveDot, visiblePointIndices, showGuide = true, compact }: Props) {
+export function ScatterPlot({ xs, ys, xLabel, yLabel, showFit, highlight, onDotClick, interactiveDot, visiblePointIndices, showGuide = true, plotTarget, onPlotClick, compact }: Props) {
   const W = 400;
   const H = compact ? 140 : 300;
   const m = compact ? { l: 14, r: 10, t: 10, b: 14 } : { l: 46, r: 16, t: 16, b: 48 };
@@ -42,12 +44,32 @@ export function ScatterPlot({ xs, ys, xLabel, yLabel, showFit, highlight, onDotC
 
   return (
     <svg
-      style={{ direction: "ltr" }}
       viewBox={`0 0 ${W} ${H}`}
       className="btd-scatter-svg h-auto w-full select-none"
       preserveAspectRatio="xMidYMid meet"
-      role="img"
-      aria-label={`مخطط نقط: ${xLabel} مقابل ${yLabel}، ${xs.length} يوم`}
+      onClick={plotTarget && onPlotClick ? (event) => {
+        const matrix = event.currentTarget.getScreenCTM();
+        if (!matrix) return;
+        const cursor = event.currentTarget.createSVGPoint();
+        cursor.x = event.clientX;
+        cursor.y = event.clientY;
+        const local = cursor.matrixTransform(matrix.inverse());
+        if (local.x < m.l || local.x > W - m.r || local.y < m.t || local.y > H - m.b) return;
+        onPlotClick({
+          x: xT.lo + ((local.x - m.l) / (W - m.l - m.r)) * (xT.hi - xT.lo),
+          y: yT.lo + ((H - m.b - local.y) / (H - m.b - m.t)) * (yT.hi - yT.lo),
+        });
+      } : undefined}
+      onKeyDown={plotTarget && onPlotClick ? (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onPlotClick(plotTarget);
+        }
+      } : undefined}
+      style={plotTarget ? { direction: "ltr", cursor: "crosshair", touchAction: "manipulation" } : { direction: "ltr" }}
+      role={plotTarget ? "button" : "img"}
+      tabIndex={plotTarget ? 0 : undefined}
+      aria-label={plotTarget ? `ضع نقطة اليوم في مخطط ${xLabel} مقابل ${yLabel}` : `مخطط نقط: ${xLabel} مقابل ${yLabel}، ${xs.length} يوم`}
     >
       {!compact &&
         xT.ticks.map((t) => (
@@ -94,6 +116,13 @@ export function ScatterPlot({ xs, ys, xLabel, yLabel, showFit, highlight, onDotC
           strokeLinecap="round"
           clipPath="url(#btd-clip)"
         />
+      )}
+      {plotTarget && (
+        <g aria-hidden="true" className="btd-plot-target">
+          <line x1={sx(plotTarget.x)} x2={sx(plotTarget.x)} y1={sy(plotTarget.y)} y2={H - m.b} className="stroke-primary" strokeDasharray="4 4" />
+          <line x1={m.l} x2={sx(plotTarget.x)} y1={sy(plotTarget.y)} y2={sy(plotTarget.y)} className="stroke-primary" strokeDasharray="4 4" />
+          <circle cx={sx(plotTarget.x)} cy={sy(plotTarget.y)} r="14" fill="transparent" stroke="currentColor" strokeDasharray="4 3" strokeWidth="2" className="text-primary" />
+        </g>
       )}
       <defs>
         <clipPath id="btd-clip">

@@ -3,7 +3,7 @@ import { BRIEFING, type ChoiceId } from "../data/dialogue";
 import { patternFor, pearson } from "./correlation";
 import { generateRunCases } from "./datasets";
 
-export type Phase = "cover" | "briefing" | "tutorial" | "tutorialReady" | "puzzle" | "reveal" | "recommendation" | "recommendationFeedback" | "debrief";
+export type Phase = "cover" | "briefing" | "tutorial" | "tutorialReady" | "puzzle" | "reveal" | "recommendation" | "recommendationFeedback" | "ending" | "debrief";
 export type Ending = "perfect" | "saved" | "glitch";
 
 export interface CaseResult {
@@ -14,7 +14,7 @@ export interface CaseResult {
 }
 
 export interface GameState {
-  v: 5;
+  v: 6;
   phase: Phase;
   briefingStep: number;
   tutorialStep: 0 | 1 | 2;
@@ -24,6 +24,7 @@ export interface GameState {
   results: Partial<Record<CaseId, CaseResult>>;
   evidence: CaseId[];
   hearts: number;
+  practiceAfterCapture: boolean;
   recommendationAttempts: ChoiceId[];
   ending: Ending | null;
   paused: boolean;
@@ -33,7 +34,7 @@ export interface GameState {
 
 export const ROUND_SECONDS = 20;
 export const initialState: GameState = {
-  v: 5,
+  v: 6,
   phase: "cover",
   briefingStep: 0,
   tutorialStep: 0,
@@ -43,6 +44,7 @@ export const initialState: GameState = {
   results: {},
   evidence: [],
   hearts: 3,
+  practiceAfterCapture: false,
   recommendationAttempts: [],
   ending: null,
   paused: false,
@@ -66,6 +68,7 @@ export type Action =
   | { type: "timeout" }
   | { type: "attach" }
   | { type: "recommendationAnswer"; choice: ChoiceId }
+  | { type: "finishEnding" }
   | { type: "retryRecommendation" }
   | { type: "pause" }
   | { type: "resume" }
@@ -86,11 +89,12 @@ function resolveCase(s: GameState, guess: Pattern | null, timedOut = false): Gam
   const coefficient = pearson(c.xs, c.ys);
   if (coefficient === null) return s;
   const actual = patternFor(coefficient);
-  const points: 0 | 3 = guess === actual && !timedOut ? 3 : 0;
+  const points: 0 | 3 = !s.practiceAfterCapture && guess === actual && !timedOut ? 3 : 0;
   return {
     ...s,
     phase: "reveal",
-    hearts: points === 3 ? s.hearts : Math.max(0, s.hearts - 1),
+    hearts: s.practiceAfterCapture || points === 3 ? s.hearts : Math.max(0, s.hearts - 1),
+    practiceAfterCapture: s.practiceAfterCapture || s.hearts === 1 && points === 0,
     results: { ...s.results, [c.id]: { guess, actual, points, ...(timedOut ? { timedOut: true } : {}) } },
   };
 }
@@ -137,17 +141,18 @@ export function reducer(s: GameState, a: Action): GameState {
       if (s.phase !== "reveal") return s;
       const c = currentCase(s);
       const evidence = s.evidence.includes(c.id) ? s.evidence : [...s.evidence, c.id];
-      if (s.hearts === 0) return { ...s, evidence, phase: "debrief", ending: "glitch", completed: true, paused: false };
       const next = s.caseIndex + 1;
       if (next >= CASES.length) return { ...s, evidence, phase: "recommendation", recommendationAttempts: [] };
-      return { ...s, evidence, caseIndex: next, phase: "puzzle" };
+      return { ...s, evidence, caseIndex: next, phase: "puzzle", paused: false };
     }
     case "recommendationAnswer": {
-      if (s.phase !== "recommendation" || s.recommendationAttempts.length !== 0 || s.hearts === 0 || s.evidence.length !== CASES.length) return s;
+      if (s.phase !== "recommendation" || s.recommendationAttempts.length !== 0 || s.evidence.length !== CASES.length) return s;
       const attempts = [...s.recommendationAttempts, a.choice];
-      const ending: Ending = a.choice !== "A" ? "glitch" : totalScore(s) === 9 ? "perfect" : "saved";
-      return { ...s, phase: "debrief", recommendationAttempts: attempts, ending, completed: true, paused: false };
+      const ending: Ending = a.choice !== "B" || s.hearts === 0 ? "glitch" : totalScore(s) === 12 ? "perfect" : "saved";
+      return { ...s, phase: "ending", recommendationAttempts: attempts, ending, completed: false, paused: false };
     }
+    case "finishEnding":
+      return s.phase === "ending" ? { ...s, phase: "debrief", completed: true, paused: false } : s;
     case "retryRecommendation":
       return s.phase === "recommendationFeedback" && s.recommendationAttempts.length === 1 ? { ...s, phase: "recommendation" } : s;
     case "pause":

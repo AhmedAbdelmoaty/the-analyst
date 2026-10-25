@@ -4,15 +4,17 @@ import { pearson } from "./correlation";
 const POINTS = 12;
 const caseCache = new Map<number, readonly StoryCase[]>();
 const Y_RANGES: Record<string, readonly [number, number]> = {
-  C1: [8, 48],
-  C2: [2, 20],
-  C3: [8, 48],
+  C1: [15, 95],
+  C2: [2, 24],
+  C3: [25, 80],
+  C4: [40, 96],
 };
 const X_POOLS: Record<string, readonly number[]> = {
   // Each point is one day. Replays change the days while keeping the pattern clear.
-  C1: Array.from({ length: 25 }, (_, i) => i + 15),
-  C2: Array.from({ length: 24 }, (_, i) => i),
-  C3: Array.from({ length: 24 }, (_, i) => i),
+  C1: Array.from({ length: 23 }, (_, i) => i + 17),
+  C2: Array.from({ length: 48 }, (_, i) => i + 8),
+  C3: Array.from({ length: 71 }, (_, i) => i + 50),
+  C4: Array.from({ length: 21 }, (_, i) => i + 2),
 };
 
 function randomFor(seed: number) {
@@ -51,11 +53,11 @@ function makeXValues(c: StoryCase, rand: () => number): number[] {
 function makeYValues(c: StoryCase, xs: readonly number[], rand: () => number): number[] {
   const [min, max] = Y_RANGES[c.id] ?? [0, 30];
   if (c.id === "C3") {
-    return Array.from({ length: POINTS }, () => min + Math.floor(rand() * (max - min + 1)));
+    return xs.map((prepared) => Math.min(prepared, min + Math.floor(rand() * (max - min + 1))));
   }
   const xMin = Math.min(...xs);
   const xMax = Math.max(...xs);
-  const direction = c.id === "C1" ? 1 : -1;
+  const direction = c.id === "C1" || c.id === "C2" ? 1 : -1;
   const spread = max - min;
   return xs.map((x) => {
     const signal = (x - xMin) / (xMax - xMin);
@@ -68,8 +70,9 @@ function makeYValues(c: StoryCase, xs: readonly number[], rand: () => number): n
 function inBand(id: string, r: number | null): boolean {
   if (r === null) return false;
   if (id === "C1") return r >= 0.70 && r <= 0.92;
-  if (id === "C2") return r >= -0.92 && r <= -0.70;
-  return Math.abs(r) <= 0.15;
+  if (id === "C2") return r >= 0.70 && r <= 0.92;
+  if (id === "C3") return Math.abs(r) <= 0.15;
+  return r >= -0.92 && r <= -0.70;
 }
 
 function generateCase(c: StoryCase, seed: number): StoryCase {
