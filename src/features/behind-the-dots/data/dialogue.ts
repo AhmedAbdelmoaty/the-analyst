@@ -46,7 +46,7 @@ export const CHOICES: { id: ChoiceId; text: string; supported: boolean }[] = [
 export const ENDING_COPY = {
   perfect: { title: "كسبنا الجولة!", line: "٤ إجابات صح والتوصية على الدليل… دوتّي بطلة النهارده!", glitch: "يا خسارة! الخطة دي كانت هتنجح!" },
   saved: { title: "دوتّي نجت!", line: "قرأنا أغلب النقط واخترنا خطة تستاهل التجربة. الجولة لينا!", glitch: "المرة الجاية مش هتفلتوا مني!" },
-  glitch: { title: "جليتش خطف الجولة!", line: "القلوب خلصت أو الخطة ما استندتش للدليل. الجولة لجليتش المرة دي.", glitch: "كنت فاكر البالونات دي هتكسبني!" },
+  glitch: { title: "جليتش خطف الجولة!", line: "القلوب خلصت أو الخطة ما استندتش للدليل. الجولة لجليتش المرة دي.", glitch: "كان عندي حيلة تانية… بس دوتّي سبقتني!" },
 } as const;
 
 export const RELATION_LABELS: Record<Pattern, string> = {

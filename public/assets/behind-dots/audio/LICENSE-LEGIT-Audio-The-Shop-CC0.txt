@@ -1,0 +1,6 @@
+Asset: 01 - LEGIT Audio - TheShopCollection_convenience_store_drinks_fridge_drone.mp3
+Creator: LEGIT Audio
+Source: https://opengameart.org/content/the-shop
+License: CC0, as explicitly stated on the OpenGameArt page for the free samples hosted there.
+Scope: The CC0 statement applies to these free OpenGameArt samples, not to other LEGIT Audio products.
+Changes: Renamed for the game; audio content was not modified.

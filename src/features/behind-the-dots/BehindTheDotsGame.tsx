@@ -1,15 +1,16 @@
-import { ArrowLeft, ArrowRight, Clock3, Heart, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
-import { useEffect, useReducer, useRef, useState, type CSSProperties } from "react";
+import { ArrowLeft, ArrowRight, Clock3, Heart, Pause, Play, RotateCcw, SlidersHorizontal, Volume2, VolumeX } from "lucide-react";
+import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import analystMark from "@/assets/brand/the-analyst-mark.png";
 import { CASES, TUTORIAL, type Pattern } from "./data/cases";
 import { BRIEFING, CASE_LINES, CHOICES, ENDING_COPY, MEETING_LINE, REACTION_LINES, RELATION_LABELS, TUTORIAL_LINES } from "./data/dialogue";
 import { ScatterPlot } from "./components/ScatterPlot";
+import { EndingSequence } from "./components/EndingSequence";
 import { currentCase, initialState, reducer, ROUND_SECONDS, totalScore, type Action, type Ending, type GameState } from "./engine/gameState";
 import { createRunSeed } from "./engine/datasets";
 import { hasLegacyProgress, loadMeta, loadState, saveMeta, saveState, type Meta } from "./engine/persistence";
 import { patternFor, pearson } from "./engine/correlation";
-import { playTone } from "./engine/sound";
+import { gameAudio, playTone, type AudioBus } from "./engine/sound";
 
 const patternChoices: { id: Pattern; symbol: string; label: string; detail: string }[] = [
   { id: "up", symbol: "↗", label: "علاقة طردية", detail: "بيزيدوا مع بعض" },
@@ -21,21 +22,27 @@ function IconButton({ label, onClick, children }: { label: string; onClick: () =
   return <button className="btd-icon-button" type="button" aria-label={label} title={label} onClick={onClick}>{children}</button>;
 }
 
-function GameHeader({ state, time, paused, muted, onPause, onMute }: { state: GameState; time?: number; paused: boolean; muted: boolean; onPause: () => void; onMute: () => void }) {
-  const timed = state.phase === "puzzle" || state.phase === "reveal";
+function GameHeader({ state, time, paused, muted, audioVolumes, onPause, onMute, onVolumeChange }: { state: GameState; time?: number; paused: boolean; muted: boolean; audioVolumes: Record<AudioBus, number>; onPause: () => void; onMute: () => void; onVolumeChange: (bus: AudioBus, value: number) => void }) {
+  const [audioOpen, setAudioOpen] = useState(false);
+  const inChallenge = state.phase === "puzzle" || state.phase === "reveal";
+  const timed = inChallenge && !state.practiceAfterCapture;
   return (
     <header className="btd-hud" aria-label="حالة اللعبة">
       <div className="btd-hud-lives" aria-label={`${state.hearts} من 3 قلوب`}>
         {[0, 1, 2].map((i) => <Heart key={i} aria-hidden="true" className={i < state.hearts ? "is-alive" : "is-broken"} fill="currentColor" />)}
       </div>
-        {timed && <div className="btd-hud-case">التحدي <b dir="ltr">{state.caseIndex + 1} / 4</b></div>}
+        {inChallenge && <div className="btd-hud-case">التحدي <b dir="ltr">{state.caseIndex + 1} / 4</b></div>}
       {timed && <div className={`btd-hud-clock ${time !== undefined && time <= 5 ? "is-urgent" : ""}`} aria-live="polite">
         <Clock3 aria-hidden="true" /><b dir="ltr">{time ?? "20"}</b><span>ثانية</span>
       </div>}
       <img className="btd-brand-mark" src={analystMark} alt="The Analyst" />
       <div className="btd-hud-tools">
-        {timed && state.phase === "puzzle" && <IconButton label={paused ? "كمّل اللعبة" : "إيقاف مؤقت"} onClick={onPause}>{paused ? <Play /> : <Pause />}</IconButton>}
+        {(state.phase === "puzzle" || state.phase === "ending") && <IconButton label={paused ? "كمّل اللعبة" : "إيقاف مؤقت"} onClick={onPause}>{paused ? <Play /> : <Pause />}</IconButton>}
+        <IconButton label="إعدادات الصوت" onClick={() => setAudioOpen((open) => !open)}><SlidersHorizontal /></IconButton>
         <IconButton label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</IconButton>
+        {audioOpen && <div className="btd-sound-panel" aria-label="مستويات الصوت">
+          {(["music", "sfx", "ambience"] as const).map((bus) => <label key={bus}>{bus === "music" ? "الموسيقى" : bus === "sfx" ? "المؤثرات" : "أجواء العربية"}<input type="range" name={bus} min="0" max="1" step="0.05" value={audioVolumes[bus]} aria-label={bus === "music" ? "مستوى الموسيقى" : bus === "sfx" ? "مستوى المؤثرات" : "مستوى أجواء العربية"} onChange={(event) => onVolumeChange(bus, Number(event.currentTarget.value))} /></label>)}
+        </div>}
       </div>
     </header>
   );
@@ -135,17 +142,17 @@ function ChaseLane({ seconds, paused }: { seconds: number; paused: boolean }) {
   </div>;
 }
 
-function ReactionCinema({ kind, finalLoss, onSkip }: { kind: "win" | "wrong" | "timeout"; finalLoss: boolean; onSkip: () => void }) {
+function ReactionCinema({ kind, practiceCapture, onSkip }: { kind: "win" | "wrong" | "timeout"; practiceCapture: boolean; onSkip: () => void }) {
   const glitchPose = kind === "win" ? "stumble" : kind === "wrong" ? "taunt" : "enter";
   const dottyPose = kind === "win" ? "celebrate" : "stumble";
-  return <div className={`btd-reaction-cinema cinema-${kind} ${finalLoss ? "cinema-final-loss" : ""}`} aria-live="assertive">
+  return <div className={`btd-reaction-cinema cinema-${kind} ${practiceCapture ? "cinema-final-loss" : ""}`} aria-live="assertive">
     <div className="btd-cinema-speed" aria-hidden="true" />
     <div className="btd-cinema-prop" aria-hidden="true">🍦</div>
     <div className="btd-cinema-glitch" aria-hidden="true"><img src={`/assets/behind-dots/v6/glitch_${glitchPose}.png`} alt="" /></div>
     <div className="btd-cinema-dotty" aria-hidden="true"><img src={`/assets/behind-dots/v6/dotty_${dottyPose}.png`} alt="" /></div>
-    {(kind === "timeout" || finalLoss) && <div className="btd-cinema-net" aria-hidden="true" />}
-    <div className="btd-cinema-stamp">{finalLoss ? "انتهت الجولة!" : kind === "win" ? "صح جدًا!" : kind === "wrong" ? "جليتش قرب!" : "خلص الوقت!"}</div>
-    <div className="btd-cinema-impact">{finalLoss ? "جليتش كسب الجولة" : kind === "win" ? "+3 نجوم ✦" : kind === "timeout" ? "لقطتها! 💥" : "قلب اتكسر ♡"}</div>
+    {(kind === "timeout" || practiceCapture) && <div className="btd-cinema-net" aria-hidden="true" />}
+    <div className="btd-cinema-stamp">{practiceCapture ? "جليتش لحق دوتّي!" : kind === "win" ? "صح جدًا!" : kind === "wrong" ? "جليتش قرب!" : "خلص الوقت!"}</div>
+    <div className="btd-cinema-impact">{practiceCapture ? "نكمل الأدلة الباقية تدريب" : kind === "win" ? "+3 نجوم ✦" : kind === "timeout" ? "لقطتها! 💥" : "قلب اتكسر ♡"}</div>
     <button type="button" className="btd-cinema-skip" onClick={onSkip}>كمّل ←</button>
   </div>;
 }
@@ -153,7 +160,7 @@ function ReactionCinema({ kind, finalLoss, onSkip }: { kind: "win" | "wrong" | "
 export function BehindTheDotsGame({ userId }: { userId: string }) {
   const [loaded, setLoaded] = useState(false);
   const [state, rawDispatch] = useReducer(reducer, initialState);
-  const [meta, setMeta] = useState<Meta>({ tutorialDone: false, bestScore: 0, muted: false });
+  const [meta, setMeta] = useState<Meta>({ tutorialDone: false, bestScore: 0, muted: false, musicVolume: 0.55, sfxVolume: 0.85, ambienceVolume: 0.18 });
   const [legacyNotice, setLegacyNotice] = useState(false);
   const [spokenChars, setSpokenChars] = useState(0);
   const [tutorialPlacementError, setTutorialPlacementError] = useState(false);
@@ -232,23 +239,40 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
       const choice = CHOICES.find((item) => item.id === action.choice);
       if (choice) playTone(choice.supported ? "win" : "lose", meta.muted);
     } else if (action.type === "attach") {
-      playTone(before.hearts === 0 ? "lose" : "tap", meta.muted);
-    } else if (action.type === "start" || action.type === "advanceBriefing" || action.type === "showTutorialDays") {
-      playTone("tap", meta.muted);
+      gameAudio.play("evidence");
+      window.setTimeout(() => gameAudio.play("page"), 380);
+    } else if (action.type === "start" || action.type === "advanceBriefing" || action.type === "showTutorialDays" || action.type === "openCase") {
+      const nextSpeaker = action.type === "advanceBriefing" ? BRIEFING[Math.min(before.briefingStep + 1, BRIEFING.length - 1)]?.speaker : null;
+      playTone(action.type === "openCase" ? "notebook" : nextSpeaker === "glitch" || nextSpeaker === "dotty" ? "entrance" : "tap", meta.muted);
     }
     if (action.type === "submitTutorial" && after.phase === "tutorialReady" && !meta.tutorialDone) updateMeta({ tutorialDone: true });
     if (action.type === "skipTutorial" && after.phase === "puzzle" && !meta.tutorialDone) updateMeta({ tutorialDone: true });
     rawDispatch(action);
   };
 
+  const finishEnding = useCallback(() => rawDispatch({ type: "finishEnding" }), []);
+  useEffect(() => {
+    gameAudio.setMuted(meta.muted);
+    gameAudio.setBusVolume("music", meta.musicVolume);
+    gameAudio.setBusVolume("sfx", meta.sfxVolume);
+    gameAudio.setBusVolume("ambience", meta.ambienceVolume);
+  }, [meta]);
+  useEffect(() => { if (!meta.muted && state.phase !== "cover") gameAudio.play("marketAmbience"); }, [meta.muted, state.phase]);
+  useEffect(() => {
+    if (state.paused) gameAudio.pause();
+    else gameAudio.resume();
+  }, [state.paused]);
+  useEffect(() => () => gameAudio.stop(), []);
+
   const challengeReady = state.phase === "puzzle" && readyCase === state.caseIndex;
   const time = useCountdown(challengeReady && !state.practiceAfterCapture, state.paused, () => dispatch({ type: "timeout" }));
   timeRef.current = time;
+  useEffect(() => { if (time === 5 && !state.paused) gameAudio.play("tick"); }, [time, state.paused]);
   if (!loaded) return <div className="btd-loading" />;
 
   const activeResult = state.phase === "reveal" ? state.results[currentCase(state).id] : undefined;
   const resultMood = activeResult ? activeResult.points === 3 ? "win" : activeResult.timedOut ? "timeout" : "wrong" : null;
-  const shot = state.phase === "briefing" ? "dialogue" : state.phase === "tutorial" ? "notebook" : state.phase === "puzzle" ? "chart" : state.phase === "reveal" ? reactionVisible ? "reaction" : "chart" : state.phase === "debrief" ? "ending" : state.phase === "cover" ? "cover" : "plan";
+  const shot = state.phase === "briefing" ? "dialogue" : state.phase === "tutorial" ? "notebook" : state.phase === "puzzle" ? "chart" : state.phase === "reveal" ? reactionVisible ? "reaction" : "chart" : state.phase === "ending" ? "ending" : state.phase === "debrief" ? "results" : state.phase === "cover" ? "cover" : "plan";
   const speaker = state.phase === "briefing" ? BRIEFING[state.briefingStep]!.speaker : undefined;
   const worldMood = resultMood ?? (state.phase === "debrief" ? state.ending === "glitch" ? "ending-glitch" : state.ending === "perfect" ? "ending-win" : "ending-saved" : state.phase === "puzzle" && (time ?? ROUND_SECONDS) <= 5 ? "urgent" : state.phase === "tutorialReady" ? "win" : "calm");
 
@@ -257,8 +281,12 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
       <div className="btd-app-backdrop" />
       <div className="btd-shell">
         <MarketStage mood={worldMood} speaker={speaker} briefingStep={state.phase === "cover" ? -1 : state.phase === "briefing" ? state.briefingStep : undefined} className="btd-world" />
-        {(state.phase === "puzzle" || state.phase === "reveal" || state.phase === "tutorial" || state.phase === "tutorialReady" || state.phase === "recommendation") && (
-          <GameHeader state={state} time={state.phase === "reveal" ? settledTime : time} paused={state.paused} muted={meta.muted} onPause={() => dispatch({ type: "pause" })} onMute={() => updateMeta({ muted: !meta.muted })} />
+        {(state.phase === "puzzle" || state.phase === "reveal" || state.phase === "tutorial" || state.phase === "tutorialReady" || state.phase === "recommendation" || state.phase === "ending") && (
+          <GameHeader state={state} time={state.phase === "reveal" ? settledTime : time} paused={state.paused} muted={meta.muted} audioVolumes={{ music: meta.musicVolume, sfx: meta.sfxVolume, ambience: meta.ambienceVolume }} onPause={() => dispatch({ type: "pause" })} onMute={() => updateMeta({ muted: !meta.muted })} onVolumeChange={(bus, value) => {
+            if (bus === "music") updateMeta({ musicVolume: value });
+            else if (bus === "sfx") updateMeta({ sfxVolume: value });
+            else updateMeta({ ambienceVolume: value });
+          }} />
         )}
 
         {state.phase === "cover" && (
@@ -355,7 +383,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
             <div className="btd-ready-card">
               <span className="btd-eyebrow">الدفتر اتفتح · التدريب من غير وقت</span>
               <h1>{state.tutorialAttempts > 1 ? "دلوقتي عرفنا الاتجاه" : "بالضبط!"}</h1>
-              <p>{state.tutorialAttempts > 1 ? `النقط طالعة لفوق: ${RELATION_LABELS.up}. دلوقتي نقرأ الحالات التلاتة براحتنا.` : "المهم الاتجاه العام، مش إن كل نقطة تبقى على نفس الخط."}</p>
+              <p>{state.tutorialAttempts > 1 ? `النقط طالعة لفوق: ${RELATION_LABELS.up}. دلوقتي نقرأ الحالات الأربعة براحتنا.` : "المهم الاتجاه العام، مش إن كل نقطة تبقى على نفس الخط."}</p>
               <div className="btd-ready-rules"><HeartsBadge count={3} /><span>٣ قلوب</span><i /><Clock3 /><span>٢٠ ثانية لكل تحدي</span></div>
               <p>جليتش: «تقدر تلحق دوتّي قبل ما أوصلها؟»</p>
               <button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "startChallenges" })}>ابدأ التحديات <ArrowLeft /></button>
@@ -392,7 +420,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
                     )}
                   </div>
                 </div>
-                {result && reactionVisible && <ReactionCinema kind={mood as "win" | "wrong" | "timeout"} finalLoss={state.hearts === 0} onSkip={() => state.hearts === 0 ? dispatch({ type: "attach" }) : setReactionVisible(false)} />}
+                {result && reactionVisible && <ReactionCinema kind={mood as "win" | "wrong" | "timeout"} practiceCapture={state.hearts === 0} onSkip={() => state.hearts === 0 ? dispatch({ type: "attach" }) : setReactionVisible(false)} />}
                 {state.phase === "puzzle" && <ChaseLane seconds={time ?? ROUND_SECONDS} paused={state.paused} />}
               </div>
             </section>
@@ -421,6 +449,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
           </section>
         )}
 
+        {state.phase === "ending" && state.ending && <EndingSequence ending={state.ending} paused={state.paused} onComplete={finishEnding} />}
         {state.phase === "debrief" && state.ending && <Results state={state} onReplay={() => dispatch({ type: "replay" })} />}
 
         {state.paused && <div className="btd-pause-overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title"><div className="btd-pause-card"><span className="btd-eyebrow">وقفة صغيرة</span><h2 id="pause-title">دوتّي مستنية</h2><p>الوقت وقف. كل حاجة محفوظة.</p><button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "resume" })}><Play /> كمّل اللعب</button></div></div>}

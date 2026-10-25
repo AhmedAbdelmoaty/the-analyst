@@ -3,7 +3,7 @@ import { BRIEFING, type ChoiceId } from "../data/dialogue";
 import { patternFor, pearson } from "./correlation";
 import { generateRunCases } from "./datasets";
 
-export type Phase = "cover" | "briefing" | "tutorial" | "tutorialReady" | "puzzle" | "reveal" | "recommendation" | "recommendationFeedback" | "debrief";
+export type Phase = "cover" | "briefing" | "tutorial" | "tutorialReady" | "puzzle" | "reveal" | "recommendation" | "recommendationFeedback" | "ending" | "debrief";
 export type Ending = "perfect" | "saved" | "glitch";
 
 export interface CaseResult {
@@ -68,6 +68,7 @@ export type Action =
   | { type: "timeout" }
   | { type: "attach" }
   | { type: "recommendationAnswer"; choice: ChoiceId }
+  | { type: "finishEnding" }
   | { type: "retryRecommendation" }
   | { type: "pause" }
   | { type: "resume" }
@@ -148,8 +149,10 @@ export function reducer(s: GameState, a: Action): GameState {
       if (s.phase !== "recommendation" || s.recommendationAttempts.length !== 0 || s.evidence.length !== CASES.length) return s;
       const attempts = [...s.recommendationAttempts, a.choice];
       const ending: Ending = a.choice !== "B" || s.hearts === 0 ? "glitch" : totalScore(s) === 12 ? "perfect" : "saved";
-      return { ...s, phase: "debrief", recommendationAttempts: attempts, ending, completed: true, paused: false };
+      return { ...s, phase: "ending", recommendationAttempts: attempts, ending, completed: false, paused: false };
     }
+    case "finishEnding":
+      return s.phase === "ending" ? { ...s, phase: "debrief", completed: true, paused: false } : s;
     case "retryRecommendation":
       return s.phase === "recommendationFeedback" && s.recommendationAttempts.length === 1 ? { ...s, phase: "recommendation" } : s;
     case "pause":
