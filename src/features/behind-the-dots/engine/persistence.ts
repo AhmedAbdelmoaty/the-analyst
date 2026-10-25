@@ -1,7 +1,8 @@
 import { ALL_CASE_IDS } from "../data/cases";
 import { initialState, type GameState, type Phase } from "./gameState";
 
-const PREFIX = "the-analyst:behind-dots:v5";
+const PREFIX = "the-analyst:behind-dots:v6";
+const V5_PREFIX = "the-analyst:behind-dots:v5";
 const LEGACY_PREFIX = "the-analyst:behind-dots:v3";
 const PHASES: Phase[] = ["cover", "briefing", "tutorial", "tutorialReady", "puzzle", "reveal", "recommendation", "recommendationFeedback", "debrief"];
 
@@ -25,7 +26,7 @@ export function loadState(storage: StorageLike, userId: string): GameState {
     const raw = storage.getItem(sessionKey(userId));
     if (!raw) return { ...initialState };
     const saved = JSON.parse(raw) as Partial<GameState>;
-    if (saved.v !== 5 || !saved.phase || !PHASES.includes(saved.phase)) return { ...initialState };
+    if (saved.v !== 6 || !saved.phase || !PHASES.includes(saved.phase)) return { ...initialState };
     const evidence = Array.from(new Set((saved.evidence ?? []).filter((id) => ALL_CASE_IDS.includes(id))));
     const results = Object.fromEntries(Object.entries(saved.results ?? {}).filter(([id]) => ALL_CASE_IDS.includes(id as never)));
     const savedChoices = (saved.recommendationAttempts ?? []).filter((id) => id === "A" || id === "B" || id === "C");
@@ -61,7 +62,7 @@ export function saveState(storage: StorageLike, userId: string, state: GameState
 
 export function loadMeta(storage: StorageLike, userId: string): Meta {
   try {
-    const raw = storage.getItem(metaKey(userId));
+    const raw = storage.getItem(metaKey(userId)) ?? storage.getItem(`${V5_PREFIX}:meta:${userId}`);
     return raw ? { ...defaultMeta, ...JSON.parse(raw) } : { ...defaultMeta };
   } catch { return { ...defaultMeta }; }
 }
