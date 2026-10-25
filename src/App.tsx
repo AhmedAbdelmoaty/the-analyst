@@ -69,7 +69,7 @@ const App = () => (
             <Route path="/games/reward-decision" element={<RequireProfile><GameGate game="reward-decision"><RewardDecisionRoute /></GameGate></RequireProfile>} />
             <Route path="/games/behind-the-dots" element={<RequireProfile><GameGate game="behind-the-dots"><BehindTheDotsRoute /></GameGate></RequireProfile>} />
             <Route path="/games/crack-the-code" element={<RequireProfile><GameGate game="crack-the-code"><CrackTheCodeRoute /></GameGate></RequireProfile>} />
-            <Route path="/games/decision-matrix" element={<RequireProfile><DecisionMatrixRoute /></RequireProfile>} />
+            <Route path="/games/decision-matrix" element={<RequireProfile><GameGate game="decision-matrix"><DecisionMatrixRoute /></GameGate></RequireProfile>} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/board-9k2x" element={<AdminBoard />} />
             <Route path="/admin/stats" element={<AdminStats />} />

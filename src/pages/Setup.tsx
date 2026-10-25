@@ -6,6 +6,7 @@ import analystImg from "@/assets/characters/analyst.webp";
 import saraImg from "@/assets/characters/sara.webp";
 import { AuthShell, ErrorBox, Field, LinkButton, PrimaryButton, TextInput } from "@/components/auth/AuthUI";
 import { destinationForPlan, takePlanIntent } from "@/features/subscription/planIntent";
+import { journeyDestination } from "@/features/discovery/journey";
 import WorkProfileFields from "@/features/profile/WorkProfileFields";
 import { hasWorkProfile, isWorkProfileSchemaUnavailable, validateWorkProfile, type WorkProfile } from "@/features/profile/workProfile";
 
@@ -30,7 +31,7 @@ const Setup = () => {
   }, [profile]);
 
   useEffect(() => {
-    if (isProfileComplete && hasWorkProfile(profile)) navigate(destinationForPlan(takePlanIntent(), true), { replace: true });
+    if (isProfileComplete && hasWorkProfile(profile)) navigate(journeyDestination(true, destinationForPlan(takePlanIntent(), true)), { replace: true });
   }, [isProfileComplete, profile, navigate]);
 
   if (authLoading) return <div className="min-h-screen bg-background" />;
@@ -46,7 +47,7 @@ const Setup = () => {
     if (Object.keys(checked.errors).length) return;
     setLoading(true); setError(null);
     const identity = isProfileComplete ? {} : {
-      first_name: firstName.trim().slice(0, 50), last_name: lastName.trim().slice(0, 50), gender: gender!, avatar_choice: gender === "male" ? "analyst" : "sara",
+      first_name: firstName.trim().slice(0, 50), last_name: lastName.trim().slice(0, 50), gender, avatar_choice: gender === "male" ? "analyst" : "sara",
     };
     const { error } = await updateProfile({ ...identity, ...checked.value });
     if (error && isWorkProfileSchemaUnavailable(error) && !isProfileComplete) {
@@ -55,7 +56,7 @@ const Setup = () => {
       const fallback = await updateProfile(identity);
       setLoading(false);
       if (!fallback.error) {
-        navigate(destinationForPlan(takePlanIntent(), true), { replace: true });
+        navigate(journeyDestination(true, destinationForPlan(takePlanIntent(), true)), { replace: true });
         return;
       }
       setError("ماقدرناش نحفظ اختيارك. جرّب تاني.");
@@ -111,7 +112,7 @@ const Setup = () => {
         <PrimaryButton type="button" onClick={handleSubmit} loading={loading} disabled={!isProfileComplete && (!firstName.trim() || !lastName.trim() || !gender)}>
           يلا نبدأ
         </PrimaryButton>
-        {isProfileComplete && <LinkButton className="w-full text-muted-foreground" onClick={() => navigate("/app", { replace: true })}>تخطي الآن</LinkButton>}
+        {isProfileComplete && <LinkButton className="w-full text-muted-foreground" onClick={() => navigate(journeyDestination(true), { replace: true })}>تخطي الآن</LinkButton>}
         <div className="text-center">
           <LinkButton className="text-muted-foreground" onClick={async () => { await signOut(); navigate("/", { replace: true }); }}>تسجيل الخروج</LinkButton>
         </div>
