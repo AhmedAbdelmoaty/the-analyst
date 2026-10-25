@@ -1,0 +1,14 @@
+# BEHIND THE DOTS — CODEX MASTER EXECUTION CONTRACT
+Status: approved product direction, not implemented code. Owner's latest direct instruction takes priority. Read ALL files in this package before touching code, then repository `AGENTS.md` and current source.
+
+**MISSION:** Upgrade the EXISTING React/TypeScript Behind the Dots game, NOT a new HTML demo. A polished, playful, character-led 2D story adventure about Leila's ice-cream cart, Dotty, and Glitch. Four scatterplot challenges. The three ORIGINAL answer choices are mandatory: `علاقة طردية ↗`, `علاقة عكسية ↘`, `مفيش اتجاه واضح •••`. **NEVER replace answers with a draggable line, slider, or trend tracing.** Guided point placement is permitted ONLY in the tutorial.
+
+**Hard constraints:** preserve recognizable existing Leila/Dotty/Glitch designs, reuse the current art where suitable, add new matching poses/layers when actual animation needs them. No random replacement mascots. No generic quiz/dashboard aesthetic. No fake 'run cycle' by sliding a single flat PNG. No static victory/loss card as substitute for acted ending. No unaudited modifications to auth, backend, other games, payment, or production. No deployment/merge to main without approval.
+
+**Repository:** `AhmedAbdelmoaty/the-analyst`, route `/games/behind-the-dots`, source `src/features/behind-the-dots/`. Previous isolated branch `feature/behind-the-dots-v6-adventure` exists; inspect its contents before using. Local Windows checkout previously `D:\the-analyst`, but inspect `pwd`, `git status`, `git branch`, `git log -1` first. Current published website cannot be inferred from source.
+
+**Before implementation:** inventory actual existing assets including dimensions/transparency and their visual style; inspect current React phase reducer, charts, data, persistence, CSS and tests; identify production constraints; present compact factual findings. **Then implement**. First build and VISUALLY TEST intro -> camera focus -> notebook -> tutorial -> first challenge as a vertical slice. Do not expand into all scenes until this slice looks like an actual 2D game. Use local browser screenshots/video if available. Document blockers rather than asserting impossible animations are done.
+
+**Definition of done:** a runnable integrated React game with coherent art, moving layered environment, distinct character poses and acting, camera-directed conversations, notebook transition, beginner-friendly untimed tutorial, 4 data-valid challenges with 3 tap answers, timed chase/heart reactions, final business choice, distinct animated win/partial-win/loss, responsive/mobile, mute/pause/reduced-motion, automated tests and actual visual evidence. 'Build succeeded' alone is NOT done.
+
+Read next: `01_VISION.md`, `02_STORY_AR.md`, `03_SCENES_MOTION.md`, `04_GAMEPLAY_DATA.md`, `05_ASSETS.md`, `06_ENGINEERING_QA.md`, `07_CODEX_PROMPTS.md`.

@@ -41,20 +41,45 @@ function GameHeader({ state, time, paused, muted, onPause, onMute }: { state: Ga
   );
 }
 
-function Actor({ name, state, className = "" }: { name: "leila" | "glitch" | "dotty"; state: string; className?: string }) {
-  const labels = { leila: "ليلى صاحبة عربية الآيس كريم", glitch: "جليتش الشرير البنفسجي", dotty: "دوتّي صاحبة الجسم الوردي" };
-  return <div className={`btd-actor btd-actor-${name} ${className} ${state ? `act-${state}` : ""}`} aria-hidden="true"><img src={`/assets/behind-dots/${name}-v5.png`} alt={labels[name]} draggable="false" /></div>;
+type ActorName = "leila" | "glitch" | "dotty";
+type ActorPose = "talk" | "worried" | "happy" | "idle" | "enter" | "stumble" | "celebrate" | "taunt";
+
+const ACTOR_POSES: Record<ActorName, Record<ActorPose, string>> = {
+  leila: { talk: "talk", worried: "worried", happy: "happy", idle: "talk", enter: "enter", stumble: "worried", celebrate: "happy", taunt: "worried" },
+  glitch: { talk: "taunt", worried: "stumble", happy: "stumble", idle: "idle", enter: "enter", stumble: "stumble", celebrate: "taunt", taunt: "taunt" },
+  dotty: { talk: "idle", worried: "stumble", happy: "celebrate", idle: "idle", enter: "enter", stumble: "stumble", celebrate: "celebrate", taunt: "enter" },
+};
+
+function actorPoseFor(name: ActorName, mood: string, briefingStep?: number): ActorPose {
+  if (briefingStep !== undefined) {
+    if (briefingStep === -1) return name === "glitch" ? "enter" : name === "leila" ? "talk" : "idle";
+    if (name === "leila") return briefingStep === 3 || briefingStep === 4 ? "talk" : "worried";
+    if (name === "glitch") return briefingStep === 1 ? "enter" : briefingStep === 2 ? "taunt" : "idle";
+    return briefingStep === 2 ? "enter" : briefingStep === 4 ? "talk" : "idle";
+  }
+  if (name === "leila") return mood.startsWith("ending") || mood === "win" ? "happy" : mood === "urgent" || mood === "wrong" || mood === "timeout" ? "worried" : "talk";
+  if (name === "dotty") return mood === "win" || mood === "ending-win" || mood === "ending-saved" ? "celebrate" : mood === "wrong" || mood === "timeout" || mood === "ending-glitch" ? "stumble" : mood === "urgent" ? "enter" : "idle";
+  return mood === "win" || mood === "ending-win" || mood === "ending-saved" ? "stumble" : mood === "wrong" || mood === "ending-glitch" ? "taunt" : mood === "timeout" || mood === "urgent" ? "enter" : "idle";
 }
 
-function MarketStage({ mood = "calm", className = "", speaker }: { mood?: string; className?: string; speaker?: "leila" | "glitch" }) {
+function Actor({ name, state, pose, className = "" }: { name: ActorName; state: string; pose: ActorPose; className?: string }) {
+  const labels = { leila: "ليلى صاحبة عربية الآيس كريم", glitch: "جليتش الشرير البنفسجي", dotty: "دوتّي صاحبة الجسم الوردي" };
+  const image = state.startsWith("ending") ? `/assets/behind-dots/${name}-v5.png` : `/assets/behind-dots/v6/${name}_${ACTOR_POSES[name][pose]}.png`;
+  return <div className={`btd-actor btd-actor-${name} ${className} ${state ? `act-${state}` : ""}`} data-pose={pose} aria-hidden="true"><img src={image} alt={labels[name]} draggable="false" /></div>;
+}
+
+function MarketStage({ mood = "calm", className = "", speaker, briefingStep }: { mood?: string; className?: string; speaker?: ActorName; briefingStep?: number }) {
   return (
     <div className={`btd-market-stage mood-${mood} ${className}`} data-speaker={speaker} aria-hidden="true">
       <div className="btd-market-sky" />
       <img className="btd-market-art" src="/assets/behind-dots/market-v5.png" alt="" draggable="false" />
+      <div className="btd-market-clouds" />
+      <div className="btd-market-awning" />
+      <div className="btd-market-customers" />
       <div className="btd-market-glow" />
-      <Actor name="glitch" state={mood} />
-      <Actor name="dotty" state={mood} />
-      <Actor name="leila" state={mood} />
+      <Actor name="glitch" state={briefingStep === undefined ? mood : "story"} pose={actorPoseFor("glitch", mood, briefingStep)} />
+      <Actor name="dotty" state={briefingStep === undefined ? mood : "story"} pose={actorPoseFor("dotty", mood, briefingStep)} />
+      <Actor name="leila" state={briefingStep === undefined ? mood : "story"} pose={actorPoseFor("leila", mood, briefingStep)} />
       <div className="btd-counter-front" />
       <div className="btd-confetti" />
       {mood === "timeout" && <div className="btd-capture-bubble">دوتّي بأمان!<span>🫧</span></div>}
@@ -94,21 +119,30 @@ function HeartsBadge({ count }: { count: number }) {
 }
 
 function ChaseLane({ seconds, paused }: { seconds: number; paused: boolean }) {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    if (paused) return;
+    const id = window.setInterval(() => setFrame((current) => (current + 1) % 4), 180);
+    return () => window.clearInterval(id);
+  }, [paused]);
   const progress = Math.min(1, Math.max(0, (ROUND_SECONDS - seconds) / ROUND_SECONDS));
+  const frameName = String(frame + 1).padStart(2, "0");
   return <div className={`btd-chase-lane ${seconds <= 5 ? "is-urgent" : ""} ${paused ? "is-paused" : ""}`} aria-label={`جليتش يقترب من دوتّي، باقي ${seconds} ثانية`} style={{ "--chase-progress": progress } as CSSProperties}>
     <div className="btd-chase-track"><span /></div>
-    <div className="btd-chase-glitch" style={{ left: `${3 + progress * 55}%` }} aria-hidden="true"><img src="/assets/behind-dots/glitch-v5.png" alt="" /></div>
-    <div className="btd-chase-dotty" aria-hidden="true"><img src="/assets/behind-dots/dotty-v5.png" alt="" /></div>
+    <div className="btd-chase-glitch" style={{ left: `${3 + progress * 55}%` }} aria-hidden="true"><img src={`/assets/behind-dots/v6/glitch_run_${frameName}.png`} alt="" /></div>
+    <div className="btd-chase-dotty" aria-hidden="true"><img src={`/assets/behind-dots/v6/dotty_run_${frameName}.png`} alt="" /></div>
     <span className="btd-chase-callout">{seconds <= 5 ? "جليتش قرب!" : "دوتّي بتجري!"}</span>
   </div>;
 }
 
 function ReactionCinema({ kind, finalLoss, onSkip }: { kind: "win" | "wrong" | "timeout"; finalLoss: boolean; onSkip: () => void }) {
+  const glitchPose = kind === "win" ? "stumble" : kind === "wrong" ? "taunt" : "enter";
+  const dottyPose = kind === "win" ? "celebrate" : "stumble";
   return <div className={`btd-reaction-cinema cinema-${kind} ${finalLoss ? "cinema-final-loss" : ""}`} aria-live="assertive">
     <div className="btd-cinema-speed" aria-hidden="true" />
     <div className="btd-cinema-prop" aria-hidden="true">🍦</div>
-    <div className="btd-cinema-glitch" aria-hidden="true"><img src="/assets/behind-dots/glitch-v5.png" alt="" /></div>
-    <div className="btd-cinema-dotty" aria-hidden="true"><img src="/assets/behind-dots/dotty-v5.png" alt="" /></div>
+    <div className="btd-cinema-glitch" aria-hidden="true"><img src={`/assets/behind-dots/v6/glitch_${glitchPose}.png`} alt="" /></div>
+    <div className="btd-cinema-dotty" aria-hidden="true"><img src={`/assets/behind-dots/v6/dotty_${dottyPose}.png`} alt="" /></div>
     {(kind === "timeout" || finalLoss) && <div className="btd-cinema-net" aria-hidden="true" />}
     <div className="btd-cinema-stamp">{finalLoss ? "انتهت الجولة!" : kind === "win" ? "صح جدًا!" : kind === "wrong" ? "جليتش قرب!" : "خلص الوقت!"}</div>
     <div className="btd-cinema-impact">{finalLoss ? "جليتش كسب الجولة" : kind === "win" ? "+3 نجوم ✦" : kind === "timeout" ? "لقطتها! 💥" : "قلب اتكسر ♡"}</div>
@@ -122,6 +156,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   const [meta, setMeta] = useState<Meta>({ tutorialDone: false, bestScore: 0, muted: false });
   const [legacyNotice, setLegacyNotice] = useState(false);
   const [spokenChars, setSpokenChars] = useState(0);
+  const [tutorialPlacementError, setTutorialPlacementError] = useState(false);
   const [readyCase, setReadyCase] = useState<number | null>(null);
   const [reactionVisible, setReactionVisible] = useState(false);
   const [settledTime, setSettledTime] = useState(ROUND_SECONDS);
@@ -138,6 +173,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   }, [userId]);
 
   useEffect(() => { if (loaded) saveState(window.localStorage, userId, state); }, [state, loaded, userId]);
+  useEffect(() => { setTutorialPlacementError(false); }, [state.phase, state.tutorialStep]);
   useEffect(() => {
     const onVisibility = () => { if (document.hidden) rawDispatch({ type: "pause" }); };
     document.addEventListener("visibilitychange", onVisibility);
@@ -213,14 +249,14 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   const activeResult = state.phase === "reveal" ? state.results[currentCase(state).id] : undefined;
   const resultMood = activeResult ? activeResult.points === 3 ? "win" : activeResult.timedOut ? "timeout" : "wrong" : null;
   const shot = state.phase === "briefing" ? "dialogue" : state.phase === "tutorial" ? "notebook" : state.phase === "puzzle" ? "chart" : state.phase === "reveal" ? reactionVisible ? "reaction" : "chart" : state.phase === "debrief" ? "ending" : state.phase === "cover" ? "cover" : "plan";
-  const speaker = state.phase === "briefing" ? state.briefingStep === 1 ? "glitch" : "leila" : undefined;
+  const speaker = state.phase === "briefing" ? BRIEFING[state.briefingStep]!.speaker : undefined;
   const worldMood = resultMood ?? (state.phase === "debrief" ? state.ending === "glitch" ? "ending-glitch" : state.ending === "perfect" ? "ending-win" : "ending-saved" : state.phase === "puzzle" && (time ?? ROUND_SECONDS) <= 5 ? "urgent" : state.phase === "tutorialReady" ? "win" : "calm");
 
   return (
     <div className={`behind-dots btd-app shot-${shot} ${state.paused ? "is-paused" : ""} ${resultMood ? `outcome-${resultMood}` : ""}`} dir="rtl" lang="ar">
       <div className="btd-app-backdrop" />
       <div className="btd-shell">
-        <MarketStage mood={worldMood} speaker={speaker} className="btd-world" />
+        <MarketStage mood={worldMood} speaker={speaker} briefingStep={state.phase === "cover" ? -1 : state.phase === "briefing" ? state.briefingStep : undefined} className="btd-world" />
         {(state.phase === "puzzle" || state.phase === "reveal" || state.phase === "tutorial" || state.phase === "tutorialReady" || state.phase === "recommendation") && (
           <GameHeader state={state} time={state.phase === "reveal" ? settledTime : time} paused={state.paused} muted={meta.muted} onPause={() => dispatch({ type: "pause" })} onMute={() => updateMeta({ muted: !meta.muted })} />
         )}
@@ -230,9 +266,10 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
             <div className="btd-cover-copy">
               <span className="btd-eyebrow">THE ANALYST · مغامرة تحليلية</span>
               <h1>ورا النقط</h1>
-              <p>ساعد ليلى تقرأ دفتر الأيام، وتختار خطة صغيرة تستاهل التجربة.</p>
+              <p className="btd-cover-tagline">أنقذ عربية ليلى</p>
+              <p>ساعدها تقرأ دفتر الأيام وتختار خطة تستاهل التجربة.</p>
               {legacyNotice && <div className="btd-legacy-note" role="status">اتحدّثت قواعد اللعبة. تقدم جولتك القديمة لسه محفوظ زي ما هو؛ ابدأ جولة جديدة بالقواعد الحالية.</div>}
-              <button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "start", seed: createRunSeed(state.runSeed) })}>افتح الحكاية <ArrowLeft /></button>
+              <button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "start", seed: createRunSeed(state.runSeed) })}>يلا نساعد ليلى! <ArrowLeft /></button>
               {meta.tutorialDone && <button className="btd-button btd-button-quiet" onClick={() => { dispatch({ type: "start", seed: createRunSeed(state.runSeed) }); window.setTimeout(() => dispatch({ type: "skipTutorial", tutorialEverDone: true }), 0); }}>ابدأ التحديات مباشرة <ArrowLeft /></button>}
               <a className="btd-return-link" href="/app"><ArrowRight /> ارجع للألعاب</a>
             </div>
@@ -242,14 +279,15 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
         {state.phase === "briefing" && (() => {
           const beat = BRIEFING[state.briefingStep]!;
           const finalBeat = state.briefingStep === BRIEFING.length - 1;
-          const speakerName = speaker === "glitch" ? "جليتش" : "ليلى";
+          const speakerName = speaker === "glitch" ? "جليتش" : speaker === "dotty" ? "دوتّي" : "ليلى";
+          const portraitPose = actorPoseFor(speaker, "calm", state.briefingStep);
           const lineLength = Array.from(beat.text).length;
           const isSpeaking = spokenChars < lineLength;
           const advance = () => isSpeaking ? setSpokenChars(lineLength) : dispatch({ type: finalBeat ? "openCase" : "advanceBriefing" });
           return (
             <section className={`btd-story speaker-${speaker} screen-enter`}>
               <div className="btd-story-bubble" key={state.briefingStep}>
-                <img className="btd-speaker-portrait" src={`/assets/behind-dots/${speaker}-v5.png`} alt="" />
+                <img className="btd-speaker-portrait" src={`/assets/behind-dots/v6/${speaker}_${ACTOR_POSES[speaker][portraitPose]}.png`} alt="" />
                 <div className="btd-speech-copy">
                   <span className="btd-speaker-name">{speakerName} بتتكلم</span>
                   <span className="btd-eyebrow">{beat.kicker}</span>
@@ -271,11 +309,32 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
           <section className="btd-tutorial screen-enter">
             <div className="btd-section-heading"><span className="btd-eyebrow">تدريب من غير وقت</span><h1>كل نقطة بتحكي يوم</h1><p>{TUTORIAL_LINES[0]}</p></div>
             <div className="btd-tutorial-sheet">
-              <div className="btd-tutorial-step"><span>الخطوة {state.tutorialStep === 0 ? "1" : "2"} من 2</span><b>{state.tutorialStep === 0 ? "اضغط النقطة الحمرا أو ورّيني النقطة" : "أظهر باقي الأيام"}</b></div>
+              <div className="btd-tutorial-step"><span>الخطوة {state.tutorialStep === 0 ? "1" : "2"} من 2</span><b>{state.tutorialStep === 0 ? "حطّ نقطة اليوم على الرسم" : "أظهر باقي الأيام"}</b></div>
+              {state.tutorialStep === 0 && <div className="btd-tutorial-day-card"><span>من دفتر ليلى · اليوم ٦</span><b><i>عدد الزوار</i> {TUTORIAL.xs[5]} <i>الكوبايات المباعة</i> {TUTORIAL.ys[5]}</b></div>}
               <div className="btd-plot-frame btd-tutorial-plot">
-                <ScatterPlot xs={TUTORIAL.xs} ys={TUTORIAL.ys} xLabel={TUTORIAL.xLabel} yLabel={TUTORIAL.yLabel} highlight={state.tutorialStep === 0 ? 5 : null} interactiveDot={state.tutorialStep === 0 ? 5 : undefined} onDotClick={() => dispatch({ type: "revealTutorialPoint" })} visiblePointIndices={state.tutorialStep < 2 ? [5] : undefined} showGuide={state.tutorialStep > 0} />
+                <ScatterPlot
+                  xs={TUTORIAL.xs}
+                  ys={TUTORIAL.ys}
+                  xLabel={TUTORIAL.xLabel}
+                  yLabel={TUTORIAL.yLabel}
+                  highlight={state.tutorialStep === 0 ? 5 : null}
+                  visiblePointIndices={state.tutorialStep === 0 ? [] : state.tutorialStep === 1 ? [5] : undefined}
+                  plotTarget={state.tutorialStep === 0 ? { x: TUTORIAL.xs[5]!, y: TUTORIAL.ys[5]! } : undefined}
+                  onPlotClick={state.tutorialStep === 0 ? (point) => {
+                    const xTolerance = (Math.max(...TUTORIAL.xs) - Math.min(...TUTORIAL.xs)) * 0.12;
+                    const yTolerance = (Math.max(...TUTORIAL.ys) - Math.min(...TUTORIAL.ys)) * 0.12;
+                    if (Math.abs(point.x - TUTORIAL.xs[5]!) <= xTolerance && Math.abs(point.y - TUTORIAL.ys[5]!) <= yTolerance) {
+                      setTutorialPlacementError(false);
+                      dispatch({ type: "revealTutorialPoint" });
+                    } else setTutorialPlacementError(true);
+                  } : undefined}
+                  showGuide={state.tutorialStep > 0}
+                />
               </div>
-              {state.tutorialStep === 0 && <button className="btd-button btd-button-sun btd-tutorial-action" onClick={() => dispatch({ type: "revealTutorialPoint" })}>ورّيني النقطة الحمرا <ArrowLeft /></button>}
+              {state.tutorialStep === 0 && <>
+                {tutorialPlacementError && <p className="btd-tutorial-hint" role="status">قرب النقطة من مكان اليوم ٦ في الدفتر وجرّب تاني.</p>}
+                <button className="btd-button btd-button-sun btd-tutorial-action" onClick={() => { setTutorialPlacementError(false); dispatch({ type: "revealTutorialPoint" }); }}>حطّ النقطة في مكانها <ArrowLeft /></button>
+              </>}
               {state.tutorialStep === 1 && <div className="btd-tutorial-coordinate" role="status">{TUTORIAL_LINES[1]} <b>الزوار: {TUTORIAL.xs[5]} · الكوبايات: {TUTORIAL.ys[5]}</b></div>}
               {state.tutorialStep === 1 && <button className="btd-button btd-button-primary btd-tutorial-action" onClick={() => dispatch({ type: "showTutorialDays" })}>أظهر باقي الأيام <ArrowLeft /></button>}
               {state.tutorialStep === 2 && <>

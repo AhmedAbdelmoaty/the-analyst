@@ -4,13 +4,13 @@ import { pearson } from "./correlation";
 const POINTS = 12;
 const caseCache = new Map<number, readonly StoryCase[]>();
 const Y_RANGES: Record<string, readonly [number, number]> = {
-  C1: [8, 48],
+  C1: [15, 95],
   C2: [2, 20],
   C3: [8, 48],
 };
 const X_POOLS: Record<string, readonly number[]> = {
   // Each point is one day. Replays change the days while keeping the pattern clear.
-  C1: Array.from({ length: 25 }, (_, i) => i + 15),
+  C1: Array.from({ length: 23 }, (_, i) => i + 17),
   C2: Array.from({ length: 24 }, (_, i) => i),
   C3: Array.from({ length: 24 }, (_, i) => i),
 };

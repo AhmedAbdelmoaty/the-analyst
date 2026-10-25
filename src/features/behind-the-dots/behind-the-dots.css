@@ -691,6 +691,58 @@
   .btd-causality-note { font-size: .69rem; }
   .btd-results-actions .btd-button { flex: 1; padding: 8px 10px; font-size: .82rem; }
 }
+
+/* V6 vertical slice: camera-led story poses and the notebook's first physical lesson. */
+.btd-app .btd-market-clouds,
+.btd-app .btd-market-awning,
+.btd-app .btd-market-customers { position: absolute; pointer-events: none; }
+.btd-app .btd-market-clouds { z-index: 1; inset: 2% 8% 48%; opacity: .28; background: radial-gradient(ellipse at 18% 30%,#fff 0 6%,transparent 6.5%),radial-gradient(ellipse at 74% 20%,#fff 0 5%,transparent 5.5%); animation: btd-cloud-drift 34s linear infinite alternate; }
+.btd-app .btd-market-awning { z-index: 3; top: 32%; left: 27%; width: 27%; height: 5%; transform-origin: 50% 0; border-radius: 0 0 45% 45%; background: repeating-linear-gradient(90deg,#fff0 0 12%,#fff9 12% 18%),linear-gradient(#cc5752,#f3bd73); opacity: .62; animation: btd-awning-sway 2.8s ease-in-out infinite alternate; }
+.btd-app .btd-market-customers { z-index: 3; right: 4%; bottom: 20%; width: 22%; height: 17%; opacity: .58; background: radial-gradient(circle at 18% 22%,#694d65 0 8%,transparent 8.5%),radial-gradient(ellipse at 18% 76%,#704c64 0 14%,transparent 14.5%),radial-gradient(circle at 50% 34%,#715269 0 8%,transparent 8.5%),radial-gradient(ellipse at 50% 86%,#805469 0 14%,transparent 14.5%),radial-gradient(circle at 82% 19%,#694d65 0 8%,transparent 8.5%),radial-gradient(ellipse at 82% 72%,#704c64 0 14%,transparent 14.5%); animation: btd-market-queue 6s ease-in-out infinite alternate; }
+.btd-app .btd-market-stage .btd-actor.act-story { filter: drop-shadow(0 9px 9px #30223350); }
+.btd-app .btd-market-stage .btd-actor.act-story img { transition: opacity .16s ease, filter .24s ease; }
+.btd-app .btd-market-stage .btd-actor.act-story[data-pose="enter"] { animation: btd-pose-entrance .56s cubic-bezier(.16,.9,.2,1) both; }
+.btd-app.shot-dialogue .btd-world[data-speaker="leila"] .btd-actor-leila { z-index: 9; transform: translateY(-4%) scale(1.12); filter: drop-shadow(0 0 20px #fff0a9c9); }
+.btd-app.shot-dialogue .btd-world[data-speaker="leila"] .btd-actor-glitch,
+.btd-app.shot-dialogue .btd-world[data-speaker="leila"] .btd-actor-dotty { transform: translateY(9%) scale(.86); filter: brightness(.68); }
+.btd-app.shot-dialogue .btd-world[data-speaker="glitch"] .btd-actor-leila,
+.btd-app.shot-dialogue .btd-world[data-speaker="glitch"] .btd-actor-dotty { transform: translateY(8%) scale(.85); filter: brightness(.66); }
+.btd-app.shot-dialogue .btd-world[data-speaker="dotty"] .btd-actor-dotty { z-index: 10; transform: translateY(-8%) scale(1.26); filter: drop-shadow(0 0 20px #ffaad9); }
+.btd-app.shot-dialogue .btd-world[data-speaker="dotty"] .btd-actor-leila,
+.btd-app.shot-dialogue .btd-world[data-speaker="dotty"] .btd-actor-glitch { transform: translateY(9%) scale(.84); filter: brightness(.62); }
+.btd-app.shot-dialogue .btd-world[data-speaker="dotty"] .btd-actor-glitch { left: 2%; }
+.btd-app .btd-tutorial-day-card { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 8px; border: 2px solid #d99b56; border-radius: 12px; background: #fff1c9; padding: 7px 12px; color: #563d56; box-shadow: 0 3px 0 #b96d52; }
+.btd-app .btd-tutorial-day-card span { font-size: .78rem; font-weight: 800; }
+.btd-app .btd-tutorial-day-card b { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 10px; font-variant-numeric: tabular-nums; }
+.btd-app .btd-tutorial-day-card i { color: #8a5d68; font-size: .73rem; font-style: normal; font-weight: 700; }
+.btd-app .btd-tutorial-plot { cursor: crosshair; }
+.btd-app .btd-tutorial-plot .btd-plot-target circle { animation: btd-target-pulse 1.2s ease-in-out infinite alternate; }
+.btd-app .btd-tutorial-plot .btd-scatter-svg circle { cursor: crosshair; }
+.btd-app .btd-chase-glitch,
+.btd-app .btd-chase-dotty { animation: none !important; }
+.btd-app .btd-chase-glitch img,
+.btd-app .btd-chase-dotty img { transition: opacity .12s ease; }
+.btd-app .btd-cinema-glitch img,
+.btd-app .btd-cinema-dotty img { object-fit: contain; object-position: bottom; }
+@keyframes btd-cloud-drift { to { transform: translateX(4%); } }
+@keyframes btd-awning-sway { to { transform: rotate(-1.2deg) skewX(-1deg); } }
+@keyframes btd-market-queue { to { transform: translateX(-5px); } }
+@keyframes btd-pose-entrance { 0% { opacity: .2; transform: translateY(16%) scale(.72); } 72% { opacity: 1; transform: translateY(-3%) scale(1.08); } 100% { transform: none; } }
+@keyframes btd-target-pulse { to { r: 18px; opacity: .55; } }
+@media (max-width: 760px) {
+  .btd-app .btd-market-awning { top: 29%; left: 26%; width: 35%; }
+  .btd-app .btd-market-customers { right: 2%; bottom: 17%; width: 28%; height: 14%; }
+  .btd-app .btd-tutorial-day-card { align-items: flex-start; flex-direction: column; padding: 6px 9px; }
+  .btd-app .btd-tutorial-day-card b { font-size: .84rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btd-app .btd-market-clouds,
+  .btd-app .btd-market-awning,
+  .btd-app .btd-market-customers,
+  .btd-app .btd-market-stage .btd-actor.act-story[data-pose="enter"],
+  .btd-app .btd-tutorial-plot .btd-plot-target circle { animation: none !important; }
+  .btd-app .btd-market-stage .btd-actor.act-story img { transition: none; }
+}
 @media (max-width: 375px) {
   .btd-shell { padding: 7px 8px max(9px, env(safe-area-inset-bottom)); }
   .btd-hud { min-height: 43px; padding: 3px 6px; }

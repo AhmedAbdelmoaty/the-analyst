@@ -32,5 +32,6 @@ function createScenario(name: string): GameState {
 
 const scenario = new URLSearchParams(location.search).get("scenario") ?? "cover";
 saveState(localStorage, userId, createScenario(scenario));
-localStorage.setItem(metaKey(userId), JSON.stringify({ tutorialDone: true, bestScore: 0, muted: true }));
+const tutorialDone = new URLSearchParams(location.search).get("tutorialDone") === "true";
+localStorage.setItem(metaKey(userId), JSON.stringify({ tutorialDone, bestScore: 0, muted: true }));
 createRoot(document.getElementById("root")!).render(<React.StrictMode><MemoryRouter><BehindTheDotsGame userId={userId} /></MemoryRouter></React.StrictMode>);
