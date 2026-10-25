@@ -21,7 +21,7 @@ export interface Meta {
   sfxVolume: number;
   ambienceVolume: number;
 }
-const defaultMeta: Meta = { tutorialDone: false, bestScore: 0, muted: false, musicVolume: 0.55, sfxVolume: 0.85, ambienceVolume: 0.18 };
+const defaultMeta: Meta = { tutorialDone: false, bestScore: 0, muted: false, musicVolume: 0.8, sfxVolume: 0.85, ambienceVolume: 0.18 };
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 export function loadState(storage: StorageLike, userId: string): GameState {

@@ -10,7 +10,8 @@ import { currentCase, initialState, reducer, ROUND_SECONDS, totalScore, type Act
 import { createRunSeed } from "./engine/datasets";
 import { hasLegacyProgress, loadMeta, loadState, saveMeta, saveState, type Meta } from "./engine/persistence";
 import { patternFor, pearson } from "./engine/correlation";
-import { gameAudio, playTone, type AudioBus } from "./engine/sound";
+import { gameAudio, type AudioBus, type SoundKind } from "./engine/sound";
+import { nextCountdownTick } from "./engine/audioManifest";
 
 const patternChoices: { id: Pattern; symbol: string; label: string; detail: string }[] = [
   { id: "up", symbol: "↗", label: "علاقة طردية", detail: "بيزيدوا مع بعض" },
@@ -160,7 +161,7 @@ function ReactionCinema({ kind, practiceCapture, onSkip }: { kind: "win" | "wron
 export function BehindTheDotsGame({ userId }: { userId: string }) {
   const [loaded, setLoaded] = useState(false);
   const [state, rawDispatch] = useReducer(reducer, initialState);
-  const [meta, setMeta] = useState<Meta>({ tutorialDone: false, bestScore: 0, muted: false, musicVolume: 0.55, sfxVolume: 0.85, ambienceVolume: 0.18 });
+  const [meta, setMeta] = useState<Meta>({ tutorialDone: false, bestScore: 0, muted: false, musicVolume: 0.8, sfxVolume: 0.85, ambienceVolume: 0.18 });
   const [legacyNotice, setLegacyNotice] = useState(false);
   const [spokenChars, setSpokenChars] = useState(0);
   const [tutorialPlacementError, setTutorialPlacementError] = useState(false);
@@ -169,7 +170,43 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   const [settledTime, setSettledTime] = useState(ROUND_SECONDS);
   const timeRef = useRef<number | undefined>(ROUND_SECONDS);
   const stateRef = useRef(state);
+  const revealAudioKey = useRef<string | null>(null);
+  const delayedAudio = useRef<number[]>([]);
+  const dispatchRef = useRef<(action: Action) => void>(() => undefined);
+  const phase = state.phase;
+  const caseIndex = state.caseIndex;
+  const runSeed = state.runSeed;
+  const isReveal = phase === "reveal";
+  const revealResult = state.results[currentCase(state).id];
+  const revealPoints = revealResult?.points;
+  const revealTimedOut = revealResult?.timedOut;
   stateRef.current = state;
+
+  const clearDelayedAudio = useCallback(() => {
+    for (const timer of delayedAudio.current) window.clearTimeout(timer);
+    delayedAudio.current = [];
+  }, []);
+  const playAfter = useCallback((kind: SoundKind, delay: number) => {
+    const timer = window.setTimeout(() => {
+      delayedAudio.current = delayedAudio.current.filter((pending) => pending !== timer);
+      gameAudio.play(kind);
+    }, delay);
+    delayedAudio.current.push(timer);
+  }, []);
+  const handleAudioClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
+    gameAudio.unlock();
+    if (!(event.target instanceof Element)) return;
+    const button = event.target.closest("button");
+    if (!button || button.disabled) return;
+    const audioKind = button.dataset.audioKind;
+    if (audioKind === "none") return;
+    if (audioKind) { gameAudio.play(audioKind as SoundKind); return; }
+    if (button.matches(".btd-pattern-button, .btd-recommend-option")) {
+      gameAudio.play("answerSelect");
+      return;
+    }
+    gameAudio.play("button");
+  };
 
   useEffect(() => {
     const storage = window.localStorage;
@@ -204,14 +241,26 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
     return () => window.clearTimeout(id);
   }, [state.phase, state.caseIndex]);
   useEffect(() => {
-    if (state.phase !== "reveal" || !reactionVisible) return;
-    const result = state.results[currentCase(state).id];
+    if (!isReveal || !reactionVisible) return;
     const id = window.setTimeout(() => {
-      if (state.hearts === 0) dispatch({ type: "attach" });
+      if (stateRef.current.hearts === 0) dispatchRef.current({ type: "attach" });
       else setReactionVisible(false);
-    }, result?.timedOut ? 2900 : 2450);
+    }, revealResult?.timedOut ? 2900 : 2450);
     return () => window.clearTimeout(id);
-  }, [state.phase, state.caseIndex, state.results, state.hearts, reactionVisible]);
+  }, [isReveal, caseIndex, revealResult?.timedOut, reactionVisible]);
+  useEffect(() => {
+    if (!isReveal) { revealAudioKey.current = null; return; }
+    if (revealPoints === undefined || revealTimedOut === undefined) return;
+    const key = `${runSeed}:${caseIndex}:${revealPoints}:${revealTimedOut}`;
+    if (revealAudioKey.current === key) return;
+    revealAudioKey.current = key;
+    if (revealPoints === 3) gameAudio.play("correct");
+    else if (revealTimedOut) gameAudio.play("heartLost");
+    else {
+      gameAudio.play("wrong");
+      playAfter("heartLost", 330);
+    }
+  }, [isReveal, caseIndex, runSeed, revealPoints, revealTimedOut, playAfter]);
   useEffect(() => {
     if (state.completed && totalScore(state) > meta.bestScore) {
       const next = { ...meta, bestScore: totalScore(state) };
@@ -229,45 +278,69 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
     const before = stateRef.current;
     const after = reducer(before, action);
     if (action.type === "answer" || action.type === "timeout") {
+      gameAudio.stop("countdownTick");
+      gameAudio.stop("footstep");
       const result = after.phase === "reveal" ? after.results[currentCase(before).id] : undefined;
       if (result && before.phase === "puzzle") {
         setSettledTime(action.type === "timeout" ? 0 : timeRef.current ?? ROUND_SECONDS);
         setReactionVisible(true);
-        playTone(result.points === 3 ? "win" : result.timedOut ? "timeout" : "heart", meta.muted);
       }
-    } else if (action.type === "recommendationAnswer") {
-      const choice = CHOICES.find((item) => item.id === action.choice);
-      if (choice) playTone(choice.supported ? "win" : "lose", meta.muted);
     } else if (action.type === "attach") {
+      gameAudio.stop("countdownTick");
+      gameAudio.stop("footstep");
       gameAudio.play("evidence");
-      window.setTimeout(() => gameAudio.play("page"), 380);
-    } else if (action.type === "start" || action.type === "advanceBriefing" || action.type === "showTutorialDays" || action.type === "openCase") {
+      playAfter("notebook", 380);
+    } else if (action.type === "advanceBriefing" || action.type === "openCase") {
       const nextSpeaker = action.type === "advanceBriefing" ? BRIEFING[Math.min(before.briefingStep + 1, BRIEFING.length - 1)]?.speaker : null;
-      playTone(action.type === "openCase" ? "notebook" : nextSpeaker === "glitch" || nextSpeaker === "dotty" ? "entrance" : "tap", meta.muted);
+      if (action.type === "openCase") gameAudio.play("notebook");
+      else if (nextSpeaker === "glitch") gameAudio.play("glitchEntrance");
+    } else if (action.type === "pause") {
+      gameAudio.stop("countdownTick");
+      gameAudio.stop("footstep");
+    } else if (action.type === "replay") {
+      clearDelayedAudio();
+      gameAudio.stop();
+      gameAudio.play("menuOpen");
     }
     if (action.type === "submitTutorial" && after.phase === "tutorialReady" && !meta.tutorialDone) updateMeta({ tutorialDone: true });
     if (action.type === "skipTutorial" && after.phase === "puzzle" && !meta.tutorialDone) updateMeta({ tutorialDone: true });
     rawDispatch(action);
   };
+  dispatchRef.current = dispatch;
 
-  const finishEnding = useCallback(() => rawDispatch({ type: "finishEnding" }), []);
+  const finishEnding = useCallback(() => {
+    gameAudio.stopEndingMusic();
+    rawDispatch({ type: "finishEnding" });
+  }, []);
   useEffect(() => {
     gameAudio.setMuted(meta.muted);
     gameAudio.setBusVolume("music", meta.musicVolume);
     gameAudio.setBusVolume("sfx", meta.sfxVolume);
     gameAudio.setBusVolume("ambience", meta.ambienceVolume);
   }, [meta]);
-  useEffect(() => { if (!meta.muted && state.phase !== "cover") gameAudio.play("marketAmbience"); }, [meta.muted, state.phase]);
   useEffect(() => {
     if (state.paused) gameAudio.pause();
     else gameAudio.resume();
   }, [state.paused]);
-  useEffect(() => () => gameAudio.stop(), []);
+  useEffect(() => () => { clearDelayedAudio(); gameAudio.dispose(); }, [clearDelayedAudio]);
 
   const challengeReady = state.phase === "puzzle" && readyCase === state.caseIndex;
   const time = useCountdown(challengeReady && !state.practiceAfterCapture, state.paused, () => dispatch({ type: "timeout" }));
   timeRef.current = time;
-  useEffect(() => { if (time === 5 && !state.paused) gameAudio.play("tick"); }, [time, state.paused]);
+  const ticking = challengeReady && state.phase === "puzzle" && !state.practiceAfterCapture;
+  const lastTick = useRef<number | null>(null);
+  useEffect(() => {
+    const next = nextCountdownTick(time ?? 0, ticking, state.paused, lastTick.current);
+    lastTick.current = next.lastPlayed;
+    if (next.play) gameAudio.play("countdownTick");
+    else gameAudio.stop("countdownTick");
+  }, [time, ticking, state.paused, state.caseIndex]);
+  useEffect(() => {
+    if (!ticking || state.paused) { gameAudio.stop("footstep"); return; }
+    gameAudio.play("footstep");
+    const id = window.setInterval(() => gameAudio.play("footstep"), 360);
+    return () => { window.clearInterval(id); gameAudio.stop("footstep"); };
+  }, [ticking, state.paused, state.caseIndex]);
   if (!loaded) return <div className="btd-loading" />;
 
   const activeResult = state.phase === "reveal" ? state.results[currentCase(state).id] : undefined;
@@ -277,7 +350,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   const worldMood = resultMood ?? (state.phase === "debrief" ? state.ending === "glitch" ? "ending-glitch" : state.ending === "perfect" ? "ending-win" : "ending-saved" : state.phase === "puzzle" && (time ?? ROUND_SECONDS) <= 5 ? "urgent" : state.phase === "tutorialReady" ? "win" : "calm");
 
   return (
-    <div className={`behind-dots btd-app shot-${shot} ${state.paused ? "is-paused" : ""} ${resultMood ? `outcome-${resultMood}` : ""}`} dir="rtl" lang="ar">
+    <div className={`behind-dots btd-app shot-${shot} ${state.paused ? "is-paused" : ""} ${resultMood ? `outcome-${resultMood}` : ""}`} dir="rtl" lang="ar" onPointerDownCapture={() => gameAudio.unlock()} onClickCapture={handleAudioClickCapture}>
       <div className="btd-app-backdrop" />
       <div className="btd-shell">
         <MarketStage mood={worldMood} speaker={speaker} briefingStep={state.phase === "cover" ? -1 : state.phase === "briefing" ? state.briefingStep : undefined} className="btd-world" />
@@ -297,8 +370,8 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
               <p className="btd-cover-tagline">أنقذ عربية ليلى</p>
               <p>ساعدها تقرأ دفتر الأيام وتختار خطة تستاهل التجربة.</p>
               {legacyNotice && <div className="btd-legacy-note" role="status">اتحدّثت قواعد اللعبة. تقدم جولتك القديمة لسه محفوظ زي ما هو؛ ابدأ جولة جديدة بالقواعد الحالية.</div>}
-              <button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "start", seed: createRunSeed(state.runSeed) })}>يلا نساعد ليلى! <ArrowLeft /></button>
-              {meta.tutorialDone && <button className="btd-button btd-button-quiet" onClick={() => { dispatch({ type: "start", seed: createRunSeed(state.runSeed) }); window.setTimeout(() => dispatch({ type: "skipTutorial", tutorialEverDone: true }), 0); }}>ابدأ التحديات مباشرة <ArrowLeft /></button>}
+              <button className="btd-button btd-button-primary" data-audio-kind="menuOpen" onClick={() => dispatch({ type: "start", seed: createRunSeed(state.runSeed) })}>يلا نساعد ليلى! <ArrowLeft /></button>
+              {meta.tutorialDone && <button className="btd-button btd-button-quiet" data-audio-kind="menuOpen" onClick={() => { dispatch({ type: "start", seed: createRunSeed(state.runSeed) }); window.setTimeout(() => dispatch({ type: "skipTutorial", tutorialEverDone: true }), 0); }}>ابدأ التحديات مباشرة <ArrowLeft /></button>}
               <a className="btd-return-link" href="/app"><ArrowRight /> ارجع للألعاب</a>
             </div>
           </section>
@@ -309,6 +382,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
           const finalBeat = state.briefingStep === BRIEFING.length - 1;
           const speakerName = speaker === "glitch" ? "جليتش" : speaker === "dotty" ? "دوتّي" : "ليلى";
           const portraitPose = actorPoseFor(speaker, "calm", state.briefingStep);
+          const nextSpeaker = BRIEFING[Math.min(state.briefingStep + 1, BRIEFING.length - 1)]?.speaker;
           const lineLength = Array.from(beat.text).length;
           const isSpeaking = spokenChars < lineLength;
           const advance = () => isSpeaking ? setSpokenChars(lineLength) : dispatch({ type: finalBeat ? "openCase" : "advanceBriefing" });
@@ -324,7 +398,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
                 </div>
               </div>
               <div className="btd-story-actions">
-                <button className="btd-button btd-button-primary" onClick={advance}>{isSpeaking ? "كمّل الكلام" : finalBeat ? "افتح الدفتر" : "كمّل الحكاية"} <ArrowLeft /></button>
+                <button className="btd-button btd-button-primary" data-audio-kind={finalBeat && !isSpeaking || !isSpeaking && nextSpeaker === "glitch" ? "none" : undefined} onClick={advance}>{isSpeaking ? "كمّل الكلام" : finalBeat ? "افتح الدفتر" : "كمّل الحكاية"} <ArrowLeft /></button>
                 <button className="btd-button btd-button-quiet" onClick={() => dispatch({ type: "skipStory" })}>تخطّي الحكاية</button>
                 {meta.tutorialDone && <button className="btd-button btd-button-quiet" onClick={() => dispatch({ type: "skipTutorial", tutorialEverDone: true })}>تخطّي التدريب</button>}
               </div>
@@ -371,7 +445,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
                   {patternChoices.map((choice) => <button key={choice.id} type="button" className={`btd-pattern-button ${state.tutorialGuess === choice.id ? "is-selected" : ""}`} aria-pressed={state.tutorialGuess === choice.id} onClick={() => dispatch({ type: "setGuess", value: choice.id })}><span className="btd-pattern-symbol">{choice.symbol}</span><span><strong>{choice.label}</strong><small>{choice.detail}</small></span></button>)}
                 </div>
                 {state.tutorialAttempts > 0 && <p className="btd-tutorial-hint" role="status">بص للنقط كلها مع بعض، مش لنقطة واحدة. المحاولة دي من غير خصم قلوب.</p>}
-                <button className="btd-button btd-button-primary btd-tutorial-action" disabled={!state.tutorialGuess} onClick={() => dispatch({ type: "submitTutorial" })}>{state.tutorialAttempts > 0 ? "جرّب تاني" : "ابدأ التحديات"} <ArrowLeft /></button>
+                <button className="btd-button btd-button-primary btd-tutorial-action" data-audio-kind="menuOpen" disabled={!state.tutorialGuess} onClick={() => dispatch({ type: "submitTutorial" })}>{state.tutorialAttempts > 0 ? "جرّب تاني" : "ابدأ التحديات"} <ArrowLeft /></button>
                 {meta.tutorialDone && <button className="btd-button btd-button-quiet" onClick={() => dispatch({ type: "skipTutorial", tutorialEverDone: true })}>تخطّي التدريب</button>}
               </>}
             </div>
@@ -386,7 +460,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
               <p>{state.tutorialAttempts > 1 ? `النقط طالعة لفوق: ${RELATION_LABELS.up}. دلوقتي نقرأ الحالات الأربعة براحتنا.` : "المهم الاتجاه العام، مش إن كل نقطة تبقى على نفس الخط."}</p>
               <div className="btd-ready-rules"><HeartsBadge count={3} /><span>٣ قلوب</span><i /><Clock3 /><span>٢٠ ثانية لكل تحدي</span></div>
               <p>جليتش: «تقدر تلحق دوتّي قبل ما أوصلها؟»</p>
-              <button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "startChallenges" })}>ابدأ التحديات <ArrowLeft /></button>
+              <button className="btd-button btd-button-primary" data-audio-kind="menuOpen" onClick={() => dispatch({ type: "startChallenges" })}>ابدأ التحديات <ArrowLeft /></button>
             </div>
           </section>
         )}
@@ -411,7 +485,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
                         <div className="btd-reaction-stamp">{result.timedOut ? "خلص الوقت!" : result.points === 3 ? "صح جدًا!" : "الاختيار اتقفل"}</div>
                         <p>{REACTION_LINES[storyCase.id][result.timedOut ? "timeout" : result.points === 3 ? "win" : "wrong"]}</p>
                         <div className="btd-reaction-footer"><strong className="btd-relation-reveal">{RELATION_LABELS[result.actual]}</strong><HeartsBadge count={state.hearts} />{result.points === 3 && <b className="btd-score-pop">+3</b>}</div>
-                        <button className="btd-button btd-button-primary btd-next-button" onClick={() => dispatch({ type: "attach" })}>{state.caseIndex === CASES.length - 1 ? "ساعد ليلى تختار خطة بكرة" : "اقلب الصفحة"} <ArrowLeft /></button>
+                        <button className="btd-button btd-button-primary btd-next-button" data-audio-kind="none" onClick={() => dispatch({ type: "attach" })}>{state.caseIndex === CASES.length - 1 ? "ساعد ليلى تختار خطة بكرة" : "اقلب الصفحة"} <ArrowLeft /></button>
                       </div>
                     ) : (
                       <div className="btd-pattern-options" aria-label="اختار اتجاه العلاقة">
@@ -482,7 +556,7 @@ function Results({ state, onReplay }: { state: GameState; onReplay: () => void }
           return <div key={id}><b>{c.title}</b><span>{state.results[id] ? RELATION_LABELS[state.results[id]!.actual] : ""}</span></div>;
         })}</div>
         <p className="btd-causality-note">النقط بتوضح ارتباط في الأيام اللي سجلناها؛ التجربة والقياس يساعدوا نعرف أكتر.</p>
-        <div className="btd-results-actions"><button className="btd-button btd-button-primary" onClick={onReplay}><RotateCcw /> العب مرة تانية</button><button className="btd-button btd-button-quiet" onClick={() => navigate("/app")}>ارجع للألعاب <ArrowRight /></button></div>
+        <div className="btd-results-actions"><button className="btd-button btd-button-primary" data-audio-kind="none" onClick={onReplay}><RotateCcw /> العب مرة تانية</button><button className="btd-button btd-button-quiet" onClick={() => navigate("/app")}>ارجع للألعاب <ArrowRight /></button></div>
       </div>
     </section>
   );

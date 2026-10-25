@@ -1,34 +1,138 @@
 {
-  "author": "Kenney",
-  "pack": "Interface Sounds (1.0)",
-  "sources": [
-    { "pack": "Interface Sounds 1.0", "sourcePage": "https://kenney.nl/assets/interface-sounds", "downloadSource": "https://github.com/Calinou/kenney-interface-sounds/archive/refs/heads/master.zip", "license": "CC0 1.0", "licenseFile": "LICENSE-Kenney-Interface-Sounds.txt" },
-    { "pack": "Impact Sounds 1.0", "sourcePage": "https://kenney.nl/assets/impact-sounds", "downloadSource": "https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip", "license": "CC0 1.0", "licenseFile": "LICENSE-Kenney-Impact-Sounds.txt" },
-    { "pack": "RPG Audio", "sourcePage": "https://kenney.nl/assets/rpg-audio", "downloadSource": "https://kenney.nl/media/pages/assets/rpg-audio/8e99002d76-1677590336/kenney_rpg-audio.zip", "license": "CC0 1.0", "licenseFile": "LICENSE-Kenney-RPG-Audio.txt" },
-    { "pack": "Music Jingles", "sourcePage": "https://kenney.nl/assets/music-jingles", "downloadSource": "https://kenney.nl/media/pages/assets/music-jingles/f37e530b9e-1677590399/kenney_music-jingles.zip", "license": "CC0 1.0", "licenseFile": "LICENSE-Kenney-Music-Jingles.txt" },
-    { "pack": "The Shop free samples", "sourcePage": "https://opengameart.org/content/the-shop", "downloadSource": "https://opengameart.org/sites/default/files/legit_audio_-_the_shop_free_sfx_mp3.zip", "creator": "LEGIT Audio", "license": "CC0 as published on OpenGameArt; applies only to the files downloaded there", "licenseFile": "LICENSE-LEGIT-Audio-The-Shop-CC0.txt" }
-  ],
-  "attribution": "Kenney (kenney.nl); attribution is optional under the included CC0 licenses.",
-  "files": [
-    { "file": "click_001.wav", "original": "click_001.wav", "event": "button press", "bus": "sfx", "volume": 0.31 },
-    { "file": "paper_flip.ogg", "original": "bookFlip1.ogg", "pack": "RPG Audio", "event": "notebook/page transition", "bus": "sfx", "volume": 0.26 },
-    { "file": "confirmation_001.wav", "original": "confirmation_001.wav", "pack": "Interface Sounds", "event": "evidence collection/supported decision", "bus": "sfx", "volume": 0.29 },
-    { "file": "error_001.wav", "original": "error_001.wav", "event": "wrong final decision", "bus": "sfx", "volume": 0.29 },
-    { "file": "drop_001.wav", "original": "drop_001.wav", "event": "heart loss", "bus": "sfx", "volume": 0.34 },
-    { "file": "glitch_001.wav", "original": "glitch_001.wav", "event": "timeout/Glitch entrance", "bus": "sfx", "volume": 0.32 },
-    { "file": "tick_001.wav", "original": "tick_001.wav", "event": "countdown warning", "bus": "sfx", "volume": 0.17 },
-    { "file": "bong_001.wav", "original": "bong_001.wav", "pack": "Interface Sounds", "event": "correct answer cue", "bus": "sfx", "volume": 0.41 },
-    { "file": "cart_bell.ogg", "original": "impactBell_heavy_000.ogg", "pack": "Impact Sounds", "event": "Leila/cart celebration accent", "bus": "sfx", "volume": 0.19 },
-    { "file": "cartoon_impact.ogg", "original": "impactGeneric_light_000.ogg", "pack": "Impact Sounds", "event": "playful capture impact", "bus": "sfx", "volume": 0.27 },
-    { "file": "cartoon_stumble.ogg", "original": "impactPunch_medium_000.ogg", "pack": "Impact Sounds", "event": "Glitch stumble/fall", "bus": "sfx", "volume": 0.30 },
-    { "file": "footstep_wood.ogg", "original": "footstep_wood_000.ogg", "pack": "Impact Sounds", "event": "wooden market footstep texture (available for run scenes)", "bus": "sfx", "volume": 0.16 },
-    { "file": "victory_fanfare.ogg", "original": "jingles_HIT00.ogg", "pack": "Music Jingles", "event": "perfect ending", "bus": "music", "volume": 0.34 },
-    { "file": "saved_victory.ogg", "original": "jingles_PIZZI01.ogg", "pack": "Music Jingles", "event": "saved ending", "bus": "music", "volume": 0.22 },
-    { "file": "comic_defeat.ogg", "original": "jingles_NES02.ogg", "pack": "Music Jingles", "event": "Glitch ending", "bus": "music", "volume": 0.23 },
-    { "file": "cart_refrigeration.mp3", "original": "01 - LEGIT Audio - TheShopCollection_convenience_store_drinks_fridge_drone.mp3", "pack": "The Shop free samples", "event": "quiet ice-cream cart refrigeration room tone, looped", "bus": "ambience", "volume": 0.05, "loop": true },
-    { "file": "open_001.wav", "original": "open_001.wav", "pack": "Interface Sounds", "event": "notebook opening", "bus": "sfx", "volume": 0.3 }
-  ],
-  "missing": [
-    "The low ambience is a refrigerator room tone rather than crowd or outdoor market ambience. No dedicated jump/landing cue or continuous background soundtrack is included; endings use short CC0 music jingles."
-  ]
+  "button": {
+    "file": "audio/button.ogg",
+    "source": "kenney_ui-audio.zip :: Audio/click4.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.68,
+    "behavior": "single-shot; no loop"
+  },
+  "menu_open": {
+    "file": "audio/menu_open.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/open_002.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.72,
+    "behavior": "single-shot; no loop"
+  },
+  "answer_select": {
+    "file": "audio/answer_select.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/select_005.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.7,
+    "behavior": "single-shot; no loop"
+  },
+  "correct": {
+    "file": "audio/correct.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/confirmation_004.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.85,
+    "behavior": "single-shot; no loop"
+  },
+  "wrong": {
+    "file": "audio/wrong.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/error_002.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.8,
+    "behavior": "single-shot; no loop"
+  },
+  "heart_lost": {
+    "file": "audio/heart_lost.ogg",
+    "source": "kenney_impact-sounds.zip :: Audio/impactGlass_light_001.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.95,
+    "behavior": "single-shot; no loop"
+  },
+  "countdown_tick": {
+    "file": "audio/countdown_tick.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/tick_002.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.28,
+    "behavior": "event-triggered repeat; never loop the raw file indefinitely"
+  },
+  "notebook": {
+    "file": "audio/notebook.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/open_003.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.55,
+    "behavior": "single-shot; no loop"
+  },
+  "evidence": {
+    "file": "audio/evidence.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/glass_003.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.78,
+    "behavior": "single-shot; no loop"
+  },
+  "glitch_entrance": {
+    "file": "audio/glitch_entrance.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/glitch_004.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.75,
+    "behavior": "single-shot; no loop"
+  },
+  "jump_land": {
+    "file": "audio/jump_land.ogg",
+    "source": "kenney_impact-sounds.zip :: Audio/impactGeneric_light_003.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.6,
+    "behavior": "single-shot; no loop"
+  },
+  "stumble": {
+    "file": "audio/stumble.ogg",
+    "source": "kenney_impact-sounds.zip :: Audio/impactPunch_medium_002.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.8,
+    "behavior": "single-shot; no loop"
+  },
+  "cart_bell": {
+    "file": "audio/cart_bell.ogg",
+    "source": "kenney_interface-sounds.zip :: Audio/glass_001.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.45,
+    "behavior": "single-shot; no loop"
+  },
+  "footstep": {
+    "file": "audio/footstep.ogg",
+    "source": "kenney_impact-sounds.zip :: Audio/footstep_concrete_000.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "sfx",
+    "relativeVolume": 0.24,
+    "behavior": "event-triggered repeat; never loop the raw file indefinitely"
+  },
+  "perfect_win": {
+    "file": "audio/perfect_win.ogg",
+    "source": "kenney_music-jingles.zip :: Audio/Pizzicato jingles/jingles_PIZZI00.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "music",
+    "relativeVolume": 0.85,
+    "behavior": "single-shot; no loop"
+  },
+  "saved_win": {
+    "file": "audio/saved_win.ogg",
+    "source": "kenney_music-jingles.zip :: Audio/Pizzicato jingles/jingles_PIZZI03.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "music",
+    "relativeVolume": 0.78,
+    "behavior": "single-shot; no loop"
+  },
+  "defeat": {
+    "file": "audio/defeat.ogg",
+    "source": "kenney_music-jingles.zip :: Audio/8-Bit jingles/jingles_NES08.ogg",
+    "license": "CC0 (Kenney)",
+    "bus": "music",
+    "relativeVolume": 0.82,
+    "behavior": "single-shot; no loop"
+  }
 }

@@ -47,10 +47,15 @@ test("all four challenges play in order and support the three original answers",
 });
 
 test("wrong answer, timeout, pause, and mute reactions are visible", async ({ page }) => {
+  const audioResponses = new Set<string>();
+  page.on("response", (response) => {
+    if (response.url().includes("/assets/behind-dots/audio/")) audioResponses.add(response.url().split("/").pop()!);
+  });
   await page.goto(`${harness}?scenario=challenge&muted=false`);
   await page.getByRole("button", { name: /علاقة عكسية/ }).click();
   await expect(page.getByText("جليتش قرب!", { exact: true })).toBeVisible();
   await expect(page.locator('.btd-hud-lives[aria-label="2 من 3 قلوب"]')).toBeVisible();
+  await expect.poll(() => audioResponses.has("wrong.ogg") && audioResponses.has("heart_lost.ogg")).toBe(true);
   await page.goto(`${harness}?scenario=timeout`);
   await expect(page.locator(".btd-reaction-stamp")).toHaveText("خلص الوقت!");
   await expect(page.locator('.btd-hud-lives[aria-label="2 من 3 قلوب"]')).toBeVisible();
@@ -75,6 +80,26 @@ test("wrong answer, timeout, pause, and mute reactions are visible", async ({ pa
   await expect(page.getByRole("button", { name: "تشغيل الصوت" })).toBeVisible();
 });
 
+test("countdown warning starts at five, pauses cleanly, and stops on answer", async ({ page }) => {
+  await page.clock.install();
+  await page.goto(`${harness}?scenario=challenge&muted=false`);
+  await page.clock.runFor(800);
+  await expect(page.locator(".btd-hud-clock b")).toHaveText("20");
+  await page.getByRole("button", { name: "إعدادات الصوت" }).click();
+  await page.clock.runFor(15_000);
+  await expect(page.locator(".btd-hud-clock b")).toHaveText("5");
+  await page.getByRole("button", { name: "إيقاف مؤقت" }).click();
+  await page.clock.runFor(3_000);
+  await expect(page.locator(".btd-hud-clock b")).toHaveText("5");
+  await page.getByRole("button", { name: "كمّل اللعب", exact: true }).click();
+  await page.clock.runFor(1_000);
+  await expect(page.locator(".btd-hud-clock b")).toHaveText("4");
+  await page.getByRole("button", { name: /علاقة عكسية/ }).click();
+  await expect(page.locator(".btd-result-reaction")).toBeVisible();
+  await page.clock.runFor(2_000);
+  await expect(page.locator(".btd-hud-clock b")).toHaveText("4");
+});
+
 test("zero hearts still allow the last evidence page in marked practice and lock the loss outcome", async ({ page }) => {
   await page.goto(`${harness}?scenario=practice`);
   await expect(page.getByText("صفحة 4 من 4", { exact: false })).toBeVisible();
@@ -91,12 +116,15 @@ test("zero hearts still allow the last evidence page in marked practice and lock
 
 for (const [scenario, title] of [["ending-perfect", "كسبنا الجولة!"], ["ending-saved", "دوتّي نجت!"], ["ending-glitch", "جليتش خطف الجولة!"]] as const) {
   test(`${scenario} runs its ending choreography before results`, async ({ page }, testInfo) => {
+    const track = scenario === "ending-perfect" ? "perfect_win.ogg" : scenario === "ending-saved" ? "saved_win.ogg" : "defeat.ogg";
+    const endingAudio = page.waitForResponse((response) => response.url().endsWith(`/audio/${track}`));
     await page.goto(`${harness}?scenario=${scenario}&muted=false`);
     const sceneStartedAt = Date.now();
     await expect(page.locator(".btd-ending-sequence")).toBeVisible();
     await expect(page.locator(".btd-ending-dotty")).toBeVisible();
     await expect(page.locator(".btd-ending-glitch")).toBeVisible();
     await expect(page.locator(".btd-ending-leila")).toBeVisible();
+    expect((await endingAudio).status()).toBe(200);
     await expect(page.getByRole("heading", { name: title })).toBeHidden();
     await page.waitForTimeout(2300);
     await page.screenshot({ path: testInfo.outputPath(`${scenario}.png`) });
@@ -138,7 +166,7 @@ test("ending animation pauses and resumes; reduced-motion users get a short vers
   await expect(page.getByRole("heading", { name: "جليتش خطف الجولة!" })).toBeVisible({ timeout: 4000 });
 });
 
-test("correct answer loads its local CC0 confirmation sound", async ({ page }) => {
+test("correct answer loads the approved confirmation sound after the answer reveal", async ({ page }) => {
   await page.addInitScript(() => {
     const instrumentation = window as typeof window & { __btdAudioStarts?: number };
     const originalStart = AudioBufferSourceNode.prototype.start;
@@ -147,11 +175,18 @@ test("correct answer loads its local CC0 confirmation sound", async ({ page }) =
       return originalStart.call(this, when, offset, duration);
     };
   });
-  const audioRequests: string[] = [];
-  page.on("request", (request) => { if (request.url().includes("behind-dots/audio")) audioRequests.push(request.url()); });
+  const audioResponses = new Map<string, number>();
+  page.on("response", (response) => {
+    const url = response.url();
+    if (url.includes("/assets/behind-dots/audio/")) audioResponses.set(url.split("/").pop()!, response.status());
+  });
   await page.goto(`${harness}?scenario=challenge&muted=false`);
-  const sound = page.waitForResponse((response) => response.url().endsWith("bong_001.wav"));
+  const startsBeforeAnswer = await page.evaluate(() => (window as typeof window & { __btdAudioStarts?: number }).__btdAudioStarts ?? 0);
+  const sound = page.waitForResponse((response) => response.url().endsWith("/audio/correct.ogg"));
   await page.getByRole("button", { name: /علاقة طردية/ }).click();
-  try { expect((await sound).status()).toBe(200); } catch { throw new Error(`No confirmation sound request; observed: ${audioRequests.join(", ") || "none"}`); }
-  await expect.poll(() => page.evaluate(() => (window as typeof window & { __btdAudioStarts?: number }).__btdAudioStarts ?? 0)).toBeGreaterThan(0);
+  await expect(page.locator(".btd-result-reaction")).toBeVisible();
+  try { expect((await sound).status()).toBe(200); } catch { throw new Error(`No approved confirmation sound response; observed: ${[...audioResponses.keys()].join(", ") || "none"}`); }
+  await expect.poll(() => audioResponses.size).toBe(17);
+  expect([...audioResponses.values()].every((status) => status === 200)).toBe(true);
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __btdAudioStarts?: number }).__btdAudioStarts ?? 0)).toBeGreaterThan(startsBeforeAnswer + 1);
 });
