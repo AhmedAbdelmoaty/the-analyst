@@ -58,3 +58,21 @@ Diagnostics for delayed/missing callbacks: check Edge Function logs for the four
 4. Run sandbox end-to-end: 400 EGP path (confirmed EG mobile account) and 1200 EGP path, success + failure + refund + duplicate callback.
 5. Receive Live credentials, repeat secrets/dashboard steps with Live values.
 6. Only after written launch approval: `PAYMOB_ENVIRONMENT=live`, publish frontend, and separately approve enabling paid-game restrictions.
+
+## Final completion update — 2026-10-25
+
+### Game-access entitlement (prepared, not enforced)
+- Server flag: `app_flags` row `paid_game_enforcement` = `on|off`; missing row = OFF (current state, verified).
+- No admin UI or RPC can flip it; enabling production enforcement requires a separate explicit owner authorization applied directly to the database.
+- Caller snapshot RPC: `my_game_access()` returns `{enforcement, entitled, expires_at, environment}` for the signed-in user only.
+- Frontend gate `GameGate` (routes `/games/reward-decision`, `/games/behind-the-dots`, `/games/crack-the-code`): OFF → unchanged access for all; ON → free game open, annual games need an active server-verified entitlement, backend failure shows a retry state instead of claiming the user is unpaid.
+- Tiers live in one file: `src/features/entitlement/access.ts` (`GAME_ACCESS`), easy to extend for new games.
+
+### Admin payments section
+- Route `/admin/payments` (linked from `/admin/stats`): overview metrics (collected revenue counts only `paid` orders), searchable/filterable payment orders with owner identity and provider references, annual subscription list with remaining duration, and webhook/stuck-attempt diagnostics.
+- All data comes from `admin_payments_overview`, `admin_payment_orders`, `admin_entitlements` RPCs with server-side admin checks; no secrets or raw callback payloads are exposed. No manual activation workflow exists.
+
+### Unchanged boundaries
+- Checkout disabled until `PAYMENT_UI_ENABLED` + server gates + credentials + launch approval.
+- Prices remain 400 EGP (confirmed Egyptian mobile) / 1,200 EGP, decided server-side from verified Auth identity.
+- No destructive changes, no fake entitlements, no live payment processing.

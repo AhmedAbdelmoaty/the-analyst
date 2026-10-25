@@ -37,3 +37,15 @@ Date: 2026-10-24. Scope: additive, non-destructive payment foundation. No live c
 ## Not run / not claimable
 
 - No real or sandbox Paymob transaction has occurred. No valid-HMAC live callback has been received from Paymob. No paid entitlement exists for any real user. Frontend was not published in this task.
+
+## Final completion update — 2026-10-25
+
+| Deliverable | State | Evidence |
+|---|---|---|
+| Game entitlement system (flag OFF) | IMPLEMENTED AND VERIFIED | Migration `0011_game_access_and_admin_payments.sql` applied: server flag `app_flags.paid_game_enforcement` defaults OFF (verified `false` in live DB), `my_game_access()` returns caller-owned snapshot, `GameGate` wraps annual routes only. All four games remain open to every authenticated user while OFF. |
+| Central game-access config | IMPLEMENTED | `src/features/entitlement/access.ts`: Problem Framing = free, Reward Decision / Behind the Dots / Crack the Code = annual; unknown games default free. |
+| Admin payments dashboard | IMPLEMENTED | `/admin/payments` page + RPCs `admin_payments_overview`, `admin_payment_orders`, `admin_entitlements` (all server-side `has_role(admin)`). Overview, filtered orders, subscriptions, webhook/stuck-attempt diagnostics. |
+| Pricing 400/1200 EGP | UNCHANGED | `priceForIdentity` untouched; pricing tests still pass. |
+| Real payment collection | STILL DISABLED | `PAYMENT_UI_ENABLED=false`, `PAYMOB_ROLLOUT_APPROVED=false`, no merchant credentials set. |
+| Tests | 43 pass / 0 fail | `bun test tests/entitlement.test.ts tests/paymob.test.ts tests/subscription-ui.test.ts tests/subscription-pricing-ui.test.tsx`; production build OK. |
+| Enforcement flag setter | INTENTIONALLY ABSENT | No RPC/UI flips the flag; enabling it requires direct database change under separate explicit owner authorization. |
