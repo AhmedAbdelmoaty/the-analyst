@@ -32,8 +32,8 @@ export default function Landing() {
     }
   }, [loading, user, arrivedSignedOut, isProfileComplete, navigate]);
   useEffect(() => {
-    if (location.pathname !== '/') authArea.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
-  }, [location.pathname]);
+    if (location.pathname !== '/' || location.hash === '#account') authArea.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
+  }, [location.pathname, location.hash]);
   useEffect(() => { if (!highlight) return; const timer = setTimeout(() => setHighlight(false), 1600); return () => clearTimeout(timer); }, [highlight]);
   const scrollAuth = () => {
     authArea.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });

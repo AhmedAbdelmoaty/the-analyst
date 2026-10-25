@@ -21,7 +21,7 @@ export function gameTier(game: string): GameTier {
 export type AccessDecision = "allow" | "deny" | "verify";
 
 /**
- * @param enforcement server flag; false/unknown → always allow (current development behavior).
+ * @param enforcement server flag; explicit false → development access; unknown → verify annual games.
  * @param entitled    null = server verification unavailable (never pretend the user is unpaid).
  */
 export function decideAccess(enforcement: boolean | null, tier: GameTier, entitled: boolean | null): AccessDecision {

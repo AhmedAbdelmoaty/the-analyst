@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import SubscriptionLayout from '@/features/subscription/SubscriptionLayout';
-import { routeForPlanChoice, type PlanIntent } from '@/features/subscription/planIntent';
+import { clearPlanIntent, routeForPlanChoice, type PlanIntent } from '@/features/subscription/planIntent';
 import AnnualPrice from '@/features/subscription/AnnualPrice';
 import { PAYMENT_UI_ENABLED } from '@/features/subscription/paymentApi';
 import { finishPlanStep, journeyDestination, onboardingStage, selectedGame } from '@/features/discovery/journey';
@@ -23,7 +23,7 @@ export default function PlanChoice() {
     if (loading || (user && (!snapshot || accessLoading))) return;
     if (!user) { navigate(routeForPlanChoice(intent, false, false)); return; }
     finishPlanStep();
-    if (development || intent === 'free') navigate(journeyDestination(isProfileComplete));
+    if (development || intent === 'free') { clearPlanIntent(); navigate(journeyDestination(isProfileComplete)); }
     else navigate(routeForPlanChoice(intent, true, isProfileComplete));
   };
   const disabled = loading || Boolean(user && (!snapshot || accessLoading));

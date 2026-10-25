@@ -10,9 +10,8 @@ export type GameAccessSnapshot = {
 
 /**
  * Reads the server-owned access snapshot (public.my_game_access).
- * On any failure the snapshot falls back to enforcement OFF: the flag lives on the
- * server, so a client cannot weaken it, and a network failure must not invent a paywall
- * (entitlement itself is only ever granted server-side by verified payments).
+ * Only an explicit server OFF opens development access. An unavailable flag is
+ * unknown, so annual routes show a retry state instead of bypassing future enforcement.
  */
 export function useGameAccess() {
   const { user, loading: authLoading } = useAuth();
