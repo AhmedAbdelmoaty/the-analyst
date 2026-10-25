@@ -1,11 +1,16 @@
 import { useNavigate } from 'react-router-dom';
-import { Clock3, FileSearch, LogOut, Play, X } from 'lucide-react';
+import { LogOut, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadRun } from '@/features/reward-decision/engine/persistence';
 import { hasWorkProfile } from '@/features/profile/workProfile';
 import analystMark from '@/assets/brand/the-analyst-mark.png';
-import currentGame from '@/assets/scenes/mansour-office-welcome-male.webp';
-import rewardCover from '@/features/reward-decision/assets/rd-cover-l.webp.asset.json';
+import { Button } from '@/components/ui/button';
+import { GAME_CATALOG } from '@/features/discovery/catalog';
+import GameCard from '@/features/discovery/GameCard';
+import { onboardingStage, selectedGame, journeyDestination } from '@/features/discovery/journey';
+import { Navigate } from 'react-router-dom';
+import '@/styles/auth.css';
+import '@/styles/discovery.css';
 
 export default function Games() {
   const { user, profile, signOut, updateProfile } = useAuth();
@@ -13,32 +18,17 @@ export default function Games() {
   const saved = user ? loadRun(user.id) : null;
   const needsWorkDetails = !hasWorkProfile(profile) && !profile?.work_details_prompt_dismissed_at;
   const dismiss = () => { void updateProfile({ work_details_prompt_dismissed_at: new Date().toISOString() }); };
-
-  return (
-    <main className="game-surface min-h-[100dvh] bg-game-paper text-game-ink" dir="rtl">
-      <header className="flex h-16 items-center justify-between border-b border-game-line bg-game-paper px-5 md:px-10">
-        <img className="h-10 w-auto" src={analystMark} alt="The Analyst" />
-        <div className="flex items-center gap-2">
-          <span className="hidden text-sm text-game-muted sm:inline">أهلاً، {profile?.first_name}</span>
-          <button className="min-h-10 rounded-md border border-game-line px-3 text-sm font-bold text-game-muted" onClick={() => navigate('/profile/work')}>بيانات العمل</button>
-          <button className="min-h-10 rounded-md border border-game-line px-3 text-sm font-bold text-[#A61E25]" onClick={() => navigate('/subscription')}>اشتراكي</button>
-          <button className="flex h-10 w-10 items-center justify-center rounded-md border border-game-line" aria-label="تسجيل الخروج" onClick={async () => { await signOut(); navigate('/'); }}><LogOut className="h-4 w-4" /></button>
-        </div>
-      </header>
-      <section className="mx-auto max-w-6xl px-5 py-10 md:py-16">
-        <p className="text-sm font-bold text-primary">تجارب The Analyst</p>
-        <h1 className="mt-2 text-3xl font-bold md:text-5xl">اختار قضيتك</h1>
-        <p className="mt-3 max-w-xl text-game-muted">كل لعبة بتدرّب زاوية مختلفة من طريقة التفكير التحليلي.</p>
-        {needsWorkDetails && <aside className="mt-4 flex items-center justify-between gap-3 rounded-md border border-game-line bg-card px-4 py-3 text-sm"><p>أضف القسم والقطاع المرتبطين بخبرتك.</p><div className="flex shrink-0 items-center gap-2"><button type="button" onClick={() => navigate('/profile/work')} className="font-bold text-[#A61E25]">استكمال البيانات</button><button type="button" onClick={dismiss} aria-label="إخفاء الدعوة" className="rounded p-2 hover:bg-muted"><X className="h-4 w-4" /></button></div></aside>}
-        <button type="button" onClick={() => navigate('/plans')} className="mt-4 min-h-11 rounded-md border border-[#A61E25] px-4 text-sm font-bold text-[#A61E25] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A61E25]">استعرض الخطط</button>
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          <article className="overflow-hidden rounded-md border border-game-line bg-card shadow-sm"><img src={currentGame} alt="مهمة أقل من المتوقع" className="aspect-[16/8] w-full object-cover" /><div className="p-5"><span className="text-xs font-bold text-primary">تحليل المشكلات</span><h2 className="mt-1 text-2xl font-bold">أقل من المتوقع.. مقارنة بإيه؟</h2><p className="mt-2 text-sm text-game-muted">تحقيق ميداني لتحديد المشكلة الصحيحة قبل اقتراح الحل.</p><button onClick={() => navigate('/play')} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 font-bold text-primary-foreground"><Play className="h-4 w-4" />ابدأ اللعبة</button></div></article>
-          <article className="overflow-hidden rounded-md border border-game-line bg-card shadow-sm"><img src={rewardCover.url} alt="قرار التكريم" className="aspect-[16/8] w-full object-cover" /><div className="p-5"><span className="text-xs font-bold text-primary">تحليل البيانات واتخاذ القرار</span><h2 className="mt-1 text-2xl font-bold">قرار التكريم</h2><p className="mt-2 text-sm text-game-muted">راجع الأدلة، افحص توزيع النتائج، ودافع عن توصيتك.</p><button onClick={() => navigate('/games/reward-decision')} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 font-bold text-primary-foreground">{saved ? <><Clock3 className="h-4 w-4" />متابعة الجولة</> : <><FileSearch className="h-4 w-4" />فتح القضية</>}</button></div></article>
-          <article className="overflow-hidden rounded-md border border-game-line bg-card shadow-sm"><img src="/assets/behind-dots/guide.png" alt="ليلى وعربية الآيس كريم" className="aspect-[16/8] w-full object-cover object-[center_30%]" /><div className="p-5"><span className="text-xs font-bold text-primary">تحليل الارتباط والأدلة</span><h2 className="mt-1 text-2xl font-bold">ورا النقط — Behind the Dots</h2><p className="mt-2 text-sm text-game-muted">اقرأ مخططات الانتشار، خمّن الارتباط، وساعد ليلى تختار خطة مبنية على الأدلة.</p><button onClick={() => navigate('/games/behind-the-dots')} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 font-bold text-primary-foreground"><Play className="h-4 w-4" />ابدأ اللعبة</button></div></article>
-          <article className="overflow-hidden rounded-md border border-game-line bg-card shadow-sm"><img src="/crack-the-code/assets/finance-manager-new.jpg" alt="مدير الحسابات والخزائن الثلاث" className="aspect-[16/8] w-full object-cover" /><div className="p-5"><span className="text-xs font-bold text-primary">ألغاز المنطق والاستنتاج</span><h2 className="mt-1 text-2xl font-bold">Crack the Code — الشفرة الأخيرة</h2><p className="mt-2 text-sm text-game-muted">حل أدلة الأرقام وافتح ثلاث خزائن متتابعة لاستعادة تقرير المراجعة.</p><button onClick={() => navigate('/games/crack-the-code')} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 font-bold text-primary-foreground"><Play className="h-4 w-4" />ابدأ اللعبة</button></div></article>
-          <article className="overflow-hidden rounded-md border border-game-line bg-card shadow-sm"><img src="/decision-matrix/assets/boardroom-cartoon.jpg" alt="فريق الشركة في اجتماع لمراجعة الأدلة" className="aspect-[16/8] w-full object-cover" /><div className="p-5"><span className="text-xs font-bold text-primary">Business Analysis &amp; Decision-Making</span><h2 className="mt-1 text-2xl font-bold">مصفوفة القرار — أول يوم في الشركة</h2><p className="mt-2 text-sm text-game-muted">ادخل تحقيق تفاعلي وسط فريق الشركة، اجمع الأدلة، وحل تحديات مصفوفة القرار عشان توصل لتوصية مبنية على الأرقام.</p><button onClick={() => navigate('/games/decision-matrix')} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 font-bold text-primary-foreground"><Play className="h-4 w-4" />ابدأ اللعبة</button></div></article>
-        </div>
-      </section>
-    </main>
-  );
+  if (onboardingStage() === 'plans') return <Navigate to="/plans" replace />;
+  if (selectedGame()) return <Navigate to={journeyDestination(true)} replace />;
+  return <main className="auth-theme discovery min-h-[100dvh] bg-background text-foreground" dir="rtl">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3 md:px-10">
+      <img className="h-10 w-auto" src={analystMark} alt="The Analyst" />
+      <div className="flex flex-wrap items-center gap-2"><span className="hidden text-sm text-muted-foreground sm:inline">أهلاً، {profile?.first_name}</span><Button onClick={() => navigate('/profile/work')}>بيانات العمل</Button><Button className="text-primary" onClick={() => navigate('/subscription')}>اشتراكي</Button><Button className="h-10 w-10 p-0" aria-label="تسجيل الخروج" onClick={async () => { await signOut(); navigate('/'); }}><LogOut className="h-4 w-4" /></Button></div>
+    </header>
+    <section className="mx-auto max-w-6xl px-5 py-10 md:py-14"><p className="text-sm font-bold text-primary">تجارب The Analyst</p><h1 className="mt-2 text-3xl font-bold md:text-5xl">اختار قضيتك</h1><p className="mt-3 max-w-xl leading-7 text-muted-foreground">كل لعبة بتدرّب زاوية مختلفة من طريقة التفكير التحليلي.</p>
+      {needsWorkDetails && <aside className="mt-4 flex flex-wrap items-center justify-between gap-3 border-y border-border py-3 text-sm"><p>أضف القسم والقطاع المرتبطين بخبرتك.</p><div className="flex items-center gap-2"><Button onClick={() => navigate('/profile/work')} className="text-primary">استكمال البيانات</Button><Button onClick={dismiss} aria-label="إخفاء الدعوة" className="h-9 w-9 p-0"><X className="h-4 w-4" /></Button></div></aside>}
+      <Button onClick={() => navigate('/plans')} className="mt-4 min-h-11 border-primary px-4 font-bold text-primary">استعرض الخطط</Button>
+      <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{GAME_CATALOG.map(game => <GameCard key={game.id} game={game} continuing={game.id === 'reward-decision' && Boolean(saved)} onChoose={() => navigate(game.route)} />)}</div>
+    </section>
+  </main>;
 }

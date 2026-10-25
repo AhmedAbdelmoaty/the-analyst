@@ -7,6 +7,8 @@ import {
 } from "@/components/auth/AuthUI";
 import { errText, maskPhone, phoneAuth, PhoneAuthResult, toE164 } from "@/lib/phoneAuth";
 
+import { markSignupCreated, markSignupVerified } from "@/features/discovery/journey";
+
 type Mode = "login" | "signup" | "verify" | "forgot" | "forgot_code" | "forgot_new" | "forgot_done";
 
 const modeFromPath = (p: string): Mode =>
@@ -108,6 +110,7 @@ const PlayerAuth = () => {
       if (password !== confirm) return setError(errText("password_mismatch"));
       const r = await phoneAuth("signup", { first_name: firstName.trim(), last_name: lastName.trim(), phone, password });
       if (!r.ok) return setError(errText(r.error));
+      markSignupCreated();
       setActivePhone(phone); setMode("verify");
       applySend(r, "أُرسل رمز التحقق عبر واتساب.");
     });
@@ -121,6 +124,7 @@ const PlayerAuth = () => {
       const extra = r.error === "invalid_code" && r.remaining ? ` المحاولات المتبقية: ${r.remaining}.` : "";
       return setError(errText(r.error) + extra);
     }
+    markSignupVerified();
     setNotice("تم تأكيد الرقم. جارٍ تسجيل الدخول...");
     const { error } = await signInWithPhone(activePhone, password);
     if (error) { setMode("login", "/login"); setNotice("تم تأكيد الرقم. سجّل الدخول بكلمة المرور."); }

@@ -3,16 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type GameAccessSnapshot = {
-  enforcement: boolean;
+  enforcement: boolean | null;
   entitled: boolean | null;
   expiresAt: string | null;
 };
 
 /**
  * Reads the server-owned access snapshot (public.my_game_access).
- * On any failure the snapshot falls back to enforcement OFF: the flag lives on the
- * server, so a client cannot weaken it, and a network failure must not invent a paywall
- * (entitlement itself is only ever granted server-side by verified payments).
+ * Only an explicit server OFF opens development access. An unavailable flag is
+ * unknown, so annual routes show a retry state instead of bypassing future enforcement.
  */
 export function useGameAccess() {
   const { user, loading: authLoading } = useAuth();
@@ -30,14 +29,14 @@ export function useGameAccess() {
       if (error) throw error;
       const d = data as { enforcement?: unknown; entitled?: unknown; expires_at?: unknown } | null;
       const snapshot: GameAccessSnapshot = {
-        enforcement: d?.enforcement === true,
+        enforcement: typeof d?.enforcement === 'boolean' ? d.enforcement : null,
         entitled: typeof d?.entitled === "boolean" ? d.entitled : null,
         expiresAt: typeof d?.expires_at === "string" ? d.expires_at : null,
       };
       if (revision === generation.current) setState({ owner: user.id, data: snapshot, loading: false });
     } catch {
       if (revision === generation.current) {
-        setState({ owner: user.id, data: { enforcement: false, entitled: null, expiresAt: null }, loading: false });
+        setState({ owner: user.id, data: { enforcement: null, entitled: null, expiresAt: null }, loading: false });
       }
     }
   }, [user?.id, authLoading]);

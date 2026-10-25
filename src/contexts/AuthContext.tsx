@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
+import { clearJourney } from "@/features/discovery/journey";
 import { clearPlanIntent } from "@/features/subscription/planIntent";
 import { buildProfileUpdatePatch, isIdentityProfileComplete, isWorkProfileSchemaUnavailable } from "@/features/profile/workProfile";
 
@@ -135,6 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     clearPlanIntent();
+    clearJourney();
     await supabase.auth.signOut();
     setProfile(null);
   };

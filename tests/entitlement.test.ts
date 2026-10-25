@@ -2,12 +2,13 @@ import { describe, expect, it } from "bun:test";
 import { decideAccess, entitlementWindowActive, GAME_ACCESS, gameTier, ROUTE_GAME } from "../src/features/entitlement/access";
 
 describe("game access configuration", () => {
-  it("maps the four current games to the approved tiers", () => {
+  it("maps the five current games to the approved tiers", () => {
     expect(GAME_ACCESS).toEqual({
       "problem-framing": "free",
       "reward-decision": "annual",
       "behind-the-dots": "annual",
       "crack-the-code": "annual",
+      "decision-matrix": "annual",
     });
   });
   it("resolves the gated routes to their games and nothing else", () => {
@@ -16,10 +17,11 @@ describe("game access configuration", () => {
       "/games/reward-decision": "reward-decision",
       "/games/behind-the-dots": "behind-the-dots",
       "/games/crack-the-code": "crack-the-code",
+      "/games/decision-matrix": "decision-matrix",
     });
   });
   it("defaults unknown games to free so new games are never blocked accidentally", () => {
-    expect(gameTier("decision-matrix")).toBe("free");
+    expect(gameTier("decision-matrix")).toBe("annual");
     expect(gameTier("some-future-game")).toBe("free");
   });
 });
