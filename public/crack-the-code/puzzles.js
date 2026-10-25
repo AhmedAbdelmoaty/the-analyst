@@ -1,6 +1,6 @@
 /* Crack the Code — 3-Digit Puzzle System
    Unified Levels Data Source
-   Level 1: 427 (Easy - Office Vault)
+   Level 1: 352 (Very Easy - Office Vault)
    Level 2: 583 (Medium - Archive Vault)
    Level 3: 946 (Hard - Main Vault)
 */
@@ -12,38 +12,38 @@ const PUZZLES = [
     level: 1,
     levelName: "Office vault",
     levelNameAr: "خزنة المكتب",
-    difficulty: "Easy",
-    difficultyAr: "سهل",
-    skill: "Easy · Basic elimination",
-    skillAr: "سهل · استبعد اللي مش موجود",
+    difficulty: "Very Easy",
+    difficultyAr: "سهل جداً",
+    skill: "Very Easy · Beginner deduction",
+    skillAr: "سهل جداً · استبعاد مباشر",
     codeLength: 3,
     length: 3,
-    correctCode: [4, 2, 7],
-    secret: [4, 2, 7],
+    correctCode: [3, 5, 2],
+    secret: [3, 5, 2],
     clues: [
       {
-        digits: [4, 9, 3],
+        digits: [7, 8, 9],
+        exact: 0,
+        misplaced: 0,
+        textAr: "ولا رقم موجود في الشفرة.",
+        textEn: "None of these digits is in the code."
+      },
+      {
+        digits: [3, 4, 1],
         exact: 1,
         misplaced: 0,
         textAr: "رقم واحد صح وفي مكانه، والباقي مش موجود.",
         textEn: "One digit is correct and well placed, the rest are not present."
       },
       {
-        digits: [2, 1, 8],
+        digits: [5, 0, 6],
         exact: 0,
         misplaced: 1,
         textAr: "رقم واحد صح بس مش في مكانه، والباقي مش موجود.",
         textEn: "One digit is correct but misplaced, the rest are not present."
       },
       {
-        digits: [6, 7, 0],
-        exact: 0,
-        misplaced: 1,
-        textAr: "رقم واحد صح بس مش في مكانه، والباقي مش موجود.",
-        textEn: "One digit is correct but misplaced, the rest are not present."
-      },
-      {
-        digits: [7, 0, 2],
+        digits: [2, 4, 5],
         exact: 0,
         misplaced: 2,
         textAr: "رقمين صح بس مش في مكانهم، والباقي مش موجود.",
@@ -52,16 +52,16 @@ const PUZZLES = [
     ],
     hints: [
       {
-        ar: "بص، مش لازم تحل كل الأدلة مرة واحدة. ابدأ بالدليل اللي بيقول إن فيه رقم صح وفي مكانه، وحاول تستخدم باقي الأدلة عشان تتأكد.",
-        en: "Look, you don't have to solve all clues at once. Start with the clue that says a digit is correct and well placed, and use the rest to verify."
+        ar: "ابدأ بالدليل اللي بيقول إن فيه رقم صح وفي مكانه، وشوف تقدر تثبت إيه.",
+        en: "Start with the clue that says a digit is correct and well placed, and see what you can prove."
       },
       {
-        ar: "هقولك سر صغير: رقم 0 مش موجود نهائيًا في الشفرة. جرّب تشيله من حساباتك وشوف إيه اللي هيتغير.",
-        en: "Here's a small secret: digit 0 is not in the code at all. Try removing it from your deductions and see what changes."
+        ar: "الرقم 3 في أول خانة! كده فاضلك رقمين بس.",
+        en: "Digit 3 is in the first position! Now only two digits left."
       },
       {
-        ar: "ركز معايا... الرقم 4 في أول خانة. والرقمين الباقيين هتلاقيهم في الدليل الرابع، بس مش في الأماكن اللي مكتوبين فيها. تقدر ترتبهم؟",
-        en: "Focus with me... digit 4 is in the first position. The other two digits are in clue 4, but misplaced. Can you order them?"
+        ar: "الرقم 5 مكانه في النص. استخدم الدليل الرابع عشان تكمل آخر خانة.",
+        en: "Digit 5 is in the middle. Use the fourth clue to complete the last position."
       }
     ],
     successMessage: {

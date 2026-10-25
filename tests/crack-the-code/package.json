@@ -1,0 +1,7 @@
+{
+  "name": "crack-the-code-source-tests",
+  "private": true,
+  "scripts": {
+    "test": "node run-source-tests.cjs"
+  }
+}
