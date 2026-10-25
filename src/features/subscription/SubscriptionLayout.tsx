@@ -12,7 +12,7 @@ export default function SubscriptionLayout({ children, publicPage = false, wide 
     <div className="mx-auto max-w-5xl px-5 pb-12 pt-5 sm:px-8">
       <header className="flex items-center justify-between gap-4 border-b border-border pb-4">
         <Link to={home} aria-label="The Analyst"><img src={analystLockup} alt="The Analyst" className="h-12 w-auto object-contain sm:h-14" /></Link>
-        <Link to={home} className="text-sm font-bold text-[#A61E25] underline-offset-4 hover:underline">{user ? "الألعاب" : "الرئيسية"}</Link>
+        <Link to={home} className="text-sm font-bold text-primary underline-offset-4 hover:underline">{user ? "الألعاب" : "الرئيسية"}</Link>
       </header>
       <main className={`mx-auto pt-8 sm:pt-12 ${wide ? "max-w-4xl" : "max-w-3xl"}`}>{children}</main>
     </div>

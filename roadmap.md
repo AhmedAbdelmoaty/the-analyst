@@ -1,4 +1,5 @@
 # Current tasks
+- [ ] Premium discovery landing, shared five-game catalog, first-signup plans and selected-game journey; safe mock flow and layout tests (no Cloud changes or publication).
 - [x] Paymob: disabled server foundation, review-only SQL, subscription UI, synthetic security tests and merchant handoff; no cloud changes.
 - [ ] Paymob activation: blocked by merchant Test credentials, explicit isolated SQL/function deployment approval, webhook setup and sandbox E2E sign-off; no Live checkout or game restrictions authorized.
 - [ ] Phase 2: reference-adapted recommendation board, confirmation and presentation; regression tests.
