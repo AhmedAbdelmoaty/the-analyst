@@ -28,3 +28,5 @@ When a significant feature, product decision, or deployment state changes, updat
 - Reward Decision server evaluation for a new case version is enabled only via `SERVER_V3_EVALUATION_ENABLED` after its SQL is approved and applied, so client and server scoring never diverge.
 
 - Use the shared discovery catalog for public, authenticated and plan game previews and tier mapping; journey storage contains allowlisted navigation only, never payment access. Mark first-time plan onboarding only after successful account creation and verification, before sign-in; returning logins skip it.
+
+- GA4 tag lives once in index.html with send_page_view:false; GaPageViews inside BrowserRouter sends one page_view per path change, so new React routes inherit tracking. Iframe games are tracked at their parent route only; standalone HTML pages or other domains need their own tag.

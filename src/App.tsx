@@ -14,6 +14,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminBoard from "./pages/AdminBoard";
 import NotFound from "./pages/NotFound";
 import VisitTracker from "@/components/analytics/VisitTracker";
+import GaPageViews from "@/components/analytics/GaPageViews";
 import PlanChoice from "@/pages/PlanChoice";
 import MySubscription from "@/pages/MySubscription";
 import SubscriptionSummary from "@/pages/SubscriptionSummary";
@@ -50,7 +51,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster /><Sonner />
-      <BrowserRouter><UpdateGate /><AuthProvider><VisitTracker /><InstallProvider>
+      <BrowserRouter><GaPageViews /><UpdateGate /><AuthProvider><VisitTracker /><InstallProvider>
         <Suspense fallback={<div className="auth-theme flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">جاري التحميل...</div>}>
           <Routes>
             <Route path="/" element={<Landing />} />
