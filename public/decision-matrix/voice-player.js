@@ -1,7 +1,7 @@
 /* One shared audio element: stop old clips and ignore stale callbacks. */
 (function(root){
 class VoicePlayer{
- constructor(createAudio=()=>new Audio()){this.audio=createAudio();this.generation=0;this.audio.preload='auto';}
+ constructor(createAudio=()=>new Audio()){this.audio=createAudio();this.generation=0;this.audio.preload='auto';if(typeof HTMLAudioElement!=='undefined'&&this.audio instanceof HTMLAudioElement){this.audio.hidden=true;this.audio.dataset.dialogueAudio='';document.body.append(this.audio);}}
  stop(){this.generation++;this.audio.onended=null;this.audio.onerror=null;this.audio.onplaying=null;this.audio.pause();this.audio.removeAttribute('src');this.audio.load();}
  play(src,callbacks={}){
   this.stop();const generation=this.generation,current=()=>generation===this.generation;
