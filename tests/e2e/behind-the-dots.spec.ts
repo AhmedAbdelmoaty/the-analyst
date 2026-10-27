@@ -3,6 +3,22 @@ import { expect, test } from "@playwright/test";
 const harness = "/tests/behind-dots-visual-harness.html";
 const answerButton = (page: Parameters<Parameters<typeof test>[1]>[0]["page"], label: string) => page.getByRole("button", { name: new RegExp(label) });
 
+test("active HUD exit and paused-state exit stay inside the viewport", async ({ page }) => {
+  await page.goto(`${harness}?scenario=challenge`);
+  const exit = page.getByRole("button", { name: "العودة إلى الألعاب" }).first();
+  await expect(exit).toBeVisible();
+  const bounds = await exit.boundingBox();
+  const viewport = page.viewportSize();
+  expect(bounds).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport!.width);
+  const resume = page.getByRole("button", { name: "كمّل اللعب", exact: true });
+  if (await resume.isVisible()) await resume.click();
+  await page.getByRole("button", { name: "إيقاف مؤقت" }).click();
+  await expect(page.getByRole("button", { name: "ارجع للألعاب" })).toBeVisible();
+});
+
 test("opening story, character dialogue, notebook, and interactive tutorial lead into challenge one", async ({ page }, testInfo) => {
   await page.goto(`${harness}?scenario=cover`);
   await page.getByRole("button", { name: "يلا نساعد ليلى!" }).click();

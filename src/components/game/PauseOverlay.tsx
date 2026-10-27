@@ -2,10 +2,11 @@ interface PauseOverlayProps {
   onContinue: () => void;
   updatePending?: boolean;
   onUpdate?: () => void;
+  onExit?: () => void;
 }
 
 /** Light veil over the frozen scene with a single resume action (no sound, no motion). */
-export const PauseOverlay = ({ onContinue, updatePending, onUpdate }: PauseOverlayProps) => (
+export const PauseOverlay = ({ onContinue, updatePending, onUpdate, onExit }: PauseOverlayProps) => (
   <div className="fixed inset-0 z-[120] flex items-center justify-center bg-game-charcoal/35 px-6 backdrop-blur-[2px]" dir="rtl">
     <div className="flex flex-col items-center gap-3">
       <button
@@ -25,6 +26,7 @@ export const PauseOverlay = ({ onContinue, updatePending, onUpdate }: PauseOverl
           تحديث الآن
         </button>
       )}
+      {onExit && <button type="button" onClick={onExit} className="rounded-md border border-game-line bg-game-paper px-4 py-2 text-xs font-bold text-game-ink shadow-sm hover:border-primary hover:text-primary">العودة إلى الألعاب</button>}
     </div>
   </div>
 );

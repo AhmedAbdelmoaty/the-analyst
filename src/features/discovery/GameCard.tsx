@@ -1,8 +1,9 @@
 import { ArrowLeft } from 'lucide-react';
 import type { CatalogGame } from './catalog';
+import { getCatalogAction, type GameProgress } from './progress';
 
-export default function GameCard({ game, onChoose, continuing = false }: { game: CatalogGame; onChoose: () => void; continuing?: boolean }) {
-  const action = continuing ? 'متابعة الجولة' : 'ابدأ المغامرة';
+export default function GameCard({ game, onChoose, progress = { status: 'new' } }: { game: CatalogGame; onChoose: () => void; progress?: GameProgress }) {
+  const action = getCatalogAction(progress.status);
   const tier = game.tier === 'free' ? 'مجانية' : 'ضمن الاشتراك السنوي';
 
   return <button
@@ -19,6 +20,7 @@ export default function GameCard({ game, onChoose, continuing = false }: { game:
       <span className="text-xs font-bold leading-5 text-primary">{game.category}</span>
       <span className="mt-1 text-lg font-bold leading-7">{game.title}</span>
       <span className="mt-1.5 line-clamp-3 text-[13px] leading-6 text-muted-foreground">{game.description}</span>
+      {progress.hint && <span className="mt-1 text-xs leading-5 text-muted-foreground">{progress.hint}</span>}
       <span className="discovery-card-action mt-auto flex items-center justify-between pt-3 text-sm font-bold text-primary">
         <span>{action}</span><ArrowLeft aria-hidden="true" className="h-4 w-4 transition-transform duration-200" />
       </span>

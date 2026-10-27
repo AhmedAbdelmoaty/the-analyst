@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useInstall } from "@/contexts/InstallContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, X, User, RotateCcw, Building2, Volume2, VolumeX, LogOut } from "lucide-react";
+import { Settings, X, User, RotateCcw, Building2, Volume2, VolumeX, LogOut, House } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSound } from "@/hooks/useSoundEffects";
 import analystImg from "@/assets/characters/analyst.webp";
@@ -12,9 +12,10 @@ import analystLockup from "@/assets/brand/the-analyst-lockup.png";
 interface PlayerSettingsPanelProps {
   onReplayBriefing: () => void;
   onResetProgress: () => void;
+  onExit: () => void;
 }
 
-export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: PlayerSettingsPanelProps) => {
+export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress, onExit }: PlayerSettingsPanelProps) => {
   const { profile, updateProfile, signOut } = useAuth();
   const { available, standalone, install, guidance } = useInstall();
   const [showInstallHelp, setShowInstallHelp] = useState(false);
@@ -70,6 +71,17 @@ export const PlayerSettingsPanel = ({ onReplayBriefing, onResetProgress }: Playe
         title="الإعدادات"
       >
         <Settings className="w-5 h-5" />
+      </motion.button>
+
+      <motion.button
+        type="button"
+        onClick={onExit}
+        aria-label="العودة إلى الألعاب"
+        title="العودة إلى الألعاب"
+        className="fixed top-4 right-4 z-50 rounded-md border border-game-line bg-game-paper p-2.5 text-game-ink shadow-lg shadow-black/15 backdrop-blur-md transition-all hover:border-primary hover:text-primary"
+        whileTap={{ scale: 0.9 }}
+      >
+        <House className="w-5 h-5" />
       </motion.button>
 
       {/* Panel overlay */}

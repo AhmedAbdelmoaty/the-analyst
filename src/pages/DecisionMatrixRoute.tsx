@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function DecisionMatrixRoute() {
   const { user } = useAuth();
+  const showResult = new URLSearchParams(useLocation().search).get('showResult') === '1';
   if (!user) return null;
 
   return (
@@ -19,7 +20,7 @@ export default function DecisionMatrixRoute() {
         key={user.id}
         name={user.id}
         title="مصفوفة القرار — أول يوم في الشركة"
-        src="/decision-matrix/index.html"
+        src={`/decision-matrix/index.html${showResult ? '?showResult=1' : ''}`}
         allow="autoplay"
         className="block h-full min-h-0 w-full border-0"
       />

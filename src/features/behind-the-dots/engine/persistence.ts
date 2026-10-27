@@ -1,5 +1,5 @@
 import { ALL_CASE_IDS } from "../data/cases";
-import { initialState, type GameState, type Phase } from "./gameState";
+import { initialState, ROUND_SECONDS, type GameState, type Phase } from "./gameState";
 
 const PREFIX = "the-analyst:behind-dots:v6";
 const V5_PREFIX = "the-analyst:behind-dots:v5";
@@ -48,10 +48,11 @@ export function loadState(storage: StorageLike, userId: string): GameState {
       evidence,
       results,
       hearts: Math.max(0, Math.min(3, Number.isInteger(saved.hearts) ? saved.hearts! : 3)),
+      remainingSeconds: Number.isInteger(saved.remainingSeconds) ? Math.max(0, Math.min(ROUND_SECONDS, saved.remainingSeconds!)) : ROUND_SECONDS,
       tutorialStep: saved.tutorialStep === 1 || saved.tutorialStep === 2 ? saved.tutorialStep : 0,
       tutorialAttempts: Math.max(0, Math.min(2, saved.tutorialAttempts ?? 0)),
       recommendationAttempts,
-      paused: false,
+      paused: saved.phase === "puzzle" ? true : Boolean(saved.paused),
       runSeed: typeof saved.runSeed === "number" && Number.isFinite(saved.runSeed) ? saved.runSeed >>> 0 : null,
     };
   } catch {

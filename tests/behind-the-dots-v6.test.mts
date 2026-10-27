@@ -86,3 +86,40 @@ test("user-scoped save resumes the ending sequence and rejects obsolete V5 state
   store.set(sessionKey("u1"), JSON.stringify({ ...state, v: 5 }));
   assert.equal(loadState(storage, "u1").phase, "cover");
 });
+
+test("an active challenge saves its remaining time and hydrates paused", () => {
+  const store = new Map<string, string>();
+  const storage = { getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => { store.set(key, value); }, removeItem: (key: string) => { store.delete(key); } };
+  const active = reducer(startChallenge(), { type: "setTimer", seconds: 7 });
+  saveState(storage, "timer-player", active);
+  const restored = loadState(storage, "timer-player");
+  assert.equal(restored.phase, "puzzle");
+  assert.equal(restored.paused, true);
+  assert.equal(restored.remainingSeconds, 7);
+  assert.equal(reducer(restored, { type: "resume" }).paused, false);
+});
+
+test("V6 active saves without timer data fall back to 20 seconds", () => {
+  const store = new Map<string, string>();
+  const storage = { getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => { store.set(key, value); }, removeItem: (key: string) => { store.delete(key); } };
+  store.set(sessionKey("legacy-timer"), JSON.stringify({ ...startChallenge(), paused: false }));
+  const restored = loadState(storage, "legacy-timer");
+  assert.equal(restored.remainingSeconds, 20);
+  assert.equal(restored.paused, true);
+});
+
+test("a new challenge receives 20 seconds after attaching the previous result", () => {
+  const active = startChallenge();
+  const nearlyExpired = reducer(active, { type: "setTimer", seconds: 2 });
+  const reveal = reducer(nearlyExpired, { type: "answer", value: "down" });
+  const nextChallenge = reducer(reveal, { type: "attach" });
+  assert.equal(nextChallenge.caseIndex, 1);
+  assert.equal(nextChallenge.remainingSeconds, 20);
+});
+
+test("pausing a challenge preserves its time and rejects a queued countdown tick", () => {
+  const active = reducer(startChallenge(), { type: "setTimer", seconds: 9 });
+  const paused = reducer(active, { type: "pause" });
+  assert.equal(paused.remainingSeconds, 9);
+  assert.equal(reducer(paused, { type: "setTimer", seconds: 8 }), paused);
+});

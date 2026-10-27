@@ -24,6 +24,7 @@ export interface GameState {
   results: Partial<Record<CaseId, CaseResult>>;
   evidence: CaseId[];
   hearts: number;
+  remainingSeconds: number;
   practiceAfterCapture: boolean;
   recommendationAttempts: ChoiceId[];
   ending: Ending | null;
@@ -44,6 +45,7 @@ export const initialState: GameState = {
   results: {},
   evidence: [],
   hearts: 3,
+  remainingSeconds: ROUND_SECONDS,
   practiceAfterCapture: false,
   recommendationAttempts: [],
   ending: null,
@@ -72,6 +74,7 @@ export type Action =
   | { type: "retryRecommendation" }
   | { type: "pause" }
   | { type: "resume" }
+  | { type: "setTimer"; seconds: number }
   | { type: "replay" }
   | { type: "__hydrate"; s: GameState };
 
@@ -128,10 +131,10 @@ export function reducer(s: GameState, a: Action): GameState {
       return { ...s, tutorialAttempts: attempts, tutorialGuess: null };
     }
     case "startChallenges":
-      return s.phase === "tutorialReady" ? { ...s, phase: "puzzle", caseIndex: 0, hearts: 3 } : s;
+      return s.phase === "tutorialReady" ? { ...s, phase: "puzzle", caseIndex: 0, hearts: 3, remainingSeconds: ROUND_SECONDS } : s;
     case "skipTutorial":
       return a.tutorialEverDone && (s.phase === "briefing" || s.phase === "tutorial")
-        ? { ...s, phase: "puzzle", caseIndex: 0, hearts: 3 }
+        ? { ...s, phase: "puzzle", caseIndex: 0, hearts: 3, remainingSeconds: ROUND_SECONDS }
         : s;
     case "answer":
       return resolveCase(s, a.value);
@@ -143,7 +146,7 @@ export function reducer(s: GameState, a: Action): GameState {
       const evidence = s.evidence.includes(c.id) ? s.evidence : [...s.evidence, c.id];
       const next = s.caseIndex + 1;
       if (next >= CASES.length) return { ...s, evidence, phase: "recommendation", recommendationAttempts: [] };
-      return { ...s, evidence, caseIndex: next, phase: "puzzle", paused: false };
+      return { ...s, evidence, caseIndex: next, phase: "puzzle", paused: false, remainingSeconds: ROUND_SECONDS };
     }
     case "recommendationAnswer": {
       if (s.phase !== "recommendation" || s.recommendationAttempts.length !== 0 || s.evidence.length !== CASES.length) return s;
@@ -159,6 +162,8 @@ export function reducer(s: GameState, a: Action): GameState {
       return s.phase === "cover" || s.phase === "debrief" ? s : { ...s, paused: true };
     case "resume":
       return { ...s, paused: false };
+    case "setTimer":
+      return s.phase === "puzzle" && !s.paused ? { ...s, remainingSeconds: Math.max(0, Math.min(ROUND_SECONDS, Math.floor(a.seconds))) } : s;
     case "replay":
       return { ...initialState, runSeed: s.runSeed };
     case "__hydrate":

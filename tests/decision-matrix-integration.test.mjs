@@ -9,7 +9,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 test('Decision Matrix uses distinct save and preference keys for each iframe user', async () => {
   const app = await readFile(path.join(root, 'public/decision-matrix/app.js'), 'utf8');
-  const declarations = app.match(/const PLAYER_ID=.*?;\nconst SCOPE=.*?;\nconst KEY=.*?;\nconst PREF=.*?;\nconst LEGACY_KEY=.*?;/s)?.[0];
+  const declarations = app.match(/const PLAYER_ID=.*?;\r?\nconst SCOPE=.*?;\r?\nconst KEY=.*?;\r?\nconst PREF=.*?;\r?\nconst LEGACY_KEY=.*?;/s)?.[0];
   assert.ok(declarations, 'game storage keys must be derived from the iframe user name');
 
   const keysFor = (name) => {
@@ -28,9 +28,9 @@ test('Decision Matrix uses distinct save and preference keys for each iframe use
 
 test('Decision Matrix preserves an existing account save before writing the replacement format', async () => {
   const app = await readFile(path.join(root, 'public/decision-matrix/app.js'), 'utf8');
-  const declarations = app.match(/const PLAYER_ID=.*?;\nconst SCOPE=.*?;\nconst KEY=.*?;\nconst PREF=.*?;\nconst LEGACY_KEY=.*?;/s)?.[0];
+  const declarations = app.match(/const PLAYER_ID=.*?;\r?\nconst SCOPE=.*?;\r?\nconst KEY=.*?;\r?\nconst PREF=.*?;\r?\nconst LEGACY_KEY=.*?;/s)?.[0];
   const persistStart = app.indexOf('function persist(){');
-  const persistEnd = app.indexOf('\nfunction toast(', persistStart);
+  const persistEnd = app.search(/\r?\nfunction toast\(/, persistStart);
   const persist = persistStart >= 0 && persistEnd >= 0 ? app.slice(persistStart, persistEnd) : null;
   assert.ok(declarations && persist, 'game must define scoped storage and a save-preserving writer');
 
@@ -67,6 +67,6 @@ test('Decision Matrix is the authenticated fifth game and passes its owner to th
   assert.match(catalog, /id: 'decision-matrix'.*route: '\/games\/decision-matrix'.*cover: '\/decision-matrix\/assets\/boardroom-cartoon\.jpg'/);
   assert.match(app, /<Route path="\/games\/decision-matrix" element={<RequireProfile><GameGate game="decision-matrix"><DecisionMatrixRoute \/><\/GameGate><\/RequireProfile>} \/>/);
   assert.match(route, /name=\{user\.id\}/);
-  assert.match(route, /src="\/decision-matrix\/index\.html"/);
+  assert.match(route, /src=\{`\/decision-matrix\/index\.html\$\{showResult \? '\?showResult=1' : ''\}`\}/);
   assert.match(route, /to="\/app"/);
 });

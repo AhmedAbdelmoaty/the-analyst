@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Clock3, Heart, Pause, Play, RotateCcw, SlidersHorizontal, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock3, Heart, House, Pause, Play, RotateCcw, SlidersHorizontal, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import analystMark from "@/assets/brand/the-analyst-mark.png";
@@ -12,6 +12,7 @@ import { hasLegacyProgress, loadMeta, loadState, saveMeta, saveState, type Meta 
 import { patternFor, pearson } from "./engine/correlation";
 import { gameAudio, type AudioBus, type SoundKind } from "./engine/sound";
 import { nextCountdownTick } from "./engine/audioManifest";
+import { useGamePlatformExit } from "@/lib/useGamePlatformExit";
 
 const patternChoices: { id: Pattern; symbol: string; label: string; detail: string }[] = [
   { id: "up", symbol: "↗", label: "علاقة طردية", detail: "بيزيدوا مع بعض" },
@@ -23,7 +24,7 @@ function IconButton({ label, onClick, children }: { label: string; onClick: () =
   return <button className="btd-icon-button" type="button" aria-label={label} title={label} onClick={onClick}>{children}</button>;
 }
 
-function GameHeader({ state, time, paused, muted, audioVolumes, onPause, onMute, onVolumeChange }: { state: GameState; time?: number; paused: boolean; muted: boolean; audioVolumes: Record<AudioBus, number>; onPause: () => void; onMute: () => void; onVolumeChange: (bus: AudioBus, value: number) => void }) {
+function GameHeader({ state, time, paused, muted, audioVolumes, onPause, onExit, onMute, onVolumeChange }: { state: GameState; time?: number; paused: boolean; muted: boolean; audioVolumes: Record<AudioBus, number>; onPause: () => void; onExit: () => void; onMute: () => void; onVolumeChange: (bus: AudioBus, value: number) => void }) {
   const [audioOpen, setAudioOpen] = useState(false);
   const inChallenge = state.phase === "puzzle" || state.phase === "reveal";
   const timed = inChallenge && !state.practiceAfterCapture;
@@ -38,7 +39,8 @@ function GameHeader({ state, time, paused, muted, audioVolumes, onPause, onMute,
       </div>}
       <img className="btd-brand-mark" src={analystMark} alt="The Analyst" />
       <div className="btd-hud-tools">
-        {(state.phase === "puzzle" || state.phase === "ending") && <IconButton label={paused ? "كمّل اللعبة" : "إيقاف مؤقت"} onClick={onPause}>{paused ? <Play /> : <Pause />}</IconButton>}
+        <IconButton label="العودة إلى الألعاب" onClick={onExit}><House /></IconButton>
+        {!paused && <IconButton label="إيقاف مؤقت" onClick={onPause}><Pause /></IconButton>}
         <IconButton label="إعدادات الصوت" onClick={() => setAudioOpen((open) => !open)}><SlidersHorizontal /></IconButton>
         <IconButton label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</IconButton>
         {audioOpen && <div className="btd-sound-panel" aria-label="مستويات الصوت">
@@ -95,30 +97,17 @@ function MarketStage({ mood = "calm", className = "", speaker, briefingStep }: {
   );
 }
 
-function useCountdown(active: boolean, paused: boolean, onTimeout: () => void) {
-  const [seconds, setSeconds] = useState(ROUND_SECONDS);
-  const callback = useRef(onTimeout);
-  callback.current = onTimeout;
-  useEffect(() => {
-    if (!active) {
-      setSeconds(ROUND_SECONDS);
-      return;
-    }
-  }, [active]);
+function useCountdown(active: boolean, paused: boolean, seconds: number, onTick: () => void, onTimeout: () => void) {
+  const tick = useRef(onTick);
+  const timeout = useRef(onTimeout);
+  tick.current = onTick;
+  timeout.current = onTimeout;
   useEffect(() => {
     if (!active || paused) return;
-    const id = window.setInterval(() => {
-      setSeconds((left) => {
-        if (left <= 1) {
-          window.clearInterval(id);
-          return 0;
-        }
-        return left - 1;
-      });
-    }, 1000);
+    const id = window.setInterval(() => tick.current(), 1000);
     return () => window.clearInterval(id);
   }, [active, paused]);
-  useEffect(() => { if (active && !paused && seconds === 0) callback.current(); }, [active, paused, seconds]);
+  useEffect(() => { if (active && !paused && seconds === 0) timeout.current(); }, [active, paused, seconds]);
   return active ? seconds : undefined;
 }
 
@@ -219,35 +208,41 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   useEffect(() => { if (loaded) saveState(window.localStorage, userId, state); }, [state, loaded, userId]);
   useEffect(() => { setTutorialPlacementError(false); }, [state.phase, state.tutorialStep]);
   useEffect(() => {
-    const onVisibility = () => { if (document.hidden) rawDispatch({ type: "pause" }); };
+    const onVisibility = () => {
+      if (!document.hidden) return;
+      clearDelayedAudio();
+      rawDispatch({ type: "pause" });
+    };
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, []);
+  }, [clearDelayedAudio]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); }, [state.phase, state.caseIndex]);
   useEffect(() => {
-    if (state.phase !== "briefing") return;
-    setSpokenChars(0);
+    if (state.phase === "briefing") setSpokenChars(0);
+  }, [state.phase, state.briefingStep]);
+  useEffect(() => {
+    if (state.phase !== "briefing" || state.paused) return;
     const length = Array.from(BRIEFING[state.briefingStep]!.text).length;
     const id = window.setInterval(() => setSpokenChars((count) => {
       if (count >= length) { window.clearInterval(id); return count; }
       return count + 1;
     }), 24);
     return () => window.clearInterval(id);
-  }, [state.phase, state.briefingStep]);
+  }, [state.phase, state.briefingStep, state.paused]);
   useEffect(() => {
-    if (state.phase !== "puzzle") { setReadyCase(null); return; }
+    if (state.phase !== "puzzle" || state.paused) { if (state.phase !== "puzzle") setReadyCase(null); return; }
     setReadyCase(null);
     const id = window.setTimeout(() => setReadyCase(state.caseIndex), 700);
     return () => window.clearTimeout(id);
-  }, [state.phase, state.caseIndex]);
+  }, [state.phase, state.caseIndex, state.paused]);
   useEffect(() => {
-    if (!isReveal || !reactionVisible) return;
+    if (!isReveal || !reactionVisible || state.paused) return;
     const id = window.setTimeout(() => {
       if (stateRef.current.hearts === 0) dispatchRef.current({ type: "attach" });
       else setReactionVisible(false);
     }, revealResult?.timedOut ? 2900 : 2450);
     return () => window.clearTimeout(id);
-  }, [isReveal, caseIndex, revealResult?.timedOut, reactionVisible]);
+  }, [isReveal, caseIndex, revealResult?.timedOut, reactionVisible, state.paused]);
   useEffect(() => {
     if (!isReveal) { revealAudioKey.current = null; return; }
     if (revealPoints === undefined || revealTimedOut === undefined) return;
@@ -295,6 +290,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
       if (action.type === "openCase") gameAudio.play("notebook");
       else if (nextSpeaker === "glitch") gameAudio.play("glitchEntrance");
     } else if (action.type === "pause") {
+      clearDelayedAudio();
       gameAudio.stop("countdownTick");
       gameAudio.stop("footstep");
     } else if (action.type === "replay") {
@@ -306,6 +302,13 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
     if (action.type === "skipTutorial" && after.phase === "puzzle" && !meta.tutorialDone) updateMeta({ tutorialDone: true });
     rawDispatch(action);
   };
+  const exitGame = useGamePlatformExit(() => {
+    const pausedState = reducer(stateRef.current, { type: "pause" });
+    saveState(window.localStorage, userId, pausedState);
+    rawDispatch({ type: "pause" });
+    clearDelayedAudio();
+    gameAudio.pause();
+  });
   dispatchRef.current = dispatch;
 
   const finishEnding = useCallback(() => {
@@ -325,7 +328,13 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   useEffect(() => () => { clearDelayedAudio(); gameAudio.dispose(); }, [clearDelayedAudio]);
 
   const challengeReady = state.phase === "puzzle" && readyCase === state.caseIndex;
-  const time = useCountdown(challengeReady && !state.practiceAfterCapture, state.paused, () => dispatch({ type: "timeout" }));
+  const time = useCountdown(
+    challengeReady && !state.practiceAfterCapture,
+    state.paused,
+    state.remainingSeconds,
+    () => dispatch({ type: "setTimer", seconds: Math.max(0, stateRef.current.remainingSeconds - 1) }),
+    () => dispatch({ type: "timeout" }),
+  );
   timeRef.current = time;
   const ticking = challengeReady && state.phase === "puzzle" && !state.practiceAfterCapture;
   const lastTick = useRef<number | null>(null);
@@ -354,8 +363,8 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
       <div className="btd-app-backdrop" />
       <div className="btd-shell">
         <MarketStage mood={worldMood} speaker={speaker} briefingStep={state.phase === "cover" ? -1 : state.phase === "briefing" ? state.briefingStep : undefined} className="btd-world" />
-        {(state.phase === "puzzle" || state.phase === "reveal" || state.phase === "tutorial" || state.phase === "tutorialReady" || state.phase === "recommendation" || state.phase === "ending") && (
-          <GameHeader state={state} time={state.phase === "reveal" ? settledTime : time} paused={state.paused} muted={meta.muted} audioVolumes={{ music: meta.musicVolume, sfx: meta.sfxVolume, ambience: meta.ambienceVolume }} onPause={() => dispatch({ type: "pause" })} onMute={() => updateMeta({ muted: !meta.muted })} onVolumeChange={(bus, value) => {
+        {state.phase !== "cover" && state.phase !== "debrief" && (
+          <GameHeader state={state} time={state.phase === "reveal" ? settledTime : time} paused={state.paused} muted={meta.muted} audioVolumes={{ music: meta.musicVolume, sfx: meta.sfxVolume, ambience: meta.ambienceVolume }} onPause={() => dispatch({ type: "pause" })} onExit={exitGame} onMute={() => updateMeta({ muted: !meta.muted })} onVolumeChange={(bus, value) => {
             if (bus === "music") updateMeta({ musicVolume: value });
             else if (bus === "sfx") updateMeta({ sfxVolume: value });
             else updateMeta({ ambienceVolume: value });
@@ -526,7 +535,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
         {state.phase === "ending" && state.ending && <EndingSequence ending={state.ending} paused={state.paused} onComplete={finishEnding} />}
         {state.phase === "debrief" && state.ending && <Results state={state} onReplay={() => dispatch({ type: "replay" })} />}
 
-        {state.paused && <div className="btd-pause-overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title"><div className="btd-pause-card"><span className="btd-eyebrow">وقفة صغيرة</span><h2 id="pause-title">دوتّي مستنية</h2><p>الوقت وقف. كل حاجة محفوظة.</p><button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "resume" })}><Play /> كمّل اللعب</button></div></div>}
+        {state.paused && <div className="btd-pause-overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title"><div className="btd-pause-card"><span className="btd-eyebrow">وقفة صغيرة</span><h2 id="pause-title">دوتّي مستنية</h2><p>الوقت وقف. كل حاجة محفوظة.</p><button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "resume" })}><Play /> كمّل اللعب</button><button className="btd-button btd-button-quiet" onClick={exitGame}>ارجع للألعاب <ArrowRight /></button></div></div>}
       </div>
     </div>
   );

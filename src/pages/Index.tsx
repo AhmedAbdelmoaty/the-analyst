@@ -42,6 +42,7 @@ import { PauseOverlay } from "@/components/game/PauseOverlay";
 import { TimeUpScreen } from "@/components/game/screens/TimeUpScreen";
 import { AnalystBrandIntroScreen } from "@/components/game/AnalystBrandIntroScreen";
 import { PlayerSettingsPanel } from "@/components/game/PlayerSettingsPanel";
+import { useGamePlatformExit } from "@/lib/useGamePlatformExit";
 import { PFGameProvider, usePFGame } from "@/contexts/PFGameContext";
 import { ScreenTransition } from "@/components/game/ScreenTransition";
 import { ProgressTimeline } from "@/components/game/ProgressTimeline";
@@ -193,6 +194,7 @@ const GameContent = () => {
     pauseGame();
     pauseTimeChallenge(uid);
   }, [saveNow, uid]);
+  const exitGame = useGamePlatformExit(doPause);
 
   useEffect(() => {
     const onLost = () => {
@@ -374,13 +376,14 @@ const GameContent = () => {
       {showTimer && challenge && <TimeChallengeBar challenge={challenge} belowTimeline={showTimeline} />}
 
       {(paused || stale) && pausable && (
-        <PauseOverlay onContinue={handleContinue} updatePending={updatePending && !stale} onUpdate={handleUpdateNow} />
+        <PauseOverlay onContinue={handleContinue} onExit={exitGame} updatePending={updatePending && !stale} onUpdate={handleUpdateNow} />
       )}
 
       {showSettings && (
         <PlayerSettingsPanel
           onReplayBriefing={handleReplayBriefing}
           onResetProgress={handleResetProgress}
+          onExit={exitGame}
         />
       )}
 

@@ -16,6 +16,7 @@ const avatar=(who,cls='')=>`<span class="avatar avatar-${who} ${cls||''}" style=
 const freshCase=i=>({index:i,mode:'intro',line:0,seen:[],picks:levels[i].rows.map(()=>-1),crosses:[],checked:[],hints:0,attempts:0,solved:false,choice:-1,notes:'',crmReceived:false,storyRevision:levels[i].meeting?.revision||0});
 const fresh=()=>({version:1,started:false,current:freshCase(0),completed:[],totalAttempts:0,totalHints:0,elapsed:0});
 let state=fresh(),prefs={sound:false,voice:true,motion:!matchMedia('(prefers-reduced-motion: reduce)').matches,timer:false},saved=false;
+const showSavedResult=new URLSearchParams(location.search).get('showResult')==='1';
 try{const p=JSON.parse(localStorage.getItem(PREF));if(p)Object.keys(prefs).forEach(k=>{if(typeof p[k]==='boolean')prefs[k]=p[k];});const s=JSON.parse(localStorage.getItem(KEY));if(window.DM_MEETING.canLoad(s,levels)){state=s;saved=!!s.started;}}catch{}
 window.DM_MEETING.normalizeProgress(state,levels,freshCase);
 let home=true,modal=null,evidenceId=null,typing=null,typedFull='',typingDone=true,toastTimer,audio,returnFocus=null;
@@ -957,6 +958,7 @@ function sceneVoiceContext(){
  return null;
 }
 function syncSceneVoice(){
+ if(document.hidden)return;
  if(c().mode==='reaction'&&!home)return;
  const clip=sceneVoiceContext(),key=clip?clip.id+':'+prefs.voice:'';
  if(key===sceneVoiceKey)return;
@@ -1047,7 +1049,7 @@ switch(action){
 document.addEventListener('input',event=>{if(event.target.id==='notes'){c().notes=event.target.value.slice(0,5000);persist();}});
 document.addEventListener('keydown',event=>{lastUserAction=Date.now();if(modal||home)return;if((event.key===' '||event.key==='Enter')&&c().mode==='intro'&&!event.target.closest('button,textarea')){event.preventDefault();next();}});
 setInterval(()=>{if(!home&&!modal&&document.visibilityState==='visible'&&Date.now()-lastUserAction<90000&&c().mode!=='finished'){state.elapsed++;const clock=$('[data-clock]');if(clock)clock.textContent=duration(state.elapsed);if(state.elapsed%10===0)persist();}},1000);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){stopVoice();sceneVoiceKey='';if(!home&&!modal)render();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopVoice('paused');clearInterval(typing);typing=null;} });
 window.addEventListener('beforeunload',()=>{stopVoice();if(state.started)persist();});
-render();
+if(showSavedResult&&saved&&state.completed.length>=levels.length){home=false;render();openModal('finish')}else render();
 })();

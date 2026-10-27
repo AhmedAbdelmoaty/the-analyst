@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useGamePlatformExit } from '@/lib/useGamePlatformExit';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { FileText, ClipboardList, NotebookPen, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -51,7 +51,6 @@ const ROOM_PHASES: RewardRun['phase'][] = ['workbench', 'notebook', 'report'];
 export default function RewardDecisionGame() {
   const { user, profile } = useAuth();
   const { playSound } = useSound();
-  const navigate = useNavigate();
   const uid = user?.id ?? '';
   const initial = useRef(inspectRun(uid));
   const [run, setRun] = useState<RewardRun>(() => initial.current.status === 'ok' ? initial.current.run : newRun(uid));
@@ -179,7 +178,10 @@ export default function RewardDecisionGame() {
   });
   const sent = useCallback(() => commit(r => r.phase === 'report' && r.stage === 'sending' ? { ...at(r, 'resolution', 'office'), endingCall: 0, callAnswered: false } : r), [commit]);
   const takeControl = () => { takeOwnership(); const result = inspectRun(uid); const latest = result.status === 'ok' && result.run.runId === runRef.current.runId && result.run.revision >= runRef.current.revision ? result.run : runRef.current; const next = { ...latest, paused: false, revision: latest.revision + 1 }; runRef.current = next; setRun(next); setOtherTab(false); persist(next); };
-  const exit = () => { commit(r => ({ ...r, paused: r.phase !== 'cover' && r.phase !== 'debrief' })); releaseOwnership(); navigate('/app'); };
+  const exit = useGamePlatformExit(() => {
+    commit(r => ({ ...r, paused: r.phase !== 'cover' && r.phase !== 'debrief' }));
+    releaseOwnership();
+  });
   const replay = () => { clearRun(uid); start(); };
   const frozen = run.paused || otherTab;
   useEffect(() => { if (frozen) setFlyingDoc(null); }, [frozen]);
@@ -230,7 +232,7 @@ export default function RewardDecisionGame() {
     {fileOpen && <CaseFile docs={run.collectedDocs} tools={run.usedTools} submitted={run.submitted} onClose={closeFile} />}
     {focusDoc && <DocumentReader id={focusDoc} onClose={closeDocument} />}
     {otherTab && run.phase !== 'cover' && <OtherTabLayer onTake={takeControl} />}
-    {!otherTab && run.paused && run.phase !== 'cover' && <PauseLayer onContinue={() => commit(r => ({ ...r, paused: false }))} />}
+    {!otherTab && run.paused && run.phase !== 'cover' && <PauseLayer onContinue={() => commit(r => ({ ...r, paused: false }))} onExit={exit} />}
     {!storageOk && <div className="rd-storage-warning">الاستكمال بعد إغلاق الصفحة غير متاح حاليًا.</div>}
   </main></MotionConfig>;
 }

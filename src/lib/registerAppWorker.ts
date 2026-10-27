@@ -1,15 +1,16 @@
 import { registerSW } from 'virtual:pwa-register';
+import { isGameRoute } from './gameRoutes';
 
 /**
- * Installed-app updates: detection on open/return, kept pending while a round
- * is on screen, applied at the next safe point (any route outside /play) or by
+ * Installed-app updates: detection on open/return, kept pending while a game
+ * is on screen, applied at the next safe point or by
  * the player's explicit "update now".
  */
 let pending = false;
 let apply: ((reload?: boolean) => Promise<void>) | null = null;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
-const inRound = () => location.pathname.startsWith('/play') || location.pathname.startsWith('/games/reward-decision');
+const inRound = () => isGameRoute(location.pathname);
 
 export const isUpdatePending = () => pending;
 export function subscribeUpdate(fn: () => void) { listeners.add(fn); return () => { listeners.delete(fn); }; }

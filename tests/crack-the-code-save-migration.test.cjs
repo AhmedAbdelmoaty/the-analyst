@@ -7,7 +7,7 @@ const gameRoot = path.resolve(__dirname, '..', 'public/crack-the-code');
 const puzzlesSource = fs.readFileSync(path.join(gameRoot, 'puzzles.js'), 'utf8');
 const fullGameSource = fs.readFileSync(path.join(gameRoot, 'game.js'), 'utf8');
 const gameSource = fullGameSource.split('function beep')[0];
-assert.match(fullGameSource, /class="platform-brand" href="\/app"/, 'platform logo returns to the internal /app route');
+assert.match(fullGameSource, /class="platform-brand" href="\/app" target="_top" onclick="persist\(\)"/, 'platform logo saves the session and navigates the top-level window to /app');
 
 function loadPlayer(playerId, initialValues = {}) {
   const values = new Map(Object.entries(initialValues));
