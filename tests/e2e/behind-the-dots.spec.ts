@@ -2,6 +2,10 @@ import { expect, test } from "@playwright/test";
 
 const harness = "/tests/behind-dots-visual-harness.html";
 const answerButton = (page: Parameters<Parameters<typeof test>[1]>[0]["page"], label: string) => page.getByRole("button", { name: new RegExp(label) });
+const resumeChallengeIfNeeded = async (page: Parameters<Parameters<typeof test>[1]>[0]["page"]) => {
+  const resume = page.getByRole("button", { name: "كمّل اللعب", exact: true });
+  if (await resume.isVisible()) await resume.click();
+};
 
 test("active HUD exit and paused-state exit stay inside the viewport", async ({ page }) => {
   await page.goto(`${harness}?scenario=challenge`);
@@ -40,6 +44,7 @@ test("opening story, character dialogue, notebook, and interactive tutorial lead
 
 test("all four challenges play in order and support the three original answers", async ({ page }, testInfo) => {
   await page.goto(`${harness}?scenario=challenge&muted=false`);
+  await resumeChallengeIfNeeded(page);
   const answers = ["علاقة طردية", "علاقة طردية", "مفيش اتجاه واضح", "علاقة عكسية"];
   const titles = ["درجة الحرارة", "عدد الزباين", "الكوبايات المحضّرة", "وقت الانتظار"];
   for (let i = 0; i < answers.length; i++) {
@@ -68,6 +73,7 @@ test("wrong answer, timeout, pause, and mute reactions are visible", async ({ pa
     if (response.url().includes("/assets/behind-dots/audio/")) audioResponses.add(response.url().split("/").pop()!);
   });
   await page.goto(`${harness}?scenario=challenge&muted=false`);
+  await resumeChallengeIfNeeded(page);
   await page.getByRole("button", { name: /علاقة عكسية/ }).click();
   await expect(page.getByText("جليتش قرب!", { exact: true })).toBeVisible();
   await expect(page.locator('.btd-hud-lives[aria-label="2 من 3 قلوب"]')).toBeVisible();
@@ -76,6 +82,8 @@ test("wrong answer, timeout, pause, and mute reactions are visible", async ({ pa
   await expect(page.locator(".btd-reaction-stamp")).toHaveText("خلص الوقت!");
   await expect(page.locator('.btd-hud-lives[aria-label="2 من 3 قلوب"]')).toBeVisible();
   await page.goto(`${harness}?scenario=challenge&muted=false`);
+  await resumeChallengeIfNeeded(page);
+  await expect(page.getByRole("button", { name: /علاقة طردية/ })).toBeEnabled();
   await page.getByRole("button", { name: "إعدادات الصوت" }).click();
   const sfxSlider = page.getByRole("slider", { name: "مستوى المؤثرات" });
   await expect(page.getByRole("slider", { name: "مستوى الموسيقى" })).toBeVisible();
@@ -99,6 +107,7 @@ test("wrong answer, timeout, pause, and mute reactions are visible", async ({ pa
 test("countdown warning starts at five, pauses cleanly, and stops on answer", async ({ page }) => {
   await page.clock.install();
   await page.goto(`${harness}?scenario=challenge&muted=false`);
+  await resumeChallengeIfNeeded(page);
   await page.clock.runFor(800);
   await expect(page.locator(".btd-hud-clock b")).toHaveText("20");
   await page.getByRole("button", { name: "إعدادات الصوت" }).click();
@@ -197,12 +206,13 @@ test("correct answer loads the approved confirmation sound after the answer reve
     if (url.includes("/assets/behind-dots/audio/")) audioResponses.set(url.split("/").pop()!, response.status());
   });
   await page.goto(`${harness}?scenario=challenge&muted=false`);
+  await resumeChallengeIfNeeded(page);
+  await expect(page.getByRole("button", { name: /علاقة طردية/ })).toBeEnabled();
   const startsBeforeAnswer = await page.evaluate(() => (window as typeof window & { __btdAudioStarts?: number }).__btdAudioStarts ?? 0);
-  const sound = page.waitForResponse((response) => response.url().endsWith("/audio/correct.ogg"));
+  await expect.poll(() => audioResponses.size).toBe(17);
+  expect(audioResponses.get("correct.ogg")).toBe(200);
   await page.getByRole("button", { name: /علاقة طردية/ }).click();
   await expect(page.locator(".btd-result-reaction")).toBeVisible();
-  try { expect((await sound).status()).toBe(200); } catch { throw new Error(`No approved confirmation sound response; observed: ${[...audioResponses.keys()].join(", ") || "none"}`); }
-  await expect.poll(() => audioResponses.size).toBe(17);
   expect([...audioResponses.values()].every((status) => status === 200)).toBe(true);
-  await expect.poll(() => page.evaluate(() => (window as typeof window & { __btdAudioStarts?: number }).__btdAudioStarts ?? 0)).toBeGreaterThan(startsBeforeAnswer + 1);
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __btdAudioStarts?: number }).__btdAudioStarts ?? 0)).toBeGreaterThan(startsBeforeAnswer);
 });

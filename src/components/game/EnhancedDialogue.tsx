@@ -665,6 +665,20 @@ export const EnhancedDialogue = ({
                   />
                 )}
               </p>
+              {isTyping && (
+                <motion.button
+                  type="button"
+                  onClick={handleNext}
+                  className={`mt-2 rounded-md border px-3 py-1.5 text-xs font-bold transition-colors ${
+                    isAnalyst
+                      ? "border-game-line bg-game-paper text-game-ink hover:border-primary hover:text-primary"
+                      : "border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
+                  }`}
+                  aria-label="إظهار النص كاملًا"
+                >
+                  إظهار النص كاملًا
+                </motion.button>
+              )}
             </div>
           </div>
 

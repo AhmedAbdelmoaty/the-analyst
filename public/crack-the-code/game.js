@@ -15,7 +15,7 @@ const PLAYER_ID=window.name||'guest';
 const SAVE_KEY=`analyst-crack-the-code-v2:${PLAYER_ID}`;
 const LEGACY_SAVE_KEY=`analyst-crack-the-code-v1:${PLAYER_ID}`;
 let saved={},migratedLegacySave=false;try{saved=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(!saved){const legacy=JSON.parse(localStorage.getItem(LEGACY_SAVE_KEY)||'null');if(legacy){saved={prefs:legacy.prefs,progress:legacy.progress,tutorialDone:legacy.tutorialDone};migratedLegacySave=true}}saved||={}}catch{saved={}}
-let prefs={lang:'ar',sound:false,volume:.55,crowd:true,motion:true,...saved.prefs}, progress=saved.progress||{},tutorialDone=!!saved.tutorialDone;
+let prefs={lang:'ar',sound:false,volume:.55,crowd:true,motion:!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,...saved.prefs}, progress=saved.progress||{},tutorialDone=!!saved.tutorialDone;
 if(!prefs.egyptianCopy){prefs.lang='ar';prefs.egyptianCopy=true}
 const L=(en,ar)=>prefs.lang==='ar'?ar:en;
 let introOpen=false;
