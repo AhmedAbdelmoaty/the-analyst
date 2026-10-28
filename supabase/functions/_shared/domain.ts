@@ -31,4 +31,4 @@ export function entitledAt(starts: string, expires: string, revoked: string | nu
 }
 
 /** Explicit source gate: credentials or browser flags alone cannot enable checkout. */
-export const PAYMOB_ROLLOUT_APPROVED = false;
+export const PAYMOB_ROLLOUT_APPROVED = true;
