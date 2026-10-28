@@ -64,6 +64,8 @@ const App = () => (
             <Route path="/plans/choose" element={<Navigate to="/plans" replace />} />
             <Route path="/subscription" element={<MySubscription />} />
             <Route path="/subscription/return" element={<PaymentReturn />} />
+            {/* Paymob dashboard redirect alias; display-only, never grants access. */}
+            <Route path="/checkout/paymob/payment/success" element={<PaymentReturn />} />
             <Route path="/subscription/summary" element={<RequireProfile><SubscriptionSummary /></RequireProfile>} />
             <Route path="/setup" element={<Setup />} />
             <Route path="/profile/work" element={<RequireProfile><WorkDetails /></RequireProfile>} />
