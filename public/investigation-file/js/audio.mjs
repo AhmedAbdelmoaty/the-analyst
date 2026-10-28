@@ -6,6 +6,8 @@ export const SOUND_CUES = Object.freeze({
   clipAttach: 'woosh.mp3',
   actualDistribution: 'sweep.mp3',
   tryDistribution: 'hospital-ding.mp3',
+  mixAdjustment: 'click.mp3',
+  proofPin: 'woosh.mp3',
   success: 'win.mp3',
   successAccent: 'confettipop.mp3',
   failure: 'lose.mp3',

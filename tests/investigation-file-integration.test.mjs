@@ -56,6 +56,8 @@ test('owner-scoped progress distinguishes an attempt from either ending', async 
   finishRun('user-a', 'failure', storage);
   assert.deepEqual(readRun('user-a', storage), { version: 1, status: 'completed', outcome: 'failure' });
   assert.equal(saveKey('user-a'), 'the-analyst:investigation-file:v1:user-a');
+  finishRun('user-a', 'failure', storage, 'causation');
+  assert.deepEqual(readRun('user-a', storage), { version: 1, status: 'completed', outcome: 'failure', failureReason: 'causation' });
 });
 
 test('the public game bundle has no Flask template dependencies', async () => {
@@ -63,4 +65,66 @@ test('the public game bundle has no Flask template dependencies', async () => {
   assert.match(html, /\/investigation-file\/css\/investigation\.css/);
   assert.match(html, /\/investigation-file\/js\/investigation\.mjs/);
   assert.doesNotMatch(html, /url_for\(|\{\{\s*static/);
+});
+
+test('counterfactual mixes update independently and any shared mix reveals the reversal', async () => {
+  const { records, originalRates, counterfactualRates } = await import('../public/investigation-file/js/case-data.mjs');
+  const at25 = counterfactualRates(0.25, 0.25);
+  assert.ok(Math.abs(at25.trained - 0.35) < 1e-12);
+  assert.ok(Math.abs(at25.untrained - 0.2625) < 1e-12);
+  assert.deepEqual(counterfactualRates(0.5, 0.5), { trained: 0.5, untrained: 0.425 });
+  assert.deepEqual(counterfactualRates(0, 1), { trained: 0.2, untrained: 0.75 });
+  for (const mix of [0, 0.01, 0.25, 0.5, 6 / 7, 0.99, 1]) {
+    const rates = counterfactualRates(mix, mix);
+    assert.ok(rates.trained > rates.untrained, `shared mix ${mix} should reverse the aggregate direction`);
+  }
+  assert.ok(Math.abs(counterfactualRates(0.25, 0).trained - 0.35) < 1e-12);
+  assert.equal(counterfactualRates(0.25, 0).untrained, 0.1);
+  assert.deepEqual(originalRates, { trained: 0.35, untrained: 460 / 700 });
+  assert.deepEqual(records.map(({ promoted, total }) => [promoted, total]), [[80, 100], [450, 600], [60, 300], [10, 100]]);
+  assert.throws(() => counterfactualRates(-0.01, 0.5), RangeError);
+  assert.throws(() => counterfactualRates(0.5, Number.NaN), RangeError);
+});
+
+test('a cautious decision with missing evidence returns requirements instead of a loss', async () => {
+  const { resolveVerdict } = await import('../public/investigation-file/js/engine.mjs');
+  const result = resolveVerdict({ pairs: [], sawOriginal: false }, 'pause-review', {});
+  assert.equal(result.status, 'needs-evidence');
+  assert.ok(result.missing.length > 0);
+  assert.notEqual(result.status, 'failure');
+});
+
+test('the final objection needs both fair comparisons, historic mix, and a valid shared-mix replay', async () => {
+  const { resolveVerdict } = await import('../public/investigation-file/js/engine.mjs');
+  const evidence = {
+    pairs: [['jt', 'ju'], ['st', 'su']],
+    sawOriginal: true,
+    simulation: { trainedJuniorShare: 0.25, untrainedJuniorShare: 0.25, observed: true },
+  };
+  const argument = {
+    comparisons: ['junior-comparison', 'senior-comparison'],
+    composition: 'historical-distribution',
+    replay: 'shared-mix-result',
+  };
+  assert.deepEqual(resolveVerdict(evidence, 'pause-review', argument), { status: 'success' });
+  assert.equal(resolveVerdict(evidence, 'cancel-program', argument).status, 'failure');
+  assert.equal(resolveVerdict(evidence, 'claim-causation', argument).status, 'failure');
+  assert.equal(resolveVerdict(evidence, 'pause-review', { ...argument, composition: 'aggregate-rate' }).status, 'needs-evidence');
+  assert.equal(resolveVerdict({ ...evidence, simulation: { ...evidence.simulation, untrainedJuniorShare: 0.85 } }, 'pause-review', argument).status, 'needs-evidence');
+  assert.equal(resolveVerdict({ ...evidence, pairs: [['jt', 'su'], ['st', 'ju']] }, 'pause-review', argument).status, 'needs-evidence');
+  assert.equal(resolveVerdict({ ...evidence, pairs: [['jt', 'ju'], ['jt', 'ju'], ['st', 'su']] }, 'pause-review', argument).status, 'needs-evidence');
+});
+
+test('missing comparison feedback names only the level that was not compared', async () => {
+  const { missingObjectionEvidence } = await import('../public/investigation-file/js/engine.mjs');
+  const argument = {};
+  const seniorOnlyMissing = missingObjectionEvidence({ pairs: [['st', 'su'], []] }, argument);
+  assert.ok(seniorOnlyMissing.includes('junior-comparison'));
+  assert.ok(!seniorOnlyMissing.includes('senior-comparison'));
+  const juniorOnlyMissing = missingObjectionEvidence({ pairs: [[], ['jt', 'ju']] }, argument);
+  assert.ok(juniorOnlyMissing.includes('senior-comparison'));
+  assert.ok(!juniorOnlyMissing.includes('junior-comparison'));
+  const malformedOtherClip = missingObjectionEvidence({ pairs: [['jt', 'ju'], ['jt', 'su']] }, argument);
+  assert.ok(malformedOtherClip.includes('senior-comparison'));
+  assert.ok(!malformedOtherClip.includes('junior-comparison'));
 });
