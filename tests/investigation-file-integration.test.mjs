@@ -86,45 +86,17 @@ test('counterfactual mixes update independently and any shared mix reveals the r
   assert.throws(() => counterfactualRates(0.5, Number.NaN), RangeError);
 });
 
-test('a cautious decision with missing evidence returns requirements instead of a loss', async () => {
-  const { resolveVerdict } = await import('../public/investigation-file/js/engine.mjs');
-  const result = resolveVerdict({ pairs: [], sawOriginal: false }, 'pause-review', {});
-  assert.equal(result.status, 'needs-evidence');
-  assert.ok(result.missing.length > 0);
-  assert.notEqual(result.status, 'failure');
-});
-
-test('the final objection needs both fair comparisons, historic mix, and a valid shared-mix replay', async () => {
-  const { resolveVerdict } = await import('../public/investigation-file/js/engine.mjs');
-  const evidence = {
-    pairs: [['jt', 'ju'], ['st', 'su']],
-    sawOriginal: true,
-    simulation: { trainedJuniorShare: 0.25, untrainedJuniorShare: 0.25, observed: true },
-  };
-  const argument = {
-    comparisons: ['junior-comparison', 'senior-comparison'],
-    composition: 'historical-distribution',
-    replay: 'shared-mix-result',
-  };
-  assert.deepEqual(resolveVerdict(evidence, 'pause-review', argument), { status: 'success' });
-  assert.equal(resolveVerdict(evidence, 'cancel-program', argument).status, 'failure');
-  assert.equal(resolveVerdict(evidence, 'claim-causation', argument).status, 'failure');
-  assert.equal(resolveVerdict(evidence, 'pause-review', { ...argument, composition: 'aggregate-rate' }).status, 'needs-evidence');
-  assert.equal(resolveVerdict({ ...evidence, simulation: { ...evidence.simulation, untrainedJuniorShare: 0.85 } }, 'pause-review', argument).status, 'needs-evidence');
-  assert.equal(resolveVerdict({ ...evidence, pairs: [['jt', 'su'], ['st', 'ju']] }, 'pause-review', argument).status, 'needs-evidence');
-  assert.equal(resolveVerdict({ ...evidence, pairs: [['jt', 'ju'], ['jt', 'ju'], ['st', 'su']] }, 'pause-review', argument).status, 'needs-evidence');
-});
-
-test('missing comparison feedback names only the level that was not compared', async () => {
-  const { missingObjectionEvidence } = await import('../public/investigation-file/js/engine.mjs');
-  const argument = {};
-  const seniorOnlyMissing = missingObjectionEvidence({ pairs: [['st', 'su'], []] }, argument);
-  assert.ok(seniorOnlyMissing.includes('junior-comparison'));
-  assert.ok(!seniorOnlyMissing.includes('senior-comparison'));
-  const juniorOnlyMissing = missingObjectionEvidence({ pairs: [[], ['jt', 'ju']] }, argument);
-  assert.ok(juniorOnlyMissing.includes('senior-comparison'));
-  assert.ok(!juniorOnlyMissing.includes('junior-comparison'));
-  const malformedOtherClip = missingObjectionEvidence({ pairs: [['jt', 'ju'], ['jt', 'su']] }, argument);
-  assert.ok(malformedOtherClip.includes('senior-comparison'));
-  assert.ok(!malformedOtherClip.includes('junior-comparison'));
+test('V2.1 requires two saved same-level comparisons and a consistent decision with justification', async () => {
+  const { resolveVerdict, hasSupportingComparisons } = await import('../public/investigation-file/js/engine.mjs');
+  const savedPairs = [['jt', 'ju'], ['st', 'su']];
+  assert.equal(hasSupportingComparisons(savedPairs), true);
+  assert.deepEqual(resolveVerdict({ savedPairs }, 'pause-review', 'composition'), { status: 'success' });
+  assert.equal(resolveVerdict({ savedPairs: [savedPairs[0], []] }, 'pause-review', 'composition').status, 'needs-evidence');
+  assert.equal(resolveVerdict({ savedPairs: [['jt', 'su'], savedPairs[1]] }, 'pause-review', 'composition').status, 'needs-evidence');
+  assert.equal(resolveVerdict({ savedPairs: [savedPairs[0], savedPairs[0]] }, 'pause-review', 'composition').status, 'needs-evidence');
+  assert.equal(resolveVerdict({ savedPairs }, 'pause-review', 'aggregate').status, 'failure');
+  assert.equal(resolveVerdict({ savedPairs }, 'cancel-program', 'composition').status, 'failure');
+  assert.equal(resolveVerdict({ savedPairs }, 'claim-causation', 'causation').reason, 'causation');
+  assert.equal(resolveVerdict({ savedPairs }, 'pause-review', null).status, 'needs-choice');
+  assert.equal(resolveVerdict({ savedPairs, simulation: null }, 'pause-review', 'composition').status, 'success');
 });

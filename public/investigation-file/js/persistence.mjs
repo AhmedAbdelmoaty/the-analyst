@@ -9,7 +9,7 @@ export function readRun(userId, storage = globalThis.localStorage) {
     const value = JSON.parse(storage.getItem(saveKey(userId)) || 'null');
     if (!value || value.version !== 1 || !['in-progress', 'completed'].includes(value.status)) return { status: 'new' };
     if (value.status === 'completed' && OUTCOMES.has(value.outcome)) {
-      const validFailureReason = ['causation', 'unsupported-decision'].includes(value.failureReason) ? value.failureReason : undefined;
+      const validFailureReason = ['causation', 'aggregate', 'unsupported-decision'].includes(value.failureReason) ? value.failureReason : undefined;
       return {
         version: 1,
         status: 'completed',
@@ -34,7 +34,7 @@ export function beginRun(userId, storage = globalThis.localStorage) {
 
 export function finishRun(userId, outcome, storage = globalThis.localStorage, failureReason) {
   if (!OUTCOMES.has(outcome)) return;
-  const validFailureReason = ['causation', 'unsupported-decision'].includes(failureReason) ? failureReason : undefined;
+  const validFailureReason = ['causation', 'aggregate', 'unsupported-decision'].includes(failureReason) ? failureReason : undefined;
   writeRun(userId, {
     version: 1,
     status: 'completed',
