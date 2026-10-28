@@ -34,9 +34,9 @@ export function safeCheckoutUrl(value: unknown): string {
   return url.toString();
 }
 
-export async function initiateCheckout(requestKey: string, billing: { email: string; city: string; country: string; street: string }) {
+export async function initiateCheckout(requestKey: string) {
   if (!PAYMENT_UI_ENABLED) throw new Error("payment_disabled");
-  const { data, error } = await supabase.functions.invoke("paymob-checkout", { body: { requestKey, billing } });
+  const { data, error } = await supabase.functions.invoke("paymob-checkout", { body: { requestKey } });
   if (error?.context instanceof Response) {
     const payload = await error.context.clone().json().catch(() => null);
     if (typeof payload?.orderId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.orderId)) throw new CheckoutPendingError(payload.orderId);

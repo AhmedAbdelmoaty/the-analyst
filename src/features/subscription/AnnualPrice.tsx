@@ -10,10 +10,6 @@ export function AnnualPriceDisplay({ price }: { price: AnnualDisplayPrice | null
       <strong className="text-4xl font-bold leading-tight text-primary sm:text-5xl"><bdi dir="ltr">{price.amount}</bdi></strong>
       <span className="text-base font-semibold text-foreground">جنيه مصري / سنة</span>
     </div>
-    {price.discounted && <p className="mt-2 text-sm text-muted-foreground">
-      السعر الأساسي <del className="mx-1"><bdi dir="ltr">{price.baseAmount}</bdi> جنيه مصري</del>
-      <span className="block text-primary">سعر الحساب ذي الهاتف المصري المؤكَّد</span>
-    </p>}
   </div>;
 }
 
