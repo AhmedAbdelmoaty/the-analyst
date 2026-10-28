@@ -4,14 +4,14 @@ import { AnnualPriceDisplay } from "../src/features/subscription/AnnualPrice";
 import { annualPriceForUser } from "../src/features/subscription/pricing";
 
 describe("annual pricing presentation", () => {
-  it("shows 400 prominently and the 1200 base as a crossed-out reference", () => {
+  it("shows only 400 to an Egyptian account, never the other price or the rule", () => {
     const price = annualPriceForUser({ phone: "201012345678", phone_confirmed_at: "2026-10-13" }, false);
     const html = renderToStaticMarkup(<AnnualPriceDisplay price={price} />);
     expect(html).toContain("400");
     expect(html).toContain("جنيه مصري / سنة");
-    expect(html).toContain("السعر الأساسي");
-    expect(html).toContain("<del");
-    expect(html).toContain("1200");
+    expect(html).not.toContain("1200");
+    expect(html).not.toContain("<del");
+    expect(html).not.toContain("الهاتف المصري");
   });
 
   it("shows only 1200 for a guest and no stale discounted value while loading", () => {
