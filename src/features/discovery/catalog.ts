@@ -7,6 +7,7 @@ export const GAME_CATALOG = [
   { id: 'behind-the-dots', title: 'ورا النقط', route: '/games/behind-the-dots', cover: '/assets/behind-dots/market-v5.png', description: 'كل نقطة وراها حكاية. ساعد ليلى تقرأ العلاقات وتختار خطة مبنية على الأدلة.', category: 'الارتباط وفحص الأدلة', tier: 'annual' },
   { id: 'crack-the-code', title: 'الشفرة الأخيرة', route: '/games/crack-the-code', cover: '/crack-the-code/assets/finance-manager-new.jpg', description: 'تلات خزائن وتقرير مختفي. فك ألغاز الأرقام ووصل للشفرة قبل ما تضيع الحقيقة.', category: 'المنطق والاستنتاج', tier: 'annual' },
   { id: 'decision-matrix', title: 'مصفوفة القرار', route: '/games/decision-matrix', cover: '/decision-matrix/assets/boardroom-cartoon.jpg', description: 'أول يوم في الشركة… وأول قرار مش سهل. اجمع الأدلة ووازن البدائل مع الفريق.', category: 'المفاضلة واتخاذ القرار', tier: 'annual' },
+  { id: 'investigation-file', title: 'ملف تحت التحقيق', route: '/games/investigation-file', cover: '/investigation-file/assets/investigation/cfo.png', description: 'تقريرين بيقولوا عكس بعض. افحص سجلات الموظفين ووزن التوزيع قبل ما تختم القرار.', category: 'تحليل البيانات', tier: 'annual' },
 ] as const;
 export type CatalogGame = typeof GAME_CATALOG[number];
 export type GameId = CatalogGame['id'];

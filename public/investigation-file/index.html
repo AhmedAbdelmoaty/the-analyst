@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#fff8e7">
+  <title>ملف تحت التحقيق</title>
+  <link rel="stylesheet" href="/investigation-file/css/investigation.css">
+</head>
+<body>
+  <div class="paper-grain" aria-hidden="true"></div>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">◈</span><span>ملف تحت التحقيق</span></div>
+    <button id="muteBtn" class="round-btn" aria-label="كتم الصوت" aria-pressed="false">♫</button>
+  </header>
+
+  <main>
+    <section id="intro" class="scene intro-scene" aria-labelledby="introTitle">
+      <div class="scene-kicker">القضية ٣ · قرار قبل التوقيع</div>
+      <h1 id="introTitle">هل نقفل برنامج تطوير القيادات؟</h1>
+      <div class="characters">
+        <div class="character cfo"><img src="/investigation-file/assets/investigation/cfo.png" alt="المدير المالي"></div>
+        <div class="report-paper" aria-label="تقرير إجمالي الترقيات">
+          <div class="paper-pin"></div>
+          <span class="report-label">تقرير الـCFO</span>
+          <div class="report-lines"><span>حضروا البرنامج</span><strong dir="ltr">140 / 400</strong><b dir="ltr">35%</b></div>
+          <div class="report-lines"><span>ماحضروش</span><strong dir="ltr">460 / 700</strong><b dir="ltr">65.7%</b></div>
+          <div class="report-stamp">قرار الإلغاء جاهز</div>
+        </div>
+        <div class="character hr"><img id="introHr" src="/investigation-file/assets/investigation/hr.png" alt="مديرة الموارد البشرية"></div>
+      </div>
+      <div class="speech paper-panel" id="introSpeech" aria-live="polite"><span class="speaker">المدير المالي</span><p>الأرقام قدامنا. اللي ماحضروش اترقّوا أكتر. نوقف البرنامج؟</p></div>
+      <button id="nextIntro" class="game-button primary">التالي <span aria-hidden="true">←</span></button>
+    </section>
+
+    <section id="investigation" class="scene investigation-scene hidden" aria-labelledby="deskTitle">
+      <div class="desk-heading"><div><div class="scene-kicker">مكتب التحقيق</div><h1 id="deskTitle">خلّي التقريرين يحكوا نفس القصة</h1></div><span class="desk-note">جرّب براحتك. الحكم بيبدأ لما تختم القرار.</span></div>
+      <div class="desk-grid">
+        <section class="paper-panel source-panel" aria-labelledby="sourceTitle">
+          <h2 id="sourceTitle">سجلات HR</h2>
+          <p class="small">اختار بطاقتين واضغط على أي مشبك. الأعداد هنا ثابتة من سجلات القضية.</p>
+          <div id="cards" class="cards"></div>
+          <button id="clearSelection" class="text-button">إلغاء الاختيار</button>
+        </section>
+        <section class="paper-panel clips-panel" aria-labelledby="clipsTitle">
+          <h2 id="clipsTitle">المشابك</h2>
+          <p class="small">كل مشبك يقارن بطاقتين تختارهم. تقدر تغيّر المقارنة في أي وقت.</p>
+          <div class="clips"><button class="clip" data-clip="0"><span class="clip-pin">◉</span><b>مشبك ١</b><span class="clip-content">اختار بطاقتين</span></button><button class="clip" data-clip="1"><span class="clip-pin">◉</span><b>مشبك ٢</b><span class="clip-content">اختار بطاقتين</span></button></div>
+          <p id="pairMessage" class="feedback" aria-live="polite">ابدأ بأي مقارنة تثير شكّك.</p>
+        </section>
+        <section class="paper-panel scale-panel" aria-labelledby="scaleTitle">
+          <h2 id="scaleTitle">ميزان التقرير</h2>
+          <p class="small">اختار أي مستوى وظيفي هو الأكثر عددًا في كل جانب، ثم جرّب وزن الأرقام.</p>
+          <div class="dominance-grid">
+            <fieldset><legend>الحاضرين: مين الأغلب؟</legend><label><input type="radio" name="trainedDominant" value="junior"> Junior</label><label><input type="radio" name="trainedDominant" value="senior"> Senior</label></fieldset>
+            <fieldset><legend>غير الحاضرين: مين الأغلب؟</legend><label><input type="radio" name="untrainedDominant" value="junior"> Junior</label><label><input type="radio" name="untrainedDominant" value="senior"> Senior</label></fieldset>
+          </div>
+          <div class="scale-art" aria-hidden="true"><div class="beam"></div><div class="pivot"></div><div class="pan right-pan"></div><div class="pan left-pan"></div></div>
+          <div class="scale-actions"><button id="weighOriginal" class="game-button secondary">وزن السجلات الفعلية</button></div>
+          <div class="mix-controls" aria-label="تجربة توزيع الموظفين">
+            <label>حصة Junior بين الحاضرين <output id="trainedMixValue">25%</output><input id="trainedMix" type="range" min="0" max="100" value="25"></label>
+            <label>حصة Junior بين غير الحاضرين <output id="untrainedMixValue">86%</output><input id="untrainedMix" type="range" min="0" max="100" value="86"></label>
+            <button id="weighBalanced" class="game-button secondary">اختبر توزيعك</button>
+          </div>
+          <div id="scaleReadout" class="scale-readout" aria-live="polite">الميزان مستني التجربة.</div>
+          <p id="scaleMessage" class="feedback">في تجربة التساوي، نسب الترقية داخل Junior وSenior تفضل زي ما هي؛ اللي بيتغير بس نسبة كل فئة في الإجمالي.</p>
+        </section>
+      </div>
+      <div class="final-access"><button id="faceCfo" class="game-button primary">ارجع للاجتماع <span aria-hidden="true">←</span></button></div>
+    </section>
+
+    <section id="confrontation" class="scene confrontation-scene hidden" aria-labelledby="finalTitle">
+      <div class="scene-kicker">لحظة القرار</div><h1 id="finalTitle">التقرير على المكتب. هتختم بإيه؟</h1>
+      <div class="final-characters"><img src="/investigation-file/assets/investigation/cfo.png" alt="المدير المالي"><div class="paper-panel final-paper"><h2>ملف اعتراضك</h2><div id="evidenceSummary"></div><p>القرار هيتختم مرة واحدة. لو ناقصك دليل ارجع للمكتب.</p></div><img src="/investigation-file/assets/investigation/hr.png" alt="مديرة الموارد البشرية"></div>
+      <div class="verdicts"><button data-verdict="cancel" class="game-button verdict">نلغي البرنامج</button><button data-verdict="pause-review" class="game-button verdict">نوقف الإلغاء ونراجع أثر البرنامج</button><button data-verdict="prove-cause" class="game-button verdict">نثبت إن التدريب سبب الترقيات</button></div>
+      <button id="backToDesk" class="text-button">أرجع للمكتب</button>
+    </section>
+
+    <section id="ending" class="scene ending-scene hidden" aria-labelledby="endingTitle"><div class="end-card paper-panel"><img id="endingReaction" alt=""><img id="endingIcon" alt="" src=""><div class="scene-kicker">نهاية القضية</div><h1 id="endingTitle"></h1><p id="endingText"></p><div id="endingMath" class="ending-math"></div><button id="replay" class="game-button primary">العب من جديد</button></div></section>
+  </main>
+  <script type="module" src="/investigation-file/js/investigation.mjs"></script>
+</body>
+</html>

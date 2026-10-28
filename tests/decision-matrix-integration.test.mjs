@@ -56,14 +56,14 @@ test('Decision Matrix preserves an existing account save before writing the repl
   assert.notEqual(data.get(context.keys.KEY), original);
 });
 
-test('Decision Matrix is the authenticated fifth game and passes its owner to the iframe', async () => {
+test('Decision Matrix stays authenticated and keeps its owner-bound iframe as the catalog grows', async () => {
   const [app, catalog, route] = await Promise.all([
     readFile(path.join(root, 'src/App.tsx'), 'utf8'),
     readFile(path.join(root, 'src/features/discovery/catalog.ts'), 'utf8'),
     readFile(path.join(root, 'src/pages/DecisionMatrixRoute.tsx'), 'utf8'),
   ]);
 
-  assert.equal((catalog.match(/\{ id: '/g) ?? []).length, 5);
+  assert.equal((catalog.match(/\{ id: '/g) ?? []).length, 6);
   assert.match(catalog, /id: 'decision-matrix'.*route: '\/games\/decision-matrix'.*cover: '\/decision-matrix\/assets\/boardroom-cartoon\.jpg'/);
   assert.match(app, /<Route path="\/games\/decision-matrix" element={<RequireProfile><GameGate game="decision-matrix"><DecisionMatrixRoute \/><\/GameGate><\/RequireProfile>} \/>/);
   assert.match(route, /name=\{user\.id\}/);

@@ -89,6 +89,14 @@ function decisionMatrix(uid: string, storage: Storage): GameProgress {
   return { status: 'in-progress', ...(completed ? { hint: `اكتملت ${completed === 1 ? 'قضية واحدة' : 'قضيتان'} من ${arabicNumber(DECISION_MATRIX_LEVELS)}` } : {}) };
 }
 
+function investigationFile(uid: string, storage: Storage): GameProgress {
+  const saved = readJson(storage, `the-analyst:investigation-file:v1:${encodeURIComponent(uid)}`);
+  if (!saved || saved.version !== 1 || !['in-progress', 'completed'].includes(String(saved.status))) return { status: 'new' };
+  if (saved.status === 'completed' && (saved.outcome === 'success' || saved.outcome === 'failure')) return { status: 'completed' };
+  if (saved.status === 'in-progress') return { status: 'in-progress' };
+  return { status: 'new' };
+}
+
 export function getGameProgress(gameId: GameId, userId: string, storage?: Storage): GameProgress {
   if (!userId) return { status: 'new' };
   try {
@@ -99,6 +107,7 @@ export function getGameProgress(gameId: GameId, userId: string, storage?: Storag
       case 'behind-the-dots': return behindTheDots(userId, browserStorage);
       case 'crack-the-code': return crackTheCode(userId, browserStorage);
       case 'decision-matrix': return decisionMatrix(userId, browserStorage);
+      case 'investigation-file': return investigationFile(userId, browserStorage);
     }
   } catch { /* unavailable/corrupt saves are shown as new without changing them */ }
   return { status: 'new' };
