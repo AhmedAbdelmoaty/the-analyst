@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { SubscriptionSnapshot } from "./model";
 
 // Change only after authorized schema/functions, merchant verification and test E2E sign-off.
-export const PAYMENT_UI_ENABLED = false;
+export const PAYMENT_UI_ENABLED = true;
 export class CheckoutPendingError extends Error {
   constructor(public readonly orderId: string) { super("payment_pending"); }
 }
