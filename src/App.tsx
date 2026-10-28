@@ -66,6 +66,7 @@ const App = () => (
             <Route path="/subscription/return" element={<PaymentReturn />} />
             {/* Paymob dashboard redirect alias; display-only, never grants access. */}
             <Route path="/checkout/paymob/payment/success" element={<PaymentReturn />} />
+            <Route path="/api/acceptance/post_pay" element={<PaymentReturn />} />
             <Route path="/subscription/summary" element={<RequireProfile><SubscriptionSummary /></RequireProfile>} />
             <Route path="/setup" element={<Setup />} />
             <Route path="/profile/work" element={<RequireProfile><WorkDetails /></RequireProfile>} />
