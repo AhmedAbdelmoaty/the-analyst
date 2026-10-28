@@ -41,7 +41,6 @@ export default function PlanChoice() {
       </section>
       <section className="flex min-w-0 flex-col rounded-lg border border-primary/50 bg-card p-6">
         <p className="text-sm font-bold text-primary">الخطة السنوية</p><h2 className="mt-2 text-2xl font-bold">التجربة الكاملة</h2><div className="mt-4"><AnnualPrice /></div>
-        <p className="mt-3 text-sm leading-7 text-muted-foreground">400 جنيه سنويًا للحساب ذي الموبايل المصري المؤكّد والمؤهّل، و1,200 جنيه لغيره.</p>
         <ul className="mt-5 flex-1 list-disc space-y-2 pr-5 text-sm leading-7 marker:text-primary"><li>كل الألعاب المشمولة في الكتالوج بعد الإطلاق التجاري.</li><li>12 شهر من تأكيد الدفع، والتجديد باختيارك.</li></ul>
         <Button disabled={disabled} onClick={() => choose('annual')} className="mt-6 min-h-12 border-primary bg-primary font-bold text-primary-foreground hover:bg-primary/90">{PAYMENT_UI_ENABLED ? 'اشترك الآن' : 'اختار السنوية وكمّل الاستكشاف'}</Button>
       </section>
