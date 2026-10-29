@@ -7,8 +7,10 @@ const $ = id => document.getElementById(id);
 const pct = n => `${(n * 100).toFixed(1).replace('.0', '')}%`;
 const levelName = level => level === 'junior' ? 'Junior' : 'Senior';
 const name = r => `${levelName(r.level)} · ${r.attended ? 'حضر' : 'لم يحضر'}`;
-const pairText = ids => ids.map(id => records.find(r => r.id === id))
-  .map(r => `${name(r)} ${r.promoted}/${r.total} = ${pct(rate(r))}`).join('  مقابل  ');
+const comparisonCard = r => `<span class="comparison-card"><span class="comparison-name">${levelName(r.level)} · ${r.attended ? 'حضر' : 'ماحضرش'}</span><span class="comparison-count"><bdi dir="ltr">${r.promoted}/${r.total}</bdi> ترقّوا</span><strong dir="ltr">${pct(rate(r))}</strong></span>`;
+const comparisonView = ids => ids.length === 2
+  ? `<span class="comparison-side">${comparisonCard(records.find(r => r.id === ids[0]))}</span><span class="comparison-vs" aria-label="مقابل">مقابل</span><span class="comparison-side">${comparisonCard(records.find(r => r.id === ids[1]))}</span>`
+  : '<span class="clip-empty">اختار بطاقتين من سجلات HR واضغط هنا</span>';
 const state = {
   pairs: [[], []], savedPairs: [[], []], selected: [], snapshot: null,
   introStep: 0, decision: null, reason: null, hint: 0,
@@ -16,9 +18,32 @@ const state = {
 const audio = createAudioManager();
 const playerId = window.name || 'guest';
 const sound = (cue = 'button') => audio.play(cue);
+const felfelAssets = {
+  idle: 'idle', entrance: 'idle', talking: 'idle', thinking: 'inspect', magnifier: 'inspect', hint: 'inspect',
+  surprise: 'celebrate', discovery: 'celebrate', celebration: 'celebrate', failure: 'concerned', exit: 'idle',
+};
+// Warm the alternate poses during the opening so the character never appears in pieces at a scene change.
+for (const pose of ['inspect', 'celebrate', 'concerned']) {
+  const image = new Image();
+  image.src = `/investigation-file/assets/felfel/${pose}.png`;
+  image.decode().catch(() => {});
+}
+let deskFelfelTimer;
+function reactFelfel(stateName, actor = 'deskFelfel') {
+  const actorElement = $(actor);
+  if (!actorElement) return;
+  actorElement.src = `/investigation-file/assets/felfel/${felfelAssets[stateName] || 'idle'}.png`;
+  actorElement.dataset.state = stateName;
+  if (actor === 'deskFelfel') {
+    window.clearTimeout(deskFelfelTimer);
+    if (stateName !== 'idle') deskFelfelTimer = window.setTimeout(() => reactFelfel('idle'), 1100);
+  }
+}
 
 function scene(id) {
   for (const el of document.querySelectorAll('.scene')) el.classList.toggle('hidden', el.id !== id);
+  $('hintBtn').classList.toggle('hidden', id !== 'investigation' && id !== 'confrontation');
+  if (!$('hintPanel').classList.contains('hidden')) closeHint(true);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -27,21 +52,23 @@ function updateCards() {
   for (const card of document.querySelectorAll('.record-card')) card.addEventListener('click', () => {
     const id = card.dataset.id;
     state.selected = state.selected.includes(id) ? state.selected.filter(x => x !== id) : state.selected.length === 2 ? [id] : [...state.selected, id];
-    sound('recordSelect'); updateCards();
+    sound('recordSelect'); reactFelfel('magnifier'); updateCards();
   });
 }
 
 function updateClips() {
   document.querySelectorAll('.clip').forEach((el, i) => {
     const ids = state.pairs[i];
-    el.querySelector('.clip-content').textContent = ids.length === 2 ? pairText(ids) : 'اختار بطاقتين';
+    el.querySelector('.clip-content').innerHTML = comparisonView(ids);
+    el.classList.remove('clip-attached');
+    if (ids.length === 2) { void el.offsetWidth; el.classList.add('clip-attached'); }
     document.querySelector(`[data-save-clip="${i}"]`).disabled = ids.length !== 2;
   });
 }
 
 function renderSavedPairs() {
   $('savedPairs').innerHTML = state.savedPairs.map((ids, i) =>
-    `<div class="saved-pair"><span>${ids.length === 2 ? pairText(ids) : 'الخانة فاضية'}</span>${ids.length === 2 ? `<button class="text-button" data-recall="${i}">افتح على المشبك</button>` : ''}</div>`
+    `<div class="saved-pair"><div class="saved-pair-heading"><b>دليل ${i + 1}</b>${ids.length === 2 ? `<button class="text-button" data-recall="${i}">افتح على المشبك</button>` : ''}</div><div class="comparison-layout">${ids.length === 2 ? comparisonView(ids) : '<span class="clip-empty">الخانة فاضية · احفظ أي مقارنة</span>'}</div></div>`
   ).join('');
   document.querySelectorAll('[data-recall]').forEach(button => button.addEventListener('click', () => {
     const i = Number(button.dataset.recall);
@@ -53,8 +80,8 @@ function renderSavedPairs() {
 
 function renderHistoricalReadout() {
   $('historicalReadout').innerHTML = `
-    <div class="history-row"><b>حضروا البرنامج</b><strong>${pct(originalRates.trained)} · 140/400</strong><span>Junior: 100/400 = ${pct(share(true, 'junior'))} · Senior: 300/400 = ${pct(share(true, 'senior'))}</span></div>
-    <div class="history-row"><b>ماحضروش البرنامج</b><strong>${pct(originalRates.untrained)} · 460/700</strong><span>Junior: 600/700 = ${pct(share(false, 'junior'))} · Senior: 100/700 = ${pct(share(false, 'senior'))}</span></div>`;
+    <div class="history-row"><b>حضروا البرنامج</b><div class="history-result"><span>اترقّوا <bdi dir="ltr">140 / 400</bdi></span><strong dir="ltr">${pct(originalRates.trained)}</strong></div><div class="history-composition"><span>Junior <bdi dir="ltr">100 / 400</bdi> · ${pct(share(true, 'junior'))}</span><span>Senior <bdi dir="ltr">300 / 400</bdi> · ${pct(share(true, 'senior'))}</span></div></div>
+    <div class="history-row"><b>ماحضروش البرنامج</b><div class="history-result"><span>اترقّوا <bdi dir="ltr">460 / 700</bdi></span><strong dir="ltr">${pct(originalRates.untrained)}</strong></div><div class="history-composition"><span>Junior <bdi dir="ltr">600 / 700</bdi> · ${pct(share(false, 'junior'))}</span><span>Senior <bdi dir="ltr">100 / 700</bdi> · ${pct(share(false, 'senior'))}</span></div></div>`;
 }
 
 function currentMix() {
@@ -73,8 +100,10 @@ function updateMix({ playSound = false } = {}) {
     document.querySelector(`.${group}-junior`).style.width = `${junior * 100}%`;
     document.querySelector(`.${group}-senior`).style.width = `${(1 - junior) * 100}%`;
     $(`${group}WhatIf`).textContent = pct(result);
+    $(`${group}RateBar`).style.width = `${result * 100}%`;
     $(`${group}Mix`).setAttribute('aria-valuetext', `Junior ${pct(junior)}، Senior ${pct(1 - junior)}`);
   }
+  $('mixRelation').textContent = Math.abs(mix.trained - mix.untrained) < .0005 ? 'تركيبة المجموعتين متشابهة في التجربة دي' : 'تركيبة المجموعتين مختلفة في التجربة دي';
   if (playSound) sound('mixAdjustment');
 }
 
@@ -82,14 +111,14 @@ document.querySelectorAll('.clip').forEach(el => el.addEventListener('click', ()
   const i = Number(el.dataset.clip);
   if (state.selected.length !== 2) { $('pairMessage').textContent = 'اختار بطاقتين الأول، وبعدين اضغط المشبك.'; return; }
   state.pairs[i] = [...state.selected]; state.selected = [];
-  updateCards(); updateClips(); sound('clipAttach');
+  updateCards(); updateClips(); reactFelfel('surprise'); sound('clipAttach');
   $('pairMessage').textContent = 'بص على النسب. لو حابب ترجع للمقارنة دي، احتفظ بيها.';
 }));
 document.querySelectorAll('[data-save-clip]').forEach(button => button.addEventListener('click', () => {
   const i = Number(button.dataset.saveClip);
   if (state.pairs[i].length !== 2) return;
   state.savedPairs[i] = [...state.pairs[i]];
-  renderSavedPairs(); sound('proofPin');
+  renderSavedPairs(); reactFelfel('discovery'); sound('proofPin');
   $('pairMessage').textContent = 'اتحفظت في ملف الأدلة. تقدر تبدّلها في أي وقت.';
 }));
 $('clearSelection').addEventListener('click', () => { state.selected = []; updateCards(); sound(); });
@@ -100,7 +129,7 @@ for (const id of ['trainedMix', 'untrainedMix']) {
     input.value = String(Math.round(Number(input.value) / 50) * 50);
     updateMix();
   });
-  $(id).addEventListener('change', () => updateMix({ playSound: true }));
+  $(id).addEventListener('change', () => { updateMix({ playSound: true }); reactFelfel('thinking'); });
   $(id).addEventListener('keydown', event => {
     const input = event.currentTarget;
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
@@ -109,36 +138,95 @@ for (const id of ['trainedMix', 'untrainedMix']) {
     const nearest = Math.round(current / 50) * 50;
     const direction = ['ArrowRight', 'ArrowUp'].includes(event.key) ? 1 : -1;
     input.value = String(Math.max(0, Math.min(1000, current % 50 ? nearest : current + direction * 50)));
-    updateMix({ playSound: true });
+    updateMix({ playSound: true }); reactFelfel('thinking');
   });
 }
 $('resetMix').addEventListener('click', () => {
   $('trainedMix').value = '250';
-  $('untrainedMix').value = String(Math.round(share(false, 'junior') * 1000));
-  updateMix({ playSound: true });
+  $('untrainedMix').value = String(share(false, 'junior') * 1000);
+  updateMix({ playSound: true }); reactFelfel('magnifier');
   $('scaleMessage').textContent = 'رجعنا للسجل الأصلي بدقته. التغيير الجاي هيبقى بخطوات 5%.';
 });
 $('saveMix').addEventListener('click', () => {
   const mix = currentMix();
   const rates = counterfactualRates(mix.trained, mix.untrained);
-  state.snapshot = { trainedShare: mix.trained, untrainedShare: mix.untrained, trainedRate: rates.trained, untrainedRate: rates.untrained };
-  $('savedMix').textContent = `لقطة افتراضية محفوظة: Junior للحاضرين ${pct(mix.trained)} ولغير الحاضرين ${pct(mix.untrained)} · معدل الترقية ${pct(rates.trained)} مقابل ${pct(rates.untrained)}. تقدر تستبدلها.`;
+  state.snapshot = { trainedShare: mix.trained, untrainedShare: mix.untrained, trainedRate: rates.trained, untrainedRate: rates.untrained, interpretation: null };
+  renderSnapshot(); reactFelfel('discovery');
   sound('proofPin');
 });
-const hints = [
-  'جرّب تغيّر مجموعة واحدة، وراقب رقمها قبل ما تغيّر التانية.',
-  'هل المجموعتين في السجل الأصلي عندهم نفس نسبة Junior وSenior؟',
-  'ارجع للمشابك: هل المقارنة بين موظفين من نفس المستوى بتقول نفس حكاية الإجمالي؟',
-];
-$('hintBtn').addEventListener('click', () => {
-  $('scaleMessage').textContent = hints[Math.min(state.hint++, hints.length - 1)];
-  sound('sceneChange');
+function renderSnapshot() {
+  const snapshot = state.snapshot;
+  if (!snapshot) { $('savedMix').innerHTML = ''; return; }
+  const changed = Math.abs(snapshot.trainedShare - share(true, 'junior')) > 1e-9 ||
+    Math.abs(snapshot.untrainedShare - share(false, 'junior')) > 1e-9;
+  const observations = [
+    ['composition-impact', changed ? 'غيّرت التركيبة، فمعدل الترقية الإجمالي اتحرك' : 'التركيبة زي الأصل، والمعدل الإجمالي ما اتحركش'],
+    ['within-rates-change', 'معدل الترقية داخل Junior أو Senior نفسه اتغيّر'],
+    ['causation', 'اللقطة دي تثبت إن البرنامج سبب الترقيات'],
+  ];
+  const firstKey = changed ? 'composition-impact' : 'unchanged';
+  $('savedMix').innerHTML = `<div class="snapshot-heading"><b>لقطة من التجربة · افتراضية</b><button type="button" class="text-button" data-clear-snapshot>شيل اللقطة</button></div>
+    <p>Junior: الحاضرين <bdi dir="ltr">${pct(snapshot.trainedShare)}</bdi> · غير الحاضرين <bdi dir="ltr">${pct(snapshot.untrainedShare)}</bdi></p>
+    <p>معدل الترقية في اللقطة: الحاضرين <bdi dir="ltr">${pct(snapshot.trainedRate)}</bdi> · غير الحاضرين <bdi dir="ltr">${pct(snapshot.untrainedRate)}</bdi></p>
+    <div class="snapshot-interpretation"><b>لو هتضيف ملاحظة للّقطة، إيه اللي لاحظته؟</b>
+    ${observations.map(([key, label], i) => `<button type="button" class="observation-button" data-observation="${i === 0 ? firstKey : key}" aria-pressed="${snapshot.interpretation === (i === 0 ? firstKey : key)}">${label}</button>`).join('')}</div>`;
+}
+$('savedMix').addEventListener('click', event => {
+  const observation = event.target.closest('[data-observation]');
+  if (observation && state.snapshot) {
+    state.snapshot.interpretation = observation.dataset.observation;
+    renderSnapshot(); sound('proofPin');
+  }
+  if (event.target.closest('[data-clear-snapshot]')) {
+    state.snapshot = null; renderSnapshot(); sound('sceneChange');
+  }
 });
+const hints = [
+  'لو رقم كبير قالك حكاية، اسأل الورق: مين اتحطّ مع مين في نفس المقارنة؟',
+  'جرّب تحرّك شريط مجموعة واحدة. معدلها بيتحرك، ولا ثابت مكانه؟ السجل الأصلي ما لمسناهوش.',
+  'بص على مستوى وظيفي واحد في كل مشبك، وبعدين بص على نسبة Junior في المجموعتين. الحكايتين متشابهتين؟',
+];
+function updateHintControl() {
+  const remaining = hints.length - state.hint;
+  $('hintCount').textContent = String(remaining).replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
+  $('hintBtn').disabled = remaining === 0;
+  $('hintBtn').setAttribute('aria-label', remaining ? `افتح تلميحًا، متبقي ${remaining}` : 'استخدمت التلميحات الثلاثة');
+}
+function closeHint(immediate = false) {
+  const panel = $('hintPanel');
+  if (panel.classList.contains('hidden')) return;
+  if (immediate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    panel.classList.add('hidden');
+  } else {
+    panel.querySelector('.hint-character').dataset.state = 'exit';
+    window.setTimeout(() => panel.classList.add('hidden'), 260);
+  }
+  if (!$('hintBtn').classList.contains('hidden')) ($('hintBtn').disabled ? $('muteBtn') : $('hintBtn')).focus();
+}
+$('hintBtn').addEventListener('click', () => {
+  if (state.hint >= hints.length || !$('hintPanel').classList.contains('hidden')) return;
+  const index = state.hint++;
+  updateHintControl();
+  $('hintFelfel').src = index === 0 ? '/investigation-file/assets/felfel/idle.png' : '/investigation-file/assets/felfel/inspect.png';
+  $('hintText').textContent = '';
+  $('hintPanel').querySelector('.hint-character').dataset.state = 'entrance';
+  $('hintPanel').classList.remove('hidden');
+  if (window.matchMedia('(max-width: 700px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
+  sound('sceneChange');
+  window.setTimeout(() => {
+    if ($('hintPanel').classList.contains('hidden')) return;
+    $('hintPanel').querySelector('.hint-character').dataset.state = 'talking';
+    $('hintText').textContent = hints[index];
+    $('dismissHint').focus();
+  }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
+});
+$('dismissHint').addEventListener('click', () => closeHint());
+updateHintControl();
 
 const dialogue = [
-  ['المدير المالي', 'الأرقام قدامنا: اللي ماحضروش اترقّوا أكتر. نلغي البرنامج ونوفّر ميزانية الكراسي؟'],
-  ['مديرة الموارد البشرية', 'قبل الكراسي، خلّينا نبص على السجلات. الرقم ساعات بيحب يحكي لوحده.'],
-  ['المدير المالي', 'ماشي، قدّامكم المكتب. بس خلّونا نطلع برأي قبل ما الشاي يبرد!'],
+  ['المدير المالي', '٣٥٪ للحاضرين، و٦٥٫٧٪ للي ماحضروش. أوقّع على إلغاء البرنامج؟'],
+  ['مديرة الموارد البشرية', 'ثانية قبل التوقيع. السجلات المفصلة على المكتب؛ بصّ فيها الأول.'],
+  ['المدير المالي', 'اتفضلوا. بس القلم مستني، والشاي قرب يبرد!'],
 ];
 $('nextIntro').addEventListener('click', () => {
   beginRun(playerId);
@@ -155,7 +243,13 @@ $('nextIntro').addEventListener('click', () => {
 
 function renderMeetingEvidence() {
   const saved = state.savedPairs.filter(ids => ids.length === 2);
-  $('meetingEvidence').innerHTML = `<b>من ملف أدلتك:</b>${saved.length ? saved.map(ids => `<p>${pairText(ids)}</p>`).join('') : '<p>لسه مفيش مقارنات محفوظة.</p>'}${state.snapshot ? `<p>لقطة افتراضية · Junior: الحاضرين ${pct(state.snapshot.trainedShare)}، غير الحاضرين ${pct(state.snapshot.untrainedShare)}. معدلات الترقية ${pct(state.snapshot.trainedRate)} مقابل ${pct(state.snapshot.untrainedRate)}.</p>` : ''}`;
+  const observationLabels = {
+    'composition-impact': 'التركيبة اتغيّرت، والمعدل الإجمالي اتحرك',
+    unchanged: 'التركيبة والمعدل زي السجل الأصلي',
+    'within-rates-change': 'معدل Junior أو Senior نفسه اتغيّر',
+    causation: 'البرنامج سبب الترقيات',
+  };
+  $('meetingEvidence').innerHTML = `<b>من ملف أدلتك:</b>${saved.length ? saved.map(ids => `<div class="meeting-pair comparison-layout">${comparisonView(ids)}</div>`).join('') : '<p>لسه مفيش مقارنات محفوظة.</p>'}${state.snapshot ? `<div class="meeting-snapshot"><b>لقطة افتراضية</b><p>Junior: الحاضرين ${pct(state.snapshot.trainedShare)} · غير الحاضرين ${pct(state.snapshot.untrainedShare)}. معدل الترقية ${pct(state.snapshot.trainedRate)} مقابل ${pct(state.snapshot.untrainedRate)}.</p>${state.snapshot.interpretation ? `<p>ملاحظتك: ${observationLabels[state.snapshot.interpretation]}</p>` : ''}</div>` : ''}`;
 }
 function resetMeeting() {
   state.decision = null; state.reason = null;
@@ -165,6 +259,7 @@ function resetMeeting() {
 }
 $('faceCfo').addEventListener('click', () => {
   resetMeeting(); renderMeetingEvidence(); $('verdictMessage').textContent = '';
+  reactFelfel('thinking', 'meetingFelfel');
   sound('sceneChange'); scene('confrontation');
 });
 $('backToDesk').addEventListener('click', () => { sound('sceneChange'); scene('investigation'); });
@@ -173,6 +268,7 @@ document.querySelectorAll('[data-decision]').forEach(button => button.addEventLi
   document.querySelectorAll('[data-decision]').forEach(option => option.setAttribute('aria-pressed', String(option === button)));
   $('decisionStep').classList.add('hidden');
   $('reasonStep').classList.remove('hidden');
+  reactFelfel('surprise', 'meetingFelfel');
   sound('sceneChange');
 }));
 $('backToDecision').addEventListener('click', () => {
@@ -180,33 +276,84 @@ $('backToDecision').addEventListener('click', () => {
 });
 document.querySelectorAll('[data-reason]').forEach(button => button.addEventListener('click', () => {
   state.reason = button.dataset.reason;
+  reactFelfel('thinking', 'meetingFelfel');
   document.querySelectorAll('[data-reason]').forEach(option => option.setAttribute('aria-pressed', String(option === button)));
   sound('button');
 }));
 
 function showEnding(result, reason = 'unsupported-decision') {
   finishRun(playerId, result, undefined, reason);
-  $('endingReaction').src = result === 'success' ? '/investigation-file/assets/investigation/cfo-surprised.png' : '/investigation-file/assets/investigation/hr-concerned.png';
-  $('endingReaction').alt = result === 'success' ? 'المدير المالي متفاجئ' : 'مديرة الموارد البشرية قلقة';
+  $('ending').classList.toggle('success', result === 'success');
+  $('ending').classList.toggle('failure', result !== 'success');
+  $('endingReaction').src = result === 'success' ? '/investigation-file/assets/investigation/cfo-surprised.png' : '/investigation-file/assets/investigation/cfo.png';
+  $('endingReaction').alt = result === 'success' ? 'المدير المالي متفاجئ' : 'المدير المالي يفكر في القرار';
+  $('endingHr').src = result === 'success' ? '/investigation-file/assets/investigation/hr.png' : '/investigation-file/assets/investigation/hr-concerned.png';
+  $('endingHr').alt = result === 'success' ? 'مديرة الموارد البشرية ارتاحت' : 'مديرة الموارد البشرية قلقة';
+  $('endingFelfel').src = result === 'success' ? '/investigation-file/assets/felfel/celebrate.png' : '/investigation-file/assets/felfel/concerned.png';
   $('endingIcon').src = result === 'success' ? '/investigation-file/assets/simpson/success-checkmark.png' : '/investigation-file/assets/simpson/failure-x.png';
-  $('endingIcon').alt = result === 'success' ? 'نجاح التحقيق' : 'نهاية غير ناجحة';
+  $('endingIcon').alt = '';
+  $('endingStampText').textContent = result === 'success' ? 'اعتراض في محلّه' : 'الحكم محتاج مراجعة';
   $('endingTitle').textContent = result === 'success' ? 'القرار اتوقف في وقته!' : 'الملف محتاج مراجعة';
   $('endingText').textContent = result === 'success'
-    ? 'اعتراضك وضّح إن المقارنة داخل كل مستوى مختلفة عن حكاية الإجمالي. نوقف الإلغاء ونطلب تقييمًا إضافيًا؛ الأرقام دي وحدها ما تثبتش السبب.'
-    : reason === 'causation' ? 'النسب ما تثبتش إن التدريب هو سبب الترقيات. محتاجين تقييم إضافي قبل الحكم ده.'
-      : reason === 'aggregate' ? 'التقرير الإجمالي لوحده ما يكفيش للحكم. توزيع Junior وSenior مختلف بين المجموعتين.'
-        : 'قرار إلغاء البرنامج ما اتسقش مع التبرير اللي قدمته. راجع الدليل قبل الحكم.';
-  $('endingMath').hidden = result !== 'success';
-  if (result === 'success') $('endingMath').innerHTML = '<div>Junior: حضروا 80% · ماحضروش 75%</div><div>Senior: حضروا 20% · ماحضروش 10%</div><div>الإجمالي الأصلي: 35% مقابل 65.7%</div><small>اختلاف تركيب المجموعتين بيغير حكاية الإجمالي. ده لا يثبت السبب.</small>';
+    ? 'وقفّت قرار متسرّع بدليل واضح. دلوقتي نطلب تقييمًا أحسن قبل ما نحكم على البرنامج.'
+    : reason === 'causation' ? 'فِلفِل بيقول: الأرقام شبه شاهد شاف نص المشهد. السجلات دي ما تثبتش إن التدريب سبب الترقيات.'
+      : reason === 'aggregate' ? 'الرقم الإجمالي لفت النظر، بس جمع مجموعتين بتركيبة مختلفة ما يكفيش لوحده لقرار الإلغاء.'
+        : 'تبريرك بيقول إن المقارنة داخل المستويات مختلفة، لكن قرار الإلغاء ما اتسقش معاه. جرّب تربط الحكم بالدليل.';
+  $('revealStage').classList.add('hidden');
+  document.querySelector('.end-card').classList.remove('hidden');
   scene('ending'); sound(result);
   window.setTimeout(() => sound(result === 'success' ? 'successAccent' : 'failureAccent'), 260);
 }
+const revealBars = (firstLabel, firstRate, secondLabel, secondRate) => `<div class="reveal-bars"><div class="reveal-bar"><div><b>${firstLabel}</b><strong dir="ltr">${pct(firstRate)}</strong></div><span><i style="width:${firstRate * 100}%"></i></span></div><div class="reveal-bar"><div><b>${secondLabel}</b><strong dir="ltr">${pct(secondRate)}</strong></div><span><i style="width:${secondRate * 100}%"></i></span></div></div>`;
+const compositionBar = (label, junior) => `<div class="reveal-composition"><b>${label}</b><div><span style="width:${junior * 100}%"></span><span style="width:${(1 - junior) * 100}%"></span></div><small>Junior ${pct(junior)} · Senior ${pct(1 - junior)}</small></div>`;
+let revealStep = 0;
+function renderReveal() {
+  const juniorTrained = records.find(r => r.id === 'jt');
+  const juniorOther = records.find(r => r.id === 'ju');
+  const seniorTrained = records.find(r => r.id === 'st');
+  const seniorOther = records.find(r => r.id === 'su');
+  const common = counterfactualRates(.5, .5);
+  const beats = [
+    ['التقرير الأول', 'المدير المالي شاف ٣٥٪ قدّام ٦٥٫٧٪. رقم كبير... بس لسه مش الحكاية كلها.', revealBars('حضروا · ١٤٠/٤٠٠', originalRates.trained, 'ماحضروش · ٤٦٠/٧٠٠', originalRates.untrained)],
+    ['ملف Junior', 'لما نقارن Junior مع Junior، الحاضرين ٨٠ من ١٠٠، واللي ماحضروش ٤٥٠ من ٦٠٠.', revealBars('حضروا · ٨٠/١٠٠', rate(juniorTrained), 'ماحضروش · ٤٥٠/٦٠٠', rate(juniorOther))],
+    ['ملف Senior', 'ونفس الحركة في Senior: الحاضرين ٦٠ من ٣٠٠، واللي ماحضروش ١٠ من ١٠٠.', revealBars('حضروا · ٦٠/٣٠٠', rate(seniorTrained), 'ماحضروش · ١٠/١٠٠', rate(seniorOther))],
+    ['مين في كل مجموعة؟', 'آه! الحاضرين أغلبهم Senior، وغير الحاضرين أغلبهم Junior. خلطنا ناس بنِسَب مختلفة.', compositionBar('حضروا', share(true, 'junior')) + compositionBar('ماحضروش', share(false, 'junior'))],
+    ['تجربة على الورق', 'لو خلّينا التركيبة واحدة، نص Junior ونص Senior للطرفين، الحساب الافتراضي هيبان بشكل تاني. ده مش سجل الشركة الأصلي.', revealBars('حضروا · افتراضي', common.trained, 'ماحضروش · افتراضي', common.untrained)],
+    ['اسم الحيلة', 'دي مفارقة سيمبسون: الإجمالي بيقول اتجاه، وكل مستوى لوحده بيقول العكس. بس خد بالك، ده ما يثبتش إن التدريب سبب الترقيات؛ نحتاج تقييمًا إضافيًا.', '<div class="reveal-last">الإجمالي اتقلب بسبب اختلاف التركيبة. والسبب الحقيقي للترقيات لسه محتاج تحقيق.</div>'],
+  ];
+  const [title, speech, visual] = beats[revealStep];
+  $('revealTitle').textContent = title;
+  $('revealSpeech').textContent = speech;
+  $('revealVisual').innerHTML = visual;
+  $('revealFelfel').src = revealStep === 3 || revealStep === 5 ? '/investigation-file/assets/felfel/celebrate.png' : '/investigation-file/assets/felfel/inspect.png';
+  $('revealFelfel').dataset.state = revealStep === 3 || revealStep === 5 ? 'discovery' : 'talking';
+  $('revealProgress').textContent = `${revealStep + 1} / ${beats.length}`;
+  $('nextReveal').textContent = revealStep === beats.length - 1 ? 'ارجع للنهاية' : 'اللي بعده ←';
+  $('revealStage').classList.remove('reveal-pop'); void $('revealStage').offsetWidth; $('revealStage').classList.add('reveal-pop');
+}
+$('openReveal').addEventListener('click', () => {
+  revealStep = 0;
+  document.querySelector('.end-card').classList.add('hidden');
+  $('revealStage').classList.remove('hidden');
+  renderReveal(); sound('sceneChange'); $('nextReveal').focus();
+});
+$('nextReveal').addEventListener('click', () => {
+  if (revealStep < 5) { revealStep++; renderReveal(); sound('sceneChange'); }
+  else { $('revealStage').classList.add('hidden'); document.querySelector('.end-card').classList.remove('hidden'); $('openReveal').focus(); sound('sceneChange'); }
+});
+$('closeReveal').addEventListener('click', () => {
+  $('revealStage').classList.add('hidden'); document.querySelector('.end-card').classList.remove('hidden'); $('openReveal').focus(); sound('sceneChange');
+});
 $('submitVerdict').addEventListener('click', () => {
-  const result = resolveVerdict({ savedPairs: state.savedPairs }, state.decision, state.reason);
+  const result = resolveVerdict({ savedPairs: state.savedPairs, snapshot: state.snapshot }, state.decision, state.reason);
   if (result.status === 'needs-choice') { $('verdictMessage').textContent = 'اختار تبريرك الأول.'; return; }
   if (result.status === 'needs-evidence') {
+    if (result.missing.includes('experiment-interpretation')) {
+      $('scaleMessage').textContent = 'قرارك مدعوم، لكن ملاحظتك على اللقطة الافتراضية مش بتوصف اللي اتغير فيها. راجعها أو شيل اللقطة وارجع.';
+      scene('investigation'); $('scaleMessage').focus(); return;
+    }
     $('pairMessage').textContent = 'قرارك وتبريرك ماشيين مع بعض، بس المقارنات المحفوظة لسه مش كفاية لدعم الاعتراض. راجع المقارنات وبدّل اللي محتاج يتبدّل.';
-    scene('investigation'); $('pairMessage').focus?.(); return;
+    scene('investigation'); $('pairMessage').focus(); return;
   }
   showEnding(result.status, result.reason);
 });

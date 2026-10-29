@@ -100,3 +100,38 @@ test('V2.1 requires two saved same-level comparisons and a consistent decision w
   assert.equal(resolveVerdict({ savedPairs }, 'pause-review', null).status, 'needs-choice');
   assert.equal(resolveVerdict({ savedPairs, simulation: null }, 'pause-review', 'composition').status, 'success');
 });
+
+test('experiment notes are checked against the saved hypothetical mix without making a snapshot mandatory', async () => {
+  const { assessExperiment, resolveVerdict } = await import('../public/investigation-file/js/engine.mjs');
+  const { counterfactualRates, share } = await import('../public/investigation-file/js/case-data.mjs');
+  const savedPairs = [['jt', 'ju'], ['st', 'su']];
+  const originalShare = share(false, 'junior');
+  assert.equal(originalShare, 6 / 7);
+  const unchanged = { trainedShare: .25, untrainedShare: originalShare,
+    trainedRate: .35, untrainedRate: 460 / 700, interpretation: 'unchanged' };
+  assert.equal(assessExperiment(unchanged).status, 'supported');
+  const recalculated = counterfactualRates(.4, .65);
+  const changed = { trainedShare: .4, untrainedShare: .65,
+    trainedRate: recalculated.trained, untrainedRate: recalculated.untrained,
+    interpretation: 'composition-impact' };
+  assert.equal(assessExperiment(changed).status, 'supported');
+  assert.equal(resolveVerdict({ savedPairs, snapshot: changed }, 'pause-review', 'composition').status, 'success');
+  assert.equal(resolveVerdict({ savedPairs }, 'pause-review', 'composition').status, 'success');
+  changed.interpretation = 'causation';
+  assert.deepEqual(resolveVerdict({ savedPairs, snapshot: changed }, 'pause-review', 'composition'),
+    { status: 'needs-evidence', missing: ['experiment-interpretation'] });
+  changed.interpretation = 'within-rates-change';
+  assert.equal(assessExperiment(changed).status, 'unsupported');
+});
+
+test('approved Felfel reference and four transparent animation poses are packaged with the game work', async () => {
+  const source = await readFile(path.join(root, 'docs/investigation-file/felfel-reference.png'));
+  assert.equal(source.subarray(1, 4).toString(), 'PNG');
+  for (const pose of ['idle', 'inspect', 'celebrate', 'concerned']) {
+    const image = await readFile(path.join(root, `public/investigation-file/assets/felfel/${pose}.png`));
+    assert.equal(image.subarray(1, 4).toString(), 'PNG');
+    assert.equal(image[25], 6, `${pose} must have an alpha channel`);
+    assert.equal(image.readUInt32BE(16), 1024);
+    assert.equal(image.readUInt32BE(20), 1536);
+  }
+});
