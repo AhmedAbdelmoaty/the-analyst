@@ -60,10 +60,10 @@ const AdminLogin = () => {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
-            type="email"
+            type="text"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
+            placeholder={mode === "signin" ? "رقم الموبايل أو الإيميل" : "Email"}
             required
             className="w-full px-4 py-3 rounded-lg bg-input border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
