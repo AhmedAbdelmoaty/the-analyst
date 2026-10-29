@@ -27,7 +27,8 @@ export async function handler(req: Request): Promise<Response> {
     try {
       response = await fetch("https://accept.paymob.com/v1/intention/", {
         method: "POST", signal: AbortSignal.timeout(15000), headers: { Authorization: "Token " + settings.secret, "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, currency: "EGP", payment_methods: settings.ids,
+        // Trial: let Paymob pick the account's active online card channel by name.
+        body: JSON.stringify({ amount, currency: "EGP", payment_methods: ["card"],
           items: [{ name: "The Analyst Annual", amount, description: "Annual subscription", quantity: 1 }],
           billing_data: billingData,
           special_reference: begun.attemptId, notification_url: settings.webhookUrl,
