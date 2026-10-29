@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
+import { toE164 } from "@/lib/phoneAuth";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -10,7 +11,7 @@ const AdminLogin = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const { signIn, signUp, session, isAdmin, loading: authLoading } = useAuth();
+  const { signIn, signUp, signInWithPhone, session, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,8 +24,17 @@ const AdminLogin = () => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    const id = email.trim();
+    if (mode === "signin" && !id.includes("@")) {
+      const phone = toE164("20", id);
+      if (!phone) { setLoading(false); setError("رقم الموبايل غير صحيح"); return; }
+      const { error } = await signInWithPhone(phone, password);
+      setLoading(false);
+      if (error) setError("بيانات الدخول غير صحيحة");
+      return;
+    }
     const fn = mode === "signin" ? signIn : signUp;
-    const { error } = await fn(email, password);
+    const { error } = await fn(id, password);
     setLoading(false);
     if (error) {
       setError(error.message);
@@ -50,10 +60,10 @@ const AdminLogin = () => {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
-            type="email"
+            type="text"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
+            placeholder={mode === "signin" ? "رقم الموبايل أو الإيميل" : "Email"}
             required
             className="w-full px-4 py-3 rounded-lg bg-input border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
