@@ -222,12 +222,24 @@ test('employee lab animates independent populations and balances hypothetical ra
   await expect(page.locator('#trainedPopulation')).toHaveAttribute('data-junior-count', '5');
   await expect(page.locator('#untrainedPopulation')).toHaveAttribute('data-junior-count', '17');
   await expect(page.locator('#trainedPopulation .employee-token:not(.leaving)')).toHaveCount(20);
+  const beamAngle = () => page.locator('#balanceBeam').evaluate(el => new DOMMatrixReadOnly(getComputedStyle(el).transform).b);
+  await expect.poll(beamAngle).toBeLessThan(-0.01);
+  const historicalUntrained = await page.locator('#untrainedMix').inputValue();
+  await setMix(page, 'trainedMix', 400);
+  await expect(page.locator('#untrainedMix')).toHaveValue(historicalUntrained);
+  await page.locator('#resetMix').click();
   await page.locator('#equalMix').click();
   await expect(page.locator('#trainedWhatIf')).toHaveText('50%');
   await expect(page.locator('#untrainedWhatIf')).toHaveText('42.5%');
   await expect(page.locator('#trainedPopulation')).toHaveAttribute('data-junior-count', '10');
   await expect(page.locator('#untrainedPopulation')).toHaveAttribute('data-senior-count', '10');
   await expect(page.locator('#labDiscovery')).toBeVisible();
+  await expect.poll(beamAngle).toBeGreaterThan(0.01);
+  await setMix(page, 'trainedMix', 50);
+  await setMix(page, 'untrainedMix', 200);
+  await expect(page.locator('#trainedWhatIf')).toHaveText('23%');
+  await expect(page.locator('#untrainedWhatIf')).toHaveText('23%');
+  await expect.poll(async () => Math.abs(await beamAngle())).toBeLessThan(0.001);
   await setMix(page, 'trainedMix', 0);
   await expect(page.locator('#trainedPopulation')).toHaveAttribute('data-junior-count', '0');
   await setMix(page, 'untrainedMix', 1000);
@@ -237,6 +249,18 @@ test('employee lab animates independent populations and balances hypothetical ra
   await expect(page.locator('#untrainedPopulation')).toHaveAttribute('data-junior-count', '17');
   await expect(page.locator('#trainedPopulation .employee-token:not(.leaving)')).toHaveCount(20);
   await expect(page.locator('#untrainedPopulation .employee-token:not(.leaving)')).toHaveCount(20);
+  await page.locator('#trainedMix').evaluate(element => {
+    for (const value of [0, 1000, 250]) {
+      (element as HTMLInputElement).value = String(value);
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+  await expect(page.locator('#trainedPopulation')).toHaveAttribute('data-junior-count', '5');
+  await expect(page.locator('#trainedPopulation .employee-token:not(.leaving)')).toHaveCount(20);
+  await expect(page.locator('#trainedPopulation .employee-token.leaving')).toHaveCount(0);
+  await page.locator('#evidenceTab').click();
+  await openLab(page);
+  await expect(page.locator('#trainedPopulation')).toHaveAttribute('data-junior-count', '5');
 });
 
 test('a saved experiment can be interpreted, corrected or removed without a false loss', async ({ page }) => {

@@ -97,7 +97,10 @@ button:focus-visible,input:focus-visible{outline:3px solid #236f90;outline-offse
 .experiment-actions{justify-content:center}
 .experiment-actions .game-button{min-height:43px;font-size:12px}
 .saved-mix:not(:empty){background:#fff4d6;color:#4b392b}
-.final-paper,.end-card,.reveal-stage{background:linear-gradient(#fff8e8,#f4dfb6);color:#463122}
+.final-paper,.reveal-stage{background:linear-gradient(#fff8e8,#f4dfb6);color:#463122}
+.end-card{width:min(100%,1000px);max-width:1000px;background:transparent;border:0;box-shadow:none;color:#463122}
+.ending-people{max-width:800px;border-bottom:8px solid #86502e;background:linear-gradient(180deg,transparent 72%,rgba(180,111,55,.34) 73%,rgba(156,91,49,.56));border-radius:0 0 18px 18px;filter:drop-shadow(0 11px 6px rgba(89,55,30,.25))}
+.end-card>p{padding:10px 18px;border:3px solid #8c542e;border-radius:9px;background:linear-gradient(#fff9e9,#f4dfb8);box-shadow:5px 7px 0 #b58050;transform:rotate(-.4deg)}
 .end-card h1{color:#4b3123;text-shadow:1px 2px #e6bb8b}
 .reveal-visual{background:#e3f2e5;color:#3d3b2d;border-color:#aa8b5a}
 .reveal-bar>span{background:#f5e2bd}
