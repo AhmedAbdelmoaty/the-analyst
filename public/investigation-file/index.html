@@ -3,9 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#101c2d">
+  <meta name="theme-color" content="#f9e8c1">
   <title>ملف تحت التحقيق</title>
   <link rel="stylesheet" href="/investigation-file/css/investigation.css">
+  <link rel="stylesheet" href="/investigation-file/css/v3-bright.css">
 </head>
 <body>
   <div class="paper-grain" aria-hidden="true"></div><div class="office-backdrop" aria-hidden="true"><span class="office-lamp"></span><span class="office-window"></span><span class="office-plant"></span></div>
@@ -64,17 +65,18 @@
             <div class="historical-heading"><b id="historicalTitle">سجل الشركة الأصلي</b><span class="history-seal">بيانات فعلية · ثابتة</span></div>
             <div id="historicalReadout" class="historical-readout"></div>
           </section>
+          <div class="experiment-actions"><button id="equalMix" class="game-button utility">جرّب توزيع 50/50</button><button id="resetMix" class="game-button utility">رجّع التوزيع الأصلي</button><button id="saveMix" class="game-button secondary">احفظ التجربة كدليل</button></div>
           <div class="experiment-board"><div class="mix-controls" aria-label="تجربة افتراضية لتوزيع الموظفين"><h3>جرّب تركيب الموظفين</h3>
-            <div class="mix-group"><label for="trainedMix"><span>الحاضرين · Junior</span><output id="trainedMixValue" for="trainedMix">25%</output></label>
+            <div class="mix-group trained-chamber"><b class="chamber-sign">حضروا التدريب</b><div id="trainedPopulation" class="employee-population" aria-hidden="true"></div><label for="trainedMix"><span>الحاضرين · Junior</span><output id="trainedMixValue" for="trainedMix">25%</output></label>
             <input id="trainedMix" type="range" min="0" max="1000" step="any" value="250" aria-label="نسبة Junior الافتراضية بين الحاضرين" aria-describedby="mixHelp">
             <div class="mix-segments" aria-hidden="true"><span class="mix-junior trained-junior" style="width:25%"></span><span class="mix-senior trained-senior" style="width:75%"></span></div>
             <div class="mix-legend"><span>Junior <b id="trainedJuniorShare">25%</b></span><span>Senior <b id="trainedSeniorShare">75%</b></span></div></div>
-            <div class="mix-group"><label for="untrainedMix"><span>غير الحاضرين · Junior</span><output id="untrainedMixValue" for="untrainedMix">85.7%</output></label>
+            <div class="mix-group untrained-chamber"><b class="chamber-sign">ماحضروش التدريب</b><div id="untrainedPopulation" class="employee-population" aria-hidden="true"></div><label for="untrainedMix"><span>غير الحاضرين · Junior</span><output id="untrainedMixValue" for="untrainedMix">85.7%</output></label>
             <input id="untrainedMix" type="range" min="0" max="1000" step="any" value="857.1428571428571" aria-label="نسبة Junior الافتراضية بين غير الحاضرين" aria-describedby="mixHelp">
             <div class="mix-segments" aria-hidden="true"><span class="mix-junior untrained-junior" style="width:85.7%"></span><span class="mix-senior untrained-senior" style="width:14.3%"></span></div>
             <div class="mix-legend"><span>Junior <b id="untrainedJuniorShare">85.7%</b></span><span>Senior <b id="untrainedSeniorShare">14.3%</b></span></div></div>
-          </div><div class="live-results" aria-label="معدلات الترقية في التجربة الافتراضية"><h3>معدل الترقية في التجربة الافتراضية</h3><p class="small">يتحسب من معدلات Junior وSenior الأصلية.</p><div class="result-row"><div class="result-label"><span>حضروا البرنامج</span><strong id="trainedWhatIf" dir="ltr">35%</strong></div><div class="result-track"><span id="trainedRateBar" class="result-fill trained-rate"></span></div></div><div class="result-row"><div class="result-label"><span>ماحضروش البرنامج</span><strong id="untrainedWhatIf" dir="ltr">65.7%</strong></div><div class="result-track"><span id="untrainedRateBar" class="result-fill untrained-rate"></span></div></div><p id="mixRelation" class="mix-relation"></p></div></div>
-          <div class="experiment-actions"><button id="resetMix" class="game-button utility">رجّع التوزيع الأصلي</button><button id="saveMix" class="game-button secondary">احفظ التجربة كدليل</button></div>
+          </div><div class="live-results" aria-label="معدلات الترقية في التجربة الافتراضية"><h3>معدل الترقية في التجربة الافتراضية</h3><p class="small">يتحسب من معدلات Junior وSenior الأصلية.</p><div class="result-row"><div class="result-label"><span>حضروا البرنامج</span><strong id="trainedWhatIf" dir="ltr">35%</strong></div><div class="result-track"><span id="trainedRateBar" class="result-fill trained-rate"></span></div></div><div class="result-row"><div class="result-label"><span>ماحضروش البرنامج</span><strong id="untrainedWhatIf" dir="ltr">65.7%</strong></div><div class="result-track"><span id="untrainedRateBar" class="result-fill untrained-rate"></span></div></div><div id="rateBalance" class="rate-balance" role="img" aria-label="ميزان مقارنة معدلات الترقية الافتراضية"><span class="balance-pivot"></span><div id="balanceBeam" class="balance-beam"><span class="balance-pan trained-pan">حضروا</span><span class="balance-pan untrained-pan">ماحضروش</span></div></div><p id="mixRelation" class="mix-relation"></p></div></div>
+          <div class="lab-note"><b>جوا كل مستوى، معدلات الترقية ثابتة من سجلات HR.</b> التجربة بتغيّر عدد Junior وSenior في كل مجموعة فقط. <span>كل شخصية ≈ 5% من تركيبة افتراضية، مش موظف من السجل.</span></div><div id="labDiscovery" class="lab-discovery hidden" role="status"><img src="/investigation-file/assets/felfel/celebrate.png" alt=""><p>أهو! الإجمالي اتقلب لما غيّرنا التركيبة، ومعدلات Junior وSenior نفسها ثابتة.</p></div>
           <div id="savedMix" class="saved-mix"></div>
           <p id="mixHelp" class="small">تجربة افتراضية محسوبة من معدلات الترقية الأصلية داخل Junior وSenior. السجل فوق ما بيتغيرش.</p>
           <p id="scaleMessage" class="feedback" tabindex="-1" aria-live="polite">حرّك شريط واحد وشوف أثره فورًا.</p>

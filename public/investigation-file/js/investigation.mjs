@@ -90,6 +90,13 @@ function updateCards() {
     const id = card.dataset.id;
     state.selected = state.selected.includes(id) ? state.selected.filter(x => x !== id) : state.selected.length === 2 ? [id] : [...state.selected, id];
     sound('recordSelect'); reactFelfel('magnifier'); updateCards();
+    if (state.selected.length === 2) {
+      const openClip = state.pairs.findIndex(pair => pair.length !== 2);
+      state.pairs[openClip < 0 ? 0 : openClip] = [...state.selected];
+      updateClips();
+      sound('clipAttach');
+      $('pairMessage').textContent = 'المقارنة ظهرت على المشبك. تقدر تحفظها أو تجرّب غيرها.';
+    }
   });
 }
 
@@ -109,17 +116,8 @@ function renderSavedPairs() {
     const summary = recordNames.length === 2
       ? `${name(recordNames[0])} ${pct(rate(recordNames[0]))} · مقابل ${name(recordNames[1])} ${pct(rate(recordNames[1]))}`
       : 'الخانة فاضية · احفظ أي مقارنة';
-    return `<div class="saved-pair ${ids.length === 2 ? 'has-evidence' : ''}"><div class="saved-pair-heading"><b>دليل ${i + 1}</b>${ids.length === 2 ? `<span class="saved-pair-summary">${summary}</span><button class="text-button" data-expand-saved="${i}" aria-expanded="false">عرض</button><button class="text-button" data-recall="${i}">افتح على المشبك</button>` : `<span>${summary}</span>`}</div><div class="saved-pair-detail hidden" data-saved-detail="${i}"><div class="comparison-layout">${ids.length === 2 ? comparisonView(ids) : ''}</div></div></div>`;
+    return `<div class="saved-pair ${ids.length === 2 ? 'has-evidence' : ''}"><div class="saved-pair-heading"><b>دليل ${i + 1}</b>${ids.length === 2 ? `<span class="saved-pair-summary">${summary}</span><button class="text-button" data-recall="${i}">افتح على المشبك</button>` : `<span>${summary}</span>`}</div><div class="saved-pair-detail" data-saved-detail="${i}"><div class="comparison-layout">${ids.length === 2 ? comparisonView(ids) : ''}</div></div></div>`;
   }).join('');
-  document.querySelectorAll('[data-expand-saved]').forEach(button => button.addEventListener('click', () => {
-    const detail = $(`savedPairs`).querySelector(`[data-saved-detail="${button.dataset.expandSaved}"]`);
-    const expanded = button.getAttribute('aria-expanded') !== 'true';
-    button.setAttribute('aria-expanded', String(expanded));
-    button.textContent = expanded ? 'إخفاء' : 'عرض';
-    detail.classList.toggle('hidden', !expanded);
-    if (expanded) { detail.classList.remove('evidence-open'); void detail.offsetWidth; detail.classList.add('evidence-open'); }
-    sound('sceneChange');
-  }));
   document.querySelectorAll('[data-recall]').forEach(button => button.addEventListener('click', () => {
     const i = Number(button.dataset.recall);
     state.pairs[i] = [...state.savedPairs[i]];
@@ -136,6 +134,56 @@ function renderHistoricalReadout() {
 
 function currentMix() {
   return { trained: Number($('trainedMix').value) / 1000, untrained: Number($('untrainedMix').value) / 1000 };
+}
+
+const populations = { trained: new Map(), untrained: new Map() };
+let labDiscoveryShown = false;
+function renderPopulation(group, juniorShare) {
+  const chamber = $(`${group}Population`);
+  const tokens = populations[group];
+  const juniorCount = Math.round(juniorShare * 20);
+  const wanted = new Set(Array.from({ length: 20 }, (_, slot) => slot < juniorCount ? `j${slot}` : `s${slot - juniorCount}`));
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  chamber.querySelectorAll('.leaving').forEach(node => node.remove());
+  for (const [key, node] of tokens) {
+    if (wanted.has(key)) continue;
+    tokens.delete(key);
+    if (reduced) { node.remove(); continue; }
+    node.classList.add('leaving');
+    const exit = node.animate([
+      { transform: 'translateX(0) translateY(0) scale(1)', opacity: 1 },
+      { transform: `translateX(${key[0] === 'j' ? '-65px' : '65px'}) translateY(15px) scale(.75)`, opacity: 0 },
+    ], { duration: 300, easing: 'ease-in', fill: 'forwards' });
+    exit.onfinish = () => node.remove();
+  }
+  for (let slot = 0; slot < 20; slot++) {
+    const junior = slot < juniorCount;
+    const key = junior ? `j${slot}` : `s${slot - juniorCount}`;
+    let node = tokens.get(key);
+    const entering = !node;
+    if (!node) {
+      node = document.createElement('img');
+      node.className = `employee-token ${junior ? 'junior-token' : 'senior-token'}`;
+      node.alt = '';
+      node.draggable = false;
+      node.src = `/investigation-file/assets/employees/${junior ? 'junior' : 'senior'}-0${slot % 4 + 1}.png`;
+      chamber.append(node);
+      tokens.set(key, node);
+    }
+    node.style.left = `${(slot % 10) * 9.5 + 2}%`;
+    node.style.top = `${slot < 10 ? 8 : 58}px`;
+    node.style.zIndex = String(slot < 10 ? 1 : 2);
+    if (entering && !reduced && chamber.dataset.ready === 'true') {
+      node.animate([
+        { transform: `translateX(${junior ? '-75px' : '75px'}) translateY(-12px) scale(.7)`, opacity: 0 },
+        { transform: 'translateX(0) translateY(5px) scale(1.07)', opacity: 1, offset: .8 },
+        { transform: 'translateX(0) translateY(0) scale(1)', opacity: 1 },
+      ], { duration: 430, easing: 'cubic-bezier(.18,.8,.26,1)' });
+    }
+  }
+  chamber.dataset.ready = 'true';
+  chamber.dataset.juniorCount = String(juniorCount);
+  chamber.dataset.seniorCount = String(20 - juniorCount);
 }
 
 function updateMix({ playSound = false } = {}) {
@@ -155,6 +203,17 @@ function updateMix({ playSound = false } = {}) {
     const resultRow = bar.closest('.result-row');
     resultRow.classList.remove('updated'); void resultRow.offsetWidth; resultRow.classList.add('updated');
     $(`${group}Mix`).setAttribute('aria-valuetext', `Junior ${pct(junior)}، Senior ${pct(1 - junior)}`);
+    renderPopulation(group, junior);
+  }
+  const difference = rates.trained - rates.untrained;
+  $('balanceBeam').style.transform = `rotate(${Math.max(-12, Math.min(12, difference * 25))}deg)`;
+  $('rateBalance').setAttribute('aria-label', `ميزان معدلات الترقية الافتراضية: الحاضرين ${pct(rates.trained)}، غير الحاضرين ${pct(rates.untrained)}`);
+  if (!labDiscoveryShown && difference > .015) {
+    labDiscoveryShown = true;
+    $('labDiscovery').classList.remove('hidden');
+    reactFelfel('discovery');
+    sound('proofPin');
+    window.setTimeout(() => $('labDiscovery').classList.add('hidden'), 4300);
   }
   $('mixRelation').textContent = Math.abs(mix.trained - mix.untrained) < .0005 ? 'تركيبة المجموعتين متشابهة في التجربة دي' : 'تركيبة المجموعتين مختلفة في التجربة دي';
   if (playSound) sound('mixAdjustment');
@@ -199,6 +258,12 @@ $('resetMix').addEventListener('click', () => {
   $('untrainedMix').value = String(share(false, 'junior') * 1000);
   updateMix({ playSound: true }); reactFelfel('magnifier');
   $('scaleMessage').textContent = 'رجعنا للسجل الأصلي بدقته. التغيير الجاي هيبقى بخطوات 5%.';
+});
+$('equalMix').addEventListener('click', () => {
+  $('trainedMix').value = '500';
+  $('untrainedMix').value = '500';
+  updateMix({ playSound: true });
+  $('scaleMessage').textContent = 'التوزيع الافتراضي بقى 50/50 في المجموعتين. قارن النتيجة بالسجل الأصلي.';
 });
 $('saveMix').addEventListener('click', () => {
   const mix = currentMix();
@@ -245,10 +310,18 @@ function updateHintControl() {
   $('hintBtn').disabled = remaining === 0;
   $('hintBtn').setAttribute('aria-label', remaining ? `افتح تلميحًا، متبقي ${remaining}` : 'استخدمت التلميحات الثلاثة');
 }
+let hintScrollY = 0;
 function closeHint(immediate = false) {
   const panel = $('hintPanel');
   if (panel.classList.contains('hidden')) return;
   $('hintVeil').classList.add('hidden');
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.width = '';
+  const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  window.scrollTo(0, hintScrollY);
+  document.documentElement.style.scrollBehavior = previousScrollBehavior;
   if (immediate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     panel.classList.add('hidden');
   } else {
@@ -267,7 +340,10 @@ $('hintBtn').addEventListener('click', () => {
   $('hintPanel').querySelector('.hint-character').dataset.state = 'entrance';
   $('hintVeil').classList.remove('hidden');
   $('hintPanel').classList.remove('hidden');
-  if (window.matchMedia('(max-width: 700px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
+  hintScrollY = window.scrollY;
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${hintScrollY}px`;
+  document.body.style.width = '100%';
   sound('sceneChange');
   window.setTimeout(() => {
     if ($('hintPanel').classList.contains('hidden')) return;
@@ -278,6 +354,7 @@ $('hintBtn').addEventListener('click', () => {
   }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
 });
 $('dismissHint').addEventListener('click', () => closeHint());
+$('hintVeil').addEventListener('click', () => closeHint());
 $('hintPanel').addEventListener('keydown', event => {
   if (event.key === 'Escape') { event.preventDefault(); closeHint(); return; }
   if (event.key !== 'Tab') return;

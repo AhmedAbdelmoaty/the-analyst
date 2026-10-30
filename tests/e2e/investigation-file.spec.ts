@@ -49,6 +49,7 @@ test('opening meeting clearly focuses the current speaker', async ({ page }, tes
 
 test('investigation uses two accessible office tabs and preserves work while switching', async ({ page }, testInfo) => {
   await openDesk(page);
+  await capturePreview(page, testInfo.outputPath('v3-evidence-board.png'));
   await expect(page.locator('#evidenceTab')).toHaveAttribute('aria-selected', 'true');
   await page.locator('#evidenceTab').focus();
   await page.keyboard.press('End');
@@ -66,6 +67,22 @@ test('investigation uses two accessible office tabs and preserves work while swi
     expect(columns.trim().split(/\s+/)).toHaveLength(1);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('desktop investigation stays usable at common laptop widths', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop');
+  for (const width of [1366, 1440]) {
+    await page.setViewportSize({ width, height: width === 1366 ? 768 : 900 });
+    await openDesk(page);
+    await expect(page.locator('#cards .record-card')).toHaveCount(4);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.locator('#labTab').click();
+    const controls = await page.locator('.mix-controls').boundingBox();
+    const results = await page.locator('.live-results').boundingBox();
+    expect(controls && results && controls.x > results.x).toBeTruthy();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await capturePreview(page, testInfo.outputPath(`v3-lab-${width}.png`));
+  }
 });
 
 test('supports freely saved comparisons and a complete success without a required slider experiment', async ({ page }, testInfo) => {
@@ -173,9 +190,7 @@ test('phase A keeps comparison cards readable, historical figures fixed, and liv
   await expect(page.locator('[data-clip="0"] .comparison-card').last()).toContainText('450/600');
   await page.locator('[data-save-clip="0"]').click();
   await expect(page.locator('#savedPairs .comparison-card')).toHaveCount(2);
-  await page.locator('[data-expand-saved="0"]').click();
   await expect(page.locator('[data-saved-detail="0"]')).toBeVisible();
-  await page.locator('[data-expand-saved="0"]').click();
   await openLab(page);
   const original = await page.locator('#historicalReadout').textContent();
   await setMix(page, 'trainedMix', 500);
@@ -186,7 +201,7 @@ test('phase A keeps comparison cards readable, historical figures fixed, and liv
     const controls = await page.locator('.mix-controls').boundingBox();
     const results = await page.locator('.live-results').boundingBox();
     expect(controls && results && controls.x > results.x).toBeTruthy();
-    expect(controls && results && Math.abs(controls.y - results.y) < 4).toBeTruthy();
+    expect(controls && results && results.y < controls.y + controls.height).toBeTruthy();
   }
   await page.locator('#faceCfo').click();
   const decisions = page.locator('#decisionStep .verdict');
@@ -199,6 +214,29 @@ test('phase A keeps comparison cards readable, historical figures fixed, and liv
   await expect(decisions.nth(0)).toHaveAttribute('aria-pressed', 'false');
   await expect(decisions.nth(1)).toHaveAttribute('aria-pressed', 'true');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('employee lab animates independent populations and balances hypothetical rates', async ({ page }) => {
+  await openDesk(page);
+  await openLab(page);
+  await expect(page.locator('#trainedPopulation')).toHaveAttribute('data-junior-count', '5');
+  await expect(page.locator('#untrainedPopulation')).toHaveAttribute('data-junior-count', '17');
+  await expect(page.locator('#trainedPopulation .employee-token:not(.leaving)')).toHaveCount(20);
+  await page.locator('#equalMix').click();
+  await expect(page.locator('#trainedWhatIf')).toHaveText('50%');
+  await expect(page.locator('#untrainedWhatIf')).toHaveText('42.5%');
+  await expect(page.locator('#trainedPopulation')).toHaveAttribute('data-junior-count', '10');
+  await expect(page.locator('#untrainedPopulation')).toHaveAttribute('data-senior-count', '10');
+  await expect(page.locator('#labDiscovery')).toBeVisible();
+  await setMix(page, 'trainedMix', 0);
+  await expect(page.locator('#trainedPopulation')).toHaveAttribute('data-junior-count', '0');
+  await setMix(page, 'untrainedMix', 1000);
+  await expect(page.locator('#untrainedPopulation')).toHaveAttribute('data-junior-count', '20');
+  await page.locator('#resetMix').click();
+  await expect(page.locator('#untrainedMixValue')).toHaveText('85.7%');
+  await expect(page.locator('#untrainedPopulation')).toHaveAttribute('data-junior-count', '17');
+  await expect(page.locator('#trainedPopulation .employee-token:not(.leaving)')).toHaveCount(20);
+  await expect(page.locator('#untrainedPopulation .employee-token:not(.leaving)')).toHaveCount(20);
 });
 
 test('a saved experiment can be interpreted, corrected or removed without a false loss', async ({ page }) => {
@@ -234,6 +272,7 @@ test('Felfel delivers three dismissible hints across desk and meeting', async ({
   await expect(page.locator('#hintText')).not.toBeEmpty();
   await expect(page.locator('#hintFelfel')).toHaveJSProperty('complete', true);
   await expect(page.locator('#hintCount')).toHaveText('٢');
+  await expect(page.locator('body')).toHaveCSS('position', 'fixed');
   if (testInfo.project.name === 'mobile') {
     const hintBox = await page.locator('#hintPanel').boundingBox();
     expect(hintBox && hintBox.x >= 0 && hintBox.x + hintBox.width <= 390).toBeTruthy();
@@ -242,11 +281,12 @@ test('Felfel delivers three dismissible hints across desk and meeting', async ({
   await capturePreview(page, testInfo.outputPath('v3-hint.png'));
   await page.locator('#dismissHint').click();
   await expect(page.locator('#hintPanel')).toBeHidden();
+  await expect(page.locator('body')).not.toHaveCSS('position', 'fixed');
   await page.locator('#faceCfo').click();
   await page.locator('#hintBtn').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#hintText')).not.toBeEmpty();
-  await page.locator('#dismissHint').click();
+  await page.locator('#hintVeil').click({ position: { x: 5, y: 5 } });
   await expect(page.locator('#hintPanel')).toBeHidden();
   await page.locator('#hintBtn').click();
   await expect(page.locator('#hintText')).not.toBeEmpty();
