@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#fff8e7">
+  <meta name="theme-color" content="#101c2d">
   <title>ملف تحت التحقيق</title>
   <link rel="stylesheet" href="/investigation-file/css/investigation.css">
 </head>
 <body>
-  <div class="paper-grain" aria-hidden="true"></div>
+  <div class="paper-grain" aria-hidden="true"></div><div class="office-backdrop" aria-hidden="true"><span class="office-lamp"></span><span class="office-window"></span><span class="office-plant"></span></div>
   <header class="topbar">
     <div class="brand"><span class="brand-mark">◈</span><span>ملف تحت التحقيق</span></div>
     <div class="topbar-actions"><button id="hintBtn" class="hint-control hidden" type="button" aria-label="افتح تلميحًا، متبقي ثلاثة" aria-controls="hintPanel"><span class="hint-icon" aria-hidden="true"></span><span>تلميح <b id="hintCount">٣</b>/٣</span></button><button id="muteBtn" class="round-btn" aria-label="كتم الصوت" aria-pressed="false">♫</button></div>
   </header>
-  <aside id="hintPanel" class="hint-panel hidden" role="dialog" aria-modal="false" aria-labelledby="hintSpeaker" aria-describedby="hintText">
+  <div id="hintVeil" class="hint-veil hidden" aria-hidden="true"></div><aside id="hintPanel" class="hint-panel hidden" role="dialog" aria-modal="true" aria-labelledby="hintSpeaker" aria-describedby="hintText">
     <div class="hint-character" data-state="entrance"><img id="hintFelfel" src="/investigation-file/assets/felfel/inspect.png" alt="فِلفِل المحقق"></div>
     <div class="hint-bubble paper-panel"><b id="hintSpeaker">فِلفِل</b><p id="hintText" aria-live="polite"></p><button id="dismissHint" class="game-button utility" type="button">تمام، هرجع للملف</button></div>
   </aside>
@@ -33,13 +33,15 @@
         </div>
         <div class="character hr"><img id="introHr" src="/investigation-file/assets/investigation/hr.png" alt="مديرة الموارد البشرية"></div>
       </div>
-      <div class="speech paper-panel" id="introSpeech" aria-live="polite"><span class="speaker">المدير المالي</span><p>٣٥٪ للحاضرين، و٦٥٫٧٪ للي ماحضروش. أوقّع على إلغاء البرنامج؟</p></div>
+      <div class="speech paper-panel" id="introSpeech" data-speaker="cfo" aria-live="polite"><span class="speaker">المدير المالي</span><p>٣٥٪ للحاضرين، و٦٥٫٧٪ للي ماحضروش. أوقّع على إلغاء البرنامج؟</p></div>
       <button id="nextIntro" class="game-button primary">التالي <span aria-hidden="true">←</span></button>
     </section>
 
     <section id="investigation" class="scene investigation-scene hidden" aria-labelledby="deskTitle">
       <div class="desk-heading"><div><div class="scene-kicker">مكتب التحقيق</div><h1 id="deskTitle">افحص التقرير قبل القرار</h1></div><div class="desk-guide"><img id="deskFelfel" src="/investigation-file/assets/felfel/idle.png" alt="فِلفِل المحقق" data-state="idle"><span class="desk-note">الورق عنده حكاية. جرّب وشوف.</span></div></div>
+      <nav class="office-tabs" role="tablist" aria-label="أقسام مكتب التحقيق"><button id="evidenceTab" class="office-tab active" type="button" role="tab" tabindex="0" aria-selected="true" aria-controls="evidenceWork"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 7.5V5a4 4 0 0 1 8 0v13a3 3 0 0 1-6 0V6.5a2 2 0 0 1 4 0V17"/></svg> لوحة الأدلة</button><button id="labTab" class="office-tab" type="button" role="tab" tabindex="-1" aria-selected="false" aria-controls="analysisWork"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 15h8"/></svg> معمل التحليل</button></nav>
       <div class="desk-grid">
+        <div id="evidenceWork" class="office-work" role="tabpanel" aria-labelledby="evidenceTab">
         <section class="paper-panel source-panel" aria-labelledby="sourceTitle">
           <h2 id="sourceTitle">سجلات HR</h2>
           <p class="small">اختار بطاقتين من السجل، وبعدين اضغط مشبك.</p>
@@ -53,6 +55,8 @@
           <div class="saved-evidence"><b>ملف الأدلة · مقارنتان بحد أقصى</b><div id="savedPairs"></div></div>
           <p id="pairMessage" class="feedback" aria-live="polite">ابدأ بأي مقارنة تثير شكّك.</p>
         </section>
+        </div>
+        <div id="analysisWork" class="office-work hidden" role="tabpanel" aria-labelledby="labTab" hidden>
         <section class="paper-panel scale-panel" aria-labelledby="scaleTitle">
           <h2 id="scaleTitle">لوح تركيب الموظفين</h2>
           <p class="small">جرّب تغيّر نسبة Junior وSenior، وشوف معدل الترقية بيتحرك إزاي. الأرقام الأصلية ثابتة.</p>
@@ -75,6 +79,7 @@
           <p id="mixHelp" class="small">تجربة افتراضية محسوبة من معدلات الترقية الأصلية داخل Junior وSenior. السجل فوق ما بيتغيرش.</p>
           <p id="scaleMessage" class="feedback" tabindex="-1" aria-live="polite">حرّك شريط واحد وشوف أثره فورًا.</p>
         </section>
+        </div>
       </div>
       <div class="final-access"><button id="faceCfo" class="game-button primary">ارجع للاجتماع <span aria-hidden="true">←</span></button></div>
     </section>
@@ -88,7 +93,7 @@
       <button id="backToDesk" class="text-button">أرجع للمكتب</button>
     </section>
 
-    <section id="ending" class="scene ending-scene hidden" aria-labelledby="endingTitle"><div class="end-card paper-panel"><div class="ending-people"><img id="endingHr" alt=""><img id="endingFelfel" alt="فِلفِل المحقق"><img id="endingReaction" alt=""></div><div class="ending-stamp"><img id="endingIcon" alt="" src=""><span id="endingStampText"></span></div><div class="scene-kicker">نهاية القضية</div><h1 id="endingTitle"></h1><p id="endingText"></p><div class="ending-actions"><button id="openReveal" class="game-button secondary">افتح الملف الأخير مع فِلفِل</button><button id="replay" class="game-button primary">العب من جديد</button></div></div><div id="revealStage" class="reveal-stage paper-panel hidden" aria-live="polite"><div class="reveal-heading"><img id="revealFelfel" src="/investigation-file/assets/felfel/inspect.png" alt="فِلفِل المحقق"><div><span class="scene-kicker">الملف الأخير</span><h2 id="revealTitle"></h2></div></div><p id="revealSpeech"></p><div id="revealVisual" class="reveal-visual"></div><div class="reveal-footer"><span id="revealProgress"></span><button id="nextReveal" class="game-button primary">اللي بعده ←</button><button id="closeReveal" class="text-button">ارجع للنهاية</button></div></div></section>
+    <section id="ending" class="scene ending-scene hidden" aria-labelledby="endingTitle"><div class="end-card paper-panel"><div class="ending-people"><img id="endingHr" alt=""><img id="endingFelfel" alt="فِلفِل المحقق"><img id="endingReaction" alt=""></div><div class="ending-stamp"><img id="endingIcon" alt="" src=""><span id="endingStampText"></span></div><div class="scene-kicker">نهاية القضية</div><h1 id="endingTitle"></h1><p id="endingText"></p><div class="ending-actions"><button id="openReveal" class="game-button secondary">افتح الملف الأخير مع فِلفِل</button><button id="replay" class="game-button primary">العب من جديد</button></div></div><div id="revealStage" class="reveal-stage paper-panel hidden" aria-live="polite"><div class="reveal-heading"><img id="revealFelfel" src="/investigation-file/assets/felfel/inspect.png" alt="فِلفِل المحقق"><div><span class="scene-kicker">الملف الأخير</span><h2 id="revealTitle"></h2></div></div><p id="revealSpeech"></p><div id="revealVisual" class="reveal-visual"></div><div class="reveal-footer"><span id="revealProgress"></span><button id="pauseReveal" class="game-button utility" aria-pressed="false">إيقاف الشرح مؤقتًا</button><button id="replayReveal" class="text-button">ابدأ الشرح من الأول</button><button id="nextReveal" class="game-button primary">اللي بعده ←</button><button id="closeReveal" class="text-button">تخطّي الشرح</button></div></div></section>
   </main>
   <script type="module" src="/investigation-file/js/investigation.mjs"></script>
 </body>

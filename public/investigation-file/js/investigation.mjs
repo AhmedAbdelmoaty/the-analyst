@@ -47,6 +47,43 @@ function scene(id) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+const officeTabs = [['evidenceTab', 'evidenceWork'], ['labTab', 'analysisWork']];
+function activateOfficeTab(tabId, focus = false) {
+  const selectedIndex = officeTabs.findIndex(([id]) => id === tabId);
+  if (selectedIndex < 0) return;
+  officeTabs.forEach(([id, panelId], index) => {
+    const active = index === selectedIndex;
+    const button = $(id);
+    const panel = $(panelId);
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+    button.classList.toggle('active', active);
+    panel.hidden = !active;
+    panel.classList.toggle('hidden', !active);
+    if (active) {
+      panel.classList.remove('tab-enter');
+      void panel.offsetWidth;
+      panel.classList.add('tab-enter');
+    }
+  });
+  if (focus) $(tabId).focus();
+}
+for (const [tabId] of officeTabs) {
+  $(tabId).addEventListener('click', () => {
+    if ($(tabId).getAttribute('aria-selected') === 'true') return;
+    sound('sceneChange');
+    activateOfficeTab(tabId);
+  });
+  $(tabId).addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const index = officeTabs.findIndex(([id]) => id === tabId);
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? officeTabs.length - 1 : (index + 1) % officeTabs.length;
+    activateOfficeTab(officeTabs[next][0], true);
+    sound('sceneChange');
+  });
+}
+
 function updateCards() {
   $('cards').innerHTML = records.map(r => `<button class="record-card ${state.selected.includes(r.id) ? 'selected' : ''}" data-id="${r.id}" aria-pressed="${state.selected.includes(r.id)}"><span class="record-tag">${name(r)}</span><span class="record-numbers"><b>${r.promoted}</b> ترقّوا من <b>${r.total}</b></span><span class="record-foot">ملف موظفين</span></button>`).join('');
   for (const card of document.querySelectorAll('.record-card')) card.addEventListener('click', () => {
@@ -67,9 +104,22 @@ function updateClips() {
 }
 
 function renderSavedPairs() {
-  $('savedPairs').innerHTML = state.savedPairs.map((ids, i) =>
-    `<div class="saved-pair"><div class="saved-pair-heading"><b>دليل ${i + 1}</b>${ids.length === 2 ? `<button class="text-button" data-recall="${i}">افتح على المشبك</button>` : ''}</div><div class="comparison-layout">${ids.length === 2 ? comparisonView(ids) : '<span class="clip-empty">الخانة فاضية · احفظ أي مقارنة</span>'}</div></div>`
-  ).join('');
+  $('savedPairs').innerHTML = state.savedPairs.map((ids, i) => {
+    const recordNames = ids.length === 2 ? ids.map(id => records.find(record => record.id === id)) : [];
+    const summary = recordNames.length === 2
+      ? `${name(recordNames[0])} ${pct(rate(recordNames[0]))} · مقابل ${name(recordNames[1])} ${pct(rate(recordNames[1]))}`
+      : 'الخانة فاضية · احفظ أي مقارنة';
+    return `<div class="saved-pair ${ids.length === 2 ? 'has-evidence' : ''}"><div class="saved-pair-heading"><b>دليل ${i + 1}</b>${ids.length === 2 ? `<span class="saved-pair-summary">${summary}</span><button class="text-button" data-expand-saved="${i}" aria-expanded="false">عرض</button><button class="text-button" data-recall="${i}">افتح على المشبك</button>` : `<span>${summary}</span>`}</div><div class="saved-pair-detail hidden" data-saved-detail="${i}"><div class="comparison-layout">${ids.length === 2 ? comparisonView(ids) : ''}</div></div></div>`;
+  }).join('');
+  document.querySelectorAll('[data-expand-saved]').forEach(button => button.addEventListener('click', () => {
+    const detail = $(`savedPairs`).querySelector(`[data-saved-detail="${button.dataset.expandSaved}"]`);
+    const expanded = button.getAttribute('aria-expanded') !== 'true';
+    button.setAttribute('aria-expanded', String(expanded));
+    button.textContent = expanded ? 'إخفاء' : 'عرض';
+    detail.classList.toggle('hidden', !expanded);
+    if (expanded) { detail.classList.remove('evidence-open'); void detail.offsetWidth; detail.classList.add('evidence-open'); }
+    sound('sceneChange');
+  }));
   document.querySelectorAll('[data-recall]').forEach(button => button.addEventListener('click', () => {
     const i = Number(button.dataset.recall);
     state.pairs[i] = [...state.savedPairs[i]];
@@ -100,7 +150,10 @@ function updateMix({ playSound = false } = {}) {
     document.querySelector(`.${group}-junior`).style.width = `${junior * 100}%`;
     document.querySelector(`.${group}-senior`).style.width = `${(1 - junior) * 100}%`;
     $(`${group}WhatIf`).textContent = pct(result);
-    $(`${group}RateBar`).style.width = `${result * 100}%`;
+    const bar = $(`${group}RateBar`);
+    bar.style.width = `${result * 100}%`;
+    const resultRow = bar.closest('.result-row');
+    resultRow.classList.remove('updated'); void resultRow.offsetWidth; resultRow.classList.add('updated');
     $(`${group}Mix`).setAttribute('aria-valuetext', `Junior ${pct(junior)}، Senior ${pct(1 - junior)}`);
   }
   $('mixRelation').textContent = Math.abs(mix.trained - mix.untrained) < .0005 ? 'تركيبة المجموعتين متشابهة في التجربة دي' : 'تركيبة المجموعتين مختلفة في التجربة دي';
@@ -195,6 +248,7 @@ function updateHintControl() {
 function closeHint(immediate = false) {
   const panel = $('hintPanel');
   if (panel.classList.contains('hidden')) return;
+  $('hintVeil').classList.add('hidden');
   if (immediate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     panel.classList.add('hidden');
   } else {
@@ -209,18 +263,29 @@ $('hintBtn').addEventListener('click', () => {
   updateHintControl();
   $('hintFelfel').src = index === 0 ? '/investigation-file/assets/felfel/idle.png' : '/investigation-file/assets/felfel/inspect.png';
   $('hintText').textContent = '';
+  $('hintPanel').querySelector('.hint-bubble').classList.remove('speech-revealed');
   $('hintPanel').querySelector('.hint-character').dataset.state = 'entrance';
+  $('hintVeil').classList.remove('hidden');
   $('hintPanel').classList.remove('hidden');
   if (window.matchMedia('(max-width: 700px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
   sound('sceneChange');
   window.setTimeout(() => {
     if ($('hintPanel').classList.contains('hidden')) return;
     $('hintPanel').querySelector('.hint-character').dataset.state = 'talking';
+    $('hintPanel').querySelector('.hint-bubble').classList.add('speech-revealed');
     $('hintText').textContent = hints[index];
     $('dismissHint').focus();
   }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
 });
 $('dismissHint').addEventListener('click', () => closeHint());
+$('hintPanel').addEventListener('keydown', event => {
+  if (event.key === 'Escape') { event.preventDefault(); closeHint(); return; }
+  if (event.key !== 'Tab') return;
+  const focusables = [...$('hintPanel').querySelectorAll('button:not(:disabled),a[href],input:not(:disabled)')];
+  const first = focusables[0]; const last = focusables.at(-1);
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+});
 updateHintControl();
 
 const dialogue = [
@@ -236,6 +301,8 @@ $('nextIntro').addEventListener('click', () => {
   const [who, words] = dialogue[state.introStep];
   $('introSpeech').querySelector('.speaker').textContent = who;
   $('introSpeech').querySelector('p').textContent = words;
+  $('introSpeech').dataset.speaker = state.introStep === 1 ? 'hr' : 'cfo';
+  $('introSpeech').classList.remove('speech-enter'); void $('introSpeech').offsetWidth; $('introSpeech').classList.add('speech-enter');
   document.querySelector('.characters').classList.toggle('hr-speaking', state.introStep === 1);
   $('introHr').src = state.introStep === 1 ? '/investigation-file/assets/investigation/hr-concerned.png' : '/investigation-file/assets/investigation/hr.png';
   $('nextIntro').textContent = state.introStep === dialogue.length - 1 ? 'افتح التحقيق ←' : 'التالي ←';
@@ -307,6 +374,14 @@ function showEnding(result, reason = 'unsupported-decision') {
 const revealBars = (firstLabel, firstRate, secondLabel, secondRate) => `<div class="reveal-bars"><div class="reveal-bar"><div><b>${firstLabel}</b><strong dir="ltr">${pct(firstRate)}</strong></div><span><i style="width:${firstRate * 100}%"></i></span></div><div class="reveal-bar"><div><b>${secondLabel}</b><strong dir="ltr">${pct(secondRate)}</strong></div><span><i style="width:${secondRate * 100}%"></i></span></div></div>`;
 const compositionBar = (label, junior) => `<div class="reveal-composition"><b>${label}</b><div><span style="width:${junior * 100}%"></span><span style="width:${(1 - junior) * 100}%"></span></div><small>Junior ${pct(junior)} · Senior ${pct(1 - junior)}</small></div>`;
 let revealStep = 0;
+let revealTimer = 0;
+let revealPaused = false;
+function stopRevealTimer() { window.clearTimeout(revealTimer); revealTimer = 0; }
+function startRevealTimer() {
+  stopRevealTimer();
+  if (revealPaused || $('revealStage').classList.contains('hidden') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  revealTimer = window.setTimeout(() => advanceReveal(true), 9000);
+}
 function renderReveal() {
   const juniorTrained = records.find(r => r.id === 'jt');
   const juniorOther = records.find(r => r.id === 'ju');
@@ -330,18 +405,37 @@ function renderReveal() {
   $('revealProgress').textContent = `${revealStep + 1} / ${beats.length}`;
   $('nextReveal').textContent = revealStep === beats.length - 1 ? 'ارجع للنهاية' : 'اللي بعده ←';
   $('revealStage').classList.remove('reveal-pop'); void $('revealStage').offsetWidth; $('revealStage').classList.add('reveal-pop');
+  $('pauseReveal').textContent = revealPaused ? 'كمّل الشرح' : 'إيقاف الشرح مؤقتًا';
+  $('pauseReveal').setAttribute('aria-pressed', String(revealPaused));
+  startRevealTimer();
 }
 $('openReveal').addEventListener('click', () => {
   revealStep = 0;
+  revealPaused = false;
   document.querySelector('.end-card').classList.add('hidden');
   $('revealStage').classList.remove('hidden');
   renderReveal(); sound('sceneChange'); $('nextReveal').focus();
 });
 $('nextReveal').addEventListener('click', () => {
-  if (revealStep < 5) { revealStep++; renderReveal(); sound('sceneChange'); }
-  else { $('revealStage').classList.add('hidden'); document.querySelector('.end-card').classList.remove('hidden'); $('openReveal').focus(); sound('sceneChange'); }
+  advanceReveal(false);
 });
+$('pauseReveal').addEventListener('click', () => {
+  revealPaused = !revealPaused;
+  if (revealPaused) stopRevealTimer(); else startRevealTimer();
+  $('pauseReveal').textContent = revealPaused ? 'كمّل الشرح' : 'إيقاف الشرح مؤقتًا';
+  $('pauseReveal').setAttribute('aria-pressed', String(revealPaused)); sound('button');
+});
+$('replayReveal').addEventListener('click', () => { revealStep = 0; revealPaused = false; renderReveal(); sound('sceneChange'); });
+function advanceReveal(fromTimer = false) {
+  stopRevealTimer();
+  if (revealStep < 5) { revealStep++; renderReveal(); if (!fromTimer) sound('sceneChange'); }
+  else {
+    $('revealStage').classList.add('hidden'); document.querySelector('.end-card').classList.remove('hidden'); $('openReveal').focus();
+    if (!fromTimer) sound('sceneChange');
+  }
+}
 $('closeReveal').addEventListener('click', () => {
+  stopRevealTimer();
   $('revealStage').classList.add('hidden'); document.querySelector('.end-card').classList.remove('hidden'); $('openReveal').focus(); sound('sceneChange');
 });
 $('submitVerdict').addEventListener('click', () => {
@@ -350,10 +444,10 @@ $('submitVerdict').addEventListener('click', () => {
   if (result.status === 'needs-evidence') {
     if (result.missing.includes('experiment-interpretation')) {
       $('scaleMessage').textContent = 'قرارك مدعوم، لكن ملاحظتك على اللقطة الافتراضية مش بتوصف اللي اتغير فيها. راجعها أو شيل اللقطة وارجع.';
-      scene('investigation'); $('scaleMessage').focus(); return;
+      activateOfficeTab('labTab'); scene('investigation'); $('scaleMessage').focus(); return;
     }
     $('pairMessage').textContent = 'قرارك وتبريرك ماشيين مع بعض، بس المقارنات المحفوظة لسه مش كفاية لدعم الاعتراض. راجع المقارنات وبدّل اللي محتاج يتبدّل.';
-    scene('investigation'); $('pairMessage').focus(); return;
+    activateOfficeTab('evidenceTab'); scene('investigation'); $('pairMessage').focus(); return;
   }
   showEnding(result.status, result.reason);
 });
@@ -366,5 +460,6 @@ $('muteBtn').addEventListener('click', () => {
 });
 
 updateCards(); updateClips(); renderSavedPairs(); renderHistoricalReadout(); updateMix();
+activateOfficeTab('evidenceTab');
 const savedRun = readRun(playerId);
 if (new URLSearchParams(location.search).get('showResult') === '1' && savedRun.status === 'completed') showEnding(savedRun.outcome, savedRun.failureReason);

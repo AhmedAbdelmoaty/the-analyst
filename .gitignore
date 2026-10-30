@@ -25,3 +25,4 @@ dist-ssr
 
 # Local Playwright traces, screenshots, and run metadata
 .superpowers/
+test-results/

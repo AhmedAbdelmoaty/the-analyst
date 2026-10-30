@@ -10,6 +10,10 @@ async function openDesk(page: Page) {
   for (let i = 0; i < 3; i++) await page.locator('#nextIntro').click();
   await expect(page.locator('#investigation')).toBeVisible();
 }
+async function openLab(page: Page) {
+  await page.locator('#labTab').click();
+  await expect(page.locator('#analysisWork')).toBeVisible();
+}
 async function pair(page: Page, first: string, second: string, slot: number) {
   await page.locator(`[data-id="${first}"]`).click();
   await page.locator(`[data-id="${second}"]`).click();
@@ -29,13 +33,50 @@ async function decide(page: Page, decision: string, reason: string) {
   await page.locator('#submitVerdict').click();
 }
 
+test('opening meeting clearly focuses the current speaker', async ({ page }, testInfo) => {
+  await page.addInitScript(() => { window.name = 'investigation-v21-test-user'; });
+  await page.goto('/investigation-file/index.html');
+  await expect(page.locator('#introSpeech')).toHaveAttribute('data-speaker', 'cfo');
+  await capturePreview(page, testInfo.outputPath('v3-meeting-cfo.png'));
+  await page.locator('#nextIntro').click();
+  await expect(page.locator('#introSpeech')).toHaveAttribute('data-speaker', 'hr');
+  await expect(page.locator('.characters')).toHaveClass(/hr-speaking/);
+  await capturePreview(page, testInfo.outputPath('v3-meeting-hr.png'));
+  await page.locator('#nextIntro').click();
+  await expect(page.locator('#introSpeech')).toHaveAttribute('data-speaker', 'cfo');
+  await expect(page.locator('.characters')).not.toHaveClass(/hr-speaking/);
+});
+
+test('investigation uses two accessible office tabs and preserves work while switching', async ({ page }, testInfo) => {
+  await openDesk(page);
+  await expect(page.locator('#evidenceTab')).toHaveAttribute('aria-selected', 'true');
+  await page.locator('#evidenceTab').focus();
+  await page.keyboard.press('End');
+  await expect(page.locator('#labTab')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#analysisWork')).toBeVisible();
+  await expect(page.locator('#evidenceWork')).toBeHidden();
+  await expect(page.locator('#historicalReadout')).toContainText('65.7%');
+  await capturePreview(page, testInfo.outputPath('v3-analysis-lab.png'));
+  await page.locator('#labTab').focus();
+  await page.keyboard.press('Home');
+  await expect(page.locator('#evidenceWork')).toBeVisible();
+  await expect(page.locator('[data-id="jt"]')).toBeVisible();
+  if (page.viewportSize()?.width === 390) {
+    const columns = await page.locator('#evidenceWork').evaluate(el => getComputedStyle(el).gridTemplateColumns);
+    expect(columns.trim().split(/\s+/)).toHaveLength(1);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test('supports freely saved comparisons and a complete success without a required slider experiment', async ({ page }, testInfo) => {
   test.setTimeout(60_000);
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await openDesk(page);
+  await openLab(page);
   await expect(page.locator('#historicalReadout')).toBeVisible();
   await expect(page.locator('#historicalReadout')).toContainText('85.7%');
+  await page.locator('#evidenceTab').click();
   await pair(page, 'jt', 'su', 0); // unsuitable comparisons can be kept.
   await page.locator('[data-save-clip="0"]').click();
   await expect(page.locator('#savedPairs')).toContainText('80/100');
@@ -86,6 +127,7 @@ test('decision and justification must agree with the data', async ({ page }) => 
 
 test('independent 5 percent mixes, accurate reset, endpoints and optional snapshot', async ({ page }) => {
   await openDesk(page);
+  await openLab(page);
   await expect(page.locator('#trainedMixValue')).toHaveText('25%');
   await expect(page.locator('#untrainedMixValue')).toHaveText('85.7%');
   await setMix(page, 'trainedMix', 500);
@@ -113,6 +155,7 @@ test('mobile, keyboard, mute and reduced motion stay usable', async ({ page }) =
   await page.setViewportSize({ width: 360, height: 780 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openDesk(page);
+  await openLab(page);
   await page.locator('#muteBtn').click();
   await expect(page.locator('#muteBtn')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#trainedMix').focus();
@@ -130,6 +173,10 @@ test('phase A keeps comparison cards readable, historical figures fixed, and liv
   await expect(page.locator('[data-clip="0"] .comparison-card').last()).toContainText('450/600');
   await page.locator('[data-save-clip="0"]').click();
   await expect(page.locator('#savedPairs .comparison-card')).toHaveCount(2);
+  await page.locator('[data-expand-saved="0"]').click();
+  await expect(page.locator('[data-saved-detail="0"]')).toBeVisible();
+  await page.locator('[data-expand-saved="0"]').click();
+  await openLab(page);
   const original = await page.locator('#historicalReadout').textContent();
   await setMix(page, 'trainedMix', 500);
   await expect(page.locator('#trainedRateBar')).toHaveCSS('width', /\d+px/);
@@ -156,6 +203,7 @@ test('phase A keeps comparison cards readable, historical figures fixed, and liv
 
 test('a saved experiment can be interpreted, corrected or removed without a false loss', async ({ page }) => {
   await openDesk(page);
+  await openLab(page);
   const original = await page.locator('#historicalReadout').textContent();
   await page.locator('#resetMix').click();
   const exactOriginal = Number(await page.locator('#untrainedMix').inputValue()) / 1000;
@@ -164,6 +212,7 @@ test('a saved experiment can be interpreted, corrected or removed without a fals
   await page.locator('#saveMix').click();
   await expect(page.locator('#savedMix')).toContainText('افتراضية');
   await page.locator('[data-observation="causation"]').click();
+  await page.locator('#evidenceTab').click();
   await pair(page, 'jt', 'ju', 0);
   await page.locator('[data-save-clip="0"]').click();
   await pair(page, 'st', 'su', 1);
@@ -187,8 +236,7 @@ test('Felfel delivers three dismissible hints across desk and meeting', async ({
   await expect(page.locator('#hintCount')).toHaveText('٢');
   if (testInfo.project.name === 'mobile') {
     const hintBox = await page.locator('#hintPanel').boundingBox();
-    const recordsBox = await page.locator('.source-panel').boundingBox();
-    expect(hintBox && recordsBox && hintBox.y + hintBox.height <= recordsBox.y).toBeTruthy();
+    expect(hintBox && hintBox.x >= 0 && hintBox.x + hintBox.width <= 390).toBeTruthy();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
   await capturePreview(page, testInfo.outputPath('v3-hint.png'));

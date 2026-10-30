@@ -2,6 +2,14 @@
 
 Date: 2026-10-29. Branch: `codex/investigation-file-v2`. Scope: `public/investigation-file/`, focused tests, and these notes. The platform route and per-user local progress format are unchanged. This work is local; it is neither pushed nor published.
 
+## V3 art and UX pass — 2026-10-30
+
+Built on the recovered V3 rather than replacing its game flow. The office now uses layered navy night lighting, a walnut investigation desk, pinned paper materials, and amber/teal/coral accents. The investigation has two keyboard-accessible tabs: a compact evidence board and a visually distinct analysis lab. Saved comparisons are summarized in a compact expandable evidence folder and can still be recalled to the clips. The lab keeps source HR rates visually fixed while its independent hypothetical composition sliders update adjacent animated rate meters; the historical and hypothetical values remain separately labeled.
+
+Felfel’s hint sequence now dims the office, enters before revealing his bubble, and returns keyboard focus on dismissal. Intro dialogue emphasizes the current speaker. Decision choices share a neutral default and only the selected verdict is highlighted. The ending explanation can auto-advance, pause/resume, replay, advance manually, or be skipped. Responsive rules stack the evidence board and clips on narrow screens, keep comparison sheets readable, and prevent horizontal overflow. Reduced-motion and mute controls remain supported. Case data, evidence validity, verdict logic, owner-scoped storage, platform route, other games, and subscriptions are unchanged.
+
+Visual review used Playwright captures from desktop and mobile for the lab, Felfel hint, success/failure endings, and final explanation. Generated `test-results/` output is ignored; approved game artwork and audio assets are untouched.
+
 ## Case and verdict
 
 The fixed HR Case #3 counts are Junior attended 80/100, Junior absent 450/600, Senior attended 60/300, and Senior absent 10/100. The aggregate rates are 140/400 (35%) and 460/700 (65.714%). The actual Junior shares are 25% and 600/700 (85.714%). Rates are recalculated from fixed within-level rates when the independent hypothetical composition sliders move. At a shared 50/50 mix, the hypothetical rates are 50% and 42.5%.
@@ -20,4 +28,4 @@ The alternate Felfel poses are decoded during the opening scene so later reactio
 
 ## Verification
 
-Nine focused integration tests and all 18 desktop/mobile Playwright scenarios passed. Commands: `node --test tests/investigation-file-integration.test.mjs`, `npx playwright test tests/e2e/investigation-file.spec.ts --workers=1`, `npx tsc -p tsconfig.app.json --noEmit`, `npx tsc -p tsconfig.node.json --noEmit`, and `npm run build`. The Playwright scenarios exercise both endings, missing evidence, saved comparisons, exact reset, independent 5% slider moves, snapshot interpretation, three hints, reveal, keyboard, mobile, mute and reduced motion. Browser screenshots were reviewed for desk, ending, and reveal. Set `INVESTIGATION_CAPTURE_PREVIEWS=1` before the Playwright command to regenerate full-page screenshots; routine test runs skip these expensive captures.
+Nine focused integration tests and all 22 desktop/mobile Playwright scenarios passed for the current pass. Commands: `node --check public/investigation-file/js/investigation.mjs`, `node --test tests/investigation-file-integration.test.mjs`, `npx playwright test tests/e2e/investigation-file.spec.ts --workers=1`, `npm run build`, and `git diff --check`. The Playwright scenarios exercise opening-speaker focus, both office tabs, retained comparisons, both endings, missing evidence, exact reset, independent 5% slider moves, snapshot interpretation, three hints, reveal, keyboard, mobile, mute and reduced motion. Desktop and mobile captures were reviewed for the analysis lab and Felfel hint, plus the endings and reveal. Set `INVESTIGATION_CAPTURE_PREVIEWS=1` before the Playwright command to regenerate full-page screenshots; routine test runs skip these captures.
