@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 185" preserveAspectRatio="none">
+  <defs><linearGradient id="leather" x2="0" y2="1"><stop stop-color="#c78b4c"/><stop offset=".4" stop-color="#a96b37"/><stop offset="1" stop-color="#794724"/></linearGradient><pattern id="grain" width="60" height="45" patternUnits="userSpaceOnUse"><path d="M4 24q10-4 17-2m20-12q8-2 15 0M32 37l14-2" stroke="#e8bb7e" stroke-opacity=".17" stroke-width="2" fill="none"/></pattern></defs>
+  <path d="M8 49q0-10 12-10h213l25-30h187q12 0 15 30h278q12 0 14 10v122q0 9-13 9H19q-11 0-11-9z" fill="url(#leather)" stroke="#61381f" stroke-width="7"/>
+  <path d="M8 49q0-10 12-10h213l25-30h187q12 0 15 30h278q12 0 14 10v122q0 9-13 9H19q-11 0-11-9z" fill="url(#grain)"/>
+  <path d="M22 57h714M22 160h714" stroke="#f4c37d" stroke-opacity=".65" stroke-width="3" fill="none"/>
+  <path d="M247 39h201" stroke="#ffdb9f" stroke-opacity=".6" stroke-width="3"/>
+  <circle cx="38" cy="151" r="5" fill="#eac485" stroke="#694227" stroke-width="2"/><circle cx="719" cy="151" r="5" fill="#eac485" stroke="#694227" stroke-width="2"/>
+</svg>

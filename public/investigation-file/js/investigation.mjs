@@ -18,6 +18,33 @@ const state = {
 const audio = createAudioManager();
 const playerId = window.name || 'guest';
 const sound = (cue = 'button') => audio.play(cue);
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// The travelling sheet is visual feedback only. State is committed before the animation starts.
+function flyPaper(from, to, kind = 'record') {
+  if (prefersReducedMotion() || !from || !to) return;
+  const start = from.getBoundingClientRect();
+  const end = to.getBoundingClientRect();
+  if (!start.width || !start.height || !end.width || !end.height || start.bottom < 0 || start.top > innerHeight) return;
+  const ghost = from.cloneNode(true);
+  ghost.classList.remove('record-card', 'clip');
+  ghost.classList.add('paper-flight', `paper-flight-${kind}`);
+  ghost.setAttribute('aria-hidden', 'true');
+  ghost.tabIndex = -1;
+  for (const element of [ghost, ...ghost.querySelectorAll('*')]) {
+    element.removeAttribute('id');
+    for (const attribute of [...element.attributes]) if (attribute.name.startsWith('data-')) element.removeAttribute(attribute.name);
+  }
+  Object.assign(ghost.style, { left: `${start.left}px`, top: `${start.top}px`, width: `${start.width}px`, height: `${start.height}px` });
+  document.body.append(ghost);
+  const shiftX = end.left + end.width / 2 - start.left - start.width / 2;
+  const shiftY = end.top + end.height / 2 - start.top - start.height / 2;
+  const animation = ghost.animate([
+    { transform: 'translate(0,0) rotate(0deg) scale(1)', opacity: .95, offset: 0 },
+    { transform: `translate(${shiftX * .4}px,${shiftY * .4 - 28}px) rotate(-5deg) scale(.82)`, opacity: .95, offset: .55 },
+    { transform: `translate(${shiftX}px,${shiftY}px) rotate(2deg) scale(.35)`, opacity: 0, offset: 1 },
+  ], { duration: kind === 'save' ? 430 : 340, easing: 'cubic-bezier(.22,.78,.2,1)', fill: 'forwards' });
+  animation.onfinish = animation.oncancel = () => ghost.remove();
+}
 const felfelAssets = {
   idle: 'idle', entrance: 'idle', talking: 'idle', thinking: 'inspect', magnifier: 'inspect', hint: 'inspect',
   surprise: 'celebrate', discovery: 'celebrate', celebration: 'celebrate', failure: 'concerned', exit: 'idle',
@@ -85,15 +112,18 @@ for (const [tabId] of officeTabs) {
 }
 
 function updateCards() {
-  $('cards').innerHTML = records.map(r => `<button class="record-card ${state.selected.includes(r.id) ? 'selected' : ''}" data-id="${r.id}" aria-pressed="${state.selected.includes(r.id)}"><span class="record-tag">${name(r)}</span><span class="record-numbers"><b>${r.promoted}</b> ترقّوا من <b>${r.total}</b></span><span class="record-foot">ملف موظفين</span></button>`).join('');
+  $('cards').innerHTML = records.map(r => `<button class="record-card ${state.selected.includes(r.id) ? 'selected' : ''}" data-id="${r.id}" data-level="${r.level}" aria-pressed="${state.selected.includes(r.id)}"><span class="record-tag">${name(r)}</span><span class="record-numbers"><b>${r.promoted}</b> ترقّوا من <b>${r.total}</b></span><span class="record-rate" dir="ltr">${pct(rate(r))}</span><span class="record-foot">ملف موظفين</span></button>`).join('');
   for (const card of document.querySelectorAll('.record-card')) card.addEventListener('click', () => {
     const id = card.dataset.id;
     state.selected = state.selected.includes(id) ? state.selected.filter(x => x !== id) : state.selected.length === 2 ? [id] : [...state.selected, id];
     sound('recordSelect'); reactFelfel('magnifier'); updateCards();
     if (state.selected.length === 2) {
       const openClip = state.pairs.findIndex(pair => pair.length !== 2);
-      state.pairs[openClip < 0 ? 0 : openClip] = [...state.selected];
+      const slot = openClip < 0 ? 0 : openClip;
+      state.pairs[slot] = [...state.selected];
       updateClips();
+      const target = document.querySelector(`[data-clip="${slot}"]`);
+      for (const selectedId of state.selected) flyPaper(document.querySelector(`.record-card[data-id="${selectedId}"]`), target);
       sound('clipAttach');
       $('pairMessage').textContent = 'المقارنة ظهرت على المشبك. تقدر تحفظها أو تجرّب غيرها.';
     }
@@ -114,10 +144,17 @@ function renderSavedPairs() {
   $('savedPairs').innerHTML = state.savedPairs.map((ids, i) => {
     const recordNames = ids.length === 2 ? ids.map(id => records.find(record => record.id === id)) : [];
     const summary = recordNames.length === 2
-      ? `${name(recordNames[0])} ${pct(rate(recordNames[0]))} · مقابل ${name(recordNames[1])} ${pct(rate(recordNames[1]))}`
+      ? `${name(recordNames[0])} ${recordNames[0].promoted}/${recordNames[0].total} = ${pct(rate(recordNames[0]))} · مقابل ${name(recordNames[1])} ${recordNames[1].promoted}/${recordNames[1].total} = ${pct(rate(recordNames[1]))}`
       : 'الخانة فاضية · احفظ أي مقارنة';
-    return `<div class="saved-pair ${ids.length === 2 ? 'has-evidence' : ''}"><div class="saved-pair-heading"><b>دليل ${i + 1}</b>${ids.length === 2 ? `<span class="saved-pair-summary">${summary}</span><button class="text-button" data-recall="${i}">افتح على المشبك</button>` : `<span>${summary}</span>`}</div><div class="saved-pair-detail" data-saved-detail="${i}"><div class="comparison-layout">${ids.length === 2 ? comparisonView(ids) : ''}</div></div></div>`;
+    return `<div class="saved-pair ${ids.length === 2 ? 'has-evidence' : ''}"><div class="saved-pair-heading"><b>دليل ${i + 1}</b>${ids.length === 2 ? `<span class="saved-pair-summary">${summary}</span><button class="text-button" data-review="${i}" aria-expanded="false">تفاصيل</button><button class="text-button" data-recall="${i}">افتح على المشبك</button>` : `<span>${summary}</span>`}</div><div class="saved-pair-detail" data-saved-detail="${i}" hidden><div class="comparison-layout">${ids.length === 2 ? comparisonView(ids) : ''}</div></div></div>`;
   }).join('');
+  document.querySelectorAll('[data-review]').forEach(button => button.addEventListener('click', () => {
+    const detail = document.querySelector(`[data-saved-detail="${button.dataset.review}"]`);
+    detail.hidden = !detail.hidden;
+    button.setAttribute('aria-expanded', String(!detail.hidden));
+    button.textContent = detail.hidden ? 'تفاصيل' : 'اقفل التفاصيل';
+    sound('sceneChange');
+  }));
   document.querySelectorAll('[data-recall]').forEach(button => button.addEventListener('click', () => {
     const i = Number(button.dataset.recall);
     state.pairs[i] = [...state.savedPairs[i]];
@@ -151,9 +188,10 @@ function renderPopulation(group, juniorShare) {
     if (reduced) { node.remove(); continue; }
     node.classList.add('leaving');
     const exit = node.animate([
-      { transform: 'translateX(0) translateY(0) scale(1)', opacity: 1 },
-      { transform: `translateX(${key[0] === 'j' ? '-65px' : '65px'}) translateY(15px) scale(.75)`, opacity: 0 },
-    ], { duration: 300, easing: 'ease-in', fill: 'forwards' });
+      { transform: 'translateX(0) translateY(0) rotate(0) scale(1)', opacity: 1, offset: 0 },
+      { transform: `translateX(${key[0] === 'j' ? '-27px' : '27px'}) translateY(-6px) rotate(${key[0] === 'j' ? '-5deg' : '5deg'}) scale(.95)`, opacity: .9, offset: .5 },
+      { transform: `translateX(${key[0] === 'j' ? '-90px' : '90px'}) translateY(12px) rotate(${key[0] === 'j' ? '-9deg' : '9deg'}) scale(.72)`, opacity: 0, offset: 1 },
+    ], { duration: 390, easing: 'ease-in', fill: 'forwards' });
     exit.onfinish = () => node.remove();
   }
   for (let slot = 0; slot < 20; slot++) {
@@ -170,15 +208,17 @@ function renderPopulation(group, juniorShare) {
       chamber.append(node);
       tokens.set(key, node);
     }
+    if (!entering) node.getAnimations().forEach(animation => animation.cancel());
     node.style.left = `${(slot % 10) * 9.5 + 2}%`;
-    node.style.top = `${slot < 10 ? 8 : 58}px`;
+    node.style.top = `${slot < 10 ? 6 : 42}px`;
     node.style.zIndex = String(slot < 10 ? 1 : 2);
     if (entering && !reduced && chamber.dataset.ready === 'true') {
       node.animate([
-        { transform: `translateX(${junior ? '-75px' : '75px'}) translateY(-12px) scale(.7)`, opacity: 0 },
-        { transform: 'translateX(0) translateY(5px) scale(1.07)', opacity: 1, offset: .8 },
+        { transform: `translateX(${junior ? '-90px' : '90px'}) translateY(10px) rotate(${junior ? '-8deg' : '8deg'}) scale(.72)`, opacity: 0, offset: 0 },
+        { transform: `translateX(${junior ? '-34px' : '34px'}) translateY(-8px) rotate(${junior ? '4deg' : '-4deg'}) scale(.96)`, opacity: .94, offset: .48 },
+        { transform: 'translateX(0) translateY(5px) rotate(2deg) scale(1.05)', opacity: 1, offset: .82 },
         { transform: 'translateX(0) translateY(0) scale(1)', opacity: 1 },
-      ], { duration: 430, easing: 'cubic-bezier(.18,.8,.26,1)' });
+      ], { duration: 490, easing: 'cubic-bezier(.18,.8,.26,1)' });
     }
   }
   chamber.dataset.ready = 'true';
@@ -231,6 +271,9 @@ document.querySelectorAll('[data-save-clip]').forEach(button => button.addEventL
   if (state.pairs[i].length !== 2) return;
   state.savedPairs[i] = [...state.pairs[i]];
   renderSavedPairs(); reactFelfel('discovery'); sound('proofPin');
+  const folder = document.querySelector('.saved-evidence');
+  folder.classList.remove('folder-receiving'); void folder.offsetWidth; folder.classList.add('folder-receiving');
+  flyPaper(document.querySelector(`[data-clip="${i}"]`), document.querySelectorAll('.saved-pair')[i], 'save');
   $('pairMessage').textContent = 'اتحفظت في ملف الأدلة. تقدر تبدّلها في أي وقت.';
 }));
 $('clearSelection').addEventListener('click', () => { state.selected = []; updateCards(); sound(); });
@@ -311,9 +354,11 @@ function updateHintControl() {
   $('hintBtn').setAttribute('aria-label', remaining ? `افتح تلميحًا، متبقي ${remaining}` : 'استخدمت التلميحات الثلاثة');
 }
 let hintScrollY = 0;
+let hintSequence = 0;
 function closeHint(immediate = false) {
   const panel = $('hintPanel');
   if (panel.classList.contains('hidden')) return;
+  hintSequence++;
   $('hintVeil').classList.add('hidden');
   document.body.style.position = '';
   document.body.style.top = '';
@@ -332,6 +377,7 @@ function closeHint(immediate = false) {
 }
 $('hintBtn').addEventListener('click', () => {
   if (state.hint >= hints.length || !$('hintPanel').classList.contains('hidden')) return;
+  const sequence = ++hintSequence;
   const index = state.hint++;
   updateHintControl();
   $('hintFelfel').src = index === 0 ? '/investigation-file/assets/felfel/idle.png' : '/investigation-file/assets/felfel/inspect.png';
@@ -345,13 +391,18 @@ $('hintBtn').addEventListener('click', () => {
   document.body.style.top = `-${hintScrollY}px`;
   document.body.style.width = '100%';
   sound('sceneChange');
+  const reduced = prefersReducedMotion();
   window.setTimeout(() => {
-    if ($('hintPanel').classList.contains('hidden')) return;
+    if (sequence !== hintSequence || $('hintPanel').classList.contains('hidden')) return;
+    $('hintPanel').querySelector('.hint-character').dataset.state = 'inspect';
+  }, reduced ? 0 : 445);
+  window.setTimeout(() => {
+    if (sequence !== hintSequence || $('hintPanel').classList.contains('hidden')) return;
     $('hintPanel').querySelector('.hint-character').dataset.state = 'talking';
     $('hintPanel').querySelector('.hint-bubble').classList.add('speech-revealed');
     $('hintText').textContent = hints[index];
     $('dismissHint').focus();
-  }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
+  }, reduced ? 0 : 730);
 });
 $('dismissHint').addEventListener('click', () => closeHint());
 $('hintVeil').addEventListener('click', () => closeHint());
@@ -381,6 +432,7 @@ $('nextIntro').addEventListener('click', () => {
   $('introSpeech').dataset.speaker = state.introStep === 1 ? 'hr' : 'cfo';
   $('introSpeech').classList.remove('speech-enter'); void $('introSpeech').offsetWidth; $('introSpeech').classList.add('speech-enter');
   document.querySelector('.characters').classList.toggle('hr-speaking', state.introStep === 1);
+  document.querySelector('.characters').classList.toggle('cfo-speaking', state.introStep !== 1);
   $('introHr').src = state.introStep === 1 ? '/investigation-file/assets/investigation/hr-concerned.png' : '/investigation-file/assets/investigation/hr.png';
   $('nextIntro').textContent = state.introStep === dialogue.length - 1 ? 'افتح التحقيق ←' : 'التالي ←';
 });

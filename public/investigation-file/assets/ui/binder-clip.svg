@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 54">
+  <defs><linearGradient id="steel" x2="1" y2="1"><stop stop-color="#e7edf0"/><stop offset=".47" stop-color="#84939a"/><stop offset="1" stop-color="#4a5963"/></linearGradient><linearGradient id="shell" x2="0" y2="1"><stop stop-color="#5a8491"/><stop offset="1" stop-color="#263d46"/></linearGradient></defs>
+  <path d="M11 31 18 8q16-11 32 0l7 23" fill="none" stroke="#36464c" stroke-width="6" stroke-linecap="round"/>
+  <path d="M13 28 20 9q14-8 28 0l7 19" fill="none" stroke="url(#steel)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M7 25q27 7 54 0l-5 24q-22 6-44 0z" fill="url(#shell)" stroke="#20363e" stroke-width="3"/>
+  <path d="M11 29q23 5 46 0M14 42q20 4 40 0" fill="none" stroke="#bdd1d3" stroke-opacity=".65" stroke-width="2"/>
+  <circle cx="34" cy="38" r="4" fill="#d5e1dd" stroke="#253f45" stroke-width="2"/>
+</svg>

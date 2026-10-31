@@ -190,7 +190,10 @@ test('phase A keeps comparison cards readable, historical figures fixed, and liv
   await expect(page.locator('[data-clip="0"] .comparison-card').last()).toContainText('450/600');
   await page.locator('[data-save-clip="0"]').click();
   await expect(page.locator('#savedPairs .comparison-card')).toHaveCount(2);
+  await expect(page.locator('[data-saved-detail="0"]')).toBeHidden();
+  await page.locator('[data-review="0"]').click();
   await expect(page.locator('[data-saved-detail="0"]')).toBeVisible();
+  await expect(page.locator('[data-review="0"]')).toHaveAttribute('aria-expanded', 'true');
   await openLab(page);
   const original = await page.locator('#historicalReadout').textContent();
   await setMix(page, 'trainedMix', 500);

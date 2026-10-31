@@ -1,6 +1,16 @@
 # Investigation File V3 — local implementation
 
-Date: 2026-10-29. Branch: `codex/investigation-file-v2`. Scope: `public/investigation-file/`, focused tests, and these notes. The platform route and per-user local progress format are unchanged. This work is local; it is neither pushed nor published.
+Date: 2026-10-29; updated 2026-10-31. Branch: `codex/investigation-file-v2`. Scope: `public/investigation-file/`, focused tests, and these notes. The platform route and per-user local progress format are unchanged. The 2026-10-30 baseline was pushed at `f314ce7`; the 2026-10-31 refinement is committed to the game branch without merging or deploying.
+
+## Art refinement — 2026-10-31
+
+The evidence board now uses layered paper slips and illustrated binder clips. Selecting records produces a short paper-flight motion, attaching a pair closes the clip, and saving sends the sheet into a folder. The folder shows both saved comparisons as compact summaries with explicit counts and rates; each can be opened for detail or recalled to its clip without losing the saved copy. Four small SVG interface pieces under `assets/ui/` provide paper, clip, folder, and slider-knob treatments. They are original interface drawings and do not replace the approved character or sound assets.
+
+The analysis lab puts the interactive experiment before the historical ledger while retaining a fixed historical-rate ribbon above it. Two separate animated 20-token chambers remain linked to independent composition sliders, and the calculated rate meters and balance react beside them. At a 1366×768 desktop viewport, the controls, populations, rates, and balance fit together; the lower actions and detailed ledger continue below. The opening now changes CFO/HR focus with the speaker, Felfel stages his entrance before the hint bubble, and the verdict and six-beat explanation use tactile paper and character motion. Reveal controls have stronger contrast. Sound cues, mute, and reduced-motion behavior remain connected to these actions.
+
+Visual review captured 12 ignored screenshots covering the opening, empty and saved evidence, three lab compositions, hint, verdict, ending, first and final reveal, and mobile lab. The capture script and generated files stay under ignored `test-results/`. No screenshots or Playwright traces are part of the game bundle. Case counts, calculations, two-comparison win rule, incomplete-evidence return, optional experiment, persistence, and other games are unchanged.
+
+Verification for this refinement: nine focused Node integration tests passed, 25 desktop/mobile Playwright checks passed with one desktop-only check skipped in the mobile project, and `npm run build` completed. The changed saved-folder test verifies closed-by-default details can be expanded and read. A separate 1366px desktop and 390px mobile visual capture reported no browser page errors or horizontal overflow. An independent code review identified an interrupted Felfel entrance; its stage timers were adjusted, and the two focused desktop/mobile hint tests passed afterward. `git diff --check` and a JavaScript syntax check complete the scoped verification.
 
 ## V3 art and UX pass — 2026-10-30
 
