@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Play, Trophy, Flame, Swords, Lock } from "lucide-react";
+import { Play, Trophy, Flame, Swords } from "lucide-react";
 import type { CatalogGame } from "@/features/discovery/catalog";
 import { getCatalogAction, type GameProgress } from "@/features/discovery/progress";
 import { sfx } from "./sfx";
@@ -52,7 +52,7 @@ export default function ArenaGameCard({ game, progress, index, onChoose }: { gam
         <span className="line-clamp-2 text-[13px] font-semibold leading-6 opacity-75">{game.description}</span>
         {progress.hint && <span className="text-xs font-bold opacity-70">{progress.hint}</span>}
         <span className="arena-card-cta arena-title mt-auto">
-          {game.tier === "free" ? <Play className="h-5 w-5 fill-current" /> : <Lock className="h-4 w-4 opacity-0" aria-hidden />}
+          <Play className="h-5 w-5 fill-current" />
           {getCatalogAction(progress.status)}
         </span>
       </span>
