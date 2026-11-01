@@ -82,3 +82,49 @@
 @keyframes arena-pulse { 50% { box-shadow: 0 6px 0 hsl(var(--arena-ink)), 0 0 50px hsl(var(--arena-flame-hot) / 0.9); } }
 @keyframes arena-float { from { transform: translateY(110vh) scale(.6); } to { transform: translateY(-10vh) scale(1.2); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .arena *, .arena *::after { animation: none !important; } }
+
+/* ===== Mission hub ===== */
+.arena-card {
+  --rx: 0deg; --ry: 0deg;
+  position: relative; display: flex; flex-direction: column; overflow: hidden; min-width: 0;
+  background: hsl(var(--arena-card)); color: hsl(var(--arena-ink));
+  border: 3px solid hsl(var(--arena-ink)); border-radius: 1.25rem;
+  box-shadow: 0 7px 0 hsl(var(--arena-ink));
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform .15s ease-out, box-shadow .2s;
+  animation: arena-pop .55s cubic-bezier(.2,1.5,.4,1) both;
+}
+.arena-card:hover, .arena-card:focus-visible {
+  outline: none;
+  box-shadow: 0 10px 0 hsl(var(--arena-ink)), 0 0 0 4px hsl(var(--card-hue)), 0 0 45px 6px hsl(var(--card-hue) / .65);
+}
+.arena-card:active { transform: perspective(900px) translateY(5px) scale(.98); box-shadow: 0 2px 0 hsl(var(--arena-ink)); }
+.arena-card-cover { position: relative; display: block; aspect-ratio: 16/10; overflow: hidden; border-bottom: 3px solid hsl(var(--arena-ink)); background: hsl(var(--card-hue) / .3); }
+.arena-card-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+.arena-card:hover .arena-card-cover img { transform: scale(1.1); }
+.arena-card-cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, hsl(var(--card-hue) / .55), transparent 55%); }
+.arena-card-shine { position: absolute; inset: 0; z-index: 1; background: linear-gradient(115deg, transparent 35%, hsl(0 0% 100% / .55) 50%, transparent 65%); transform: translateX(-120%); }
+.arena-card:hover .arena-card-shine { transform: translateX(120%); transition: transform .7s ease; }
+.arena-card-cover > .arena-chip, .arena-card-status, .arena-card-num { z-index: 2; }
+.arena-card-status {
+  display: inline-flex; align-items: center; gap: .3rem; border-radius: 999px; padding: .2rem .7rem; font-size: .72rem; font-weight: 800;
+  background: hsl(var(--arena-card)); border: 2px solid hsl(var(--arena-ink)); box-shadow: 0 3px 0 hsl(var(--arena-ink));
+}
+.arena-card[data-status="completed"] .arena-card-status { background: hsl(var(--arena-lime)); }
+.arena-card[data-status="in-progress"] .arena-card-status { background: hsl(var(--arena-gold)); animation: arena-blink 1.2s ease-in-out infinite; }
+.arena-card-num { position: absolute; bottom: .2rem; left: .8rem; font-size: 3rem; line-height: 1; color: hsl(0 0% 100%); -webkit-text-stroke: 2px hsl(var(--arena-ink)); text-shadow: 0 4px 0 hsl(var(--arena-ink)); }
+.arena-card-cta {
+  display: flex; align-items: center; justify-content: center; gap: .5rem; margin-top: .75rem; padding: .55rem; font-size: 1.25rem;
+  color: hsl(0 0% 100%); text-shadow: 0 2px 0 hsl(var(--arena-ink));
+  background: linear-gradient(180deg, hsl(var(--card-hue)), hsl(var(--card-hue) / .75)), hsl(var(--arena-ink));
+  border: 3px solid hsl(var(--arena-ink)); border-radius: .9rem; box-shadow: 0 4px 0 hsl(var(--arena-ink));
+}
+.arena-card:hover .arena-card-cta { animation: arena-wiggle .5s ease; }
+.arena-hud { background: hsl(var(--arena-card) / .9); border: 3px solid hsl(var(--arena-ink)); border-radius: 1.25rem; box-shadow: 0 6px 0 hsl(var(--arena-ink)); }
+.arena-avatar { border: 3px solid hsl(var(--arena-ink)); border-radius: 999px; background: linear-gradient(180deg, hsl(var(--arena-gold)), hsl(var(--arena-flame))); box-shadow: 0 0 0 3px hsl(var(--arena-gold)), 0 0 24px hsl(var(--arena-flame) / .8); overflow: hidden; }
+.arena-icon-btn { display: inline-grid; place-items: center; height: 2.6rem; min-width: 2.6rem; padding: 0 .7rem; gap: .3rem; grid-auto-flow: column; font-weight: 800; font-size: .85rem; border: 2.5px solid hsl(var(--arena-ink)); border-radius: .8rem; background: hsl(var(--arena-soft)); box-shadow: 0 4px 0 hsl(var(--arena-ink)); transition: transform .1s, box-shadow .1s; }
+.arena-icon-btn:hover { background: hsl(var(--arena-gold)); }
+.arena-icon-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 hsl(var(--arena-ink)); }
+@keyframes arena-pop { from { opacity: 0; transform: translateY(40px) scale(.85); } }
+@keyframes arena-blink { 50% { filter: brightness(1.25); transform: scale(1.06); } }
+@keyframes arena-wiggle { 25% { transform: rotate(-2deg) scale(1.04); } 75% { transform: rotate(2deg) scale(1.04); } }
