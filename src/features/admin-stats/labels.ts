@@ -1,15 +1,15 @@
-export const GAMES = [
-  { key: "problem-framing", label: "اسأل صح" },
-  { key: "reward-decision", label: "قرار التكريم" },
-] as const;
+import { GAME_CATALOG } from "@/features/discovery/catalog";
+
+/** Every game in the shared catalog appears in admin reports automatically. */
+export const GAMES = GAME_CATALOG.map(g => ({ key: g.id, label: g.title }));
 export const gameLabel = (k: string) => GAMES.find(g => g.key === k)?.label ?? k;
 
 export const OUTCOME_LABEL: Record<string, string> = {
-  strong: "قوية", weak: "ضعيفة",
-  supported: "توصية مدعومة", insufficient: "توصية غير كافية", criterion_mismatch: "لا تطابق المعيار",
+  strong: "كسب", weak: "خسر",
+  supported: "كسب", insufficient: "خسر", criterion_mismatch: "خسر",
   unknown: "غير مسجلة",
 };
-export const outcomeLabel = (k?: string | null) => (k ? OUTCOME_LABEL[k] ?? k : "—");
+export const outcomeLabel = (k?: string | null) => (k ? OUTCOME_LABEL[k] ?? "—" : "—");
 
 export const REASON_LABEL: Record<string, string> = {
   complete: "مكتملة", wrong_team: "فريق غير مدعوم", wrong_document: "مستند غير مناسب",
