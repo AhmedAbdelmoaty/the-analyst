@@ -11,6 +11,7 @@ import { journeyDestination } from "@/features/discovery/journey";
 import WorkProfileFields from "@/features/profile/WorkProfileFields";
 import { hasWorkProfile, isWorkProfileSchemaUnavailable, validateWorkProfile, type WorkProfile } from "@/features/profile/workProfile";
 import { sfx } from "@/features/arena/sfx";
+import { bgm } from "@/features/arena/bgm";
 import "@/features/arena/arena.css";
 
 const Setup = () => {
@@ -29,6 +30,8 @@ const Setup = () => {
   const sparks = useMemo(() => Array.from({ length: 14 }, (_, i) => ({
     left: `${(i * 37) % 100}%`, size: 4 + ((i * 7) % 8), dur: 7 + ((i * 5) % 9), delay: -((i * 3) % 10),
   })), []);
+
+  useEffect(() => { bgm.start("setup"); return () => bgm.stop(); }, []);
 
   useEffect(() => {
     if (profile) {
@@ -106,86 +109,91 @@ const Setup = () => {
   const canStart = isProfileComplete || (firstName.trim() && lastName.trim() && gender);
 
   return (
-    <div dir="rtl" className="arena relative min-h-screen overflow-hidden px-4 py-6">
+    <div dir="rtl" className="arena relative flex min-h-[100dvh] items-center overflow-hidden px-4 py-5">
       <div className="arena-grid pointer-events-none absolute inset-0" />
       {sparks.map((s, i) => (
-        <span key={i} className="arena-spark" style={{ left: s.left, width: s.size, height: s.size, animationDuration: `${s.dur}s`, animationDelay: `${s.delay}s` }} />
+        <span key={i} className="arena-spark" style={{ left: s.left, width: s.size / 2, height: s.size / 2, animationDuration: `${s.dur}s`, animationDelay: `${s.delay}s` }} />
       ))}
       <AnimatePresence>
         {flash > 0 && (
-          <motion.div key={flash} className="pointer-events-none fixed inset-0 z-50" style={{ background: "hsl(var(--arena-gold))" }}
-            initial={{ opacity: 0.7 }} animate={{ opacity: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.45 }} />
+          <motion.div key={flash} className="pointer-events-none fixed inset-0 z-50" style={{ background: "radial-gradient(circle, hsl(var(--arena-gold) / .55), transparent 70%)" }}
+            initial={{ opacity: 1 }} animate={{ opacity: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} />
         )}
       </AnimatePresence>
 
       <button type="button" aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"}
-        onClick={() => { const v = !muted; sfx.setMuted(v); setMuted(v); if (!v) sfx.play("select"); }}
-        className="arena-chip absolute left-4 top-4 z-10 !p-2">
-        {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        onClick={() => { const v = !muted; sfx.setMuted(v); bgm.setMuted(v); setMuted(v); if (!v) sfx.play("select"); }}
+        className="arena-icon-btn absolute left-4 top-4 z-10" data-on={!muted}>
+        {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+        <span className="arena-eq" data-off={muted}><i /><i /><i /><i /></span>
       </button>
 
-      <div className="relative mx-auto max-w-xl">
-        <motion.div initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", bounce: 0.5 }} className="mb-5 text-center">
-          <span className="arena-chip mb-2"><Zap className="h-3.5 w-3.5" /> المرحلة ١ · جهّز بطلك</span>
-          <h1 className="arena-title arena-flame-text text-5xl leading-tight sm:text-6xl">
-            {profile?.first_name ? `يلا يا ${profile.first_name}!` : "اختار بطلك"}
-          </h1>
-          <div className="mx-auto mt-3 flex max-w-xs items-center gap-2">
-            <Star className="h-5 w-5 shrink-0" style={{ color: "hsl(var(--arena-gold))", fill: "hsl(var(--arena-gold))" }} />
+      <div className="relative mx-auto w-full max-w-5xl">
+        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <span className="arena-chip"><Zap className="h-3.5 w-3.5" /> المرحلة ١ · جهّز بطلك</span>
+            <h1 className="arena-title arena-flame-text mt-1 text-4xl leading-tight sm:text-5xl">
+              {profile?.first_name ? `يلا يا ${profile.first_name}!` : "اختار بطلك"}
+            </h1>
+          </div>
+          <div className="flex w-48 items-center gap-2">
+            <Star className="h-4 w-4 shrink-0" style={{ color: "hsl(var(--arena-gold))", fill: "hsl(var(--arena-gold))" }} />
             <div className="arena-xp flex-1"><span style={{ width: `${(progress / 4) * 100}%` }} /></div>
-            <span className="arena-title text-lg text-primary-foreground" style={{ textShadow: "0 2px 0 hsl(var(--arena-ink))" }}>{progress}/4</span>
+            <span className="arena-title text-base">{progress}/4</span>
           </div>
         </motion.div>
 
-        <div className="arena-panel space-y-5 rounded-3xl p-5">
-          {needsName && (
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block"><span className="mb-1 block text-sm font-bold">الاسم الأول</span>
-                <input className="arena-input" dir="auto" maxLength={50} value={firstName} onFocus={() => sfx.play("tick")} onChange={(e) => setFirstName(e.target.value)} /></label>
-              <label className="block"><span className="mb-1 block text-sm font-bold">الاسم الأخير</span>
-                <input className="arena-input" dir="auto" maxLength={50} value={lastName} onFocus={() => sfx.play("tick")} onChange={(e) => setLastName(e.target.value)} /></label>
-            </div>
-          )}
-
-          <div role="radiogroup" aria-label="اختار شخصيتك" className="grid grid-cols-2 gap-4">
+        <div className="arena-panel grid gap-5 rounded-2xl p-4 md:grid-cols-[1.1fr_1fr] md:p-5">
+          <div role="radiogroup" aria-label="اختار شخصيتك" className="grid grid-cols-2 gap-3">
             {characters.map((char, idx) => {
               const on = gender === char.id;
               return (
                 <motion.button key={char.id} type="button" role="radio" aria-checked={on} disabled={isProfileComplete && !on}
                   onMouseEnter={() => sfx.play("hover")} onClick={() => pick(char.id)}
-                  initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1, scale: on ? 1.04 : 1 }}
-                  transition={{ delay: 0.1 + idx * 0.1, type: "spring", bounce: 0.5 }} whileTap={{ scale: 0.95 }}
-                  className="arena-hero p-3 text-right focus:outline-none focus-visible:ring-4 focus-visible:ring-ring">
-                  <span className="arena-chip absolute right-2 top-2 z-10 !text-[0.65rem]"><Shield className="h-3 w-3" />{char.tag}</span>
-                  <div className="relative mx-auto mt-5 aspect-square w-full max-w-[9rem] overflow-hidden rounded-2xl border-[3px]" style={{ borderColor: "hsl(var(--arena-ink))", background: "hsl(var(--arena-card))" }}>
-                    <img src={char.image} alt="" className="h-full w-full object-cover" />
+                  initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1, scale: on ? 1.02 : 1 }}
+                  transition={{ delay: 0.05 + idx * 0.08, type: "spring", bounce: 0.4 }} whileTap={{ scale: 0.96 }}
+                  className="arena-hero flex flex-col text-right focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <div className="relative aspect-[4/5] max-h-64 w-full overflow-hidden">
+                    <img src={char.image} alt="" className="h-full w-full object-cover object-top" />
+                    <div className="absolute inset-0" style={{ background: "linear-gradient(to top, hsl(var(--arena-bg)), transparent 55%)" }} />
+                    <span className="arena-chip absolute right-2 top-2 !text-[0.65rem]"><Shield className="h-3 w-3" />{char.tag}</span>
+                    <div className="absolute inset-x-0 bottom-1 text-center">
+                      <div className="arena-title text-2xl">{char.label}</div>
+                      {on && <motion.div initial={{ scale: 1.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="arena-title text-sm" style={{ color: "hsl(var(--arena-gold))" }}>✔ تم الاختيار</motion.div>}
+                    </div>
                   </div>
-                  <div className="arena-title mt-2 text-center text-2xl">{char.label}</div>
-                  <div className="mt-1 space-y-1">
+                  <div className="relative z-[1] space-y-1 p-2.5">
                     {char.stats.map(([name, v]) => (
-                      <div key={name} className="flex items-center gap-2 text-[0.7rem] font-bold">
-                        <span className="w-9">{name}</span>
-                        <div className="arena-xp !h-2 flex-1"><span style={{ width: `${v}%` }} /></div>
+                      <div key={name} className="flex items-center gap-2 text-[0.68rem] font-bold">
+                        <span className="arena-muted w-9">{name}</span>
+                        <div className="arena-xp !h-1.5 flex-1"><span style={{ width: `${v}%` }} /></div>
                       </div>
                     ))}
                   </div>
-                  {on && <motion.div initial={{ scale: 2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="arena-title mt-2 text-center text-lg text-primary-foreground" style={{ textShadow: "0 2px 0 hsl(var(--arena-ink))" }}>✔ جاهز!</motion.div>}
                 </motion.button>
               );
             })}
           </div>
 
-          <WorkProfileFields value={work} onChange={handleWork} errors={workErrors} />
-          {error && <ErrorBox>{error}</ErrorBox>}
-
-          <motion.button type="button" onClick={handleSubmit} onMouseEnter={() => canStart && sfx.play("hover")} disabled={!canStart || loading}
-            whileHover={canStart ? { scale: 1.03 } : undefined} className="arena-btn w-full py-3 text-3xl">
-            {loading ? "جاري التحميل..." : "▶ يلا نبدأ"}
-          </motion.button>
-
-          <div className="flex items-center justify-center gap-5 text-sm font-bold">
-            {isProfileComplete && <button type="button" className="underline" onClick={() => navigate(journeyDestination(true), { replace: true })}>تخطي الآن</button>}
-            <button type="button" className="opacity-70 hover:opacity-100" onClick={async () => { await signOut(); navigate("/", { replace: true }); }}>تسجيل الخروج</button>
+          <div className="flex flex-col gap-4">
+            {needsName && (
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block"><span className="mb-1 block text-sm font-bold">الاسم الأول</span>
+                  <input className="arena-input" dir="auto" maxLength={50} value={firstName} onFocus={() => sfx.play("tick")} onChange={(e) => setFirstName(e.target.value)} /></label>
+                <label className="block"><span className="mb-1 block text-sm font-bold">الاسم الأخير</span>
+                  <input className="arena-input" dir="auto" maxLength={50} value={lastName} onFocus={() => sfx.play("tick")} onChange={(e) => setLastName(e.target.value)} /></label>
+              </div>
+            )}
+            <WorkProfileFields value={work} onChange={handleWork} errors={workErrors} />
+            {error && <ErrorBox>{error}</ErrorBox>}
+            <motion.button type="button" onClick={handleSubmit} onMouseEnter={() => canStart && sfx.play("hover")} disabled={!canStart || loading}
+              whileHover={canStart ? { scale: 1.02 } : undefined} className="arena-btn mt-auto w-full py-2.5 text-2xl">
+              {loading ? "جاري التحميل..." : "▶ يلا نبدأ"}
+            </motion.button>
+            <div className="flex items-center justify-center gap-5 text-sm font-bold">
+              {isProfileComplete && <button type="button" className="underline" onClick={() => navigate(journeyDestination(true), { replace: true })}>تخطي الآن</button>}
+              <button type="button" className="arena-muted hover:opacity-100" onClick={async () => { await signOut(); navigate("/", { replace: true }); }}>تسجيل الخروج</button>
+            </div>
           </div>
         </div>
       </div>
