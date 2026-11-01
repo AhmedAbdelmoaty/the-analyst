@@ -201,16 +201,17 @@ function renderPopulation(group, juniorShare) {
     const entering = !node;
     if (!node) {
       node = document.createElement('img');
-      node.className = `employee-token ${junior ? 'junior-token' : 'senior-token'}`;
+      const variant = (junior ? slot : slot - juniorCount) % 4;
+      node.className = `employee-token ${junior ? 'junior-token' : 'senior-token'} variant-${variant + 1}`;
       node.alt = '';
       node.draggable = false;
-      node.src = `/investigation-file/assets/employees/${junior ? 'junior' : 'senior'}-0${slot % 4 + 1}.png`;
+      node.src = `/investigation-file/assets/employees/${junior ? 'junior' : 'senior'}-0${variant + 1}.png`;
       chamber.append(node);
       tokens.set(key, node);
     }
     if (!entering) node.getAnimations().forEach(animation => animation.cancel());
-    node.style.left = `${(slot % 10) * 9.5 + 2}%`;
-    node.style.top = `${slot < 10 ? 6 : 42}px`;
+    node.style.left = `${(slot % 10) * 9 + 2 + (slot >= 10 ? 3 : 0)}%`;
+    node.style.top = `${slot < 10 ? 14 : 91}px`;
     node.style.zIndex = String(slot < 10 ? 1 : 2);
     if (entering && !reduced && chamber.dataset.ready === 'true') {
       node.animate([
