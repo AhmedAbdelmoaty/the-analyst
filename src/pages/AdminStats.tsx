@@ -91,7 +91,11 @@ export default function AdminStats() {
   const overview = useQuery({ ...opts, queryKey: ["adm-overview", f], queryFn: () => rpc("admin_overview", { ...base(f), _game: game, _status: status }), enabled: ok && tab === "overview" });
   const users = useQuery({ ...opts, queryKey: ["adm-users", f, debounced, sort, page, userFilters], queryFn: () => rpc("admin_users", userReportArgs({ ...base(f), _game: game, _status: status }, userFilters, debounced, sort, PAGE, page * PAGE)), enabled: ok && tab === "users" });
   const activity = useQuery({ ...opts, queryKey: ["adm-activity", f], queryFn: () => rpc("admin_activity_summary", { ...base(f), _game: game }) });
-  const metrics = activity.data?.games ?? [];
+  const metrics = useMemo(() => {
+    const rows: any[] = activity.data?.games ?? [];
+    const keys = f.game ? [f.game] : [...GAMES.map(g => g.key), ...rows.map(r => r.game).filter(k => !GAMES.some(g => g.key === k))];
+    return keys.map(k => rows.find(r => r.game === k) ?? { game: k, players: 0, attempts: 0, completed: 0, wins: 0, losses: 0, unknown: 0, tracked_finished: 0, tracked_starts: 0 });
+  }, [activity.data, f.game]);
   const totals = (key: string) => metrics.reduce((sum: number, g: any) => sum + (g[key] ?? 0), 0);
   const mergedUser = (r: any) => {
     const row = { ...r, ...(activity.data?.users?.[r.user_id] ?? {}) };
@@ -255,15 +259,14 @@ export default function AdminStats() {
         </Section>}
 
         {tab === "games" && <State q={activity}>
-          <div className="flex justify-end"><ExportBtns kind="rounds" /></div>
-          <div className="mt-3 space-y-6">{metrics.map((g: any) => (
-            <Section key={g.game} title={gameLabel(g.game)} action={<ExportBtns kind="games" />}>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Card title="لاعبون معروفون" value={n(g.players)} /><Card title="محاولات مسجلة" value={n(g.attempts)}  />
-                <Card title="مكتملة" value={n(g.completed)} /><Card title="نسبة الإكمال" value={completionRate(g.tracked_finished, g.tracked_starts)} note="الجولات معروفة البداية فقط؛ تشمل انتهاء الوقت" />
+          <div className="flex justify-end gap-2"><ExportBtns kind="games" /><ExportBtns kind="rounds" /></div>
+          <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{metrics.map((g: any) => (
+            <Section key={g.game} title={gameLabel(g.game)}>
+              <div className="grid grid-cols-2 gap-2">
+                <Card title="اللاعبون" value={n(g.players)} /><Card title="المحاولات" value={n(g.attempts)} />
+                <Card title="مكتملة" value={n(g.completed)} /><Card title="نسبة الإكمال" value={completionRate(g.tracked_finished, g.tracked_starts)} />
+                <Card title="كسب" value={n(g.wins)} /><Card title="خسر" value={n(g.losses)} />
               </div>
-              <div className="mt-5"><h3 className="mb-3 font-semibold">نتيجة اللعبة</h3><Dist data={{ win: g.wins, loss: g.losses }} label={resultLabel} /></div>
-              {g.unknown > 0 && <p className="mt-2 text-xs text-muted-foreground">{g.unknown} نتيجة غير مسجلة</p>}
             </Section>))}</div>
         </State>}
       </main>
