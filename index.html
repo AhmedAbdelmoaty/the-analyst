@@ -10,6 +10,39 @@
     // Page views are sent once per React Router path change by GaPageViews.
     gtag('config', 'G-EW9CQFJH95', { send_page_view: false });
   </script>
+  <!-- Meta Pixel: loads only outside consent-required regions (no-banner route) -->
+  <script>
+    (function () {
+      var CONSENT_REGIONS = ["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE","IS","LI","NO","GB","CH"];
+      function loadPixel() {
+        if (window.fbq) return;
+        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+        n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+        document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '1170831002275950', {}, {agent: 'lovable'});
+        fbq('track', 'PageView');
+      }
+      function allowByRegion(loc) {
+        return !!loc && CONSENT_REGIONS.indexOf(loc) === -1;
+      }
+      try {
+        var ctrl = new AbortController();
+        var timer = setTimeout(function () { ctrl.abort(); }, 2000);
+        fetch('/cdn-cgi/trace', { signal: ctrl.signal })
+          .then(function (r) { return r.ok ? r.text() : ''; })
+          .then(function (txt) {
+            clearTimeout(timer);
+            if (!txt || txt.indexOf('h=' + location.host) === -1) return;
+            var m = txt.match(/loc=([A-Z]{2}|XX|T1)/);
+            var loc = m ? m[1] : null;
+            if (loc && loc !== 'XX' && loc !== 'T1' && allowByRegion(loc)) loadPixel();
+          })
+          .catch(function () { /* unresolved region: stay blocked */ });
+      } catch (e) { /* stay blocked */ }
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#A61E25" />
