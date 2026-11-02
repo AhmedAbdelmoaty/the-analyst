@@ -8,6 +8,7 @@ import {
 import { errText, maskPhone, phoneAuth, PhoneAuthResult, toE164 } from "@/lib/phoneAuth";
 
 import { markSignupCreated, markSignupVerified } from "@/features/discovery/journey";
+import { trackCompleteRegistration } from "@/lib/metaPixel";
 
 type Mode = "login" | "signup" | "verify" | "forgot" | "forgot_code" | "forgot_new" | "forgot_done";
 
@@ -125,6 +126,7 @@ const PlayerAuth = () => {
       return setError(errText(r.error) + extra);
     }
     markSignupVerified();
+    trackCompleteRegistration();
     setNotice("تم تأكيد الرقم. جارٍ تسجيل الدخول...");
     const { error } = await signInWithPhone(activePhone, password);
     if (error) { setMode("login", "/login"); setNotice("تم تأكيد الرقم. سجّل الدخول بكلمة المرور."); }

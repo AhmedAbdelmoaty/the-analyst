@@ -13,6 +13,7 @@ import PlayerAuth from "./pages/PlayerAuth";
 import AdminLogin from "./pages/AdminLogin";
 import AdminBoard from "./pages/AdminBoard";
 import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy";
 import VisitTracker from "@/components/analytics/VisitTracker";
 import GaPageViews from "@/components/analytics/GaPageViews";
 import PlanChoice from "@/pages/PlanChoice";
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/login" element={<Landing />} />
             <Route path="/signup" element={<Landing />} />
             <Route path="/forgot-password" element={<Landing />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/app" element={<AppEntry />} />
             <Route path="/plans" element={<PlanChoice />} />
             <Route path="/plans/choose" element={<Navigate to="/plans" replace />} />
