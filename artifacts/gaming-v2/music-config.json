@@ -1,0 +1,70 @@
+{
+	"media": [
+		{"file": "Scritch/Week 29 - Heart-Shaped PALPATATIONS.ogg", "title": "Week 29 Heart-Shaped", "type": "audio" },
+		{"file": "Scritch/Week 30 - Crushing It SMOOV.ogg", "title": "Week 30 Crushing It", "type": "audio" },
+		{"file": "Scritch/Week 34 - Piecemeal COLLECTED.ogg", "title": "Week 34 Piecemeal", "type": "audio" },
+		{"file": "Scritch/Week 35 - Reverence ENDLESS.ogg", "title": "Week 35 Reverence", "type": "audio" },
+		{"file": "Scritch/Week 37 - Schmoovin.ogg", "title": "Week 37 Schmoovin", "type": "audio" },
+		
+		{"file": "Scritch/Week 15 - Sunburn SPF 3000.ogg", "title": "Week 15 Sunburn", "type": "audio" },
+		{"file": "Scritch/Week 17 - Alley Cat DUMPSTER PARTY.ogg", "title": "Week 17 Alley Cat", "type": "audio" },
+		{"file": "Scritch/Week 21 - Freefall WHAT A VIEW.ogg", "title": "Week 21 Freefall", "type": "audio" },
+		{"file": "Scritch/Week 23 - Workshop BREADBOARD.ogg", "title": "Week 23 Workshop", "type": "audio" },
+		{"file": "Scritch/Week 26 - Seaside ENDLESS WAVES.ogg", "title": "Week 26 Seaside", "type": "audio" },
+		
+		{"file": "Scritch/Week 10 - Mischief MELODY.ogg", "title": "Week 10 Mischief", "type": "audio" },
+		{"file": "Scritch/Week 6 - Never Miss FIRE.ogg", "title": "Week 6 Never Miss", "type": "audio" },
+		{"file": "Scritch/Week 4 - Cloak of Darkness STAGE 2.ogg", "title": "Week 4 Cloak of Darkness", "type": "audio" },
+		{"file": "Scritch/Week 1.5 - Super Retro Lounge.ogg", "title": "Week 1.5 Super Retro Lounge", "type": "audio" },
+		
+		{"file": "Scritch/Three Red Hearts Penguin Town.ogg", "title": "Three Red Hearts - Penguin Town", "type": "audio" },
+		{"file": "Scritch/Three Red Hearts Sanctuary.ogg", "title": "Three Red Hearts - Sanctuary", "type": "audio" },
+	
+		{"file": "Scritch/Sketchbook 2025-12-11_VERSE.ogg", "title": "Sketchbook 2025-12-11", "type": "audio" },
+		{"file": "Scritch/Sketchbook 2025-11-26.ogg", "title": "Sketchbook 2025-11-26", "type": "audio" },
+	
+		{"file": "Scritch/Troubadeck 12 Good King.ogg", "title": "Troubadeck 12 Good King", "type": "audio" },
+		{"file": "Scritch/Troubadeck 28 Quaint Questions.ogg", "title": "Troubadeck 28 Quaint Questions", "type": "audio" },
+		{"file": "Scritch/Troubadeck 32 Perserverance.ogg", "title": "Troubadeck 32 Perserverance", "type": "audio" },
+	
+		{"file": "Scritch/Sketchbook 2024-12-21.ogg", "title": "Sketchbook 2024-12-21", "type": "audio" },
+		{"file": "Scritch/Sketchbook 2024-11-20.ogg", "title": "Sketchbook 2024-11-20", "type": "audio" },
+		{"file": "Scritch/Sketchbook 2024-11-07.ogg", "title": "Sketchbook 2024-11-07", "type": "audio" },
+		{"file": "Scritch/Sketchbook 2024-10-14.ogg", "title": "Sketchbook 2024-10-14", "type": "audio" },
+		{"file": "Scritch/Interior Birdecorator Decorate.ogg", "title": "Interior Birdecorator - Decorate", "type": "audio" },
+		{"file": "Scritch/Sketchbook 2024-08-01.ogg", "title": "Sketchbook 2024-08-01", "type": "audio" },
+		{"file": "Scritch/Sketchbook 2024-07-03.ogg", "title": "Sketchbook 2024-07-03", "type": "audio" },
+		{"file": "Scritch/Sketchbook 2024-05-29.ogg", "title": "Sketchbook 2024-05-29", "type": "audio" },
+		{"file": "Scritch/Sketchbook 2024-02-14_L03.ogg", "title": "Sketchbook 2024-02-14", "type": "audio" },
+		{"file": "Scritch/Sketchbook 2024-02-07.ogg", "title": "Sketchbook 2024-02-07", "type": "audio" },
+		
+		{"file": "Scritch/Patreon Challenge 03.ogg", "title": "Patreon Challenge 03", "type": "audio" },
+		{"file": "Scritch/Patreon Challenge 06.ogg", "title": "Patreon Challenge 06", "type": "audio" },
+		{"file": "Scritch/VGMA Challenge 06.ogg", "title": "VGMA Challenge 06", "type": "audio" },
+		{"file": "Scritch/Ludum Dare 38 09.ogg", "title": "Ludum Dare 38 09", "type": "audio" },
+		{"file": "Scritch/Ludum Dare 30 04.ogg", "title": "Ludum Dare 30 04", "type": "audio" }
+	],
+	"cover": "FreeLoopsMetadata.png",
+	"theme": {
+		"titleStyle": "none",
+		"backgroundColor": "#1e1e1e",
+		"primaryColor": "#d9dde2",
+		"primaryAltColor": "#838383",
+		"secondaryColor": "#000000",
+		"highlightColor": "#434343",
+		"primaryTextColor": "#d9dde2",
+		"primaryAltTextColor": "#838383",
+		"previewStripeColor1": "#3f3f3f",
+		"previewStripeColor2": "#2c2c2c",
+		"linkColor": "#838383",
+		"layoutStyle": "vertical",
+		"infoStyle": "overlaid",
+		"overlayTextColor": "#d9dde2",
+		"overlayBackgroundColor": "#00000080",
+		"hideInfoDropdown": false,
+		"contentWidth": "500",
+		"coverSize": "0",
+		"nativePlayer": false,
+		"customCSS": ""
+	}
+}

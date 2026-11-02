@@ -14,13 +14,15 @@ test('fresh account refreshes Plans then Setup, saves secure fields and reaches 
   await page.goto('/app'); await expect(page).toHaveURL(/\/plans$/);
   await page.reload(); await page.getByRole('button', { name: 'ابدأ مجانًا', exact: true }).click();
   await expect(page).toHaveURL(/\/setup$/); await page.reload();
+  await expect(page.getByLabel('الاسم الأول', { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel('الاسم الأخير', { exact: true })).toHaveCount(0);
   await expect(page.getByText('تركيز', { exact: true })).toHaveCount(0);
   await page.getByRole('radio', { name: /محللة/ }).click();
   await page.getByRole('combobox').nth(0).click(); await page.getByRole('option', { name: /Finance|المالية/, exact: true }).click();
   await page.getByRole('combobox').nth(1).click(); await page.getByRole('option', { name: /Technology & Telecom|التكنولوجيا والاتصالات/, exact: true }).click();
   await page.getByRole('button', { name: 'ابدأ مغامرتك', exact: true }).click();
   await expect(page).toHaveURL(/\/app$/);
-  expect(patches).toEqual([{ filter: 'eq.00000000-0000-4000-a000-000000000002', patch: { first_name: 'نور', last_name: 'أحمد', display_name: 'نور', gender: 'female', avatar_choice: 'sara', department: 'finance', department_other: null, industry: 'technology_telecom', industry_other: null } }]);
+  expect(patches).toEqual([{ filter: 'eq.00000000-0000-4000-a000-000000000002', patch: { gender: 'female', avatar_choice: 'sara', department: 'finance', department_other: null, industry: 'technology_telecom', industry_other: null } }]);
   expect(forbidden).toEqual([]);
 });
 

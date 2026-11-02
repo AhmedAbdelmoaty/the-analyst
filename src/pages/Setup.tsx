@@ -11,6 +11,7 @@ import { onboardingFor, finishOnboarding } from '@/features/discovery/onboarding
 import WorkProfileFields from '@/features/profile/WorkProfileFields';
 import { isWorkProfileSchemaUnavailable, validateWorkProfile, type WorkProfile } from '@/features/profile/workProfile';
 import PlatformHeader from '@/features/platform-shell/PlatformHeader';
+import PlayerCenter from '@/features/platform-shell/PlayerCenter';
 import { platformAudio } from '@/features/platform-audio/mixer';
 
 const characters = [
@@ -20,8 +21,6 @@ const characters = [
 export default function Setup() {
   const { user, profile, loading: authLoading, updateProfile, isProfileComplete, signOut } = useAuth();
   const navigate = useNavigate();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [gender, setGender] = useState<'male' | 'female' | null>(null);
   const [work, setWork] = useState<WorkProfile>({ department: null, department_other: null, industry: null, industry_other: null });
   const [workErrors, setWorkErrors] = useState<Partial<Record<keyof WorkProfile, string>>>({});
@@ -30,8 +29,6 @@ export default function Setup() {
   const checkpoint = user ? onboardingFor(user.id) : null;
   useEffect(() => {
     if (!profile) return;
-    setFirstName(v => v || profile.first_name || '');
-    setLastName(v => v || profile.last_name || '');
     setGender(v => v || profile.gender || null);
     setWork(v => ({ department: v.department || profile.department || null, department_other: v.department_other || profile.department_other || null, industry: v.industry || profile.industry || null, industry_other: v.industry_other || profile.industry_other || null }));
   }, [profile]);
@@ -45,22 +42,22 @@ export default function Setup() {
   if (!user) return <Navigate to="/" replace />;
   if (checkpoint?.stage === 'plans') return <Navigate to="/plans" replace />;
   const needsName = !profile?.first_name || !profile?.last_name;
-  const canStart = Boolean(firstName.trim() && lastName.trim() && gender);
+  const canStart = Boolean(profile?.first_name?.trim() && profile?.last_name?.trim() && gender);
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (saving || !canStart) return;
     const checked = validateWorkProfile(work); setWorkErrors(checked.errors);
     if (Object.keys(checked.errors).length) { platformAudio.play('locked'); return; }
     setSaving(true); setError(null);
-    const identity = { first_name: firstName.trim().slice(0, 50), last_name: lastName.trim().slice(0, 50), gender, avatar_choice: gender === 'male' ? 'analyst' : 'sara' };
+    const identity = { gender, avatar_choice: gender === 'male' ? 'analyst' : 'sara' };
     let result = await updateProfile({ ...identity, ...checked.value });
     if (result.error && isWorkProfileSchemaUnavailable(result.error)) result = await updateProfile(identity);
     if (result.error) { setError('ماقدرناش نحفظ اختيارك. بياناتك موجودة هنا؛ جرّب تاني.'); setSaving(false); return; }
     platformAudio.play('success');
     navigate(finishOnboarding(user.id) ?? journeyDestination(true, destinationForPlan(takePlanIntent(), true)), { replace: true });
   };
-  return <div className="platform" dir="rtl"><div className="platform-container">
-    <PlatformHeader><button className="platform-button" onClick={async () => { await signOut(); navigate('/'); }}>تسجيل الخروج</button></PlatformHeader>
+  return <div className="platform setup-world" dir="rtl"><div className="platform-container">
+    <PlatformHeader>{needsName && <PlayerCenter snapshot={null} />}<button className="platform-button" onClick={async () => { await signOut(); navigate('/'); }}>تسجيل الخروج</button></PlatformHeader>
     <main className="setup-stage">
       <div className="platform-heading"><p className="platform-kicker">حكايتك تبدأ بشخصيتك</p><h1>{profile?.first_name ? `يلا يا ${profile.first_name}، اختار شخصيتك` : 'اختار شخصيتك'}</h1><p className="platform-muted">نفس المغامرات، بطريقتك أنت. جهّز هويتك وخلّينا نبدأ.</p></div>
       <div className="setup-grid">
@@ -71,7 +68,7 @@ export default function Setup() {
         </div><p className="platform-muted mt-4 text-center">الشخصية اختيارك. مهاراتك بتظهر في قراراتك.</p></div>
         <form className="setup-form" onSubmit={submit}>
           <div><h2>خلّينا نتعرّف عليك</h2><p className="platform-muted">القسم وقطاع العمل بيساعدونا نفهم جمهور التجربة.</p></div>
-          {needsName ? <div className="grid grid-cols-2 gap-3"><label>الاسم الأول<input required maxLength={50} className="platform-input" dir="auto" value={firstName} onChange={e => setFirstName(e.target.value)} /></label><label>الاسم الأخير<input required maxLength={50} className="platform-input" dir="auto" value={lastName} onChange={e => setLastName(e.target.value)} /></label></div> : <p className="flex items-center gap-2 text-sm font-bold"><Check className="h-4 w-4 text-teal-700" />{firstName} {lastName}</p>}
+          {needsName ? <p className="platform-note" role="status">بيانات الاسم ناقصة في حسابك. افتح مركز اللاعب بالأعلى لإكمالها، وبعدها اختار شخصيتك.</p> : <p className="flex items-center gap-2 text-sm font-bold"><Check className="h-4 w-4 text-teal-700" />{profile.first_name} {profile.last_name}</p>}
           <WorkProfileFields localized value={work} onChange={setWork} errors={workErrors} />
           {error && <ErrorBox>{error}</ErrorBox>}
           <button type="submit" className="platform-button primary mt-2" disabled={!canStart || saving}>{saving ? 'جاري حفظ اختيارك...' : 'ابدأ مغامرتك'}<ArrowLeft /></button>

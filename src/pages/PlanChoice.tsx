@@ -26,7 +26,7 @@ export default function PlanChoice() {
     }
     navigate(routeForPlanChoice(intent, Boolean(user), isProfileComplete));
   };
-  return <div className="platform" dir="rtl"><div className="platform-container">
+  return <div className="platform plans-world" dir="rtl"><div className="platform-container">
     <PlatformHeader home={user ? '/app' : '/'}><Link className="platform-button" to={user ? '/app' : '/'}>{user ? 'الألعاب' : 'الرئيسية'}<ArrowLeft /></Link></PlatformHeader>
     <main className="pass-stage">
       <div className="platform-heading"><p className="platform-kicker">مساحة أكبر للاكتشاف</p><h1>{firstTime ? 'أهلاً بيك! اختار تجربتك' : 'اختار تجربتك'}</h1><p className="platform-muted">ابدأ بسؤال يغيّر تفكيرك… أو افتح باب كل المغامرات.</p></div>

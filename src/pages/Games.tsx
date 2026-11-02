@@ -29,7 +29,7 @@ export default function Games() {
   if (selectedGame()) return <Navigate to={journeyDestination(true)} replace />;
   const progress = Object.fromEntries(GAME_CATALOG.map(game => [game.id, user ? getGameProgress(game.id, user.id) : { status: 'new' as const }]));
   const needsWork = !hasWorkProfile(profile) && !profile?.work_details_prompt_dismissed_at;
-  return <div className="platform" dir="rtl"><div className="platform-container">
+  return <div className="platform hub-world" dir="rtl"><div className="platform-container">
     <PlatformHeader><Link className="platform-button hub-plans-link" to="/plans">الخطط</Link><PlayerCenter snapshot={snapshot} /></PlatformHeader>
     <main>
       <div className="hub-intro platform-heading"><div><p className="platform-kicker">مغامراتك</p><h1>اختار مغامرتك</h1><p className="platform-muted">ادخل الحكاية، افحص الأدلة، وخد القرار بطريقتك.</p></div><span className="hub-library-label">٦ حكايات تستحق التجربة<ArrowLeft /></span></div>

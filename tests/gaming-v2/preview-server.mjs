@@ -13,7 +13,7 @@ const session = () => ({ access_token: ['local-preview', Buffer.from(JSON.string
 const api = http.createServer(async (req, res) => {
   if (req.headers.origin && req.headers.origin !== UI) { res.writeHead(403); res.end(); return; }
   res.setHeader('Access-Control-Allow-Origin', UI);
-  res.setHeader('Access-Control-Allow-Headers', 'authorization,apikey,content-type,x-client-info,x-supabase-api-version,prefer');
+  res.setHeader('Access-Control-Allow-Headers', 'authorization,apikey,content-type,x-client-info,x-supabase-api-version,prefer,accept-profile,content-profile,x-retry-count');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
   res.setHeader('Content-Type', 'application/json');
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
