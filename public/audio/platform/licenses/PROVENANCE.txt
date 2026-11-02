@@ -1,0 +1,38 @@
+# Music and SFX provenance — 2026-11-02
+
+All selected files are CC0. No generated music or synthesized oscillator effects.
+
+Music: Abstraction / Tallbeard Studios, Music Loop Bundle
+https://tallbeard.itch.io/music-loop-bundle
+https://abstractionmusic.com/
+License: https://creativecommons.org/publicdomain/zero/1.0/
+Creator page explicitly identifies the bundle as CC0 for commercial and noncommercial use.
+Retrieved individual files only from the creator's embedded player:
+https://html-classic.itch.zone/html/9601284-2057894/config.json
+Relative media files below are resolved under:
+https://html-classic.itch.zone/html/9601284-2057894/media/
+
+Local filename -> original filename -> use
+schmoovin.ogg -> Scritch/Week 37 - Schmoovin.ogg -> provisional Hub/entry default
+retro-lounge.ogg -> Scritch/Week 1.5 - Super Retro Lounge.ogg -> Hub audition alternative
+workshop.ogg -> Scritch/Week 23 - Workshop BREADBOARD.ogg -> Hub audition alternative
+quaint-questions.ogg -> Scritch/Troubadeck 28 Quaint Questions.ogg -> provisional Setup default
+sanctuary.ogg -> Scritch/Three Red Hearts Sanctuary.ogg -> Setup audition alternative
+
+SFX: Kenney. Actual original licenses copied beside this file.
+https://kenney.nl/assets/ui-audio
+https://kenney.nl/assets/interface-sounds
+Read/copied from D:/PatternWorlds-Library/audio/kenney/ (library never modified).
+hover.ogg -> ui-audio/Audio/rollover1.ogg
+click.ogg -> interface-sounds/Audio/click_003.ogg
+avatar.ogg -> interface-sounds/Audio/select_002.ogg
+panel.ogg -> interface-sounds/Audio/open_001.ogg
+choice.ogg -> interface-sounds/Audio/confirmation_001.ogg
+launch.ogg -> interface-sounds/Audio/confirmation_002.ogg
+locked.ogg -> interface-sounds/Audio/error_003.ogg
+success.ogg -> interface-sounds/Audio/confirmation_004.ogg
+
+Processing: decoded with libsndfile; gain bounded to -3 dBFS peak and target RMS -18 dBFS (music) / -17 dBFS (SFX); 3 ms edge taper; re-encoded Ogg Vorbis. Timing preserved. Original and output hashes plus technical analysis in docs/gaming-v2/AUDIO_MANIFEST.json.
+No listening judgment is claimed by the implementation agent. Defaults are swappable and provisional until owner listening review. Schmoovin selected for its compact 33.684s loop and low measured boundary discontinuity; Quaint Questions for its distinct 40.421s cue with dynamic headroom. Human review must judge musical fit and looping quality.
+
+Prior arena-hub-theme.mp3 / arena-setup-theme.mp3 metadata lacked creator/title/license proof and local media bytes. Their previous references are unused in V2. No ownership inference was made from the old source comment.

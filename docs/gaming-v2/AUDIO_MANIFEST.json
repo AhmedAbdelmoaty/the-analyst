@@ -1,0 +1,132 @@
+[
+  {
+    "file": "avatar.ogg",
+    "duration": 0.043,
+    "bytes": 5129,
+    "gain_db": -2.03,
+    "peak_db": -3.36,
+    "boundary_jump": 0.00468,
+    "original_sha256": "4cc6ac5341b9b2c86fef80c347de028e9ab9f2e037586ac7d9fa59a403a1c012",
+    "sha256": "13499f9537fd83c2196d6e61f3648fa942dd2f330ad45e61091db7e11ac28340"
+  },
+  {
+    "file": "choice.ogg",
+    "duration": 0.29,
+    "bytes": 5362,
+    "gain_db": -5.69,
+    "peak_db": -6.85,
+    "boundary_jump": 0.00178,
+    "original_sha256": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a",
+    "sha256": "53842f3dd68bb668594af486501f4d8dbd821d671e6b562357bf50f3e570e0ff"
+  },
+  {
+    "file": "click.ogg",
+    "duration": 0.01,
+    "bytes": 4193,
+    "gain_db": -1.64,
+    "peak_db": -2.89,
+    "boundary_jump": 0.01735,
+    "original_sha256": "2fa929138bc3a0f432696588f66eac94b8f6d463905ec8808c6461ce4b054292",
+    "sha256": "b16db960dd1a62ff019dc0f1757472a266563d4b664f868b4baedcec035f2711"
+  },
+  {
+    "file": "hover.ogg",
+    "duration": 0.227,
+    "bytes": 7234,
+    "gain_db": -2.85,
+    "peak_db": -3.1,
+    "boundary_jump": 0.01753,
+    "original_sha256": "4eb47e2e1540c44847b47a89825e21335c820a4e54cacf8c4c1eb5100e36af42",
+    "sha256": "234034f2f44b15c900874966316548c57a1e139cffcbf5161e8769780124b815"
+  },
+  {
+    "file": "launch.ogg",
+    "duration": 0.539,
+    "bytes": 7892,
+    "gain_db": -2.12,
+    "peak_db": -3.27,
+    "boundary_jump": 0.00283,
+    "original_sha256": "33b17a9a9a2397c62b285c52c33a907fdffb476909c99e42dde603f6a7a8b12c",
+    "sha256": "47c600e8ea83bc240f4463b0274cfba8ae1d957a714aa77f6c317df8aa88aa17"
+  },
+  {
+    "file": "locked.ogg",
+    "duration": 0.533,
+    "bytes": 11552,
+    "gain_db": -2.5,
+    "peak_db": -3.16,
+    "boundary_jump": 1e-05,
+    "original_sha256": "885b28175c7b511118bcffab95675b48bbac9005cf6514656ebdad979276b3ab",
+    "sha256": "baf20d43155bd4d4a638059330f926569fb6470fb393d997c3a65ce2c2cc3281"
+  },
+  {
+    "file": "panel.ogg",
+    "duration": 0.148,
+    "bytes": 6120,
+    "gain_db": -2.22,
+    "peak_db": -3.8,
+    "boundary_jump": 0.00746,
+    "original_sha256": "a27c6bb0df7da1e6af5dd5937593c98bc58b6e513f42fe6a3254cd6a6949c648",
+    "sha256": "71af29e0eb1e3cb4fd80924bf64f17485fe2d29087fbf26ee541acfb48446309"
+  },
+  {
+    "file": "quaint-questions.ogg",
+    "duration": 40.421,
+    "bytes": 662096,
+    "gain_db": -1.09,
+    "peak_db": -2.86,
+    "boundary_jump": 0.00076,
+    "original_sha256": "26ce8cf869030436a31120d5e360b8b1e79b7c55a811e3c2a2a1c5ee2ca95ae8",
+    "sha256": "f8b8d74353975488eb705a2c203243845da7d603ec7b55bf0489de7e27fb728c"
+  },
+  {
+    "file": "retro-lounge.ogg",
+    "duration": 24.0,
+    "bytes": 444725,
+    "gain_db": -2.12,
+    "peak_db": -3.38,
+    "boundary_jump": 0.00457,
+    "original_sha256": "fc84b6b9b0dd8e533b1e7b561ea1ee19899d5784100b4e579c389b99d11745b1",
+    "sha256": "41ac2ae8bd97d410a593dcff4a335edf233663d6dbd008d07859258cc4d0a1fb"
+  },
+  {
+    "file": "sanctuary.ogg",
+    "duration": 76.807,
+    "bytes": 1060053,
+    "gain_db": -7.53,
+    "peak_db": -6.62,
+    "boundary_jump": 0.00105,
+    "original_sha256": "2025ea863cecf0d36bc641a30f30ef99e451ee8cfd02f1be9c7d1d02c4d336f1",
+    "sha256": "f8aa2376241e3dcf0e4b8c628aca845e1cb7c6c76617b56a8b49d97da2b37423"
+  },
+  {
+    "file": "schmoovin.ogg",
+    "duration": 33.684,
+    "bytes": 680366,
+    "gain_db": -3.76,
+    "peak_db": -4.45,
+    "boundary_jump": 0.00319,
+    "original_sha256": "076d06a68ce9dc8f7d2401afa05e247ad3849ac4d425c3b28f995c15bfdab007",
+    "sha256": "dda06a658a6dcf8cfdc48de71ce7526bd704de679fb283d54a02cab04dd7ca3a"
+  },
+  {
+    "file": "success.ogg",
+    "duration": 0.49,
+    "bytes": 6794,
+    "gain_db": -5.22,
+    "peak_db": -6.16,
+    "boundary_jump": 3e-05,
+    "original_sha256": "568967a3d9f8a8f6af54ea01729c4882284308f2a27d78c07ffd7ee0d6951661",
+    "sha256": "99832bb4ccfaed4b5e96c9e73aff3d4a51051a54d47baa2e72e0bbe3f9cd68ab"
+  },
+  {
+    "file": "workshop.ogg",
+    "duration": 22.588,
+    "bytes": 471636,
+    "gain_db": -2.62,
+    "peak_db": -2.95,
+    "boundary_jump": 0.02359,
+    "original_sha256": "7ec21cd36dd4be375e542a3e32116d2c2d060587f7c041f2444dfdc80da3648a",
+    "sha256": "ebf7895f0f8698c984b9c710788e1422eb73baa7ed947ce93924b879f35a8146"
+  }
+]
