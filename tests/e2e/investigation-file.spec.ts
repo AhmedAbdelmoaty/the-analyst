@@ -37,6 +37,9 @@ test('opening meeting clearly focuses the current speaker', async ({ page }, tes
   await page.addInitScript(() => { window.name = 'investigation-v21-test-user'; });
   await page.goto('/investigation-file/index.html');
   await expect(page.locator('#introSpeech')).toHaveAttribute('data-speaker', 'cfo');
+  const report = await page.locator('.intro-scene .report-paper').boundingBox();
+  const next = await page.locator('#nextIntro').boundingBox();
+  expect(report && next && report.y + report.height < next.y).toBe(true);
   await capturePreview(page, testInfo.outputPath('v3-meeting-cfo.png'));
   await page.locator('#nextIntro').click();
   await expect(page.locator('#introSpeech')).toHaveAttribute('data-speaker', 'hr');
@@ -190,10 +193,9 @@ test('phase A keeps comparison cards readable, historical figures fixed, and liv
   await expect(page.locator('[data-clip="0"] .comparison-card').last()).toContainText('450/600');
   await page.locator('[data-save-clip="0"]').click();
   await expect(page.locator('#savedPairs .comparison-card')).toHaveCount(2);
-  await expect(page.locator('[data-saved-detail="0"]')).toBeHidden();
-  await page.locator('[data-review="0"]').click();
-  await expect(page.locator('[data-saved-detail="0"]')).toBeVisible();
-  await expect(page.locator('[data-review="0"]')).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#savedPairs .comparison-card').first()).toBeVisible();
+  await expect(page.locator('#savedPairs')).toContainText('80/100');
+  await expect(page.locator('#savedPairs')).toContainText('450/600');
   await openLab(page);
   const original = await page.locator('#historicalReadout').textContent();
   await setMix(page, 'trainedMix', 500);
@@ -236,7 +238,7 @@ test('employee lab animates independent populations and balances hypothetical ra
   await expect(page.locator('#untrainedWhatIf')).toHaveText('42.5%');
   await expect(page.locator('#trainedPopulation')).toHaveAttribute('data-junior-count', '10');
   await expect(page.locator('#untrainedPopulation')).toHaveAttribute('data-senior-count', '10');
-  await expect(page.locator('#labDiscovery')).toBeVisible();
+  await expect(page.locator('#labDiscovery')).toBeHidden();
   await expect.poll(beamAngle).toBeGreaterThan(0.01);
   await setMix(page, 'trainedMix', 50);
   await setMix(page, 'untrainedMix', 200);
@@ -264,6 +266,19 @@ test('employee lab animates independent populations and balances hypothetical ra
   await page.locator('#evidenceTab').click();
   await openLab(page);
   await expect(page.locator('#trainedPopulation')).toHaveAttribute('data-junior-count', '5');
+});
+
+test('the paradox discovery follows evidence and a changed hypothetical result', async ({ page }) => {
+  await openDesk(page);
+  await pair(page, 'jt', 'ju', 0);
+  await page.locator('[data-save-clip="0"]').click();
+  await pair(page, 'st', 'su', 1);
+  await page.locator('[data-save-clip="1"]').click();
+  await openLab(page);
+  await expect(page.locator('#labDiscovery')).toBeHidden();
+  await page.locator('#equalMix').click();
+  await expect(page.locator('#labDiscovery')).toBeVisible();
+  await expect(page.locator('.experiment-board')).toHaveClass(/paradox-found/);
 });
 
 test('a saved experiment can be interpreted, corrected or removed without a false loss', async ({ page }) => {

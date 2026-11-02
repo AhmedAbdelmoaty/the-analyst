@@ -1,5 +1,5 @@
 import { records, rate, share, counterfactualRates, originalRates } from './case-data.mjs';
-import { resolveVerdict } from './engine.mjs';
+import { resolveVerdict, hasSupportingComparisons } from './engine.mjs';
 import { createAudioManager } from './audio.mjs';
 import { beginRun, finishRun, readRun } from './persistence.mjs';
 
@@ -146,15 +146,8 @@ function renderSavedPairs() {
     const summary = recordNames.length === 2
       ? `${name(recordNames[0])} ${recordNames[0].promoted}/${recordNames[0].total} = ${pct(rate(recordNames[0]))} · مقابل ${name(recordNames[1])} ${recordNames[1].promoted}/${recordNames[1].total} = ${pct(rate(recordNames[1]))}`
       : 'الخانة فاضية · احفظ أي مقارنة';
-    return `<div class="saved-pair ${ids.length === 2 ? 'has-evidence' : ''}"><div class="saved-pair-heading"><b>دليل ${i + 1}</b>${ids.length === 2 ? `<span class="saved-pair-summary">${summary}</span><button class="text-button" data-review="${i}" aria-expanded="false">تفاصيل</button><button class="text-button" data-recall="${i}">افتح على المشبك</button>` : `<span>${summary}</span>`}</div><div class="saved-pair-detail" data-saved-detail="${i}" hidden><div class="comparison-layout">${ids.length === 2 ? comparisonView(ids) : ''}</div></div></div>`;
+    return `<div class="saved-pair ${ids.length === 2 ? 'has-evidence' : ''}"><div class="saved-pair-heading"><b>دليل ${i + 1}</b>${ids.length === 2 ? `<button class="text-button" data-recall="${i}">افتح على المشبك</button>` : `<span>${summary}</span>`}</div>${ids.length === 2 ? `<div class="saved-pair-detail"><div class="comparison-layout">${comparisonView(ids)}</div></div>` : ''}</div>`;
   }).join('');
-  document.querySelectorAll('[data-review]').forEach(button => button.addEventListener('click', () => {
-    const detail = document.querySelector(`[data-saved-detail="${button.dataset.review}"]`);
-    detail.hidden = !detail.hidden;
-    button.setAttribute('aria-expanded', String(!detail.hidden));
-    button.textContent = detail.hidden ? 'تفاصيل' : 'اقفل التفاصيل';
-    sound('sceneChange');
-  }));
   document.querySelectorAll('[data-recall]').forEach(button => button.addEventListener('click', () => {
     const i = Number(button.dataset.recall);
     state.pairs[i] = [...state.savedPairs[i]];
@@ -175,6 +168,19 @@ function currentMix() {
 
 const populations = { trained: new Map(), untrained: new Map() };
 let labDiscoveryShown = false;
+function maybeRevealParadox() {
+  if (labDiscoveryShown || !hasSupportingComparisons(state.savedPairs)) return;
+  const { trained, untrained } = currentMix();
+  const rates = counterfactualRates(trained, untrained);
+  if (rates.trained - rates.untrained <= .015) return;
+  labDiscoveryShown = true;
+  $('labDiscovery').classList.remove('hidden');
+  document.querySelector('.experiment-board').classList.add('paradox-found');
+  document.querySelector('.saved-evidence').classList.add('paradox-found');
+  reactFelfel('discovery');
+  sound('proofPin');
+  window.setTimeout(() => $('labDiscovery').classList.add('hidden'), 4300);
+}
 function renderPopulation(group, juniorShare) {
   const chamber = $(`${group}Population`);
   const tokens = populations[group];
@@ -249,13 +255,7 @@ function updateMix({ playSound = false } = {}) {
   const difference = rates.trained - rates.untrained;
   $('balanceBeam').style.transform = `rotate(${Math.max(-12, Math.min(12, difference * 25))}deg)`;
   $('rateBalance').setAttribute('aria-label', `ميزان معدلات الترقية الافتراضية: الحاضرين ${pct(rates.trained)}، غير الحاضرين ${pct(rates.untrained)}`);
-  if (!labDiscoveryShown && difference > .015) {
-    labDiscoveryShown = true;
-    $('labDiscovery').classList.remove('hidden');
-    reactFelfel('discovery');
-    sound('proofPin');
-    window.setTimeout(() => $('labDiscovery').classList.add('hidden'), 4300);
-  }
+  maybeRevealParadox();
   $('mixRelation').textContent = Math.abs(mix.trained - mix.untrained) < .0005 ? 'تركيبة المجموعتين متشابهة في التجربة دي' : 'تركيبة المجموعتين مختلفة في التجربة دي';
   if (playSound) sound('mixAdjustment');
 }
@@ -271,11 +271,12 @@ document.querySelectorAll('[data-save-clip]').forEach(button => button.addEventL
   const i = Number(button.dataset.saveClip);
   if (state.pairs[i].length !== 2) return;
   state.savedPairs[i] = [...state.pairs[i]];
-  renderSavedPairs(); reactFelfel('discovery'); sound('proofPin');
+  renderSavedPairs(); reactFelfel('thinking'); sound('proofPin');
   const folder = document.querySelector('.saved-evidence');
   folder.classList.remove('folder-receiving'); void folder.offsetWidth; folder.classList.add('folder-receiving');
   flyPaper(document.querySelector(`[data-clip="${i}"]`), document.querySelectorAll('.saved-pair')[i], 'save');
   $('pairMessage').textContent = 'اتحفظت في ملف الأدلة. تقدر تبدّلها في أي وقت.';
+  maybeRevealParadox();
 }));
 $('clearSelection').addEventListener('click', () => { state.selected = []; updateCards(); sound(); });
 
@@ -504,14 +505,6 @@ function showEnding(result, reason = 'unsupported-decision') {
 const revealBars = (firstLabel, firstRate, secondLabel, secondRate) => `<div class="reveal-bars"><div class="reveal-bar"><div><b>${firstLabel}</b><strong dir="ltr">${pct(firstRate)}</strong></div><span><i style="width:${firstRate * 100}%"></i></span></div><div class="reveal-bar"><div><b>${secondLabel}</b><strong dir="ltr">${pct(secondRate)}</strong></div><span><i style="width:${secondRate * 100}%"></i></span></div></div>`;
 const compositionBar = (label, junior) => `<div class="reveal-composition"><b>${label}</b><div><span style="width:${junior * 100}%"></span><span style="width:${(1 - junior) * 100}%"></span></div><small>Junior ${pct(junior)} · Senior ${pct(1 - junior)}</small></div>`;
 let revealStep = 0;
-let revealTimer = 0;
-let revealPaused = false;
-function stopRevealTimer() { window.clearTimeout(revealTimer); revealTimer = 0; }
-function startRevealTimer() {
-  stopRevealTimer();
-  if (revealPaused || $('revealStage').classList.contains('hidden') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  revealTimer = window.setTimeout(() => advanceReveal(true), 9000);
-}
 function renderReveal() {
   const juniorTrained = records.find(r => r.id === 'jt');
   const juniorOther = records.find(r => r.id === 'ju');
@@ -535,37 +528,22 @@ function renderReveal() {
   $('revealProgress').textContent = `${revealStep + 1} / ${beats.length}`;
   $('nextReveal').textContent = revealStep === beats.length - 1 ? 'ارجع للنهاية' : 'اللي بعده ←';
   $('revealStage').classList.remove('reveal-pop'); void $('revealStage').offsetWidth; $('revealStage').classList.add('reveal-pop');
-  $('pauseReveal').textContent = revealPaused ? 'كمّل الشرح' : 'إيقاف الشرح مؤقتًا';
-  $('pauseReveal').setAttribute('aria-pressed', String(revealPaused));
-  startRevealTimer();
 }
 $('openReveal').addEventListener('click', () => {
   revealStep = 0;
-  revealPaused = false;
   document.querySelector('.end-card').classList.add('hidden');
   $('revealStage').classList.remove('hidden');
   renderReveal(); sound('sceneChange'); $('nextReveal').focus();
 });
-$('nextReveal').addEventListener('click', () => {
-  advanceReveal(false);
-});
-$('pauseReveal').addEventListener('click', () => {
-  revealPaused = !revealPaused;
-  if (revealPaused) stopRevealTimer(); else startRevealTimer();
-  $('pauseReveal').textContent = revealPaused ? 'كمّل الشرح' : 'إيقاف الشرح مؤقتًا';
-  $('pauseReveal').setAttribute('aria-pressed', String(revealPaused)); sound('button');
-});
-$('replayReveal').addEventListener('click', () => { revealStep = 0; revealPaused = false; renderReveal(); sound('sceneChange'); });
-function advanceReveal(fromTimer = false) {
-  stopRevealTimer();
-  if (revealStep < 5) { revealStep++; renderReveal(); if (!fromTimer) sound('sceneChange'); }
+$('nextReveal').addEventListener('click', advanceReveal);
+function advanceReveal() {
+  if (revealStep < 5) { revealStep++; renderReveal(); sound('sceneChange'); }
   else {
     $('revealStage').classList.add('hidden'); document.querySelector('.end-card').classList.remove('hidden'); $('openReveal').focus();
-    if (!fromTimer) sound('sceneChange');
+    sound('sceneChange');
   }
 }
 $('closeReveal').addEventListener('click', () => {
-  stopRevealTimer();
   $('revealStage').classList.add('hidden'); document.querySelector('.end-card').classList.remove('hidden'); $('openReveal').focus(); sound('sceneChange');
 });
 $('submitVerdict').addEventListener('click', () => {
