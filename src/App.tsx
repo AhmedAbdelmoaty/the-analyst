@@ -22,6 +22,7 @@ import SubscriptionSummary from "@/pages/SubscriptionSummary";
 import WorkDetails from "@/pages/WorkDetails";
 import PaymentReturn from "@/pages/PaymentReturn";
 import GameGate from "@/features/entitlement/GameGate";
+import PlatformAudio from "@/features/platform-audio/PlatformAudio";
 
 const Setup = lazy(() => import('./pages/Setup'));
 const GameRoute = lazy(() => import('./pages/GameRoute'));
@@ -53,7 +54,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster /><Sonner />
-      <BrowserRouter><GaPageViews /><UpdateGate /><AuthProvider><VisitTracker /><InstallProvider>
+      <BrowserRouter><GaPageViews /><UpdateGate /><PlatformAudio /><AuthProvider><VisitTracker /><InstallProvider>
         <Suspense fallback={<div className="auth-theme flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">جاري التحميل...</div>}>
           <Routes>
             <Route path="/" element={<Landing />} />

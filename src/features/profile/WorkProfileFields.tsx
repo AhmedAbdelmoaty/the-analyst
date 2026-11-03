@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DEPARTMENTS, INDUSTRIES, OTHER_MAX_LENGTH, type WorkProfile } from "@/features/profile/workProfile";
 
-type Props = { value: WorkProfile; onChange: (value: WorkProfile) => void; errors?: Partial<Record<keyof WorkProfile, string>> };
+import { WORK_LABELS } from './workLabels';
+
+type Props = { localized?: boolean; value: WorkProfile; onChange: (value: WorkProfile) => void; errors?: Partial<Record<keyof WorkProfile, string>> };
 const label = (options: readonly (readonly [string, string])[], id: string | null) => options.find(([key]) => key === id)?.[1] ?? "اختار من القائمة";
 
 function SearchableChoice({ title, options, value, onSelect }: { title: string; options: readonly (readonly [string, string])[]; value: string | null; onSelect: (id: string) => void }) {
@@ -32,11 +34,12 @@ function OtherField({ id, label: fieldLabel, value, error, onChange }: { id: str
   return <div><label className="mb-1 block text-sm font-semibold" htmlFor={id}>{fieldLabel}</label><input id={id} dir="auto" required maxLength={OTHER_MAX_LENGTH} value={value ?? ""} onChange={e => onChange(e.target.value)} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"/><p className="mt-1 text-end text-xs text-muted-foreground" dir="ltr">{(value ?? "").length}/{OTHER_MAX_LENGTH}</p>{error && <p id={`${id}-error`} role="alert" className="text-xs text-destructive">{error === "too_long" ? `الحد الأقصى ${OTHER_MAX_LENGTH} حرفًا` : "اكتب قيمة قصيرة"}</p>}</div>;
 }
 
-export default function WorkProfileFields({ value, onChange, errors = {} }: Props) {
+export default function WorkProfileFields({ value, onChange, errors = {}, localized = false }: Props) {
+  const localize = (options: readonly (readonly [string, string])[]) => localized ? options.map(([id, text]) => [id, WORK_LABELS[id] ?? text] as const) : options;
   const update = (patch: Partial<WorkProfile>) => onChange({ ...value, ...patch });
   return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" dir="rtl">
-    <div><SearchableChoice title="بتشتغل في أنهي قسم؟" options={DEPARTMENTS} value={value.department} onSelect={department => update({ department, department_other: department === "other" ? value.department_other : null })}/>{errors.department && <p role="alert" className="mt-1 text-xs text-destructive">اختار قسم</p>}</div>
-    <div><SearchableChoice title="شركتك في أنهي قطاع؟" options={INDUSTRIES} value={value.industry} onSelect={industry => update({ industry, industry_other: industry === "other" ? value.industry_other : null })}/>{errors.industry && <p role="alert" className="mt-1 text-xs text-destructive">اختار قطاع</p>}</div>
+    <div><SearchableChoice title={localized ? "القسم" : "بتشتغل في أنهي قسم؟"} options={localize(DEPARTMENTS)} value={value.department} onSelect={department => update({ department, department_other: department === "other" ? value.department_other : null })}/>{errors.department && <p role="alert" className="mt-1 text-xs text-destructive">اختار قسم</p>}</div>
+    <div><SearchableChoice title={localized ? "قطاع العمل" : "شركتك في أنهي قطاع؟"} options={localize(INDUSTRIES)} value={value.industry} onSelect={industry => update({ industry, industry_other: industry === "other" ? value.industry_other : null })}/>{errors.industry && <p role="alert" className="mt-1 text-xs text-destructive">اختار قطاع</p>}</div>
     {value.department === "other" && <OtherField id="department_other" label="اكتب القسم" value={value.department_other} error={errors.department_other} onChange={department_other => update({ department_other })}/>}
     {value.industry === "other" && <OtherField id="industry_other" label="اكتب القطاع" value={value.industry_other} error={errors.industry_other} onChange={industry_other => update({ industry_other })}/>}
   </div>;

@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Regenerable browser review captures and Playwright output (kept locally).
+artifacts/gaming-v2/
+artifacts/gaming-v3/
+artifacts/gaming-v4/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

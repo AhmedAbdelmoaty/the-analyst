@@ -1,51 +1,47 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Check, Compass, Crown, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import SubscriptionLayout from '@/features/subscription/SubscriptionLayout';
-import { clearPlanIntent, routeForPlanChoice, type PlanIntent } from '@/features/subscription/planIntent';
+import { routeForPlanChoice, type PlanIntent } from '@/features/subscription/planIntent';
 import AnnualPrice from '@/features/subscription/AnnualPrice';
 import { PAYMENT_UI_ENABLED } from '@/features/subscription/paymentApi';
-import { finishPlanStep, journeyDestination, onboardingStage, selectedGame } from '@/features/discovery/journey';
-import { GAME_CATALOG } from '@/features/discovery/catalog';
-import GameCard from '@/features/discovery/GameCard';
-import { selectGame } from '@/features/discovery/journey';
+import { clearSelectedGame } from '@/features/discovery/journey';
+import { chooseOnboardingPlan, onboardingFor, finishOnboarding } from '@/features/discovery/onboarding';
 import { useGameAccess } from '@/features/entitlement/useGameAccess';
-import '@/styles/discovery.css';
+import PlatformHeader from '@/features/platform-shell/PlatformHeader';
+import { platformAudio } from '@/features/platform-audio/mixer';
 
 export default function PlanChoice() {
   const navigate = useNavigate();
   const { user, loading, isProfileComplete } = useAuth();
-  const { snapshot, loading: accessLoading } = useGameAccess();
-  const game = selectedGame();
-  const firstTime = onboardingStage() === 'plans';
-  const development = !PAYMENT_UI_ENABLED && snapshot?.enforcement === false;
+  const { snapshot } = useGameAccess();
+  const firstTime = user && onboardingFor(user.id)?.stage === 'plans';
   const choose = (intent: PlanIntent) => {
-    if (loading || (user && (!snapshot || accessLoading))) return;
-    if (!user) { navigate(routeForPlanChoice(intent, false, false)); return; }
-    finishPlanStep();
-    if (development || intent === 'free') { clearPlanIntent(); navigate(journeyDestination(isProfileComplete)); }
-    else navigate(routeForPlanChoice(intent, true, isProfileComplete));
+    if (loading) return; platformAudio.unlock(); platformAudio.play('choice');
+    if (user) {
+      chooseOnboardingPlan(user.id, intent); clearSelectedGame();
+      if (isProfileComplete) {
+        const finished = finishOnboarding(user.id);
+        if (finished) { navigate(finished); return; }
+      }
+    }
+    navigate(routeForPlanChoice(intent, Boolean(user), isProfileComplete));
   };
-  const disabled = loading || Boolean(user && (!snapshot || accessLoading));
-  return <SubscriptionLayout publicPage wide>
-    <p className="text-sm font-bold text-primary">تجارب The Analyst</p>
-    <h1 className="mt-2 text-3xl font-bold leading-snug sm:text-4xl">{firstTime ? 'أهلاً بيك! اختار تجربتك' : 'اختار تجربتك'}</h1>
-    <p className="mt-3 leading-7 text-muted-foreground">{game ? `مغامرة «${game.title}» مستنياك بعد اختيار الخطة واستكمال بياناتك.` : 'حساب واحد يفتح لك اللعب والتعلّم بالطريقة اللي تناسبك.'}</p>
-    {!PAYMENT_UI_ENABLED && <aside className="mt-5 border-r-2 border-primary bg-primary/5 px-5 py-4 text-sm leading-7">الدفع السنوي لسه مش متاح. حاليًا أثناء التطوير، كل الألعاب متاحة للحسابات المكتملة. اختيار الخطة مش اشتراك مدفوع، ومش هيطلب منك دفع.</aside>}
-    <div className="mt-7 grid items-stretch gap-5 md:grid-cols-2">
-      <section className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-6">
-        <p className="text-sm font-bold text-primary">الخطة المجانية</p><h2 className="mt-2 text-2xl font-bold">ابدأ مجانًا</h2>
-        <p className="mt-4 text-4xl font-bold text-primary">0 <span className="text-base text-foreground">جنيه</span></p>
-        <ul className="mt-5 flex-1 list-disc space-y-2 pr-5 text-sm leading-7 marker:text-primary"><li>الوصول إلى «اسأل صح» بعد الإطلاق التجاري.</li><li>بدون دفع.</li></ul>
-        <Button disabled={disabled} onClick={() => choose('free')} className="mt-6 min-h-12 border-primary font-bold text-primary">ابدأ مجانًا</Button>
-      </section>
-      <section className="flex min-w-0 flex-col rounded-lg border border-primary/50 bg-card p-6">
-        <p className="text-sm font-bold text-primary">الخطة السنوية</p><h2 className="mt-2 text-2xl font-bold">التجربة الكاملة</h2><div className="mt-4"><AnnualPrice /></div>
-        <ul className="mt-5 flex-1 list-disc space-y-2 pr-5 text-sm leading-7 marker:text-primary"><li>كل الألعاب المشمولة في الكتالوج بعد الإطلاق التجاري.</li><li>12 شهر من تأكيد الدفع، والتجديد باختيارك.</li></ul>
-        <Button disabled={disabled} onClick={() => choose('annual')} className="mt-6 min-h-12 border-primary bg-primary font-bold text-primary-foreground hover:bg-primary/90">{PAYMENT_UI_ENABLED ? 'اشترك الآن' : 'اختار السنوية وكمّل الاستكشاف'}</Button>
-      </section>
-    </div>
-    {disabled && <p role="status" className="mt-4 text-sm text-muted-foreground">جاري التحقق من الحساب وإتاحة الألعاب...</p>}
-    <section className="discovery mt-8 border-t border-border pt-6" aria-labelledby="current-games"><h2 id="current-games" className="text-xl font-bold">اختار مغامرتك</h2><p className="mt-1 text-sm leading-7 text-muted-foreground">استكشف تجارب تفاعلية مختلفة، واختار الحكاية اللي تحب تبدأ بيها.</p><div className="discovery-grid mt-4 grid">{GAME_CATALOG.map(item => <GameCard key={item.id} game={item} onChoose={() => { selectGame(item.id); if (user) navigate(journeyDestination(isProfileComplete)); else navigate('/#account'); }} />)}</div></section>
-  </SubscriptionLayout>;
+  return <div className="platform plans-world" dir="rtl"><div className="platform-container">
+    <PlatformHeader home={user ? '/app' : '/'}><Link className="platform-button" to={user ? '/app' : '/'}>{user ? 'الألعاب' : 'الرئيسية'}<ArrowLeft /></Link></PlatformHeader>
+    <main className="pass-stage">
+      <div className="platform-heading"><p className="platform-kicker">مساحة أكبر للاكتشاف</p><h1>{firstTime ? 'أهلاً بيك! اختار تجربتك' : 'اختار تجربتك'}</h1><p className="platform-muted">ابدأ بسؤال يغيّر تفكيرك… أو افتح باب كل المغامرات.</p></div>
+      <div className="pass-grid">
+        <section className="pass-card"><div className="pass-icon"><Compass /></div><p className="pass-label">الخطة المجانية</p><h2>ابدأ مجانًا</h2><div className="pass-price"><strong>0</strong> <span>جنيه</span></div>
+          <ul className="pass-features"><li><Check />مغامرة «اسأل صح» لتجربة صياغة المشكلات.</li><li><Check />حسابك وشخصيتك، بدون دفع.</li><li><Check />اختار الترقية في الوقت اللي يناسبك.</li></ul>
+          <button className="platform-button" disabled={loading} onClick={() => choose('free')}>ابدأ مجانًا<ArrowLeft /></button>
+        </section>
+        <section className="pass-card annual"><span className="pass-stamp">كل المغامرات</span><div className="pass-icon"><Crown /></div><p className="pass-label">الخطة السنوية</p><h2>التجربة الكاملة</h2><div className="pass-price"><AnnualPrice /></div>
+          <ul className="pass-features"><li><Check />الألعاب الست، ومهارات مختلفة في كل حكاية.</li><li><Check />12 شهر من تأكيد الدفع.</li><li><Check />دفع سنوي لمرة واحدة، والتجديد باختيارك.</li></ul>
+          <button className="platform-button primary" disabled={loading} onClick={() => choose('annual')}>اختار السنوية<ArrowLeft /></button>
+        </section>
+      </div>
+      <p className="platform-note">{PAYMENT_UI_ENABLED ? 'اختيار السنوية ينقلك لملخص الاشتراك بعد استكمال حسابك. الوصول المدفوع يبدأ بعد تأكيد الدفع، مش بمجرد اختيار الخطة.' : 'الدفع السنوي لسه مش متاح. تقدر تشوف ملخص الاشتراك وترجع للألعاب؛ اختيار الخطة مش اشتراك مدفوع.'}{snapshot?.enforcement === false && ' حاليًا كل الألعاب متاحة للحسابات المكتملة أثناء التطوير.'}</p>
+      <p className="platform-muted mt-4 text-center">حساب واحد. قرارات كتير. كل تجربة بتعلّمك حاجة جديدة.</p>
+    </main>
+  </div></div>;
 }
