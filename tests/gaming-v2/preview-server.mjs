@@ -1,8 +1,10 @@
 // Local review service only. No outbound networking, real users, OTP, or payments.
 import http from 'node:http';
 import { createServer } from 'vite';
-const UI = 'http://127.0.0.1:8099';
-const API = 'http://127.0.0.1:8100';
+const uiPort = Number(process.env.REVIEW_UI_PORT ?? 8099);
+const apiPort = Number(process.env.REVIEW_API_PORT ?? 8100);
+const UI = `http://127.0.0.1:${uiPort}`;
+const API = `http://127.0.0.1:${apiPort}`;
 const owner = '00000000-0000-4000-a000-000000000099';
 let scenario = 'returning';
 let profile;
@@ -45,11 +47,11 @@ const api = http.createServer(async (req, res) => {
   // Even in this synthetic preview, checkout/reconciliation are deliberately unavailable.
   return reply({ error:'local_preview_only', message:'No real services or payment actions in this preview.' },403);
 });
-api.listen(8100,'127.0.0.1');
+api.listen(apiPort,'127.0.0.1');
 process.env.VITE_SUPABASE_URL=API;
 process.env.VITE_SUPABASE_PUBLISHABLE_KEY='local-preview-only';
 process.env.VITE_SUPABASE_PROJECT_ID='local-review';
-const vite=await createServer({ mode:'review', server:{host:'127.0.0.1',port:8099,strictPort:true,headers:{'Content-Security-Policy':"default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:8100 ws://127.0.0.1:8099; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; frame-src 'self';"}} });
+const vite=await createServer({ mode:'review', server:{host:'127.0.0.1',port:uiPort,strictPort:true,headers:{'Content-Security-Policy':`default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${API} ws://127.0.0.1:${uiPort}; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; frame-src 'self';`}} });
 await vite.listen();
 console.log(`Isolated local review: ${UI}/tests/gaming-v2/preview.html`);
 console.log('External connections blocked by CSP. All accounts and status responses are synthetic.');

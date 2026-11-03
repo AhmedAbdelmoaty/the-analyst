@@ -27,6 +27,7 @@ test('real audio unlock, mute, volume persistence and game route silence', async
   await page.getByRole('button', { name: 'تشغيل الصوت', exact: true }).click();
   await expect.poll(active).toHaveLength(1);
   await page.getByRole('button', { name: /مركز اللاعب/ }).click();
+  await expect(page.getByLabel('مستوى المؤثرات')).toHaveValue('100');
   await page.getByLabel('مستوى الموسيقى').fill('25');
   await page.getByRole('button', { name: 'كتم الموسيقى', exact: true }).click();
   await expect.poll(active).toHaveLength(0);

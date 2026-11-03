@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, MoveHorizontal, Pause, Play } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { GAME_CATALOG, type CatalogGame } from '@/features/discovery/catalog';
 import GameCoverCard from './GameCoverCard';
 import { platformAudio } from '@/features/platform-audio/mixer';
@@ -13,7 +13,6 @@ export default function GameShowcase({ onChoose }: { onChoose: (game: CatalogGam
   const focused = useRef(false);
   const touching = useRef(false);
   const lastManualAt = useRef(0);
-  const [userPaused, setUserPaused] = useState(false);
   const [systemReduced, setSystemReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const { reducedMotion } = usePlatformAudio();
   const autoAvailable = !systemReduced && !reducedMotion;
@@ -25,17 +24,17 @@ export default function GameShowcase({ onChoose }: { onChoose: (game: CatalogGam
     return () => media.removeEventListener('change', update);
   }, []);
   useEffect(() => {
-    if (userPaused || !autoAvailable) return;
+    if (!autoAvailable) return;
     const timer = window.setInterval(() => {
       const el = strip.current;
-      if (!el || document.hidden || hovered.current || focused.current || touching.current || Date.now() - lastManualAt.current < 5000) return;
+      if (!el || document.hidden || hovered.current || focused.current || touching.current || Date.now() - lastManualAt.current < 4000) return;
       const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
       const width = el.firstElementChild?.getBoundingClientRect().width ?? el.clientWidth;
       if (Math.abs(el.scrollLeft) >= el.scrollWidth - el.clientWidth - 3) el.scrollTo({ left: 0, behavior: 'smooth' });
       else el.scrollBy({ left: -(width + gap), behavior: 'smooth' });
-    }, 5000);
+    }, 4000);
     return () => window.clearInterval(timer);
-  }, [userPaused, autoAvailable]);
+  }, [autoAvailable]);
   const behavior = (): ScrollBehavior => window.matchMedia('(prefers-reduced-motion: reduce)').matches || platformAudio.snapshot().reducedMotion ? 'instant' : 'smooth';
   const scroll = (direction: number) => {
     const el = strip.current; if (!el) return;
@@ -44,9 +43,10 @@ export default function GameShowcase({ onChoose }: { onChoose: (game: CatalogGam
     const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
     el.scrollBy({ left: -direction * (width + gap), behavior: behavior() }); platformAudio.play('click');
   };
-  return <div className="game-showcase" onPointerEnter={event => { if (event.pointerType === 'mouse') hovered.current = true; }} onPointerLeave={() => { hovered.current = false; }}>
-    <div className="showcase-controls"><span><MoveHorizontal />اسحب أو انتظر اللعبة التالية</span><div><button className="platform-icon" disabled={!autoAvailable} aria-label={!autoAvailable ? 'الحركة التلقائية متوقفة بسبب تقليل الحركة' : userPaused ? 'تشغيل الحركة التلقائية' : 'إيقاف الحركة التلقائية'} aria-pressed={userPaused} onClick={() => setUserPaused(value => !value)}>{userPaused ? <Play /> : <Pause />}</button><button className="platform-icon" disabled={edges.start} aria-label="الألعاب السابقة" onClick={() => scroll(-1)}><ArrowRight /></button><button className="platform-icon" disabled={edges.end} aria-label="الألعاب التالية" onClick={() => scroll(1)}><ArrowLeft /></button></div></div>
+  return <div className="game-showcase">
+    <div className="showcase-stage"><button className="platform-icon showcase-nav" disabled={edges.start} aria-label="الألعاب السابقة" onClick={() => scroll(-1)}><ArrowRight /></button>
     <div ref={strip} className="showcase-strip" role="region" aria-label="استكشف الألعاب" tabIndex={0}
+      onPointerEnter={event => { if (event.pointerType === 'mouse') hovered.current = true; }} onPointerLeave={() => { hovered.current = false; }}
       onFocus={() => { focused.current = true; }} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) focused.current = false; }}
       onScroll={event => { const el = event.currentTarget; setEdges({ start: Math.abs(el.scrollLeft) < 3, end: Math.abs(el.scrollLeft) >= el.scrollWidth - el.clientWidth - 3 }); }}
       onKeyDown={event => {
@@ -65,6 +65,6 @@ export default function GameShowcase({ onChoose }: { onChoose: (game: CatalogGam
       onPointerCancel={event => { drag.current = null; touching.current = false; delete event.currentTarget.dataset.dragging; }}
       onClickCapture={event => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); suppressClick.current = false; } }}>
       {GAME_CATALOG.map(game => <GameCoverCard key={game.id} game={game} teaser onChoose={() => onChoose(game)} />)}
-    </div>
+    </div><button className="platform-icon showcase-nav" disabled={edges.end} aria-label="الألعاب التالية" onClick={() => scroll(1)}><ArrowLeft /></button></div>
   </div>;
 }

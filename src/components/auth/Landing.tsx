@@ -73,17 +73,16 @@ export default function Landing() {
         <p className="mt-1 text-sm leading-7 text-muted-foreground">استكشف تجارب تفاعلية مختلفة، واختار الحكاية اللي تحب تبدأ بيها.</p>
       </div>
       <GameShowcase onChoose={choose} />
-      <p className="mt-4 text-sm leading-7 text-muted-foreground">حساب واحد للمغامرات كلها. شوف الخطط واعرف التجربة المناسبة ليك؛ الوصول حسب حالة حسابك واشتراكك.</p>
     </section>
     <section ref={authArea} id="account" data-highlight={highlight} className="discovery-auth border-y border-border bg-card" aria-labelledby="account-heading">
       <div className="mx-auto grid max-w-6xl items-center gap-5 px-5 py-7 sm:px-8 sm:py-8 lg:grid-cols-[1fr_430px] lg:gap-12">
-        <div><p className="text-sm font-bold text-primary">مغامرتك تبدأ هنا</p><h2 id="account-heading" className="mt-2 text-2xl font-bold leading-relaxed sm:text-3xl">{choice ? `جاهز تبدأ «${choice.title}»؟` : 'حساب واحد، وتجارب متنوعة.'}</h2><p role="status" className="mt-3 text-base leading-8 text-muted-foreground">{choice ? `سجّل حسابك علشان تبدأ مغامرة ${choice.title}. عندك حساب؟ سجّل دخولك وكمّل من هنا.` : 'اعمل حسابك، اختار شخصيتك، وابدأ تكتشف. عندك حساب؟ مغامراتك مستنياك.'}</p><div className="mt-4 border-r-2 border-primary pr-4 text-sm leading-7 text-muted-foreground">تأكيد حسابك بيتم برمز على واتساب. بعد التسجيل لأول مرة هتشوف الخطط قبل ما تبدأ.</div></div>
+        <div><p className="text-sm font-bold text-primary">مغامرتك تبدأ هنا</p><h2 id="account-heading" className="mt-2 text-2xl font-bold leading-relaxed sm:text-3xl">{choice ? `جاهز تبدأ «${choice.title}»؟` : 'حساب واحد، وتجارب متنوعة.'}</h2><p role="status" className="mt-3 text-base leading-8 text-muted-foreground">{choice ? `سجّل حسابك علشان تبدأ مغامرة ${choice.title}. عندك حساب؟ سجّل دخولك وكمّل من هنا.` : 'اعمل حسابك، اختار شخصيتك، وابدأ تكتشف. عندك حساب؟ مغامراتك مستنياك.'}</p></div>
         <div className="flex min-w-0 justify-center">{loading || arrivedSignedOut === null || (user && arrivedSignedOut) ? <p role="status">جاري التحميل...</p> : user ? <div className="w-full border-t border-border py-8"><h3 className="text-2xl font-bold">أهلاً بيك من جديد</h3><Button className="mt-5 min-h-12 bg-primary px-6 text-primary-foreground" onClick={() => navigate('/app')}>متابعة اللعب <ArrowLeft className="h-4 w-4" /></Button></div> : <LandingContext.Provider value={true}><PlayerAuth /></LandingContext.Provider>}</div>
       </div>
     </section>
     <footer className="mx-auto max-w-7xl px-5 py-5 sm:px-8">
       <div className="flex flex-wrap items-center justify-between gap-4"><img src={analystLockup} alt="The Analyst" className="h-10 w-auto" /><Link to="/plans" className="text-sm font-bold text-primary">استعرض الخطط</Link><div dir="ltr" className="flex items-center gap-3"><span className="text-xs text-muted-foreground">An experience by IMP</span><img src="/imp-footer-logo.png" alt="IMP" className="h-9 w-auto" /></div></div>
-      <p className="mt-4 border-t border-border pt-3 text-xs leading-6 text-muted-foreground">نسجّل داخل المنصة أوقات الزيارات والجولات ونتائجها لتحسين التجربة ومتابعة التعلّم. ونستخدم بكسل Meta لقياس فعالية إعلاناتنا — لا يعمل للزوار من الدول التي تشترط موافقة مسبقة. التفاصيل في <Link to="/privacy" className="text-primary underline">سياسة الخصوصية</Link>.</p>
+      <Link to="/privacy" className="mt-3 inline-block text-xs text-primary underline">سياسة الخصوصية</Link>
     </footer>
   </div>;
 }

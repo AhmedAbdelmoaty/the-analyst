@@ -133,10 +133,6 @@
 .motion-choice { display: flex; align-items: center; gap: 10px; font-size: 12px; }
 .motion-choice input { width: 18px; height: 18px; accent-color: #a61e25; }
 .game-showcase { margin-top: 14px; }
-.showcase-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
-.showcase-controls > span { display: flex; align-items: center; gap: 8px; color: #52627b; font-size: 11px; }
-.showcase-controls > span svg { width: 16px; }
-.showcase-controls > div { display: flex; gap: 8px; }
 .showcase-strip { display: flex; gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 4px; overscroll-behavior-x: contain; padding: 10px 4px 18px; scrollbar-width: thin; scrollbar-color: #c6cfdc transparent; touch-action: pan-x pan-y; }
 .showcase-strip > .game-cover-card { flex: 0 0 calc((100% - 36px) / 3); scroll-snap-align: start; user-select: none; }
 .showcase-strip[data-dragging=true] { scroll-snap-type: none; cursor: grabbing; }

@@ -19,6 +19,7 @@ for (const width of [1280, 768, 390, 360]) {
     await page.screenshot({ path: `artifacts/gaming-v4/hub-${width}.png`, fullPage: true });
     await page.getByRole('button', { name: /مركز اللاعب/ }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
+    if (width === 1280 || width === 390) expect(await page.getByRole('dialog').evaluate(el => el.scrollHeight <= el.clientHeight + 2)).toBe(true);
     await page.screenshot({ path: `artifacts/gaming-v4/player-${width}.png`, fullPage: false });
     await page.keyboard.press('Escape');
 
@@ -56,27 +57,27 @@ test('mission card lifts, tilts, and shows a keyboard focus state', async ({ pag
   expect(await card.evaluate(el => getComputedStyle(el).transform)).toBe('none');
 });
 
-test('landing auto advances one card, pauses, and resumes without disabling manual controls', async ({ page }) => {
+test('landing auto advances one card, pauses during interaction, and keeps manual controls', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await mockAccount(page, { guest: true }); await page.goto('/');
   const strip = page.getByRole('region', { name: 'استكشف الألعاب' });
   await expect(strip).toBeVisible();
-  await page.waitForTimeout(5500);
+  await page.waitForTimeout(4500);
   await expect.poll(() => strip.evaluate(el => el.scrollLeft)).toBeLessThan(-100);
-  await page.getByRole('button', { name: 'إيقاف الحركة التلقائية' }).click();
-  await page.mouse.move(0, 0);
+  await expect(page.getByRole('button', { name: /الحركة التلقائية/ })).toHaveCount(0);
+  await strip.hover();
   const pausedAt = await strip.evaluate(el => el.scrollLeft);
-  await page.waitForTimeout(5500);
+  await page.waitForTimeout(4500);
   expect(Math.abs((await strip.evaluate(el => el.scrollLeft)) - pausedAt)).toBeLessThan(5);
+  await page.mouse.move(0, 0);
   await page.getByRole('button', { name: 'الألعاب التالية' }).click();
   await expect.poll(() => strip.evaluate(el => el.scrollLeft)).toBeLessThan(pausedAt - 100);
-  await page.getByRole('button', { name: 'تشغيل الحركة التلقائية' }).click();
   await page.mouse.move(0, 0);
   const resumedAt = await strip.evaluate(el => el.scrollLeft);
-  await page.waitForTimeout(5500);
+  await page.waitForTimeout(8500);
   expect(await strip.evaluate(el => el.scrollLeft)).not.toBe(resumedAt);
   await strip.focus();
   const focusedAt = await strip.evaluate(el => el.scrollLeft);
-  await page.waitForTimeout(5500);
+  await page.waitForTimeout(4500);
   expect(Math.abs((await strip.evaluate(el => el.scrollLeft)) - focusedAt)).toBeLessThan(3);
 });
 
@@ -86,9 +87,9 @@ test('system reduced motion disables landing autoplay', async ({ page }) => {
   const strip = page.getByRole('region', { name: 'استكشف الألعاب' });
   await expect(strip).toBeVisible();
   const start = await strip.evaluate(el => el.scrollLeft);
-  await page.waitForTimeout(5500);
+  await page.waitForTimeout(4500);
   expect(Math.abs((await strip.evaluate(el => el.scrollLeft)) - start)).toBeLessThan(3);
-  await expect(page.getByRole('button', { name: 'الحركة التلقائية متوقفة بسبب تقليل الحركة' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /الحركة التلقائية/ })).toHaveCount(0);
 });
 
 test('landing autoplay loops from the last card to the first', async ({ page }) => {
@@ -97,7 +98,7 @@ test('landing autoplay loops from the last card to the first', async ({ page }) 
   await expect(strip).toBeVisible();
   await strip.evaluate(el => { el.scrollLeft = -(el.scrollWidth - el.clientWidth); });
   await expect.poll(() => strip.evaluate(el => el.scrollLeft)).toBeLessThan(-100);
-  await page.waitForTimeout(5500);
+  await page.waitForTimeout(4500);
   await expect.poll(() => strip.evaluate(el => Math.abs(el.scrollLeft))).toBeLessThan(3);
 });
 

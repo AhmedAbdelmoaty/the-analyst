@@ -48,11 +48,11 @@ export default function PlayerCenter({ snapshot }: { snapshot: GameAccessSnapsho
   return <Dialog.Root open={open} onOpenChange={value => { setOpen(value); if (value) platformAudio.play('panel'); if (!value) { setEditing(false); setSaved(false); } }}>
     <Dialog.Trigger asChild><button className="player-trigger" aria-label={`مركز اللاعب: ${profile?.first_name ?? ''}`}><img src={avatar} alt="" /><span>{profile?.first_name}<small>مركز اللاعب</small></span><ChevronDown className="h-4 w-4" /></button></Dialog.Trigger>
     <Dialog.Portal><Dialog.Overlay className="player-overlay" /><Dialog.Content dir="rtl" className="platform player-center"><Dialog.Close className="platform-icon player-close" aria-label="إغلاق مركز اللاعب"><X /></Dialog.Close>
-      <div className="!text-right"><Dialog.Title data-player-title className="flex items-center gap-2 !text-xl"><Settings2 className="h-5 w-5" />مركز اللاعب</Dialog.Title><Dialog.Description data-player-description>هويتك، اشتراكك، وإعدادات تجربتك في مكان واحد.</Dialog.Description></div>
-      <div className="player-identity"><img src={avatar} alt="شخصيتك الحالية" /><div><h2>{profile?.first_name} {profile?.last_name}</h2><p className="platform-muted">جاهز للحكاية الجاية؟</p></div></div>
+      <div className="!text-right"><Dialog.Title data-player-title className="flex items-center gap-2 !text-xl"><Settings2 className="h-5 w-5" />مركز اللاعب</Dialog.Title><Dialog.Description className="sr-only">بيانات الحساب والاشتراك وإعدادات الصوت والعرض.</Dialog.Description></div>
+      <div className="player-identity"><img src={avatar} alt="شخصيتك الحالية" /><div><h2>{profile?.first_name} {profile?.last_name}</h2></div></div>
       {saved && <p role="status" className="platform-note">✓ تعديلاتك اتحفظت.</p>}
       {editing ? <ProfileEditor onSaved={() => { setEditing(false); setSaved(true); }} /> : <button className="platform-button w-full" onClick={() => { setEditing(true); setSaved(false); }}>تعديل بياناتي<ArrowLeft /></button>}
-      <section className="player-section"><h3>اشتراكي</h3><p className="platform-muted">{subscription}</p>{snapshot?.enforcement === false && <p className="platform-muted">كل الألعاب متاحة حاليًا أثناء التطوير.</p>}<Link className="platform-button mt-3 w-full" to="/subscription">تفاصيل الاشتراك<ArrowLeft /></Link></section>
+      <section className="player-section"><h3>اشتراكي</h3><p className="platform-muted">{subscription}</p><Link className="platform-button mt-3 w-full" to="/subscription">تفاصيل الاشتراك<ArrowLeft /></Link></section>
       <section className="player-section" data-audio-settings><h3>الصوت والعرض</h3><AudioControls /></section>
       <button className="platform-button w-full" onClick={async () => { await signOut(); navigate('/'); }}><LogOut />تسجيل الخروج</button>
     </Dialog.Content></Dialog.Portal>

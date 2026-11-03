@@ -32,13 +32,13 @@ export default function Games() {
   return <div className="platform hub-world" dir="rtl"><div className="platform-container">
     <PlatformHeader><Link className="platform-button hub-plans-link" to="/plans">الخطط</Link><PlayerCenter snapshot={snapshot} /></PlatformHeader>
     <main>
-      <div className="hub-intro platform-heading"><div><p className="platform-kicker">مغامراتك</p><h1>اختار مغامرتك</h1><p className="platform-muted">ادخل الحكاية، افحص الأدلة، وخد القرار بطريقتك.</p></div><span className="hub-library-label">٦ حكايات تستحق التجربة<ArrowLeft /></span></div>
+      <div className="hub-intro platform-heading"><div><p className="platform-kicker">مغامراتك</p><h1>اختار مغامرتك</h1></div><span className="hub-library-label">٦ حكايات تستحق التجربة<ArrowLeft /></span></div>
       {needsWork && <aside className="platform-note mb-4 flex items-center justify-between gap-3"><span>ضيف القسم وقطاع العمل من مركز اللاعب.</span><button aria-label="إخفاء الدعوة" className="platform-icon" onClick={() => void updateProfile({ work_details_prompt_dismissed_at: new Date().toISOString() })}><X /></button></aside>}
       <div className="hub-grid">{GAME_CATALOG.map(game => <GameCoverCard key={game.id} game={game} progress={progress[game.id]} snapshot={snapshot} onChoose={() => {
         if (cardAccess(game, progress[game.id], snapshot).decision === 'deny') { selectGame(game.id); navigate('/plans'); }
         else navigate(`${game.route}${progress[game.id].status === 'completed' ? '?showResult=1' : ''}`);
       }} />)}</div>
-      <footer className="hub-footer"><p>{snapshot?.enforcement === false ? 'كل الألعاب متاحة حاليًا للحسابات المكتملة أثناء التطوير.' : 'الوصول للألعاب حسب حالة حسابك واشتراكك المتحقق منها.'}</p>{snapshot?.enforcement === null && <button className="platform-button" onClick={() => void refresh()}>إعادة التحقق من الوصول</button>}<p>تقدّم الألعاب محفوظ على المتصفح ده.</p></footer>
+      {snapshot?.enforcement === null && <footer className="hub-footer"><button className="platform-button" onClick={() => void refresh()}>إعادة التحقق من الوصول</button></footer>}
     </main>
   </div></div>;
 }

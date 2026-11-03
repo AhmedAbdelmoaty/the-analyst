@@ -3,7 +3,7 @@ import { EFFECTS, MUSIC, type MusicContext, type SoundEvent } from './manifest';
 type Preferences = { enabled: boolean; musicMuted: boolean; sfxMuted: boolean; musicVolume: number; sfxVolume: number; reducedMotion: boolean };
 type Snapshot = Preferences & { unlocked: boolean; playing: boolean; unavailable: boolean };
 const KEY = 'analyst-platform-audio-v2';
-const initial: Preferences = { enabled: true, musicMuted: false, sfxMuted: false, musicVolume: .35, sfxVolume: .65, reducedMotion: false };
+const initial: Preferences = { enabled: true, musicMuted: false, sfxMuted: false, musicVolume: .35, sfxVolume: 1, reducedMotion: false };
 function preferences(): Preferences {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}');

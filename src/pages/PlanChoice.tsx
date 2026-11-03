@@ -3,17 +3,14 @@ import { Check, Compass, Crown, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { routeForPlanChoice, type PlanIntent } from '@/features/subscription/planIntent';
 import AnnualPrice from '@/features/subscription/AnnualPrice';
-import { PAYMENT_UI_ENABLED } from '@/features/subscription/paymentApi';
 import { clearSelectedGame } from '@/features/discovery/journey';
 import { chooseOnboardingPlan, onboardingFor, finishOnboarding } from '@/features/discovery/onboarding';
-import { useGameAccess } from '@/features/entitlement/useGameAccess';
 import PlatformHeader from '@/features/platform-shell/PlatformHeader';
 import { platformAudio } from '@/features/platform-audio/mixer';
 
 export default function PlanChoice() {
   const navigate = useNavigate();
   const { user, loading, isProfileComplete } = useAuth();
-  const { snapshot } = useGameAccess();
   const firstTime = user && onboardingFor(user.id)?.stage === 'plans';
   const choose = (intent: PlanIntent) => {
     if (loading) return; platformAudio.unlock(); platformAudio.play('choice');
@@ -40,8 +37,6 @@ export default function PlanChoice() {
           <button className="platform-button primary" disabled={loading} onClick={() => choose('annual')}>اختار السنوية<ArrowLeft /></button>
         </section>
       </div>
-      <p className="platform-note">{PAYMENT_UI_ENABLED ? 'اختيار السنوية ينقلك لملخص الاشتراك بعد استكمال حسابك. الوصول المدفوع يبدأ بعد تأكيد الدفع، مش بمجرد اختيار الخطة.' : 'الدفع السنوي لسه مش متاح. تقدر تشوف ملخص الاشتراك وترجع للألعاب؛ اختيار الخطة مش اشتراك مدفوع.'}{snapshot?.enforcement === false && ' حاليًا كل الألعاب متاحة للحسابات المكتملة أثناء التطوير.'}</p>
-      <p className="platform-muted mt-4 text-center">حساب واحد. قرارات كتير. كل تجربة بتعلّمك حاجة جديدة.</p>
     </main>
   </div></div>;
 }
