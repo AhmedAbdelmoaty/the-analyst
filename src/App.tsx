@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import VisitTracker from "@/components/analytics/VisitTracker";
 import GaPageViews from "@/components/analytics/GaPageViews";
+import CanonicalLink from "@/components/analytics/CanonicalLink";
 import PlanChoice from "@/pages/PlanChoice";
 import MySubscription from "@/pages/MySubscription";
 import SubscriptionSummary from "@/pages/SubscriptionSummary";
@@ -54,7 +55,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster /><Sonner />
-      <BrowserRouter><GaPageViews /><UpdateGate /><PlatformAudio /><AuthProvider><VisitTracker /><InstallProvider>
+      <BrowserRouter><GaPageViews /><CanonicalLink /><UpdateGate /><PlatformAudio /><AuthProvider><VisitTracker /><InstallProvider>
         <Suspense fallback={<div className="auth-theme flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">جاري التحميل...</div>}>
           <Routes>
             <Route path="/" element={<Landing />} />
