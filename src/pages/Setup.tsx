@@ -65,7 +65,7 @@ export default function Setup() {
           {characters.map((character, index) => <button key={character.id} type="button" role="radio" aria-label={character.label} aria-checked={gender === character.id} className="avatar-option" onClick={() => { setGender(character.id); platformAudio.unlock(); platformAudio.play('avatar'); }} onKeyDown={event => {
             if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) { event.preventDefault(); setGender(characters[1 - index].id); (event.currentTarget.parentElement?.children[1 - index] as HTMLElement)?.focus(); }
           }}><img src={character.image} alt="" /><span className="avatar-caption"><strong>{character.label}</strong><span>{gender === character.id ? '✓ دي شخصيتك' : 'اختار الشخصية'}</span></span></button>)}
-        </div><p className="platform-muted mt-4 text-center">الشخصية اختيارك. مهاراتك بتظهر في قراراتك.</p></div>
+        </div></div>
         <form className="setup-form" onSubmit={submit}>
           <div><h2>خلّينا نتعرّف عليك</h2><p className="platform-muted">القسم وقطاع العمل بيساعدونا نفهم جمهور التجربة.</p></div>
           {needsName ? <p className="platform-note" role="status">بيانات الاسم ناقصة في حسابك. افتح مركز اللاعب بالأعلى لإكمالها، وبعدها اختار شخصيتك.</p> : <p className="flex items-center gap-2 text-sm font-bold"><Check className="h-4 w-4 text-teal-700" />{profile.first_name} {profile.last_name}</p>}

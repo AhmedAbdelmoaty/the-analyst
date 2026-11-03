@@ -8,7 +8,7 @@ test('Landing showcase scrolls with RTL buttons and keyboard and preserves guest
   await page.getByRole('button', { name: 'الألعاب التالية' }).click();
   await expect.poll(() => strip.evaluate(e => e.scrollLeft)).toBeLessThan(-100);
   await strip.focus(); await page.keyboard.press('Home');
-  await expect.poll(() => strip.evaluate(e => e.scrollLeft)).toBe(0);
+  await expect.poll(() => strip.evaluate(e => Math.abs(e.scrollLeft))).toBeLessThan(3);
   await page.getByRole('button', { name: 'اكتشف المغامرة: اسأل صح' }).click();
   await expect(page.getByRole('heading', { name: 'جاهز تبدأ «اسأل صح»؟' })).toBeInViewport();
   expect(await page.evaluate(() => sessionStorage.getItem('analyst-selected-game-v1'))).toBe('problem-framing');

@@ -156,10 +156,7 @@
   --world-violet: #5847a9;
   --world-gold: #ffdc8e;
   color: #142245;
-  background:
-    linear-gradient(180deg, #1a245777 0%, #25347c30 35%, #f0d5c959 75%, #e8e5f5 100%),
-    url('../../assets/world/luminous-courtyard.webp') center top / cover fixed,
-    #c4bfdf;
+  background: linear-gradient(180deg, #222b6c, #44348d);
   isolation: isolate;
 }
 .platform:is(.hub-world,.setup-world,.plans-world)::before {
