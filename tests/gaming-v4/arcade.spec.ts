@@ -100,3 +100,20 @@ test('landing autoplay loops from the last card to the first', async ({ page }) 
   await page.waitForTimeout(5500);
   await expect.poll(() => strip.evaluate(el => Math.abs(el.scrollLeft))).toBeLessThan(3);
 });
+
+test('all six original Hub cards navigate to their existing game routes', async ({ page }) => {
+  await mockAccount(page);
+  const games = [
+    ['اسأل صح', '/play'],
+    ['قرار التكريم', '/games/reward-decision'],
+    ['ورا النقط', '/games/behind-the-dots'],
+    ['الشفرة الأخيرة', '/games/crack-the-code'],
+    ['مصفوفة القرار', '/games/decision-matrix'],
+    ['ملف تحت التحقيق', '/games/investigation-file'],
+  ] as const;
+  for (const [title, route] of games) {
+    await page.goto('/app');
+    await page.getByRole('button', { name: `ابدأ اللعب: ${title}` }).click();
+    await expect(page).toHaveURL(new RegExp(`${route}$`));
+  }
+});
