@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import analyst from './assets/analyst.png.asset.json';
 import manager from './assets/manager.png.asset.json';
@@ -118,6 +118,9 @@ export default function TeamPerformanceGame() {
   const [won, setWon] = useState(false);
   const [muted, setMuted] = useState(() => localStorage.getItem('tp-muted') === '1');
   const [pop, setPop] = useState<string | null>(null);
+  const [levelOk, setLevelOk] = useState(false);
+  const [round, setRound] = useState(0);
+  const opts = useMemo(() => ({ first: shuffle(FIRST), level: shuffle(LEVEL), why: shuffle(WHY), final: shuffle(FINAL) }), [round]);
   const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { localStorage.setItem('tp-muted', muted ? '1' : '0'); }, [muted]);
@@ -126,20 +129,21 @@ export default function TeamPerformanceGame() {
   const go = (p: Phase) => { play('page-turn', muted); setPicked(null); setPhase(p); };
   const pick = (o: Option, points: number) => {
     setPicked(o);
+    if (phase === 'level') setLevelOk(o.good);
     if (o.good) { setScore(s => s + points); play('pop', muted); setPop(`+${points}`); setTimeout(() => setPop(null), 900); }
     else play('horn-short', muted);
   };
+  // Win = correct final decision AND correct reading of the table (level). Trap mistakes only lower the score.
   const decide = (o: Option) => {
-    const ok = o.good && score >= 40;
-    const final = o.good ? score + 40 : score;
+    const final = o.good ? score + POINTS.final : score;
+    const win = o.good && levelOk;
     setScore(final);
-    setWon(o.good && final >= 70);
-    play(o.good && final >= 70 ? 'win' : 'lose', muted);
-    if (o.good && final >= 70) setTimeout(() => play('confettipop', muted), 500);
-    void ok;
+    setWon(win);
+    play(win ? 'win' : 'lose', muted);
+    if (win) setTimeout(() => play('confettipop', muted), 500);
     setPhase('result');
   };
-  const restart = () => { play('woosh', muted); setScore(0); setPicked(null); setWon(false); setPhase('intro'); };
+  const restart = () => { play('woosh', muted); setScore(0); setPicked(null); setWon(false); setLevelOk(false); setRound(r => r + 1); setPhase('intro'); };
 
   const step = ['intro', 'first', 'inspect', 'level', 'why', 'final', 'result'].indexOf(phase);
 
@@ -147,8 +151,9 @@ export default function TeamPerformanceGame() {
     <div ref={topRef} dir="rtl" className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,#fef3c7,#fde68a_40%,#fb923c)] font-[Cairo,sans-serif] text-slate-900">
       <style>{`@keyframes tp-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes tp-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}@keyframes tp-rise{0%{opacity:0;transform:translateY(0) scale(.6)}30%{opacity:1;transform:translateY(-10px) scale(1.2)}100%{opacity:0;transform:translateY(-50px) scale(1)}}@keyframes tp-confetti{0%{transform:translateY(-10vh) rotate(0)}100%{transform:translateY(110vh) rotate(720deg)}}`}</style>
 
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b-4 border-slate-900 bg-slate-900 px-4 py-2 text-white">
-        <div className="text-sm font-black">⚡ أداء الفريق</div>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b-4 border-slate-900 bg-slate-900 px-3 py-2 text-white">
+        <Link to="/app" aria-label="رجوع للألعاب" className="grid h-9 w-9 place-items-center rounded-lg bg-white/10 text-lg hover:bg-white/20">🏠</Link>
+        <div className="hidden text-sm font-black sm:block">⚡ أداء الفريق</div>
         <div className="flex flex-1 justify-center gap-1">
           {Array.from({ length: 7 }).map((_, i) => <span key={i} className={`h-2 w-6 rounded-full ${i <= step ? 'bg-yellow-400' : 'bg-white/20'}`} />)}
         </div>
@@ -180,33 +185,25 @@ export default function TeamPerformanceGame() {
 
         {phase === 'first' && (
           <>
-            <Speech who="الأستاذ شريف" img={manager.url}>إيه رأيك يا محلل؟ نمضي على المكافأة؟</Speech>
-            <Choices options={FIRST} picked={picked} onPick={o => pick(o, 20)} />
-            {picked && <Feedback o={picked} next={() => go('inspect')} label="افتح التابلت 📊" />}
+            <Speech who="الأستاذ شريف" img={manager.url}>فريق ب واضح إنه متأخر… تنصحني أعمل إيه معاهم يا محلل؟</Speech>
+            <Choices options={opts.first} picked={picked} onPick={o => pick(o, POINTS.first)} />
+            {picked && <Feedback o={picked} next={() => go('inspect')} label="افتح تفاصيل التقرير 📊" />}
           </>
         )}
 
         {phase === 'inspect' && (
           <>
-            <Speech who="أنت — المحلل" img={analyst.url}>خليني أفصّل المهام حسب الصعوبة… 🔍</Speech>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {(['A', 'B'] as const).map((t, ti) => (
-                <div key={t} className="space-y-3 rounded-2xl border-4 border-slate-900 bg-white p-4 shadow-[6px_6px_0_#0f172a] animate-fade-in">
-                  <div className="font-black">فريق {t === 'A' ? 'أ' : 'ب'}</div>
-                  <Bar label={`سهلة (${DATA[t].easy[0]}/${DATA[t].easy[1]})`} value={pct(DATA[t].easy)} tone={t === 'A' ? 'a' : 'b'} delay={300 + ti * 400} />
-                  <Bar label={`صعبة (${DATA[t].hard[0]}/${DATA[t].hard[1]})`} value={pct(DATA[t].hard)} tone={t === 'A' ? 'a' : 'b'} delay={700 + ti * 400} />
-                  <div className="rounded-lg bg-slate-100 p-2 text-xs font-bold">توزيع المهام: {DATA[t].easy[1]} سهلة · {DATA[t].hard[1]} صعبة</div>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => go('level')} className="w-full rounded-2xl border-4 border-slate-900 bg-sky-500 py-4 text-lg font-black text-white shadow-[6px_6px_0_#0f172a] active:translate-y-1 active:shadow-none">شُفت الأرقام ▶</button>
+            <Speech who="أنت — المحلل" img={analyst.url}>ده التقرير مفصّل حسب صعوبة المهام. اقراه كويس… 🔍</Speech>
+            <DataTable />
+            <button onClick={() => go('level')} className="w-full rounded-2xl border-4 border-slate-900 bg-sky-500 py-4 text-lg font-black text-white shadow-[6px_6px_0_#0f172a] active:translate-y-1 active:shadow-none">قريت الجدول ▶</button>
           </>
         )}
 
         {phase === 'level' && (
           <>
+            <DataTable />
             <Speech who="أنت — المحلل" img={analyst.url}>سؤال مهم: مين أعلى نسبة إنجاز <u>داخل كل مستوى صعوبة</u>؟</Speech>
-            <Choices options={LEVEL} picked={picked} onPick={o => pick(o, 20)} />
+            <Choices options={opts.level} picked={picked} onPick={o => pick(o, POINTS.level)} />
             {picked && <Feedback o={picked} next={() => go('why')} />}
           </>
         )}
@@ -214,7 +211,7 @@ export default function TeamPerformanceGame() {
         {phase === 'why' && (
           <>
             <Speech who="الأستاذ شريف" img={manager.url}>طب إزاي فريق ب أحسن في الاتنين… والإجمالي بتاعه أقل؟! 🤯</Speech>
-            <Choices options={WHY} picked={picked} onPick={o => pick(o, 20)} />
+            <Choices options={opts.why} picked={picked} onPick={o => pick(o, POINTS.why)} />
             {picked && <Feedback o={picked} next={() => go('final')} />}
           </>
         )}
@@ -222,7 +219,7 @@ export default function TeamPerformanceGame() {
         {phase === 'final' && (
           <>
             <Speech who="الأستاذ شريف" img={manager.url}>تمام… القرار النهائي في إيدك. المكافأة لمين؟</Speech>
-            <Choices options={FINAL} picked={null} onPick={decide} />
+            <Choices options={opts.final} picked={null} onPick={decide} />
           </>
         )}
 
@@ -231,7 +228,7 @@ export default function TeamPerformanceGame() {
             {won && <Confetti />}
             <div className={`rounded-3xl border-4 border-slate-900 p-5 text-center shadow-[8px_8px_0_#0f172a] ${won ? 'bg-emerald-300' : 'bg-rose-300'}`}>
               <div className="text-5xl">{won ? '🏆' : '💥'}</div>
-              <h2 className="mt-2 text-3xl font-black">{won ? 'قرار محلل محترف!' : 'المرة الجاية هتكسب'}</h2>
+              <h2 className="mt-2 text-3xl font-black">{won ? (score === 100 ? 'محلل محترف — قرار مثالي!' : 'كسبت — بس اتداركت الموقف') : 'خسرت — القرار ظلم الفريق الأحسن'}</h2>
               <div className="mt-1 text-lg font-black tabular-nums">{score} / 100 نقطة</div>
             </div>
             <Speech who={won ? 'الأستاذ شريف' : 'أنت — المحلل'} img={won ? manager.url : analyst.url}>
