@@ -12,7 +12,6 @@ import PlatformHeader from '@/features/platform-shell/PlatformHeader';
 import GameCoverCard from '@/features/platform-shell/GameCoverCard';
 import PlayerCenter from '@/features/platform-shell/PlayerCenter';
 import { cardAccess } from '@/features/platform-shell/accessPresentation';
-import HubCinematicIntro from '@/features/platform-shell/HubCinematicIntro';
 
 export default function Games() {
   const { user, profile, updateProfile } = useAuth();
@@ -41,5 +40,5 @@ export default function Games() {
       }} />)}</div>
       {snapshot?.enforcement === null && <footer className="hub-footer"><button className="platform-button" onClick={() => void refresh()}>إعادة التحقق من الوصول</button></footer>}
     </main>
-  </div><HubCinematicIntro /></div>;
+  </div></div>;
 }
