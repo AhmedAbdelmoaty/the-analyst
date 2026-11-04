@@ -1,0 +1,183 @@
+/* V5 branded arcade: visual overrides only; gameplay and account flows are untouched. */
+.platform {
+  --game-red: #a61e25;
+  --game-red-bright: #c42a34;
+  --game-red-deep: #75151b;
+  --game-ink: #101013;
+  --game-panel: #1b1b20;
+  --game-raised: #29292f;
+  --game-line: #77777d;
+}
+.platform:is(.hub-world,.setup-world,.plans-world) {
+  --arcade-cyan: #c42a34;
+  --arcade-yellow: #f5f5f5;
+  --arcade-orange: #a61e25;
+  --arcade-pink: #a61e25;
+  --arcade-ink: #101013;
+  --arcade-line: #000;
+  background: #101013;
+  position: relative;
+  isolation: isolate;
+}
+.platform:is(.hub-world,.setup-world,.plans-world)::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: url('../../assets/world/arcade-arena.webp') center / cover no-repeat;
+  filter: grayscale(1) brightness(.32) contrast(1.2);
+}
+.platform:is(.hub-world,.setup-world,.plans-world)::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 53% 5%, #a61e254d, transparent 50%),
+    linear-gradient(100deg, #080809ae, #25101448 48%, #080809ad),
+    linear-gradient(0deg, #a61e2530, transparent 38%);
+}
+.platform:is(.hub-world,.setup-world,.plans-world) .platform-header {
+  min-height: 68px;
+  border-color: #aa5155;
+  background: linear-gradient(100deg, #111114f5, #2b171bf0 55%, #111114f5);
+  box-shadow: 0 5px 0 #060607, 0 0 28px #a61e2533, inset 0 1px #ffffff42;
+}
+.platform:is(.hub-world,.setup-world,.plans-world) .platform-brand img {
+  border-color: #dedee1;
+  background: #fff;
+  box-shadow: 0 3px 0 #75151b, 0 0 16px #a61e256b;
+}
+.platform:is(.hub-world,.setup-world,.plans-world) .platform-brand span { color: #ececef; text-shadow: none; }
+.platform:is(.hub-world,.setup-world,.plans-world) :is(.platform-button,.platform-icon,.player-trigger) {
+  border-color: #b8b8bd;
+  border-bottom-color: #5a5a60;
+  background: linear-gradient(165deg, #f9f9fa, #bfc0c5);
+  color: #151519;
+  box-shadow: 0 4px 0 #080809, 0 0 14px #ffffff24;
+}
+.platform:is(.hub-world,.setup-world,.plans-world) .platform-button.primary {
+  border-color: #eea5a9;
+  border-bottom-color: #4a1015;
+  background: linear-gradient(165deg, #cf4048, #a61e25 60%, #75151b);
+  color: white;
+  text-shadow: 0 1px #4a1015;
+  box-shadow: 0 5px 0 #09090a, 0 0 22px #a61e2580;
+}
+.platform:is(.hub-world,.setup-world,.plans-world) :is(.platform-button,.platform-icon,.player-trigger):hover:not(:disabled) {
+  box-shadow: 0 7px 0 #080809, 0 0 22px #c42a3466;
+}
+.platform:is(.hub-world,.setup-world,.plans-world) :is(button,a,input,select,[role=combobox]):focus-visible,
+.discovery.platform .game-showcase :is(button,a):focus-visible { outline-color: #fff; }
+.platform:is(.hub-world,.setup-world,.plans-world) .platform-kicker { color: #f0c6c8; }
+.platform:is(.hub-world,.setup-world,.plans-world) .platform-kicker::before { background: #c42a34; box-shadow: 0 0 11px #c42a34; }
+.hub-world .hub-intro h1, .setup-world .platform-heading h1, .plans-world .platform-heading h1 {
+  color: white;
+  text-shadow: 3px 4px 0 #75151b, 6px 7px 0 #09090a, 0 0 19px #a61e2580;
+}
+.hub-world .hub-intro { margin-block: 10px 12px; min-height: 0; }
+.hub-world .hub-grid { gap: 14px; }
+.hub-world .game-cover-card {
+  --tile-accent: #d1d1d5;
+  --tile-shadow: #444449;
+  background: #1b1b20;
+  box-shadow: 0 5px 0 var(--tile-shadow), 0 12px 0 #070708, 0 19px 30px #000b, 0 0 15px #a61e254a;
+}
+.hub-world .game-cover-card:nth-child(3n + 2) { --tile-accent: #c42a34; --tile-shadow: #75151b; }
+.hub-world .game-cover-card:nth-child(3n + 3) { --tile-accent: #aaa9ac; --tile-shadow: #555359; }
+.hub-world .game-cover-card[data-access=deny] { --tile-accent: #77777d; --tile-shadow: #39393f; }
+.hub-world .game-cover-card::after { border-color: #ffffff75; }
+.hub-world .game-cover-art { height: clamp(145px, 16vw, 193px); }
+.hub-world .game-cover-art::after { background: linear-gradient(0deg, #080809ed, #10101370 44%, transparent 78%); }
+.hub-world .game-cover-title { text-shadow: 2px 3px #000, 0 0 12px #000; }
+.hub-world .game-cover-details { background: linear-gradient(110deg, #29292f, #18181b 55%, #39171b); border-color: var(--tile-accent); }
+.hub-world .game-cover-meta { color: #ebebee; }
+.hub-world .game-cover-action {
+  border-color: #f2b9bc;
+  border-bottom-color: #75151b;
+  background: linear-gradient(165deg, #d54850, #a61e25 65%, #75151b);
+  color: white;
+  text-shadow: 0 1px #4a1015;
+  box-shadow: 0 4px 11px #0008;
+}
+.hub-world .game-cover-card[data-access=deny] .game-cover-action { border-color: #dedee0; border-bottom-color: #73737a; background: linear-gradient(#ececee,#bfc0c5); color: #19191d; }
+.hub-world .game-status { background: #111114d9; border-color: #b9b9be; }
+.hub-world .game-access { border-color: #e2e2e5; box-shadow: 0 3px 0 #75151b, 0 5px 9px #0009; }
+.hub-world .game-cover-card:focus-visible { border-color: white; box-shadow: 0 8px 0 #75151b, 0 16px 0 #070708, 0 25px 40px #000d, 0 0 28px #c42a34; }
+.hub-world .game-cover-card:active { box-shadow: 0 2px 0 var(--tile-shadow), 0 5px 0 #070708, 0 9px 16px #000b; }
+@media (hover:hover) and (pointer:fine) {
+  .hub-world .game-cover-card:hover { box-shadow: 0 9px 0 var(--tile-shadow), 0 17px 0 #070708, 0 27px 44px #000e, 0 0 28px #c42a34a8; }
+  .hub-world .game-cover-card:hover .game-cover-action { box-shadow: 0 6px 15px #0009, 0 0 14px #c42a34; }
+}
+.hub-world .platform-note { border-color: #b8555a; background: #24191be8; }
+.platform:is(.hub-world,.setup-world,.plans-world) .player-trigger { border-color: #c6c6cb; background: linear-gradient(#fff,#d0d0d4); }
+.platform:is(.hub-world,.setup-world,.plans-world) .player-trigger small { color: #58585e; }
+
+.setup-world .platform-heading { margin-block: 14px 12px; }
+.setup-world .setup-grid { border-color: #a7444a; background: linear-gradient(135deg,#242327ec,#17171aec); box-shadow: 0 7px 0 #4a1015, 0 18px 38px #000c, inset 0 0 35px #a61e2528; }
+.setup-world .avatar-option, .setup-world .avatar-option:nth-child(2) { border-color: #939398; background: radial-gradient(ellipse at 50% 25%, #666368, #1b1b20 76%); box-shadow: 0 5px 0 #343438, 0 13px 22px #0009; }
+.setup-world .avatar-option:nth-child(2) { border-color: #b75b61; }
+.setup-world .avatar-caption { background: linear-gradient(120deg,#252428,#17171a); border-color: #9c3c42; }
+.setup-world .avatar-caption span { color: #dedee1; }
+.setup-world .avatar-option[aria-checked=true] { border-color: #f0bec1; box-shadow: 0 8px 0 #75151b, 0 0 0 4px #a61e256e, 0 0 29px #c42a34, 0 19px 35px #000c; }
+.setup-world .avatar-option[aria-checked=true] .avatar-caption { background: linear-gradient(120deg,#a61e25,#4a1015); }
+.setup-world .setup-form { border-color: #a45358; border-bottom-color: #75151b; background: linear-gradient(155deg,#2b292eeb,#17171bed); box-shadow: 0 10px 24px #0009; }
+.setup-world .setup-form h2 { color: white; text-shadow: 0 2px #75151b; }
+.setup-world .setup-form .platform-muted, .setup-world .setup-grid > div > .platform-muted { color: #dedee1; }
+.setup-world .setup-form :is(.platform-input,[role=combobox]) { color: #161619; background: #f5f5f5; border-color: #bcbcc0; }
+
+.plans-world .pass-stage { max-width: 1050px; margin-block: 10px 22px; }
+.plans-world .platform-heading { margin-block: 10px 8px; }
+.plans-world .pass-grid { gap: 18px; margin-block: 12px; }
+.plans-world .pass-card, .plans-world .pass-card.annual { padding: 20px 23px; border-radius: 20px; transform: none; }
+.plans-world .pass-card { border-color: #c6c6ca; border-bottom-color: #626268; background: linear-gradient(150deg,#f5f5f5,#c9c9ce); color: #18181c; box-shadow: 0 7px 0 #4d4d53, 0 18px 32px #0009; }
+.plans-world .pass-card.annual { border-color: #e4a6a9; border-bottom-color: #75151b; background: linear-gradient(150deg,#fff,#e7d7d9 48%,#be8e92); color: #19191c; box-shadow: 0 7px 0 #75151b, 0 18px 35px #000a, 0 0 27px #a61e2570; }
+.plans-world .pass-card::before { height: 8px; background: repeating-linear-gradient(100deg,#77777d 0 26px,#d8d8dc 26px 52px,#fff 52px 58px); }
+.plans-world .pass-card.annual::before { background: repeating-linear-gradient(100deg,#75151b 0 26px,#c42a34 26px 52px,#f4d5d7 52px 58px); }
+.plans-world .pass-card h2 { color: #151518; font-size: 28px; }
+.plans-world .pass-card .pass-label, .plans-world .pass-features { color: #303036; }
+.plans-world .pass-price { min-height: 58px; }
+.plans-world .pass-price > strong { color: #a61e25; }
+.plans-world .pass-features { gap: 8px; margin: 14px 0; padding-top: 14px; border-color: #a6a6ad; }
+.plans-world .pass-icon, .plans-world .annual .pass-icon { width: 50px; height: 50px; border-color: #fff; background: linear-gradient(145deg,#6c6c73,#29292f); color: white; box-shadow: 0 4px 0 #48484e, 0 9px 15px #0005; }
+.plans-world .annual .pass-icon { background: linear-gradient(145deg,#c42a34,#75151b); box-shadow: 0 4px 0 #4a1015, 0 9px 15px #0005; }
+.plans-world .pass-card .platform-button { min-height: 48px; }
+.plans-world .pass-card.annual .platform-button.primary { background: linear-gradient(155deg,#d4474e,#a61e25 64%,#75151b); }
+.plans-world .pass-stamp { border-color: #75151b; background: #a61e25; color: white; box-shadow: 0 3px 0 #4a1015; }
+.plans-world .platform-note { border-color: #b7b7bc; background: #f5f5f5; color: #29292f; }
+
+.player-overlay { background: #000b; }
+.platform.player-center { border-color: #a61e25; background: linear-gradient(160deg,#131316,#292124 65%,#141416); color: white; box-shadow: -8px 0 0 #75151b, -18px 0 45px #000b; }
+.platform.player-center::before { height: 6px; background: repeating-linear-gradient(100deg,#4a1015 0 30px,#a61e25 30px 60px,#d3d3d7 60px 90px); }
+.platform.player-center [data-player-title], .platform.player-center .player-section h3 { color: #fff; text-shadow: 0 0 12px #a61e2575; }
+.platform.player-center .player-close { background: #e7e7ea; color: #151518; }
+.platform.player-center .player-identity { border-color: #a7444a; border-bottom-color: #75151b; background: linear-gradient(120deg,#29292f,#4a171d); }
+.platform.player-center .player-identity > img { border-color: #d0d0d4; background: #55555a; }
+.platform.player-center .platform-muted { color: #d4d4d9; }
+.platform.player-center .player-section { border-color: #525258; border-bottom-color: #333338; background: #29292fc2; }
+.platform.player-center .platform-button, .platform.player-center .platform-icon { border-color: #c8c8cd; border-bottom-color: #77777d; background: linear-gradient(#f5f5f5,#bfc0c5); color: #17171a; box-shadow: 0 4px 0 #09090a; }
+.platform.player-center .platform-button.primary, .platform.player-center > .platform-button:not(:last-child) { border-color: #e4a1a5; border-bottom-color: #75151b; background: linear-gradient(#c42a34,#a61e25); color: #fff; }
+.platform.player-center > .platform-button:last-child { border-color: #59595f; border-bottom-color: #35353a; background: #29292f; color: #dedee1; box-shadow: none; }
+.platform.player-center .player-section .platform-button { border-color: #c8c8cd; background: linear-gradient(#f5f5f5,#bfc0c5); color: #17171a; }
+.platform.player-center :is(.platform-input,[role=combobox]) { background: #f5f5f5; color: #17171a; border-color: #a8a8ae; }
+.platform.player-center .player-editor { border-color: #6d4549; background: #212125; }
+.platform.player-center .player-avatar-choice img { border-color: #d2d2d5; }
+.platform.player-center .platform-note { color: #17171a; background: #f5f5f5; }
+.platform.player-center .audio-row input, .platform.player-center .motion-choice input { accent-color: #a61e25; }
+
+.discovery.platform .game-showcase { border-color: #a61e25; border-bottom-color: #75151b; background: linear-gradient(140deg,#18181ce8,#40191ee8), url('../../assets/world/arcade-arena.webp') center / cover; box-shadow: 0 8px 0 #4a1015, 0 19px 30px #0005; }
+.discovery.platform .showcase-strip > .game-cover-card { --tile-accent: #c0c0c5; border-color: var(--tile-accent); border-bottom-color: #616167; background: #1b1b20; box-shadow: 0 6px 0 #3b3b40, 0 13px 22px #0009; }
+.discovery.platform .showcase-strip > .game-cover-card:nth-child(3n + 2) { --tile-accent: #c42a34; border-bottom-color: #75151b; }
+.discovery.platform .showcase-strip > .game-cover-card:nth-child(3n + 3) { --tile-accent: #e1e1e4; border-bottom-color: #77777d; }
+.discovery.platform .showcase-strip .game-cover-details { background: linear-gradient(120deg,#29292f,#461a1e); }
+.discovery.platform .showcase-strip .game-cover-action { background: linear-gradient(#d4474e,#a61e25); color: white; }
+.discovery.platform .showcase-nav { border-color: #f0c6c8; border-bottom-color: #75151b; background: linear-gradient(#d4474e,#a61e25); color: white; box-shadow: 0 4px 0 #4a1015; }
+.discovery.platform .showcase-strip .game-cover-card:focus-visible, .discovery.platform .showcase-strip .game-cover-card:hover { border-color: #fff; box-shadow: 0 7px 0 #75151b, 0 18px 27px #0008, 0 0 20px #a61e25; }
+@media (max-width: 639px) {
+  .hub-world .hub-intro { margin-block: 14px 12px; }
+  .hub-world .hub-grid { gap: 10px; }
+  .hub-world .game-cover-art { height: 140px; }
+  .plans-world .pass-card, .plans-world .pass-card.annual { padding: 19px; }
+  .platform.player-center { padding: 18px 16px 12px; }
+}

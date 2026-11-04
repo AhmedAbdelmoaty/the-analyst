@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import analystLockup from '@/assets/brand/the-analyst-lockup.png';
 import './platform.css';
 import './arcade.css';
+import './branded-v5.css';
 import { SoundToggle } from '@/features/platform-audio/AudioControls';
 
 export default function PlatformHeader({ children, home = '/app' }: { children?: ReactNode; home?: string }) {
