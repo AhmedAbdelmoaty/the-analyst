@@ -1,4 +1,5 @@
 /* V5 branded arcade: visual overrides only; gameplay and account flows are untouched. */
+@font-face { font-family: 'Lalezar'; src: url('../../assets/fonts/lalezar-arabic-400-normal.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; }
 .platform {
   --game-red: #a61e25;
   --game-red-bright: #c42a34;
@@ -181,3 +182,108 @@
   .plans-world .pass-card, .plans-world .pass-card.annual { padding: 19px; }
   .platform.player-center { padding: 18px 16px 12px; }
 }
+
+/* Brighter arcade scene: the covers and controls carry the energy, with red as the signature. */
+.platform:is(.hub-world,.setup-world,.plans-world) { background: #a7434a; }
+.platform:is(.hub-world,.setup-world,.plans-world)::before {
+  filter: grayscale(.72) sepia(.24) brightness(1.08) contrast(.94);
+}
+.platform:is(.hub-world,.setup-world,.plans-world)::after {
+  background:
+    radial-gradient(ellipse at 50% 9%, #f0a6a37a, transparent 48%),
+    linear-gradient(90deg, #62151b72, #a23c4588 48%, #62151b72),
+    linear-gradient(180deg, #4711169c 0%, #7f293298 32%, #d78b8c68 72%, #f3d8c66e 100%);
+}
+.platform:is(.hub-world,.setup-world,.plans-world) .platform-header {
+  background: linear-gradient(105deg,#731b22ed,#a6343deb 52%,#69171eed);
+  border-color: #f4beb9;
+  box-shadow: 0 5px 0 #56141a, 0 12px 30px #5d111a6b, inset 0 1px #fff7;
+}
+.hub-world .hub-intro h1, .setup-world .platform-heading h1, .plans-world .platform-heading h1 {
+  font-family: 'Lalezar','Cairo',sans-serif;
+  font-weight: 400;
+  letter-spacing: .005em;
+  text-shadow: 3px 4px 0 #75151b, 0 8px 20px #3c1017a8;
+}
+.platform:is(.hub-world,.setup-world,.plans-world) :is(.platform-button,.platform-icon,.player-trigger) {
+  background: linear-gradient(165deg,#fffaf4,#e4d9d4);
+  border-color: #fff9ef;
+  border-bottom-color: #9d7778;
+  box-shadow: 0 4px 0 #62252a, 0 9px 16px #4a10154a;
+}
+.platform:is(.hub-world,.setup-world,.plans-world) .platform-button.primary,
+.hub-world .game-cover-action {
+  background: linear-gradient(160deg,#ef6062,#c42a34 57%,#8d1921);
+  border-color: #ffd5ca;
+  border-bottom-color: #75151b;
+}
+.hub-world .game-cover-card {
+  --tile-accent: #f3d6c8;
+  --tile-shadow: #915653;
+  background: #fff6ed;
+  box-shadow: 0 5px 0 var(--tile-shadow), 0 12px 0 #5a2630, 0 20px 30px #4a10157a, 0 0 17px #ffd0ba8a;
+}
+.hub-world .game-cover-card:nth-child(3n + 2) { --tile-accent: #ff8480; --tile-shadow: #9c252b; }
+.hub-world .game-cover-card:nth-child(3n + 3) { --tile-accent: #f5b09d; --tile-shadow: #a6544a; }
+.hub-world .game-cover-card[data-access=deny] { --tile-accent: #d7c9c6; --tile-shadow: #817171; }
+.hub-world .game-cover-art::after { background: linear-gradient(0deg,#28141dc9,#2a1c2460 35%,transparent 74%); }
+.hub-world .game-cover-details {
+  background: linear-gradient(125deg,#fff9ef,#f5dbd4 60%,#f0c0b7);
+  border-color: var(--tile-accent);
+  color: #411820;
+}
+.hub-world .game-cover-meta { color: #5e2931; }
+.hub-world .game-status { color: #79222b; background: #fff8f1; border-color: #be8584; }
+.hub-world .game-cover-card:focus-visible { box-shadow: 0 8px 0 #a61e25, 0 16px 0 #5a2630, 0 25px 40px #4a1015a8, 0 0 28px #ffe4cd; }
+@media (hover:hover) and (pointer:fine) {
+  .hub-world .game-cover-card:hover { box-shadow: 0 9px 0 var(--tile-shadow), 0 17px 0 #5a2630, 0 27px 44px #4a1015b3, 0 0 32px #ffd0bb; }
+  .hub-world .game-cover-card:hover .game-cover-action { box-shadow: 0 6px 15px #65212b91, 0 0 18px #ffb9a8; }
+}
+.setup-world .setup-grid {
+  background: linear-gradient(130deg,#fff9efeb,#f4d0cae5);
+  border-color: #ffe1d5;
+  box-shadow: 0 7px 0 #8e3139, 0 18px 38px #4a101589, inset 0 0 32px #fff7;
+}
+.setup-world .avatar-option, .setup-world .avatar-option:nth-child(2) {
+  background: radial-gradient(ellipse at 50% 25%,#ffe1d1,#ba706e 76%);
+  border-color: #f9d1c6;
+  box-shadow: 0 5px 0 #9e5b59, 0 13px 22px #61212984;
+}
+.setup-world .avatar-option:nth-child(2) { border-color: #df9d9c; }
+.setup-world .avatar-caption { background: linear-gradient(120deg,#fffaf1,#f5d8cf); border-color: #bd5c5c; }
+.setup-world .avatar-caption strong { color: #642129; }
+.setup-world .avatar-caption span { color: #723941; }
+.setup-world .avatar-option[aria-checked=true] { border-color: #fff9dd; box-shadow: 0 8px 0 #a61e25, 0 0 0 4px #ed6c6ca6, 0 0 32px #fff1d1, 0 19px 35px #672029a3; }
+.setup-world .avatar-option[aria-checked=true] .avatar-caption { background: linear-gradient(120deg,#e85358,#a61e25); }
+.setup-world .avatar-option[aria-checked=true] .avatar-caption :is(strong,span) { color: white; }
+.setup-world .setup-form {
+  background: linear-gradient(155deg,#fffaf4,#f4ded8);
+  color: #46252a;
+  border-color: #ffd3c6;
+  border-bottom-color: #ae5a57;
+  box-shadow: 0 10px 24px #68293157;
+}
+.setup-world .setup-form h2 { color: #821e28; text-shadow: none; font-family: 'Lalezar','Cairo',sans-serif; font-weight: 400; }
+.setup-world .setup-form .platform-muted, .setup-world .setup-grid > div > .platform-muted { color: #68474a; text-shadow: none; }
+.setup-world .setup-form :is(.platform-input,[role=combobox]) { background: white; border-color: #d6a6a1; }
+.plans-world .pass-card, .plans-world .pass-card.annual { box-shadow: 0 7px 0 #8f4d50, 0 20px 35px #4a10157d, 0 0 24px #fff1d588; }
+.plans-world .pass-card { background: linear-gradient(150deg,#fffdf8,#e9ddd9); }
+.plans-world .pass-card.annual { background: linear-gradient(150deg,#fff8f2,#f9d8cb 55%,#e9a9a1); border-color: #ffd3ba; box-shadow: 0 7px 0 #a61e25, 0 19px 36px #4a10159c, 0 0 30px #ffd7b7b3; }
+.plans-world .pass-card h2 { font-family: 'Lalezar','Cairo',sans-serif; font-weight: 400; font-size: 31px; }
+.platform.player-center { background: linear-gradient(160deg,#fff9f3,#f3ded9 68%,#ebc6c0); color: #4a1c23; border-color: #a61e25; box-shadow: -8px 0 0 #8b2630, -18px 0 45px #47131b8f; }
+.platform.player-center [data-player-title], .platform.player-center .player-section h3 { color: #7d1d27; text-shadow: none; }
+.platform.player-center .player-identity { background: linear-gradient(120deg,#f8e0d8,#f2b9b1); border-color: #c25e63; }
+.platform.player-center .player-identity h2 { color: #531d26; }
+.platform.player-center .player-section { background: #fffaf2db; border-color: #d8aaa6; border-bottom-color: #ae7774; }
+.platform.player-center .platform-muted { color: #64454a; }
+.platform.player-center .player-section .platform-button { background: linear-gradient(#fff,#e9d9d5); }
+.platform.player-center > .platform-button:last-child { background: #e5d8d5; color: #5e3e42; border-color: #d0b7b3; }
+.platform.player-center .player-editor { background: #fffaf2; color: #4a1c23; border-color: #dca6a1; }
+.platform.player-center .player-avatar-choice { color: #4a1c23; }
+.discovery.platform .game-showcase { background: linear-gradient(140deg,#7d2731d9,#a83d47d9),url('../../assets/world/arcade-arena.webp') center / cover; border-color: #d96a67; box-shadow: 0 8px 0 #8b2630, 0 19px 30px #63212b55; }
+.discovery.platform .showcase-strip > .game-cover-card { --tile-accent: #ffe0ce; background: #fff6ee; border-bottom-color: #a55d5a; }
+.discovery.platform .showcase-strip > .game-cover-card:nth-child(3n + 2) { --tile-accent: #fb7776; }
+.discovery.platform .showcase-strip > .game-cover-card:nth-child(3n + 3) { --tile-accent: #f8b7a1; }
+.discovery.platform .showcase-strip .game-cover-details { background: linear-gradient(120deg,#fff7eb,#f0c6bd); color: #571e28; }
+.discovery.platform .showcase-strip .game-cover-meta { color: #683239; }
+.discovery.platform .showcase-strip .game-cover-action { background: linear-gradient(#ee5d61,#a61e25); color: white; }

@@ -1,11 +1,12 @@
-import { defineConfig } from "vite";
+import { defineConfig, searchForWorkspaceRoot } from "vite";
+import { realpathSync } from 'node:fs';
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => ({
-  server: { host: "::", port: 8080 },
+  server: { host: "::", port: 8080, fs: { allow: [searchForWorkspaceRoot(process.cwd()), realpathSync('node_modules')] } },
   plugins: [react(), mode === "development" && componentTagger(), VitePWA({
     strategies: 'generateSW', injectRegister: null, registerType: 'prompt',
     devOptions: { enabled: false },
