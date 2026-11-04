@@ -4,10 +4,11 @@ import analyst from './assets/analyst.png.asset.json';
 import manager from './assets/manager.png.asset.json';
 
 const SFX = '/investigation-file/audio/';
-type Sound = 'click' | 'page-turn' | 'win' | 'lose' | 'pop' | 'woosh' | 'confettipop' | 'horn-short';
+type Sound = 'click' | 'page-turn' | 'win' | 'lose' | 'pop' | 'woosh' | 'confettipop' | 'wrong';
 function play(name: Sound, muted: boolean) {
   if (muted) return;
-  const a = new Audio(`${SFX}${name}.mp3`);
+  const src = name === 'wrong' ? '/assets/behind-dots/audio/wrong.ogg' : `${SFX}${name}.mp3`;
+  const a = new Audio(src);
   a.volume = 0.6;
   void a.play().catch(() => {});
 }
