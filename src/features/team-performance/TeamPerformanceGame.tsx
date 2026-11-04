@@ -132,7 +132,7 @@ export default function TeamPerformanceGame() {
     setPicked(o);
     if (phase === 'level') setLevelOk(o.good);
     if (o.good) { setScore(s => s + points); play('pop', muted); setPop(`+${points}`); setTimeout(() => setPop(null), 900); }
-    else play('horn-short', muted);
+    else play('wrong', muted);
   };
   // Win = correct final decision AND correct reading of the table (level). Trap mistakes only lower the score.
   const decide = (o: Option) => {
