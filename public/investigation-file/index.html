@@ -3,22 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#fff8e7">
+  <meta name="theme-color" content="#f9e8c1">
   <title>ملف تحت التحقيق</title>
   <link rel="stylesheet" href="/investigation-file/css/investigation.css">
+  <link rel="stylesheet" href="/investigation-file/css/v3-bright.css">
 </head>
 <body>
-  <div class="paper-grain" aria-hidden="true"></div>
-  <header class="topbar">
-    <div class="brand"><span class="brand-mark">◈</span><span>ملف تحت التحقيق</span></div>
-    <button id="muteBtn" class="round-btn" aria-label="كتم الصوت" aria-pressed="false">♫</button>
-  </header>
+  <div class="paper-grain" aria-hidden="true"></div><div class="office-backdrop" aria-hidden="true"><span class="office-lamp"></span><span class="office-window"></span><span class="office-plant"></span></div>
+  <div class="floating-controls"><button id="hintBtn" class="hint-control hidden" type="button" aria-label="افتح تلميحًا، متبقي ثلاثة" aria-controls="hintPanel"><span class="hint-icon" aria-hidden="true"></span><span>تلميح <b id="hintCount">٣</b>/٣</span></button><button id="muteBtn" class="round-btn" aria-label="كتم الصوت" aria-pressed="false">♫</button></div>
+  <div id="hintVeil" class="hint-veil hidden" aria-hidden="true"></div><aside id="hintPanel" class="hint-panel hidden" role="dialog" aria-modal="true" aria-labelledby="hintSpeaker" aria-describedby="hintText">
+    <div class="hint-character" data-state="entrance"><img id="hintFelfel" src="/investigation-file/assets/felfel/inspect.png" alt="فِلفِل المحقق"></div>
+    <div class="hint-bubble paper-panel"><b id="hintSpeaker">فِلفِل</b><p id="hintText" aria-live="polite"></p><button id="dismissHint" class="game-button utility" type="button">تمام، هرجع للملف</button></div>
+  </aside>
 
   <main>
     <section id="intro" class="scene intro-scene" aria-labelledby="introTitle">
       <div class="scene-kicker">القضية ٣ · قرار قبل التوقيع</div>
-      <h1 id="introTitle">هل نقفل برنامج تطوير القيادات؟</h1>
-      <div class="characters">
+      <h1 id="introTitle">نلغي برنامج تطوير الموظفين؟</h1>
+      <div class="characters cfo-speaking">
         <div class="character cfo"><img src="/investigation-file/assets/investigation/cfo.png" alt="المدير المالي"></div>
         <div class="report-paper" aria-label="تقرير إجمالي الترقيات">
           <div class="paper-pin"></div>
@@ -28,55 +30,68 @@
           <div class="report-stamp">قرار الإلغاء جاهز</div>
         </div>
         <div class="character hr"><img id="introHr" src="/investigation-file/assets/investigation/hr.png" alt="مديرة الموارد البشرية"></div>
+        <div class="speech paper-panel speech-idle" id="introSpeech" data-speaker="cfo" aria-live="polite"><span class="speaker">ملف القضية</span><p>اسمع وجهتي النظر قبل ما تفتح السجلات.</p></div>
       </div>
-      <div class="speech paper-panel" id="introSpeech" aria-live="polite"><span class="speaker">المدير المالي</span><p>الأرقام قدامنا. اللي ماحضروش اترقّوا أكتر. نوقف البرنامج؟</p></div>
-      <button id="nextIntro" class="game-button primary">التالي <span aria-hidden="true">←</span></button>
+      <button id="nextIntro" class="game-button primary">ابدأ الحوار <span aria-hidden="true">←</span></button>
     </section>
 
     <section id="investigation" class="scene investigation-scene hidden" aria-labelledby="deskTitle">
-      <div class="desk-heading"><div><div class="scene-kicker">مكتب التحقيق</div><h1 id="deskTitle">خلّي التقريرين يحكوا نفس القصة</h1></div><span class="desk-note">جرّب براحتك. الحكم بيبدأ لما تختم القرار.</span></div>
+      <div class="desk-heading"><div><div class="scene-kicker">مكتب التحليل</div><h1 id="deskTitle">راجع الأدلة قبل ما تقرر</h1></div><div class="desk-guide"><img id="deskFelfel" src="/investigation-file/assets/felfel/idle.png" alt="فِلفِل المحقق" data-state="idle"><span class="desk-note">الورق عنده حكاية. جرّب وشوف.</span></div></div>
+      <nav class="office-tabs" role="tablist" aria-label="أقسام مكتب التحقيق"><button id="evidenceTab" class="office-tab active" type="button" role="tab" tabindex="0" aria-selected="true" aria-controls="evidenceWork"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 7.5V5a4 4 0 0 1 8 0v13a3 3 0 0 1-6 0V6.5a2 2 0 0 1 4 0V17"/></svg> لوحة الأدلة</button><button id="labTab" class="office-tab" type="button" role="tab" tabindex="-1" aria-selected="false" aria-controls="analysisWork"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 15h8"/></svg> معمل التحليل</button></nav>
       <div class="desk-grid">
+        <div id="evidenceWork" class="office-work" role="tabpanel" aria-labelledby="evidenceTab">
         <section class="paper-panel source-panel" aria-labelledby="sourceTitle">
           <h2 id="sourceTitle">سجلات HR</h2>
-          <p class="small">اختار بطاقتين واضغط على أي مشبك. الأعداد هنا ثابتة من سجلات القضية.</p>
+          <p class="small">اختار سجلين للمقارنة.</p>
           <div id="cards" class="cards"></div>
+          <div id="mobileComparison" class="mobile-comparison paper-panel" aria-live="polite"></div>
           <button id="clearSelection" class="text-button">إلغاء الاختيار</button>
         </section>
         <section class="paper-panel clips-panel" aria-labelledby="clipsTitle">
-          <h2 id="clipsTitle">المشابك</h2>
-          <p class="small">كل مشبك يقارن بطاقتين تختارهم. تقدر تغيّر المقارنة في أي وقت.</p>
-          <div class="clips"><button class="clip" data-clip="0"><span class="clip-pin">◉</span><b>مشبك ١</b><span class="clip-content">اختار بطاقتين</span></button><button class="clip" data-clip="1"><span class="clip-pin">◉</span><b>مشبك ٢</b><span class="clip-content">اختار بطاقتين</span></button></div>
+          <h2 id="clipsTitle">قارن السجلات</h2>
+          <div id="comparisonResult" class="comparison-result" aria-live="polite"></div>
           <p id="pairMessage" class="feedback" aria-live="polite">ابدأ بأي مقارنة تثير شكّك.</p>
         </section>
+        </div>
+        <div id="analysisWork" class="office-work hidden" role="tabpanel" aria-labelledby="labTab" hidden>
         <section class="paper-panel scale-panel" aria-labelledby="scaleTitle">
-          <h2 id="scaleTitle">ميزان التقرير</h2>
-          <p class="small">اختار أي مستوى وظيفي هو الأكثر عددًا في كل جانب، ثم جرّب وزن الأرقام.</p>
-          <div class="dominance-grid">
-            <fieldset><legend>الحاضرين: مين الأغلب؟</legend><label><input type="radio" name="trainedDominant" value="junior"> Junior</label><label><input type="radio" name="trainedDominant" value="senior"> Senior</label></fieldset>
-            <fieldset><legend>غير الحاضرين: مين الأغلب؟</legend><label><input type="radio" name="untrainedDominant" value="junior"> Junior</label><label><input type="radio" name="untrainedDominant" value="senior"> Senior</label></fieldset>
-          </div>
-          <div class="scale-art" aria-hidden="true"><div class="beam"></div><div class="pivot"></div><div class="pan right-pan"></div><div class="pan left-pan"></div></div>
-          <div class="scale-actions"><button id="weighOriginal" class="game-button secondary">وزن السجلات الفعلية</button></div>
-          <div class="mix-controls" aria-label="تجربة توزيع الموظفين">
-            <label>حصة Junior بين الحاضرين <output id="trainedMixValue">25%</output><input id="trainedMix" type="range" min="0" max="100" value="25"></label>
-            <label>حصة Junior بين غير الحاضرين <output id="untrainedMixValue">86%</output><input id="untrainedMix" type="range" min="0" max="100" value="86"></label>
-            <button id="weighBalanced" class="game-button secondary">اختبر توزيعك</button>
-          </div>
-          <div id="scaleReadout" class="scale-readout" aria-live="polite">الميزان مستني التجربة.</div>
-          <p id="scaleMessage" class="feedback">في تجربة التساوي، نسب الترقية داخل Junior وSenior تفضل زي ما هي؛ اللي بيتغير بس نسبة كل فئة في الإجمالي.</p>
+          <h2 id="scaleTitle">لوح تركيب الموظفين</h2>
+          <p class="small">جرّب تغيّر نسبة Junior وSenior، وشوف معدل الترقية بيتحرك إزاي. الأرقام الأصلية ثابتة.</p>
+          <div class="source-ribbon" aria-label="ملخص السجل الحقيقي الثابت"><span>السجل الحقيقي</span><b>حضروا <bdi dir="ltr">35%</bdi></b><b>ماحضروش <bdi dir="ltr">65.7%</bdi></b><small>المعدلات داخل Junior وSenior ثابتة</small></div>
+          <section class="historical-board" aria-labelledby="historicalTitle">
+            <div class="historical-heading"><b id="historicalTitle">سجل الشركة الأصلي</b><span class="history-seal">بيانات فعلية · ثابتة</span></div>
+            <div id="historicalReadout" class="historical-readout"></div>
+          </section>
+          <div class="experiment-actions"><button id="equalMix" class="game-button utility">جرّب توزيع 50/50</button><button id="resetMix" class="game-button utility">رجّع التوزيع الأصلي</button></div>
+          <div class="experiment-board"><div class="mix-controls" aria-label="تجربة افتراضية لتوزيع الموظفين"><h3>جرّب تركيب الموظفين</h3>
+            <div class="mix-group trained-chamber"><b class="chamber-sign">حضروا التدريب</b><div id="trainedPopulation" class="employee-population" aria-hidden="true"></div><label for="trainedMix"><span>الحاضرين · Junior</span><output id="trainedMixValue" for="trainedMix">25%</output></label>
+            <input id="trainedMix" type="range" min="0" max="1000" step="any" value="250" aria-label="نسبة Junior الافتراضية بين الحاضرين" aria-describedby="mixHelp">
+            <div class="mix-segments" aria-hidden="true"><span class="mix-junior trained-junior" style="width:25%"></span><span class="mix-senior trained-senior" style="width:75%"></span></div>
+            <div class="mix-legend"><span>Junior <b id="trainedJuniorShare">25%</b></span><span>Senior <b id="trainedSeniorShare">75%</b></span></div><div class="near-rate">معدل الترقية الافتراضي <strong id="trainedNearRate" dir="ltr">35%</strong></div></div>
+            <div class="mix-group untrained-chamber"><b class="chamber-sign">ماحضروش التدريب</b><div id="untrainedPopulation" class="employee-population" aria-hidden="true"></div><label for="untrainedMix"><span>غير الحاضرين · Junior</span><output id="untrainedMixValue" for="untrainedMix">85.7%</output></label>
+            <input id="untrainedMix" type="range" min="0" max="1000" step="any" value="857.1428571428571" aria-label="نسبة Junior الافتراضية بين غير الحاضرين" aria-describedby="mixHelp">
+            <div class="mix-segments" aria-hidden="true"><span class="mix-junior untrained-junior" style="width:85.7%"></span><span class="mix-senior untrained-senior" style="width:14.3%"></span></div>
+            <div class="mix-legend"><span>Junior <b id="untrainedJuniorShare">85.7%</b></span><span>Senior <b id="untrainedSeniorShare">14.3%</b></span></div><div class="near-rate">معدل الترقية الافتراضي <strong id="untrainedNearRate" dir="ltr">65.7%</strong></div></div>
+          </div><div class="live-results" aria-label="معدلات الترقية في التجربة الافتراضية"><h3>معدل الترقية في التجربة الافتراضية</h3><p class="small">يتحسب من معدلات Junior وSenior الأصلية.</p><div class="result-row"><div class="result-label"><span>حضروا البرنامج</span><strong id="trainedWhatIf" dir="ltr">35%</strong></div><div class="result-track"><span id="trainedRateBar" class="result-fill trained-rate"></span></div></div><div class="result-row"><div class="result-label"><span>ماحضروش البرنامج</span><strong id="untrainedWhatIf" dir="ltr">65.7%</strong></div><div class="result-track"><span id="untrainedRateBar" class="result-fill untrained-rate"></span></div></div><div id="rateBalance" class="rate-balance" role="img" aria-label="ميزان مقارنة معدلات الترقية الافتراضية"><span class="balance-pivot"></span><div id="balanceBeam" class="balance-beam"><span class="balance-pan trained-pan">حضروا</span><span class="balance-pan untrained-pan">ماحضروش</span></div></div><p id="mixRelation" class="mix-relation"></p></div></div>
+          <div id="labDiscovery" class="lab-discovery hidden" role="status"><img src="/investigation-file/assets/felfel/celebrate.png" alt=""><p>أهو! الإجمالي اتقلب لما غيّرنا التركيبة، ومعدلات Junior وSenior نفسها ثابتة.</p></div>
+          <p id="mixHelp" class="small">تجربة افتراضية؛ سجلات HR الأصلية ثابتة.</p>
+          <p id="scaleMessage" class="feedback" tabindex="-1" aria-live="polite"></p>
         </section>
+        </div>
       </div>
-      <div class="final-access"><button id="faceCfo" class="game-button primary">ارجع للاجتماع <span aria-hidden="true">←</span></button></div>
+      <div class="final-access"><p id="meetingGuidance">زور معمل التحليل الأول، وبعدها تقدر تروح للاجتماع من هنا أو من المعمل.</p><button id="faceCfo" class="game-button primary" disabled>روح للاجتماع <span aria-hidden="true">←</span></button></div>
     </section>
 
     <section id="confrontation" class="scene confrontation-scene hidden" aria-labelledby="finalTitle">
-      <div class="scene-kicker">لحظة القرار</div><h1 id="finalTitle">التقرير على المكتب. هتختم بإيه؟</h1>
-      <div class="final-characters"><img src="/investigation-file/assets/investigation/cfo.png" alt="المدير المالي"><div class="paper-panel final-paper"><h2>ملف اعتراضك</h2><div id="evidenceSummary"></div><p>القرار هيتختم مرة واحدة. لو ناقصك دليل ارجع للمكتب.</p></div><img src="/investigation-file/assets/investigation/hr.png" alt="مديرة الموارد البشرية"></div>
-      <div class="verdicts"><button data-verdict="cancel" class="game-button verdict">نلغي البرنامج</button><button data-verdict="pause-review" class="game-button verdict">نوقف الإلغاء ونراجع أثر البرنامج</button><button data-verdict="prove-cause" class="game-button verdict">نثبت إن التدريب سبب الترقيات</button></div>
+      <div class="scene-kicker">لحظة القرار</div><h1 id="finalTitle">إيه قرارك بخصوص البرنامج؟</h1>
+      <div class="final-characters"><img src="/investigation-file/assets/investigation/cfo.png" alt="المدير المالي"><div class="paper-panel final-paper"><div class="final-paper-heading"><h2>ورقة القرار</h2><img id="meetingFelfel" src="/investigation-file/assets/felfel/idle.png" alt="فِلفِل يراجع الملف" data-state="thinking"></div><p class="small">تقرير الشركة: الحاضرين <bdi dir="ltr">35%</bdi> · غير الحاضرين <bdi dir="ltr">65.7%</bdi>. راجع قرار الإلغاء قبل التوقيع.</p></div><img src="/investigation-file/assets/investigation/hr.png" alt="مديرة الموارد البشرية"></div>
+      <p id="verdictMessage" class="feedback verdict-message" aria-live="polite"></p>
+      <div id="decisionStep" class="meeting-step"><h2>١. إيه قرارك؟</h2><div class="verdicts"><button data-decision="cancel-program" class="game-button verdict">نوافق على إلغاء البرنامج</button><button data-decision="pause-review" class="game-button verdict">نوقف الإلغاء مؤقتًا ونحقق أكتر</button><button data-decision="claim-causation" class="game-button verdict">نستمر في البرنامج لأنه ثبت إنه سبب زيادة الترقيات</button></div></div>
+      <div id="reasonStep" class="meeting-step"><h2>٢. ليه اخترت القرار ده؟</h2><div class="verdicts"><button data-reason="aggregate" class="game-button verdict">فرق النسب الإجمالية كفاية عشان نحكم.</button><button data-reason="composition" class="game-button verdict">تركيبة Junior وSenior مختلفة بين المجموعتين، ومعدل الترقية الأصلي لكل مستوى مختلف. ده ممكن يقلب المقارنة الإجمالية، والسجلات وحدها ما تثبتش تأثير التدريب.</button><button data-reason="causation" class="game-button verdict">الحاضرين أعلى داخل كل مستوى، وده يثبت إن التدريب سبب الترقيات.</button></div></div><button id="submitVerdict" class="game-button primary">أكّد القرار النهائي</button>
       <button id="backToDesk" class="text-button">أرجع للمكتب</button>
     </section>
 
-    <section id="ending" class="scene ending-scene hidden" aria-labelledby="endingTitle"><div class="end-card paper-panel"><img id="endingReaction" alt=""><img id="endingIcon" alt="" src=""><div class="scene-kicker">نهاية القضية</div><h1 id="endingTitle"></h1><p id="endingText"></p><div id="endingMath" class="ending-math"></div><button id="replay" class="game-button primary">العب من جديد</button></div></section>
+    <section id="ending" class="scene ending-scene hidden" aria-labelledby="endingTitle"><div class="end-card paper-panel"><div class="ending-people"><img id="endingHr" alt=""><img id="endingFelfel" alt="فِلفِل المحقق"><img id="endingReaction" alt=""></div><div class="ending-stamp"><img id="endingIcon" alt="" src=""><span id="endingStampText"></span></div><div class="scene-kicker">نهاية القضية</div><h1 id="endingTitle"></h1><p id="endingText"></p><div class="ending-actions"><button id="openReveal" class="game-button secondary">افتح الملف الأخير مع فِلفِل</button><button id="replay" class="game-button primary">العب من جديد</button></div></div><div id="revealStage" class="reveal-stage paper-panel hidden" aria-live="polite"><div class="reveal-heading"><img id="revealFelfel" src="/investigation-file/assets/felfel/inspect.png" alt="فِلفِل المحقق"><div><span class="scene-kicker">الملف الأخير</span><h2 id="revealTitle"></h2></div></div><p id="revealSpeech"></p><div id="revealVisual" class="reveal-visual"></div><div class="reveal-footer"><span id="revealProgress"></span><button id="nextReveal" class="game-button primary">التالي ←</button><button id="closeReveal" class="text-button">العودة للنهاية</button></div></div></section>
   </main>
   <script type="module" src="/investigation-file/js/investigation.mjs"></script>
 </body>

@@ -20,5 +20,14 @@ export const weightedRate = (attended, juniorShare) => {
   const senior = records.find(r => r.attended === attended && r.level === 'senior');
   return juniorShare * rate(junior) + (1 - juniorShare) * rate(senior);
 };
+export const counterfactualRates = (trainedJuniorShare, untrainedJuniorShare) => {
+  for (const share of [trainedJuniorShare, untrainedJuniorShare]) {
+    if (!Number.isFinite(share) || share < 0 || share > 1) throw new RangeError('Group shares must be finite values from 0 to 1.');
+  }
+  return Object.freeze({
+    trained: weightedRate(true, trainedJuniorShare),
+    untrained: weightedRate(false, untrainedJuniorShare),
+  });
+};
 export const originalRates = Object.freeze({ trained: rate(aggregate(true)), untrained: rate(aggregate(false)) });
 export const balancedRates = Object.freeze({ trained: weightedRate(true, .5), untrained: weightedRate(false, .5) });

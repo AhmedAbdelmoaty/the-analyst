@@ -56,6 +56,8 @@ test('owner-scoped progress distinguishes an attempt from either ending', async 
   finishRun('user-a', 'failure', storage);
   assert.deepEqual(readRun('user-a', storage), { version: 1, status: 'completed', outcome: 'failure' });
   assert.equal(saveKey('user-a'), 'the-analyst:investigation-file:v1:user-a');
+  finishRun('user-a', 'failure', storage, 'causation');
+  assert.deepEqual(readRun('user-a', storage), { version: 1, status: 'completed', outcome: 'failure', failureReason: 'causation' });
 });
 
 test('the public game bundle has no Flask template dependencies', async () => {
@@ -63,4 +65,52 @@ test('the public game bundle has no Flask template dependencies', async () => {
   assert.match(html, /\/investigation-file\/css\/investigation\.css/);
   assert.match(html, /\/investigation-file\/js\/investigation\.mjs/);
   assert.doesNotMatch(html, /url_for\(|\{\{\s*static/);
+});
+
+test('counterfactual mixes update independently and any shared mix reveals the reversal', async () => {
+  const { records, originalRates, counterfactualRates } = await import('../public/investigation-file/js/case-data.mjs');
+  const at25 = counterfactualRates(0.25, 0.25);
+  assert.ok(Math.abs(at25.trained - 0.35) < 1e-12);
+  assert.ok(Math.abs(at25.untrained - 0.2625) < 1e-12);
+  assert.deepEqual(counterfactualRates(0.5, 0.5), { trained: 0.5, untrained: 0.425 });
+  assert.deepEqual(counterfactualRates(0, 1), { trained: 0.2, untrained: 0.75 });
+  for (const mix of [0, 0.01, 0.25, 0.5, 6 / 7, 0.99, 1]) {
+    const rates = counterfactualRates(mix, mix);
+    assert.ok(rates.trained > rates.untrained, `shared mix ${mix} should reverse the aggregate direction`);
+  }
+  assert.ok(Math.abs(counterfactualRates(0.25, 0).trained - 0.35) < 1e-12);
+  assert.equal(counterfactualRates(0.25, 0).untrained, 0.1);
+  assert.deepEqual(originalRates, { trained: 0.35, untrained: 460 / 700 });
+  assert.deepEqual(records.map(({ promoted, total }) => [promoted, total]), [[80, 100], [450, 600], [60, 300], [10, 100]]);
+  assert.throws(() => counterfactualRates(-0.01, 0.5), RangeError);
+  assert.throws(() => counterfactualRates(0.5, Number.NaN), RangeError);
+});
+
+test('final decision evaluates exactly the decision and justification', async () => {
+  const { resolveVerdict } = await import('../public/investigation-file/js/engine.mjs');
+  assert.deepEqual(resolveVerdict('pause-review', 'composition'), { status: 'success' });
+  assert.equal(resolveVerdict('pause-review', 'aggregate').status, 'failure');
+  assert.equal(resolveVerdict('cancel-program', 'composition').status, 'failure');
+  assert.equal(resolveVerdict('claim-causation', 'causation').reason, 'causation');
+  assert.equal(resolveVerdict('pause-review', null).status, 'needs-choice');
+});
+
+test('meeting needs no saved comparisons or experiment interpretation', async () => {
+  const { resolveVerdict } = await import('../public/investigation-file/js/engine.mjs');
+  const { counterfactualRates, share } = await import('../public/investigation-file/js/case-data.mjs');
+  assert.equal(share(false, 'junior'), 6 / 7);
+  assert.deepEqual(counterfactualRates(.5, .5), { trained: .5, untrained: .425 });
+  assert.deepEqual(resolveVerdict('pause-review', 'composition'), { status: 'success' });
+});
+
+test('approved Felfel reference and four transparent animation poses are packaged with the game work', async () => {
+  const source = await readFile(path.join(root, 'docs/investigation-file/felfel-reference.png'));
+  assert.equal(source.subarray(1, 4).toString(), 'PNG');
+  for (const pose of ['idle', 'inspect', 'celebrate', 'concerned']) {
+    const image = await readFile(path.join(root, `public/investigation-file/assets/felfel/${pose}.png`));
+    assert.equal(image.subarray(1, 4).toString(), 'PNG');
+    assert.equal(image[25], 6, `${pose} must have an alpha channel`);
+    assert.equal(image.readUInt32BE(16), 1024);
+    assert.equal(image.readUInt32BE(20), 1536);
+  }
 });
