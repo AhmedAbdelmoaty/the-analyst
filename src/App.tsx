@@ -32,6 +32,7 @@ const BehindTheDotsRoute = lazy(() => import('./pages/BehindTheDotsRoute'));
 const CrackTheCodeRoute = lazy(() => import('./pages/CrackTheCodeRoute'));
 const DecisionMatrixRoute = lazy(() => import('./pages/DecisionMatrixRoute'));
 const InvestigationFileRoute = lazy(() => import('./pages/InvestigationFileRoute'));
+const TeamPerformanceRoute = lazy(() => import('./pages/TeamPerformanceRoute'));
 const AdminStats = lazy(() => import('./pages/AdminStats'));
 const AdminPayments = lazy(() => import('./pages/AdminPayments'));
 const queryClient = new QueryClient();
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/games/crack-the-code" element={<RequireProfile><GameGate game="crack-the-code"><CrackTheCodeRoute /></GameGate></RequireProfile>} />
             <Route path="/games/decision-matrix" element={<RequireProfile><GameGate game="decision-matrix"><DecisionMatrixRoute /></GameGate></RequireProfile>} />
             <Route path="/games/investigation-file" element={<RequireProfile><GameGate game="investigation-file"><InvestigationFileRoute /></GameGate></RequireProfile>} />
+            <Route path="/games/team-performance" element={<RequireProfile><GameGate game="team-performance"><TeamPerformanceRoute /></GameGate></RequireProfile>} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/board-9k2x" element={<AdminBoard />} />
             <Route path="/admin/stats" element={<AdminStats />} />

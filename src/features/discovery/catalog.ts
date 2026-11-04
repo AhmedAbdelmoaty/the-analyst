@@ -1,3 +1,4 @@
+import analystCover from "@/features/team-performance/assets/analyst.png.asset.json";
 import currentCover from "@/assets/scenes/mansour-office-welcome-male.webp";
 import rewardCover from "@/features/reward-decision/assets/rd-cover-l.webp.asset.json";
 /** Shared presentation catalog; tiers describe future access, never entitlement. */
@@ -8,6 +9,7 @@ export const GAME_CATALOG = [
   { id: 'crack-the-code', title: 'الشفرة الأخيرة', route: '/games/crack-the-code', cover: '/crack-the-code/assets/finance-manager-new.jpg', description: 'تلات خزائن وتقرير مختفي. فك ألغاز الأرقام ووصل للشفرة قبل ما تضيع الحقيقة.', category: 'المنطق والاستنتاج', tier: 'annual' },
   { id: 'decision-matrix', title: 'مصفوفة القرار', route: '/games/decision-matrix', cover: '/decision-matrix/assets/boardroom-cartoon.jpg', description: 'أول يوم في الشركة… وأول قرار مش سهل. اجمع الأدلة ووازن البدائل مع الفريق.', category: 'المفاضلة واتخاذ القرار', tier: 'annual' },
   { id: 'investigation-file', title: 'ملف تحت التحقيق', route: '/games/investigation-file', cover: '/investigation-file/assets/investigation/cfo.png', description: 'تقريرين بيقولوا عكس بعض. افحص سجلات الموظفين ووزن التوزيع قبل ما تختم القرار.', category: 'تحليل البيانات', tier: 'annual' },
+  { id: 'team-performance', title: 'أداء الفريق', route: '/games/team-performance', cover: analystCover.url, description: 'فريق 80% وفريق 59%… بس مين فعلاً الأحسن؟ افتح الأرقام قبل ما المكافأة تروح للفريق الغلط.', category: 'تحليل البيانات', tier: 'annual' },
 ] as const;
 export type CatalogGame = typeof GAME_CATALOG[number];
 export type GameId = CatalogGame['id'];
