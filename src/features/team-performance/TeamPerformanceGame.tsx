@@ -21,10 +21,17 @@ const pct = (v: readonly [number, number] | readonly number[]) => Math.round((v[
 type Phase = 'intro' | 'first' | 'inspect' | 'level' | 'why' | 'final' | 'result';
 type Option = { id: string; text: string; good: boolean; feedback: string };
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
 const FIRST: Option[] = [
-  { id: 'reward-a', text: 'كافئ فريق أ فوراً — 80% أعلى بكتير', good: false, feedback: 'قرار سريع على رقم إجمالي… خلينا نشوف التفاصيل الأول.' },
-  { id: 'inspect', text: 'استنى… عايز أشوف نوع المهام اللي كل فريق اشتغل عليها', good: true, feedback: 'سؤال محلل حقيقي! الرقم الإجمالي ممكن يخبّي حاجات.' },
-  { id: 'equal', text: 'نكافئ الفريقين بالتساوي ونقفل الموضوع', good: false, feedback: 'هروب من القرار مش تحليل. نفتح الأرقام.' },
+  { id: 'monitor', text: 'زيادة الرقابة والمتابعة على موظفي فريق ب', good: false, feedback: 'قرار مبني على رقم إجمالي بس… ممكن يكون مضلل.' },
+  { id: 'training', text: 'توفير تدريب إضافي لفريق ب', good: false, feedback: 'إزاي تعرف إنهم محتاجين تدريب من غير ما تشوف التفاصيل؟' },
+  { id: 'replace', text: 'استبدال الموظفين ضعاف الأداء في فريق ب', good: false, feedback: 'قرار قاسي على رقم واحد… ممكن تظلم ناس كويسة.' },
+  { id: 'data', text: 'محتاجين بيانات أكتر قبل أي قرار', good: true, feedback: 'تفكير محلل حقيقي! الرقم الإجمالي ممكن يخبّي حاجات.' },
 ];
 const LEVEL: Option[] = [
   { id: 'A', text: 'فريق أ', good: false, feedback: 'بص تاني: في السهل 90% مقابل 95%، وفي الصعب 40% مقابل 50%.' },
@@ -40,16 +47,36 @@ const FINAL: Option[] = [
   { id: 'B', text: 'التكريم لفريق ب — أداؤه أعلى في كل مستوى صعوبة', good: true, feedback: '' },
   { id: 'A', text: 'التكريم لفريق أ — الإجمالي هو اللي يهم', good: false, feedback: '' },
 ];
+const POINTS = { first: 30, level: 20, why: 20, final: 30 };
 
-function Bar({ label, value, tone, delay }: { label: string; value: number; tone: 'a' | 'b'; delay: number }) {
-  const [w, setW] = useState(0);
-  useEffect(() => { const t = setTimeout(() => setW(value), delay); return () => clearTimeout(t); }, [value, delay]);
+function DataTable() {
+  const rows: [string, string, string][] = [
+    ['المهام السهلة المنجزة', `${DATA.A.easy[0]} / ${DATA.A.easy[1]}`, `${DATA.B.easy[0]} / ${DATA.B.easy[1]}`],
+    ['نسبة إنجاز المهام السهلة', `${pct(DATA.A.easy)}%`, `${pct(DATA.B.easy)}%`],
+    ['المهام الصعبة المنجزة', `${DATA.A.hard[0]} / ${DATA.A.hard[1]}`, `${DATA.B.hard[0]} / ${DATA.B.hard[1]}`],
+    ['نسبة إنجاز المهام الصعبة', `${pct(DATA.A.hard)}%`, `${pct(DATA.B.hard)}%`],
+    ['نسبة الإنجاز الإجمالية', `${pct(DATA.A.total)}%`, `${pct(DATA.B.total)}%`],
+  ];
   return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-sm font-bold"><span>{label}</span><span className="tabular-nums">{w}%</span></div>
-      <div className="h-4 overflow-hidden rounded-full bg-slate-200">
-        <div className={`h-full rounded-full transition-all duration-1000 ease-out ${tone === 'a' ? 'bg-amber-400' : 'bg-sky-500'}`} style={{ width: `${w}%` }} />
-      </div>
+    <div className="animate-fade-in overflow-hidden rounded-xl border-4 border-slate-900 bg-white shadow-[6px_6px_0_#0f172a]">
+      <table className="w-full text-sm sm:text-base">
+        <thead>
+          <tr className="border-b-2 border-slate-700">
+            <th className="p-3 text-right font-black text-rose-700">صعوبة المهام</th>
+            <th className="border-r-2 border-slate-700 p-3 text-center font-black text-rose-700">فريق أ</th>
+            <th className="border-r-2 border-slate-700 p-3 text-center font-black text-rose-700">فريق ب</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([l, a, b]) => (
+            <tr key={l} className="border-b border-slate-400 last:border-b-0">
+              <td className="p-3 font-bold text-slate-800">{l}</td>
+              <td className="border-r-2 border-slate-700 p-3 text-center font-bold tabular-nums text-slate-800">{a}</td>
+              <td className="border-r-2 border-slate-700 p-3 text-center font-bold tabular-nums text-slate-800">{b}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
