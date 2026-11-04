@@ -11,6 +11,7 @@ const GENRE: Record<string, { label: string; level: number }> = {
   "crack-the-code": { label: "هروب وألغاز", level: 3 },
   "decision-matrix": { label: "استراتيجية", level: 2 },
   "investigation-file": { label: "تحقيق تكتيكي", level: 3 },
+  "team-performance": { label: "تحدي أرقام", level: 2 },
 };
 const STATUS = { new: "جديدة", "in-progress": "قيد اللعب", completed: "خلصتها" } as const;
 
