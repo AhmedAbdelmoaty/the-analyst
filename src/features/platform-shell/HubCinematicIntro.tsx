@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import './hub-cinematic-intro.css';
 
-const SESSION_KEY = 'analyst-hub-cinematic-intro-v2';
+const SESSION_KEY = 'analyst-hub-cinematic-intro-v1';
 
 function shouldPlayIntro() {
   try {
@@ -22,6 +22,7 @@ export default function HubCinematicIntro() {
 
   useEffect(() => {
     if (!startedRef.current) return;
+    try { sessionStorage.setItem(SESSION_KEY, 'seen'); } catch { /* Private storage can be unavailable. */ }
     const video = videoRef.current;
     mediaRef.current = video;
     void video?.play().catch(() => setPhase('hidden'));
@@ -56,7 +57,7 @@ export default function HubCinematicIntro() {
 
   if (phase === 'hidden') return null;
   return <div className="hub-cinematic-intro" data-ready={ready} data-phase={phase} role="dialog" aria-modal="true" aria-label="مقدمة مركز الألعاب">
-    <video ref={videoRef} src={source} autoPlay muted playsInline preload="auto" onLoadedData={() => setReady(true)} onPlaying={() => { try { sessionStorage.setItem(SESSION_KEY, 'seen'); } catch { /* Private storage can be unavailable. */ } }} onEnded={() => setPhase(current => current === 'playing' ? 'fading' : current)} onError={() => setPhase('hidden')} />
+    <video ref={videoRef} src={source} autoPlay muted playsInline preload="auto" onLoadedData={() => setReady(true)} onEnded={() => setPhase(current => current === 'playing' ? 'fading' : current)} onError={() => setPhase('hidden')} />
     <button type="button" className="hub-cinematic-skip" autoFocus onClick={() => setPhase(current => current === 'playing' ? 'fading' : current)}>تخطي المقدمة</button>
   </div>;
 }
