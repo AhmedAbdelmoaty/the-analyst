@@ -83,6 +83,7 @@
 .game-cover-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg,#101a2ff2 0%,#101a2f30 45%,transparent 70%); }
 .game-cover-art img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; transition: transform 200ms; }
 .game-cover-card[data-game=investigation-file] img { object-fit: contain; object-position: center 5%; }
+.game-cover-card[data-game=team-performance] img { object-fit: contain; object-position: center 5%; }
 .game-cover-title { position: absolute; bottom: 12px; right: 16px; left: 16px; z-index: 1; color: white; font-size: 22px; font-weight: 800; line-height: 1.5; text-shadow: 0 2px 4px #0004; }
 .game-access { position: absolute; z-index: 1; right: 12px; top: 12px; background: #ffffffed; color: #24334b; padding: 3px 9px; border-radius: 7px; font-size: 10px; font-weight: 750; max-width: calc(100% - 24px); }
 .game-cover-details { display: flex; flex-direction: column; padding: 12px 16px; gap: 10px; width: 100%; flex: 1; }
