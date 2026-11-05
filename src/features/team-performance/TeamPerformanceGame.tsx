@@ -1,155 +1,272 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import analyst from './assets/analyst.png.asset.json';
 import manager from './assets/manager.png.asset.json';
 
-type Phase = 'intro' | 'advice' | 'confirm' | 'report' | 'decision' | 'result';
-type Outcome = 'correct' | 'premature' | 'aggregate' | null;
-type Team = 'A' | 'B';
-type Advice = 'monitor' | 'training' | 'replace' | 'data';
-const data = {
-  A: { total: [80, 100], easy: [72, 80], hard: [8, 20] },
-  B: { total: [59, 100], easy: [19, 20], hard: [40, 80] },
-} as const;
-const advice: { id: Advice; text: string; icon: string }[] = [
-  { id: 'monitor', text: 'نزود متابعة الموظفين', icon: '👀' },
-  { id: 'training', text: 'نوفر لهم تدريب إضافي', icon: '📚' },
-  { id: 'replace', text: 'نستبدل الموظفين الأقل أداءً', icon: '🔄' },
-  { id: 'data', text: 'نطلب بيانات أكتر', icon: '📂' },
-];
-const rate = ([done, all]: readonly [number, number]) => Math.round(done / all * 100);
-function play(name: 'click' | 'page-turn' | 'win' | 'lose' | 'woosh' | 'confettipop', muted: boolean) {
+const SFX = '/investigation-file/audio/';
+type Sound = 'click' | 'page-turn' | 'win' | 'lose' | 'pop' | 'woosh' | 'confettipop' | 'wrong';
+function play(name: Sound, muted: boolean) {
   if (muted) return;
-  const sound = new Audio(`/investigation-file/audio/${name}.mp3`);
-  sound.volume = 0.6;
-  void sound.play().catch(() => {});
+  const src = name === 'wrong' ? '/assets/behind-dots/audio/wrong.ogg' : `${SFX}${name}.mp3`;
+  const a = new Audio(src);
+  a.volume = 0.6;
+  void a.play().catch(() => {});
 }
-function Speech({ who, image, children }: { who: string; image: string; children: React.ReactNode }) {
-  return <div className="tp-speech flex items-end gap-2 sm:gap-4">
-    <img src={image} alt={who} className="tp-character h-28 w-24 shrink-0 object-contain object-bottom drop-shadow-xl min-[380px]:h-36 min-[380px]:w-28 sm:h-52 sm:w-40" />
-    <div className="tp-bubble mb-2 min-w-0 flex-1 rounded-2xl border-[3px] border-slate-900 bg-white p-3 text-sm font-bold leading-relaxed shadow-[4px_4px_0_#0f172a] sm:mb-5 sm:p-5 sm:text-lg">
-      <div className="mb-1 text-xs font-black text-rose-600">{who}</div>{children}
+
+const DATA = {
+  A: { easy: [72, 80], hard: [8, 20], total: [80, 100] },
+  B: { easy: [19, 20], hard: [40, 80], total: [59, 100] },
+} as const;
+const pct = (v: readonly [number, number] | readonly number[]) => Math.round((v[0] / v[1]) * 100);
+
+type Phase = 'intro' | 'first' | 'inspect' | 'level' | 'why' | 'final' | 'result';
+type Option = { id: string; text: string; good: boolean; feedback: string };
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+const FIRST: Option[] = [
+  { id: 'monitor', text: 'زيادة الرقابة والمتابعة على موظفي فريق ب', good: false, feedback: 'قرار مبني على رقم إجمالي بس… ممكن يكون مضلل.' },
+  { id: 'training', text: 'توفير تدريب إضافي لفريق ب', good: false, feedback: 'إزاي تعرف إنهم محتاجين تدريب من غير ما تشوف التفاصيل؟' },
+  { id: 'replace', text: 'استبدال الموظفين ضعاف الأداء في فريق ب', good: false, feedback: 'قرار قاسي على رقم واحد… ممكن تظلم ناس كويسة.' },
+  { id: 'data', text: 'محتاجين بيانات أكتر قبل أي قرار', good: true, feedback: 'تفكير محلل حقيقي! الرقم الإجمالي ممكن يخبّي حاجات.' },
+];
+const LEVEL: Option[] = [
+  { id: 'A', text: 'فريق أ', good: false, feedback: 'بص تاني: في السهل 90% مقابل 95%، وفي الصعب 40% مقابل 50%.' },
+  { id: 'B', text: 'فريق ب', good: true, feedback: 'بالظبط! فريق ب أعلى في السهل وفي الصعب.' },
+  { id: 'same', text: 'متساويين تقريباً', good: false, feedback: 'الفرق واضح في المستويين لصالح فريق ب.' },
+];
+const WHY: Option[] = [
+  { id: 'mix', text: 'فريق ب أخد 80 مهمة صعبة، وفريق أ أخد 80 مهمة سهلة — التوزيع مختلف', good: true, feedback: 'ده سر المفارقة: خلطة المهام هي اللي نزّلت إجمالي فريق ب.' },
+  { id: 'lazy', text: 'فريق ب كان كسلان في آخر الشهر', good: false, feedback: 'مفيش أي دليل على كده في البيانات.' },
+  { id: 'error', text: 'أكيد في غلطة في الأرقام', good: false, feedback: 'الأرقام سليمة؛ الإجمالي متسق مع التفاصيل.' },
+];
+const FINAL: Option[] = [
+  { id: 'B', text: 'التكريم لفريق ب — أداؤه أعلى في كل مستوى صعوبة', good: true, feedback: '' },
+  { id: 'A', text: 'التكريم لفريق أ — الإجمالي هو اللي يهم', good: false, feedback: '' },
+];
+const POINTS = { first: 30, level: 20, why: 20, final: 30 };
+
+function DataTable() {
+  const rows: [string, string, string][] = [
+    ['المهام السهلة المنجزة', `${DATA.A.easy[0]} / ${DATA.A.easy[1]}`, `${DATA.B.easy[0]} / ${DATA.B.easy[1]}`],
+    ['نسبة إنجاز المهام السهلة', `${pct(DATA.A.easy)}%`, `${pct(DATA.B.easy)}%`],
+    ['المهام الصعبة المنجزة', `${DATA.A.hard[0]} / ${DATA.A.hard[1]}`, `${DATA.B.hard[0]} / ${DATA.B.hard[1]}`],
+    ['نسبة إنجاز المهام الصعبة', `${pct(DATA.A.hard)}%`, `${pct(DATA.B.hard)}%`],
+    ['نسبة الإنجاز الإجمالية', `${pct(DATA.A.total)}%`, `${pct(DATA.B.total)}%`],
+  ];
+  return (
+    <div className="animate-fade-in overflow-hidden rounded-xl border-4 border-slate-900 bg-white shadow-[6px_6px_0_#0f172a]">
+      <table className="w-full text-sm sm:text-base">
+        <thead>
+          <tr className="border-b-2 border-slate-700">
+            <th className="p-3 text-right font-black text-rose-700">صعوبة المهام</th>
+            <th className="border-r-2 border-slate-700 p-3 text-center font-black text-rose-700">فريق أ</th>
+            <th className="border-r-2 border-slate-700 p-3 text-center font-black text-rose-700">فريق ب</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([l, a, b]) => (
+            <tr key={l} className="border-b border-slate-400 last:border-b-0">
+              <td className="p-3 font-bold text-slate-800">{l}</td>
+              <td className="border-r-2 border-slate-700 p-3 text-center font-bold tabular-nums text-slate-800">{a}</td>
+              <td className="border-r-2 border-slate-700 p-3 text-center font-bold tabular-nums text-slate-800">{b}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
-  </div>;
+  );
 }
-function Action({ children, onClick, tone = 'yellow', disabled = false, picked = false }: { children: React.ReactNode; onClick: () => void; tone?: 'yellow' | 'sky' | 'rose' | 'white'; disabled?: boolean; picked?: boolean }) {
-  const color = { yellow: 'bg-yellow-400', sky: 'bg-sky-400', rose: 'bg-rose-400', white: 'bg-white' }[tone];
-  return <button type="button" disabled={disabled} onClick={onClick} className={`tp-action min-h-12 w-full rounded-xl border-[3px] border-slate-900 px-3 py-2.5 text-center text-sm font-black text-slate-900 shadow-[4px_4px_0_#0f172a] sm:text-lg ${picked ? 'tp-picked' : ''} ${color}`}>{children}</button>;
+
+function Speech({ who, img, children }: { who: string; img: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-end gap-3 animate-fade-in">
+      <img src={img} alt={who} className="h-40 w-auto shrink-0 drop-shadow-xl sm:h-56 animate-[tp-bob_3s_ease-in-out_infinite]" />
+      <div className="relative mb-6 flex-1 rounded-2xl border-4 border-slate-900 bg-white p-4 text-base font-bold leading-relaxed text-slate-900 shadow-[6px_6px_0_#0f172a] sm:text-lg">
+        <div className="mb-1 text-xs font-black text-rose-600">{who}</div>
+        {children}
+      </div>
+    </div>
+  );
 }
-function Report() {
-  return <div className="tp-report rounded-2xl border-4 border-slate-900 bg-[#fffdf5] p-3 shadow-[6px_7px_0_#0f172a] sm:p-5" aria-label="تقرير المهام التفصيلي">
-    <h2 className="mb-3 border-b-2 border-dashed border-slate-400 pb-2 text-lg font-black sm:text-xl">📋 تفاصيل تقرير الفريقين</h2>
-    <div className="grid gap-3 sm:grid-cols-2">{(['easy', 'hard'] as const).map(level => <section key={level} className="rounded-xl border-2 border-slate-800 bg-white p-3">
-      <h3 className="mb-2 text-center font-black">{level === 'easy' ? 'المهام السهلة' : 'المهام الصعبة'}</h3>
-      <div className="grid grid-cols-2 gap-2">{(['A', 'B'] as const).map(team => {
-        const numbers = data[team][level];
-        return <div key={team} className="rounded-lg border-2 border-slate-300 bg-slate-50 p-2 text-center">
-          <div className="text-sm font-black">فريق {team === 'A' ? 'أ' : 'ب'}</div>
-          <div className="text-lg font-black tabular-nums">{numbers[0]} / {numbers[1]}</div>
-          <div className="text-sm font-bold tabular-nums text-slate-600">{rate(numbers)}%</div>
-        </div>;
-      })}</div>
-    </section>)}</div>
-  </div>;
+
+function Choices({ options, onPick, picked }: { options: Option[]; onPick: (o: Option) => void; picked: Option | null }) {
+  return (
+    <div className="grid gap-3">
+      {options.map((o, i) => {
+        const state = picked ? (o.id === picked.id ? (o.good ? 'good' : 'bad') : 'dim') : 'idle';
+        return (
+          <button key={o.id} disabled={!!picked} onClick={() => onPick(o)}
+            style={{ animationDelay: `${i * 90}ms` }}
+            className={`animate-fade-in rounded-xl border-4 border-slate-900 px-4 py-3 text-right text-base font-black shadow-[4px_4px_0_#0f172a] transition-transform active:translate-x-1 active:translate-y-1 active:shadow-none ${
+              state === 'good' ? 'bg-emerald-400 scale-[1.02]' : state === 'bad' ? 'bg-rose-400 animate-[tp-shake_.4s]' : state === 'dim' ? 'bg-white opacity-50' : 'bg-white hover:-translate-y-0.5 hover:bg-yellow-200'}`}>
+            {o.text}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
-function Confetti() {
-  const colors = ['#f43f5e', '#facc15', '#22c55e', '#0ea5e9', '#a855f7'];
-  return <div aria-hidden="true" className="tp-confetti pointer-events-none fixed inset-0 z-20 overflow-hidden">{Array.from({ length: 26 }, (_, i) =>
-    <span key={i} className="absolute top-0 h-3 w-2 rounded-sm" style={{ left: `${(i * 37) % 100}%`, background: colors[i % colors.length], animationDelay: `${(i % 8) * 65}ms`, animationDuration: `${1.2 + (i % 4) * 0.2}s` }} />)}</div>;
-}
+
 export default function TeamPerformanceGame() {
   const [phase, setPhase] = useState<Phase>('intro');
-  const [selected, setSelected] = useState<Advice | Team | null>(null);
-  const [recommendation, setRecommendation] = useState<Advice | null>(null);
-  const [outcome, setOutcome] = useState<Outcome>(null);
+  const [score, setScore] = useState(0);
+  const [picked, setPicked] = useState<Option | null>(null);
+  const [won, setWon] = useState(false);
   const [muted, setMuted] = useState(() => localStorage.getItem('tp-muted') === '1');
+  const [pop, setPop] = useState<string | null>(null);
+  const [levelOk, setLevelOk] = useState(false);
   const [round, setRound] = useState(0);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const top = useRef<HTMLDivElement>(null);
+  const opts = useMemo(() => ({ first: shuffle(FIRST), level: shuffle(LEVEL), why: shuffle(WHY), final: shuffle(FINAL) }), [round]);
+  const topRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => { localStorage.setItem('tp-muted', muted ? '1' : '0'); }, [muted]);
-  useEffect(() => { top.current?.scrollTo({ top: 0, behavior: 'instant' }); }, [phase]);
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
-  const go = (next: Phase) => { play(next === 'report' ? 'page-turn' : 'woosh', muted); setSelected(null); setPhase(next); };
-  const chooseAdvice = (choice: Advice) => {
-    if (selected) return;
-    setSelected(choice); play('click', muted);
-    timer.current = setTimeout(() => {
-      if (choice === 'data') go('report');
-      else { setRecommendation(choice); go('confirm'); }
-    }, 160);
+  useEffect(() => { topRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); }, [phase]);
+
+  const go = (p: Phase) => { play('page-turn', muted); setPicked(null); setPhase(p); };
+  const pick = (o: Option, points: number) => {
+    setPicked(o);
+    if (phase === 'level') setLevelOk(o.good);
+    if (o.good) { setScore(s => s + points); play('pop', muted); setPop(`+${points}`); setTimeout(() => setPop(null), 900); }
+    else play('wrong', muted);
   };
-  const finish = (result: Exclude<Outcome, null>) => {
-    setOutcome(result); setPhase('result'); play(result === 'correct' ? 'win' : 'lose', muted);
-    if (result === 'correct') timer.current = setTimeout(() => play('confettipop', muted), 250);
+  // Win = correct final decision AND correct reading of the table (level). Trap mistakes only lower the score.
+  const decide = (o: Option) => {
+    const final = o.good ? score + POINTS.final : score;
+    const win = o.good && levelOk;
+    setScore(final);
+    setWon(win);
+    play(win ? 'win' : 'lose', muted);
+    if (win) setTimeout(() => play('confettipop', muted), 500);
+    setPhase('result');
   };
-  const chooseTeam = (team: Team) => {
-    if (selected) return;
-    setSelected(team); play('click', muted);
-    timer.current = setTimeout(() => finish(team === 'B' ? 'correct' : 'aggregate'), 170);
-  };
-  const restart = () => {
-    if (timer.current) clearTimeout(timer.current);
-    play('woosh', muted); setSelected(null); setRecommendation(null); setOutcome(null);
-    setRound(value => value + 1); setPhase('intro');
-  };
-  return <div ref={top} dir="rtl" className="h-full w-full overflow-x-hidden overflow-y-auto bg-[radial-gradient(circle_at_top,#fef3c7,#fde68a_45%,#fb923c)] font-[Cairo,sans-serif] text-slate-900">
-    <style>{`
-      @keyframes tp-enter{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-      @keyframes tp-pop{0%{opacity:0;transform:translateY(24px) scale(.75)}65%{opacity:1;transform:translateY(-5px) scale(1.06)}100%{transform:translateY(0) scale(1)}}
-      @keyframes tp-paper{from{opacity:0;transform:perspective(900px) rotateX(-22deg) translateY(-14px)}to{opacity:1;transform:perspective(900px) rotateX(0) translateY(0)}}
-      @keyframes tp-cheer{0%,100%{transform:rotate(-7deg) scale(1)}50%{transform:rotate(8deg) scale(1.16)}}
-      @keyframes tp-oops{0%,100%{transform:rotate(0)}30%{transform:rotate(-12deg)}70%{transform:rotate(9deg)}}
-      @keyframes tp-fall{to{transform:translateY(100vh) rotate(500deg);opacity:0}}
-      .tp-scene{animation:tp-enter .22s ease-out both}.tp-character{animation:tp-pop .42s cubic-bezier(.2,.8,.25,1.2) both}.tp-bubble{animation:tp-enter .3s .1s ease-out both}.tp-report{animation:tp-paper .38s ease-out both}
-      .tp-action{transition:transform .15s,box-shadow .15s,filter .15s}.tp-action:not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.04)}.tp-action:not(:disabled):active,.tp-picked{transform:translate(3px,3px) scale(.98);box-shadow:1px 1px 0 #0f172a}.tp-action:focus-visible{outline:3px solid #0369a1;outline-offset:3px}
-      .tp-cheer{animation:tp-cheer .55s 3}.tp-oops{animation:tp-oops .48s 2}.tp-confetti span{animation:tp-fall 1.5s ease-in forwards}
-      @media (prefers-reduced-motion:reduce){.tp-scene,.tp-character,.tp-bubble,.tp-report,.tp-cheer,.tp-oops,.tp-confetti span{animation:none!important}.tp-action{transition:none!important}}
-    `}</style>
-    <header className="sticky top-0 z-10 flex min-h-12 items-center gap-2 border-b-4 border-slate-900 bg-slate-900 px-3 py-1.5 text-white">
-      <Link to="/app" aria-label="مركز الألعاب" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/10 text-lg hover:bg-white/20">🏠</Link>
-      <strong className="min-w-0 flex-1 truncate text-center text-sm sm:text-lg">⚡ أداء الفريق</strong>
-      <button type="button" onClick={() => setMuted(value => !value)} aria-label={muted ? 'تشغيل الصوت' : 'كتم الصوت'} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/10 text-lg">{muted ? '🔇' : '🔊'}</button>
-    </header>
-    <main key={`${round}-${phase}`} className="tp-scene mx-auto max-w-2xl space-y-4 p-3 pb-10 sm:space-y-5 sm:p-6">
-      {phase === 'intro' && <>
-        <Speech who="الأستاذ شريف — المدير" image={manager.url}>تقرير الشهر وصل! فريق أ خلّص 80 من 100 مهمة، وفريق ب خلّص 59 من 100. بص معايا على النتيجة قبل ما نقرر نعمل إيه.</Speech>
-        <div className="grid grid-cols-2 gap-2 sm:gap-4">{(['A', 'B'] as const).map(team => <div key={team} className="rounded-xl border-[3px] border-slate-900 bg-white p-3 text-center shadow-[4px_4px_0_#0f172a]">
-          <div className="text-sm font-black">فريق {team === 'A' ? 'أ' : 'ب'}</div><div className="text-4xl font-black tabular-nums text-sky-700 sm:text-5xl">{rate(data[team].total)}%</div><div className="text-xs font-bold text-slate-600">معدل الإكمال الإجمالي</div>
-        </div>)}</div>
-        <Action onClick={() => go('advice')} tone="rose">شوف التوصيات ←</Action>
-      </>}
-      {phase === 'advice' && <>
-        <Speech who="الأستاذ شريف" image={manager.url}>قدامنا 4 توصيات. شايف نبدأ بإيه؟</Speech>
-        <div className="grid gap-2.5">{advice.map(item => <Action key={item.id} disabled={!!selected} picked={selected === item.id} onClick={() => chooseAdvice(item.id)} tone="white">{item.icon} {item.text}</Action>)}</div>
-      </>}
-      {phase === 'confirm' && <>
-        <Speech who="الأستاذ شريف" image={manager.url}>تمام، هنمشي بالتوصية دي. بس هنثبت القرار من غير ما نراجع تفاصيل الشغل؟</Speech>
-        <div className="rounded-xl border-[3px] border-slate-900 bg-white p-3 text-center font-black shadow-[4px_4px_0_#0f172a]">{advice.find(item => item.id === recommendation)?.icon} {advice.find(item => item.id === recommendation)?.text}</div>
-        <div className="grid gap-3 sm:grid-cols-2"><Action onClick={() => go('report')} tone="sky">راجع البيانات الأول 📂</Action><Action onClick={() => finish('premature')} tone="rose">اعتمد القرار</Action></div>
-      </>}
-      {phase === 'report' && <>
-        <Speech who="أنت — المحلل" image={analyst.url}>فتحنا الملف التفصيلي. دي أعداد المهام ومعدلات إكمالها حسب صعوبتها.</Speech>
-        <Report /><Action onClick={() => go('decision')} tone="sky">اتخذ القرار ←</Action>
-      </>}
-      {phase === 'decision' && <>
-        <Report /><Speech who="الأستاذ شريف" image={manager.url}>بعد مراجعة التفاصيل، مين الفريق اللي حقق معدل إكمال أعلى داخل كل مستوى صعوبة؟</Speech>
-        <div className="grid grid-cols-2 gap-3"><Action disabled={!!selected} picked={selected === 'A'} onClick={() => chooseTeam('A')} tone="white">فريق أ</Action><Action disabled={!!selected} picked={selected === 'B'} onClick={() => chooseTeam('B')} tone="white">فريق ب</Action></div>
-      </>}
-      {phase === 'result' && <>
-        {outcome === 'correct' && <Confetti />}
-        <div className={`rounded-2xl border-4 border-slate-900 p-4 text-center shadow-[6px_6px_0_#0f172a] ${outcome === 'correct' ? 'bg-emerald-300' : 'bg-rose-300'}`}>
-          <div className={`inline-block text-5xl ${outcome === 'correct' ? 'tp-cheer' : 'tp-oops'}`}>{outcome === 'correct' ? '🎉' : '😮'}</div>
-          <h1 className="mt-2 text-2xl font-black sm:text-3xl">{outcome === 'correct' ? 'قرار ممتاز!' : 'استنى لحظة… القرار اتسرّع'}</h1>
+  const restart = () => { play('woosh', muted); setScore(0); setPicked(null); setWon(false); setLevelOk(false); setRound(r => r + 1); setPhase('intro'); };
+
+  const step = ['intro', 'first', 'inspect', 'level', 'why', 'final', 'result'].indexOf(phase);
+
+  return (
+    <div ref={topRef} dir="rtl" className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,#fef3c7,#fde68a_40%,#fb923c)] font-[Cairo,sans-serif] text-slate-900">
+      <style>{`@keyframes tp-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes tp-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}@keyframes tp-rise{0%{opacity:0;transform:translateY(0) scale(.6)}30%{opacity:1;transform:translateY(-10px) scale(1.2)}100%{opacity:0;transform:translateY(-50px) scale(1)}}@keyframes tp-confetti{0%{transform:translateY(-10vh) rotate(0)}100%{transform:translateY(110vh) rotate(720deg)}}`}</style>
+
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b-4 border-slate-900 bg-slate-900 px-3 py-2 text-white">
+        <Link to="/app" aria-label="رجوع للألعاب" className="grid h-9 w-9 place-items-center rounded-lg bg-white/10 text-lg hover:bg-white/20">🏠</Link>
+        <div className="hidden text-sm font-black sm:block">⚡ أداء الفريق</div>
+        <div className="flex flex-1 justify-center gap-1">
+          {Array.from({ length: 7 }).map((_, i) => <span key={i} className={`h-2 w-6 rounded-full ${i <= step ? 'bg-yellow-400' : 'bg-white/20'}`} />)}
         </div>
-        <Speech who={outcome === 'correct' ? 'الأستاذ شريف' : 'أنت — المحلل'} image={outcome === 'correct' ? manager.url : analyst.url}>
-          {outcome === 'correct' ? 'برافو! فريق ب حقق معدل إكمال أعلى في السهل والصعب، رغم إن معدله الإجمالي أقل.' : outcome === 'premature' ? 'اعتمدنا توصية من الرقم الإجمالي وحده، من غير دليل كفاية. التفاصيل بتوضح إن فريق ب أعلى في السهل والصعب.' : 'الإجمالي وحده ضللنا. فريق ب حقق معدل إكمال أعلى في السهل والصعب، رغم إن إجماليه أقل.'}
-        </Speech>
-        <div className="rounded-xl border-[3px] border-slate-900 bg-white p-4 font-bold leading-relaxed shadow-[4px_4px_0_#0f172a]">
-          <h2 className="mb-1 text-lg font-black">💡 مفارقة سيمبسون</h2>
-          <p>فريق أ أنجز 72/80 من السهل (90%) و8/20 من الصعب (40%). فريق ب أنجز 19/20 من السهل (95%) و40/80 من الصعب (50%). توزيع المهام مختلف: فريق ب عنده مهام صعبة أكتر، فظهر إجماليه أقل رغم تفوقه داخل كل مستوى.</p>
+        <div className="relative rounded-lg bg-yellow-400 px-3 py-1 text-sm font-black text-slate-900 tabular-nums">
+          {score} نقطة
+          {pop && <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-lg font-black text-emerald-300 animate-[tp-rise_.9s_ease-out_forwards]">{pop}</span>}
         </div>
-        <div className="grid grid-cols-2 gap-3"><Action onClick={restart}>العب تاني ↻</Action><Link to="/app" className="tp-action flex min-h-12 items-center justify-center rounded-xl border-[3px] border-slate-900 bg-white px-2 py-2.5 text-center text-sm font-black shadow-[4px_4px_0_#0f172a] sm:text-lg">مركز الألعاب</Link></div>
-      </>}
-    </main>
-  </div>;
+        <button onClick={() => setMuted(m => !m)} aria-label={muted ? 'تشغيل الصوت' : 'كتم الصوت'} className="rounded-lg bg-white/10 px-2 py-1 text-lg">{muted ? '🔇' : '🔊'}</button>
+      </div>
+
+      <div className="mx-auto max-w-2xl space-y-5 p-4 pb-16">
+        {phase === 'intro' && (
+          <>
+            <Speech who="الأستاذ شريف — المدير" img={manager.url}>
+              يا سلام! تقرير الشهر وصل 🎉 فريق <b className="text-amber-600">أ</b> خلّص <b>80%</b> من مهامه، وفريق <b className="text-sky-600">ب</b> خلّص <b>59%</b> بس. أنا ناوي أدي المكافأة الكبيرة لفريق أ النهارده!
+            </Speech>
+            <div className="grid grid-cols-2 gap-3">
+              {(['A', 'B'] as const).map(t => (
+                <div key={t} className="animate-scale-in rounded-2xl border-4 border-slate-900 bg-white p-4 text-center shadow-[6px_6px_0_#0f172a]">
+                  <div className="text-sm font-black">فريق {t === 'A' ? 'أ' : 'ب'}</div>
+                  <div className={`text-5xl font-black ${t === 'A' ? 'text-amber-500' : 'text-sky-600'}`}>{pct(DATA[t].total)}%</div>
+                  <div className="text-xs font-bold text-slate-500">نسبة الإنجاز الإجمالية</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => go('first')} className="w-full rounded-2xl border-4 border-slate-900 bg-rose-500 py-4 text-xl font-black text-white shadow-[6px_6px_0_#0f172a] active:translate-y-1 active:shadow-none">ابدأ التحليل ▶</button>
+          </>
+        )}
+
+        {phase === 'first' && (
+          <>
+            <Speech who="الأستاذ شريف" img={manager.url}>فريق ب واضح إنه متأخر… تنصحني أعمل إيه معاهم يا محلل؟</Speech>
+            <Choices options={opts.first} picked={picked} onPick={o => pick(o, POINTS.first)} />
+            {picked && <Feedback o={picked} next={() => go('inspect')} label="افتح تفاصيل التقرير 📊" />}
+          </>
+        )}
+
+        {phase === 'inspect' && (
+          <>
+            <Speech who="أنت — المحلل" img={analyst.url}>ده التقرير مفصّل حسب صعوبة المهام. اقراه كويس… 🔍</Speech>
+            <DataTable />
+            <button onClick={() => go('level')} className="w-full rounded-2xl border-4 border-slate-900 bg-sky-500 py-4 text-lg font-black text-white shadow-[6px_6px_0_#0f172a] active:translate-y-1 active:shadow-none">قريت الجدول ▶</button>
+          </>
+        )}
+
+        {phase === 'level' && (
+          <>
+            <DataTable />
+            <Speech who="أنت — المحلل" img={analyst.url}>سؤال مهم: مين أعلى نسبة إنجاز <u>داخل كل مستوى صعوبة</u>؟</Speech>
+            <Choices options={opts.level} picked={picked} onPick={o => pick(o, POINTS.level)} />
+            {picked && <Feedback o={picked} next={() => go('why')} />}
+          </>
+        )}
+
+        {phase === 'why' && (
+          <>
+            <Speech who="الأستاذ شريف" img={manager.url}>طب إزاي فريق ب أحسن في الاتنين… والإجمالي بتاعه أقل؟! 🤯</Speech>
+            <Choices options={opts.why} picked={picked} onPick={o => pick(o, POINTS.why)} />
+            {picked && <Feedback o={picked} next={() => go('final')} />}
+          </>
+        )}
+
+        {phase === 'final' && (
+          <>
+            <Speech who="الأستاذ شريف" img={manager.url}>تمام… القرار النهائي في إيدك. المكافأة لمين؟</Speech>
+            <Choices options={opts.final} picked={null} onPick={decide} />
+          </>
+        )}
+
+        {phase === 'result' && (
+          <div className="space-y-4 animate-scale-in">
+            {won && <Confetti />}
+            <div className={`rounded-3xl border-4 border-slate-900 p-5 text-center shadow-[8px_8px_0_#0f172a] ${won ? 'bg-emerald-300' : 'bg-rose-300'}`}>
+              <div className="text-5xl">{won ? '🏆' : '💥'}</div>
+              <h2 className="mt-2 text-3xl font-black">{won ? (score === 100 ? 'محلل محترف — قرار مثالي!' : 'كسبت — بس اتداركت الموقف') : 'خسرت — القرار ظلم الفريق الأحسن'}</h2>
+              <div className="mt-1 text-lg font-black tabular-nums">{score} / 100 نقطة</div>
+            </div>
+            <Speech who={won ? 'الأستاذ شريف' : 'أنت — المحلل'} img={won ? manager.url : analyst.url}>
+              {won ? 'برافو! كنت هظلم فريق ب اللي شال الشغل الصعب. المكافأة رايحة لهم 👏' : 'الإجمالي خدعنا… فريق ب كان أعلى في السهل وفي الصعب، بس أخد مهام صعبة أكتر.'}
+            </Speech>
+            <div className="rounded-2xl border-4 border-slate-900 bg-white p-4 shadow-[6px_6px_0_#0f172a]">
+              <h3 className="mb-2 text-lg font-black text-rose-600">💡 مفارقة سيمبسون</h3>
+              <p className="font-bold leading-relaxed">ممكن مجموعة تكون أحسن في كل فئة لوحدها، ومع ذلك إجماليها يطلع أقل — لأن توزيعها على الفئات مختلف. قبل ما تقارن نسب إجمالية، اسأل: <b>"هل الخلطة واحدة؟"</b></p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={restart} className="rounded-2xl border-4 border-slate-900 bg-yellow-400 py-3 text-lg font-black shadow-[4px_4px_0_#0f172a] active:translate-y-1 active:shadow-none">العب تاني ↻</button>
+              <Link to="/app" className="rounded-2xl border-4 border-slate-900 bg-white py-3 text-center text-lg font-black shadow-[4px_4px_0_#0f172a]">كل الألعاب</Link>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Feedback({ o, next, label = 'التالي ▶' }: { o: Option; next: () => void; label?: string }) {
+  return (
+    <div className={`animate-fade-in space-y-3 rounded-2xl border-4 border-slate-900 p-4 font-bold shadow-[4px_4px_0_#0f172a] ${o.good ? 'bg-emerald-100' : 'bg-rose-100'}`}>
+      <div>{o.good ? '✅ ' : '❌ '}{o.feedback}</div>
+      <button onClick={next} className="w-full rounded-xl border-4 border-slate-900 bg-slate-900 py-3 font-black text-white active:translate-y-1">{label}</button>
+    </div>
+  );
+}
+
+function Confetti() {
+  const colors = ['#f43f5e', '#facc15', '#22c55e', '#0ea5e9', '#a855f7'];
+  return (
+    <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden">
+      {Array.from({ length: 40 }).map((_, i) => (
+        <span key={i} className="absolute top-0 h-3 w-2 rounded-sm"
+          style={{ left: `${(i * 37) % 100}%`, background: colors[i % 5], animation: `tp-confetti ${2 + (i % 5) * 0.4}s linear ${(i % 10) * 0.15}s forwards` }} />
+      ))}
+    </div>
+  );
 }
