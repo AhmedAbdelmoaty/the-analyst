@@ -31,7 +31,7 @@ Vite is configured for `http://localhost:8080`; use the address it prints if the
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-Use ignored `.env.local` for local overrides. Never put a Chakra token, OTP HMAC secret, Supabase service-role key, database migration credential, or future Fawaterak secret in a `VITE_` variable. The local frontend uses the configured cloud backend. Do not run migrations, send OTPs, or modify real accounts merely to check that the UI starts.
+Use ignored `.env.local` for local overrides. Never put a Chakra token, OTP HMAC secret, Supabase service-role key, database migration credential, or Paymob secret in a `VITE_` variable. The local frontend uses the configured cloud backend. Do not run migrations, send OTPs, or modify real accounts merely to check that the UI starts.
 
 Lovable metadata in `*.asset.json` gives `__l5e` URLs rather than image bytes. The five PWA icons and 15 verified Reward Decision WebPs are under `public/__l5e` at their matching paths for local builds. Keep asset paths and portrait/landscape pairs intact.
 
@@ -57,6 +57,12 @@ The unit tests use Bun, which must be installed separately if you want to run th
 
 Editing locally or committing changes does not deploy them. Pushing the Git branch can update the Lovable-connected source; publishing the site is a separate action. Edge Function deployment, database migrations, environment secrets, and Auth settings must be reviewed and applied separately to the intended backend. The migration history spans `supabase/migrations` and `drizzle/migrations`; do not replay it wholesale on an existing database.
 
-## Subscription UI and planned payments
+## Subscription and payments (Paymob)
 
-The UI presents a free “اسأل صح” tier and an annual plan for all available games. Its display price is 1200 EGP, reduced to 400 EGP only when the current Auth account has a confirmed Egyptian mobile number. The paid plan leads to an authenticated summary with a disabled payment button. All six games remain accessible under their current sign-in checks. Fawaterak is the prospective provider; EGP collection and enabled methods still need merchant confirmation. There is no checkout, subscription record, or entitlement enforcement in this repository today. A future server checkout must calculate the amount again from the verified account and grant access only after verified payment confirmation. See [subscription handoff](docs/SUBSCRIPTION_UI_HANDOFF.md) for integration points.
+- **Display:** free “اسأل صح” tier and an annual plan for all games; 1200 EGP, or 400 EGP for an Auth-confirmed Egyptian mobile number.
+- **Database foundation:** payment tables and service-role-only RPCs are reported applied to Lovable Cloud (see [Paymob status](docs/PAYMOB_IMPLEMENTATION_STATUS.md)).
+- **Server functions:** `paymob-checkout`, `-webhook`, `-subscription`, `-reconcile` exist in `supabase/functions/` and were reported deployed; they refuse to charge without `PAYMOB_ENABLED` and credentials.
+- **UI:** checkout wiring exists but is gated off (`PAYMENT_UI_ENABLED = false`).
+- **Not done:** sandbox end-to-end test (waiting for Paymob credentials), merchant callback configuration, live launch approval, and paid entitlement enforcement. All seven games remain available to any signed-in player with a completed profile.
+
+See [Paymob handoff](docs/PAYMOB_INTEGRATION_HANDOFF.md) and [subscription UI handoff](docs/SUBSCRIPTION_UI_HANDOFF.md).
