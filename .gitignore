@@ -27,3 +27,12 @@ artifacts/gaming-v4/
 *.njsproj
 *.sln
 *.sw?
+
+# Generated test output, screenshots and previews
+test-results/
+playwright-report/
+blob-report/
+tests/e2e/evidence-*/
+artifacts/*.png
+artifacts/**/results/
+coverage/
