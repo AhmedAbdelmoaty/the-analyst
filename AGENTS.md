@@ -1,11 +1,14 @@
 # The Analyst — project rules
 
-## Start with the relevant context
+## How to work (keep tasks small)
 
-- Check `git status`, branch, and HEAD before editing; preserve local and untracked files.
-- Read [README.md](README.md) for setup and commands, [CURRENT_STATE.md](docs/CURRENT_STATE.md) for the latest recorded status, and [PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) for the architecture map, and [GAME_REGISTRY.md](docs/GAME_REGISTRY.md) for every game's route, source, save and tests.
-- For task details, consult only the relevant reference: [security review](docs/SECURITY_REVIEW.md), [user profiling](docs/USER_PROFILING_HANDOFF.md), [subscription UI and payment boundary](docs/SUBSCRIPTION_UI_HANDOFF.md), or the [comprehensive Arabic context](docs/THE_ANALYST_PROJECT_CONTEXT_AR.md). [The older Arabic handoff](docs/The-Analyst_Codex_Handoff_AR.md) is historical.
-- Do not scan or read the whole repository for a narrow task; follow the affected code path and its dependencies.
+1. Check `git status`, branch and HEAD; preserve local and untracked files.
+2. Find the affected game in [GAME_REGISTRY.md](docs/GAME_REGISTRY.md) or the area in [PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md).
+3. Read only those source files and their direct dependencies — no whole-repo scans for narrow tasks.
+4. Open broader references only when the task needs them: [CURRENT_STATE](docs/CURRENT_STATE.md), [security](docs/SECURITY_REVIEW.md), [profiling](docs/USER_PROFILING_HANDOFF.md), [subscription](docs/SUBSCRIPTION_UI_HANDOFF.md), [Paymob status](docs/PAYMOB_IMPLEMENTATION_STATUS.md), [Arabic full context](docs/THE_ANALYST_PROJECT_CONTEXT_AR.md). Setup/commands: [README](README.md).
+5. Make small, focused changes; preserve unrelated behavior.
+6. Verify proportionately: typecheck, build, and the game's targeted tests. Avoid full suites, repeated screenshots and long test loops for simple tasks.
+7. A commit, push or build is not a publication or deployment.
 
 ## Safety and behavior boundaries
 
@@ -17,18 +20,18 @@
 - Subscription UI is not an entitlement. All games currently retain existing authentication access; never grant paid access from browser state, plan intent, scores, or URL parameters.
 - Stage unapproved payment Edge Functions and SQL under `docs/paymob/`, outside automatic deployment paths, so source preparation cannot mutate shared services; move/deploy/apply only with explicit approval.
 - Payment fulfillment must bind provider-verified transaction/order/amount/currency/integration to a server-priced owner order, with atomic service-role-only RPCs and environment-separated entitlements; redirects and unsigned callback metadata never grant access.
+- Preserve `.lovable/north-star/north-star.md` unchanged.
+
+## Architecture rules
+
+- Use the shared discovery catalog for public, authenticated and plan game previews and tier mapping; journey storage contains allowlisted navigation only, never payment access. Mark first-time plan onboarding only after successful account creation and verification, before sign-in; returning logins skip it.
+- Keep Reward Decision presentation styles and reference-adapted components scoped to its feature; reuse its existing data, save controller and sound provider so other games and platform features remain unchanged.
+- Dialogue documents use an independent reader; the HUD opens the separate case-file index, while the controller persists collection before visual feedback so animations cannot gate saving.
+- Reward Decision server evaluation for a new case version is enabled only via `SERVER_V3_EVALUATION_ENABLED` after its SQL is approved and applied, so client and server scoring never diverge.
+- GA4 tag lives once in index.html with send_page_view:false; GaPageViews inside BrowserRouter sends one page_view per path change, so new React routes inherit tracking. Iframe games are tracked at their parent route only; standalone HTML pages or other domains need their own tag.
+- Iframe games load assets by runtime string paths; check JS/CSS/HTML string references before deleting any `public/` asset.
 
 ## Documentation maintenance
 
-- Keep Reward Decision presentation styles and reference-adapted components scoped to its feature; reuse its existing data, save controller and sound provider so other games and platform features remain unchanged.
-- Dialogue documents use an independent reader; the HUD opens the separate case-file index, while the controller persists collection before visual feedback so animations cannot gate saving.
-
-When a significant feature, product decision, or deployment state changes, update the relevant documentation as part of that task. Minor edits do not require broad documentation rewrites. Keep `docs/CURRENT_STATE.md` short and dated; preserve historical context in its reference without presenting it as current behavior.
-
-- Reward Decision server evaluation for a new case version is enabled only via `SERVER_V3_EVALUATION_ENABLED` after its SQL is approved and applied, so client and server scoring never diverge.
-
-- Use the shared discovery catalog for public, authenticated and plan game previews and tier mapping; journey storage contains allowlisted navigation only, never payment access. Mark first-time plan onboarding only after successful account creation and verification, before sign-in; returning logins skip it.
-
-- GA4 tag lives once in index.html with send_page_view:false; GaPageViews inside BrowserRouter sends one page_view per path change, so new React routes inherit tracking. Iframe games are tracked at their parent route only; standalone HTML pages or other domains need their own tag.
-
-- Generated test output, screenshots and preview captures are git-ignored; never commit them, and archive old plans under `docs/history/` so the repo stays lean.
+- When a feature, product decision or deployment state changes, update the relevant doc in the same task. Keep `docs/CURRENT_STATE.md` short and current; history belongs in Git, not new archive files.
+- Generated test output, screenshots and preview captures are git-ignored; never commit them.
