@@ -3,7 +3,7 @@
 ## Start with the relevant context
 
 - Check `git status`, branch, and HEAD before editing; preserve local and untracked files.
-- Read [README.md](README.md) for setup and commands, [CURRENT_STATE.md](docs/CURRENT_STATE.md) for the latest recorded status, and [PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) for the architecture map.
+- Read [README.md](README.md) for setup and commands, [CURRENT_STATE.md](docs/CURRENT_STATE.md) for the latest recorded status, and [PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) for the architecture map, and [GAME_REGISTRY.md](docs/GAME_REGISTRY.md) for every game's route, source, save and tests.
 - For task details, consult only the relevant reference: [security review](docs/SECURITY_REVIEW.md), [user profiling](docs/USER_PROFILING_HANDOFF.md), [subscription UI and payment boundary](docs/SUBSCRIPTION_UI_HANDOFF.md), or the [comprehensive Arabic context](docs/THE_ANALYST_PROJECT_CONTEXT_AR.md). [The older Arabic handoff](docs/The-Analyst_Codex_Handoff_AR.md) is historical.
 - Do not scan or read the whole repository for a narrow task; follow the affected code path and its dependencies.
 
@@ -14,7 +14,7 @@
 - Database migrations, Edge Function deployment, cloud settings, frontend publication, and Git push are separate actions. Never infer deployment from a commit or build. Do not mutate production data or deploy without explicit authorization.
 - Preserve game dialogue, rules, scoring, timing, saves, and PWA behavior unless the task explicitly authorizes a scoped change. Server evaluators use client-submitted evidence; they do not independently attest gameplay.
 - Analytics writes must remain owner-bound through approved RPCs; admin reporting and exports must retain server-side role checks. Do not aggregate private user data from paginated browser rows.
-- Subscription UI is not an entitlement. Both games currently retain existing authentication access; never grant paid access from browser state, plan intent, scores, or URL parameters.
+- Subscription UI is not an entitlement. All games currently retain existing authentication access; never grant paid access from browser state, plan intent, scores, or URL parameters.
 - Stage unapproved payment Edge Functions and SQL under `docs/paymob/`, outside automatic deployment paths, so source preparation cannot mutate shared services; move/deploy/apply only with explicit approval.
 - Payment fulfillment must bind provider-verified transaction/order/amount/currency/integration to a server-priced owner order, with atomic service-role-only RPCs and environment-separated entitlements; redirects and unsigned callback metadata never grant access.
 
@@ -30,3 +30,5 @@ When a significant feature, product decision, or deployment state changes, updat
 - Use the shared discovery catalog for public, authenticated and plan game previews and tier mapping; journey storage contains allowlisted navigation only, never payment access. Mark first-time plan onboarding only after successful account creation and verification, before sign-in; returning logins skip it.
 
 - GA4 tag lives once in index.html with send_page_view:false; GaPageViews inside BrowserRouter sends one page_view per path change, so new React routes inherit tracking. Iframe games are tracked at their parent route only; standalone HTML pages or other domains need their own tag.
+
+- Generated test output, screenshots and preview captures are git-ignored; never commit them, and archive old plans under `docs/history/` so the repo stays lean.
