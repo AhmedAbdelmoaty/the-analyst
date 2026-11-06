@@ -1,92 +1,33 @@
-# Current state
+# Current state — 2026-11-06
 
-**Snapshot — 2026-11-06:** Seven games live in source and in the shared catalog (see [GAME_REGISTRY.md](GAME_REGISTRY.md)). Game 7 «أداء الفريق» (`/games/team-performance`) is implemented in source and was published by the owner; it has no saved progress yet and no automated tests. Merged into GitHub `main` via the `lovable-sync` branch. Payment/paid access is still not implemented (UI only). Repository cleanup removed generated test output, obsolete screenshots and two unused decision-matrix images; old Lovable plans moved to `docs/history/lovable-plans/`. Entries below are history, newest first.
+Short, current status only. Detailed history lives in Git and in [THE_ANALYST_PROJECT_CONTEXT_AR.md](THE_ANALYST_PROJECT_CONTEXT_AR.md).
 
-**Investigation File responsive update — 2026-11-04:** The current game bundle now has direct unsaved HR comparisons, a lab-visit meeting unlock, two decisive final questions, distinct outcomes, and responsive opening, evidence, lab, and meeting layouts. Original HR records and hypothetical lab calculations remain separate. The complete game art and sound bundle accompanies the update. Nine focused integration tests, ten desktop/mobile browser checks, and the production build passed in the source worktree. Git integration is separate from frontend publication.
+## Games (7)
+All are in source and in the shared catalog; details in [GAME_REGISTRY.md](GAME_REGISTRY.md).
+اسأل صح (free) · قرار التكريم · ورا النقط · الشفرة الأخيرة · مصفوفة القرار · ملف تحت التحقيق · أداء الفريق.
 
-**Branded Arcade V5 — 2026-11-04 (local feature branch):** The V4 Hub, Character Setup, Plans, Player Center and Landing game showcase use a brighter warm-red arcade environment with the official `#A61E25` red, cream game panels, retained arena depth, and licensed Lalezar display headings alongside Cairo controls. The original six covers, characters, carousel behavior, audio, account and payment paths remain unchanged. Hub and Plans spacing is tighter, and Player Center actions have clearer visual priority. The isolated worktree preview now serves local fonts correctly. This work has not been pushed or published.
+## Platform
+- Phone/password sign-up with WhatsApp OTP (`phone-auth`); admin via `user_roles`.
+- Player setup (character, department, industry), branded arcade hub, public landing showcase, `/plans`.
+- Catalog-driven admin statistics (`/admin/stats`) through protected `admin_*` RPCs; CSV/XLSX export.
+- Analytics: owner-bound visit/round RPCs, GA4 (one page_view per route), Meta Pixel incl. `CompleteRegistration`.
+- SEO: `sitemap.xml`, `robots.txt`, per-route canonical/OG, Organization/WebSite JSON-LD.
+- Optional PWA (worker disabled in dev/preview).
 
-**Landing and player UI refinement — 2026-11-03:** The public six-game shelf now has only two side arrows beside its cards; automatic one-card advance and manual drag remain, while hover/focus/touch and reduced-motion preferences still pause it. Removed explanatory/development copy from Landing, Hub, Plans and Player Center, kept a short Privacy Policy link, compacted the default Player Center view, and set new-player SFX volume to 100% without overriding stored preferences. V2/V3/V4 browser suites passed 21/8/12; 12 unit tests, TypeScript, focused ESLint and production build passed. No game, entitlement, payment, backend, or sound asset changes. Git push does not imply frontend publication.
+## Source, GitHub, publication
+- **Source / GitHub:** `main` is synced with Lovable through the `lovable-sync` branch (owner merged; Lovable reported "In sync").
+- **Published:** owner reported publishing the version including «أداء الفريق» to theanalystedu.com. Later edits (repository cleanup) are not published until Publish is clicked.
 
-**Arcade Action shell — 2026-11-03 (pushed feature branch; local cleanup pending):** The approved Arcade Rush + Comic Action V4 is on `codex/light-premium-v2`. The six original covers, responsive Hub, Character, Free/Annual Plans, Player Center and auto-advancing Landing shelf remain unchanged. Review screenshots and test output are being removed from Git tracking while retained locally; see [V4 final audit](V4_FINAL_AUDIT.md). No merge, deployment or production data change was made in this audit.
+## Payments
+Paymob foundation exists (DB tables/RPCs and server functions reported deployed) but the payment button is gated off, sandbox testing waits for credentials, and **no paid entitlement is enforced**. See [PAYMOB_IMPLEMENTATION_STATUS.md](PAYMOB_IMPLEMENTATION_STATUS.md).
 
-**Luminous Gaming World V3 — 2026-11-03 (local review):** The V2 Hub, Character Setup, Plans, and public game showcase now use a luminous cinematic world. The Hub keeps the six original covers and Arabic titles in a responsive 3×2 desktop grid; Character Setup uses the existing portraits and no longer asks for the verified signup name a second time. The original access, payment, save, and game runtime paths remain unchanged. A synthetic local preview, browser screenshots, and soundtrack audition are available; the soundtrack choice remains provisional pending owner audition. See [V3 implementation and review](GAMING_WORLD_V3.md). No push, publication, or backend action.
+## Saves and limitations
+- Game progress is browser localStorage per user (does not sync across devices). Problem Framing also submits completion to the backend.
+- «أداء الفريق» has no saved progress and no automated tests yet.
+- Server evaluators trust client-submitted evidence.
 
-**Investigation File — 2026-10-28:** Added «ملف تحت التحقيق» as the sixth annual-catalog game at `/games/investigation-file`, using a profile-gated React route and static iframe bundle. Case #3 calculations and win/failure rules are unchanged; progress is owner-scoped local display state. Replaced synthesized beeps with 11 selected Contrary SFX, mapped across scene entry, dialogue, records, comparison, both scale actions, UI and separate endings; copied the upstream MIT notice, and omitted music with undocumented provenance. Five focused integration checks, the Decision Matrix integration checks, four Playwright desktop/mobile ending runs (including audio request/trigger and replay-result checks), app TypeScript, changed-file lint, diff check and production build passed. Changes remain on local branch `codex/investigation-game-integration`; no push, publication, auth/backend, database, entitlement or PWA changes.
-
-**Game feel polish — 2026-10-28:** Problem Framing now offers a clear action to reveal a typing dialogue line; Decision Matrix labels its intro action as reveal-text while typing and next/continue afterward; Crack the Code defaults motion to the device accessibility preference while retaining a saved player choice. Behind the Dots' browser scenarios now explicitly resume paused saved challenges and verify the already-loaded effect audio correctly. Reward Decision's existing reveal-text and evidence feedback were retained. Focused desktop/mobile game checks, relevant game tests, TypeScript checks, targeted lint, and production build passed. No save, story, puzzle, or rule changes; no publication.
-
-**Save & Resume — 2026-10-27:** The authenticated games catalog now reads the five existing account-scoped browser saves and shows new, in-progress, or completed actions with limited real progress indicators. Completed iframe-game entries open their saved ending/results directly. Existing save keys, migration paths, and game persistence remain in place. Focused status/lifecycle/persistence tests, TypeScript checks, targeted lint, Crack the Code validation, and production build passed. No publication or backend changes.
-
-**Unified game experience — 2026-10-27:** Added progress-safe return navigation across all five games. Problem Framing, Reward Decision, and Behind the Dots save/pause before exit; Crack the Code now has explicit pause/resume and keeps its clock/audio frozen after tab hiding; Decision Matrix stops narration while hidden without restarting it automatically. Paused screens retain a direct exit. Focused game tests, TypeScript, desktop/mobile Behind the Dots HUD checks, and production build passed. Local changes only; no publication.
-
-**Decision Matrix replacement — 2026-10-26:** Replaced `public/decision-matrix/` with the provided `decision-matrix-story-preview-main.zip` runtime. The authenticated `/games/decision-matrix` route, `GameGate`, iframe user ID, and catalog cover remain intact. Game saves/preferences remain account-scoped; the first replacement-format write preserves the prior raw save at a separate per-user legacy key, and the new game migrates compatible progress (the former third case is discontinued and maps to the new two-case completion). Archive gameplay tests, integration tests, both TypeScript checks, production build, and desktop/mobile browser playthrough passed. Whole-repo lint still reports pre-existing errors in unrelated files. The accessible source repo's latest commit differs from the archive; the archive was used as requested. No backend changes or site deployment.
-
-**Behind the Dots V6 audio integration — 2026-10-25:** The existing authenticated game route now uses the four-challenge V6 game, its ending sequence, and the 17 approved audio selections. Audio assets and source licenses are kept under `public/assets/behind-dots/audio/`; no market ambience plays. The integration was scoped to Behind the Dots, its existing route target, runtime dependencies, and game-specific tests. Eight focused unit checks, the production build, and all 22 desktop/mobile Playwright scenarios passed. No deployment was performed.
-
-**Public discovery and onboarding — 2026-10-25:** Preview-only redesign uses a shared five-game catalog across landing, `/app` and plans. Selecting a game as a visitor scrolls to the existing embedded phone form and preserves an allowlisted tab-scoped destination through auth/profile setup. Successful new-account creation followed by verification triggers Plans before Setup; returning login skips this step. With the server development flag OFF, either plan continues to the selected game without payment or entitlement creation. Decision Matrix is included in the future Annual mapping. Unknown access flag now shows verification/retry rather than weakening future enforcement. No Cloud writes, function deployment, public publication, or Git push in this task. Safe browser mocks cover OTP/onboarding without real messages/accounts; pricing and access regressions remain unchanged.
-
-**Decision Matrix — 2026-10-25:** أُدمجت اللعبة الخامسة عند `/games/decision-matrix` عبر iframe ثابت ومحمي بمتطلبات الملف المكتمل. الحفظ والتفضيلات معزولان حسب الحساب في المتصفح؛ لا مزامنة بين الأجهزة، وروابط الأصول الثابتة ليست محمية بمسار React. اختبارات ZIP وTypeScript والبناء نجحت. فُحص الحوار وتقرير CRM واللغز الأول، والشاشة الافتتاحية بصريًا بإطار CSS 390×844 و360×740. لا يوجد backend معزول لاختبار تحويل الضيف، ولم يحدث نشر على Lovable. راجع [تسليم اللعبة](DECISION_MATRIX_HANDOFF_AR.md).
-
-**Crack the Code replacement — 2026-10-25:** Integrated the developer ZIP `crack-the-code-feature-cartoon-game-ui` over the existing fourth-game assets/runtime. Kept `/games/crack-the-code`, profile-gated access, `/app` return, and added narrow-mobile layout fixes. Per-user v2 saves migrate compatible v1 preferences and level scores/unlocks while preserving legacy saves and dropping stale puzzle sessions. ZIP gameplay/audio/validation tests, save migration/isolation checks, both TypeScript checks, desktop/mobile playthroughs of all three vaults, refresh/resume, and production build passed. Source is committed/pushed only; the public site was not deployed.
-
-**Paymob preparation — 2026-10-24:** Disabled checkout/status/return UI and four staged payment functions are in source. Review-only SQL and local synthetic tests are under `docs/paymob/`; nothing was applied to Cloud or deployed/published. Existing games/auth/saves/admin access remain unchanged. Merchant credentials, isolated Test deployment approval, timestamp/refund contracts and full Paymob sandbox E2E are required before any enablement. See [Paymob handoff](paymob/HANDOFF_AR.md).
-
-**Scoped local update — 2026-10-22:** Fixed Behind the Dots chart clipping at its source: SVG intrinsic height was expanding the grid row beyond its chart panel, so the plot now draws inside a constrained, aspect-preserving viewport. Rechecked current `main` through the same LAN preview URL on desktop (1366×768) and mobile (390×844): all chart axes and labels fit, with no page scroll. The mobile tutorial keeps the original two-step lesson flow and shows the whole plot. Correct-answer action was visually inspected in the live scene; its character movement and reward effects stay on top of the chart without hiding its axes. The local Vite preview is running at `http://192.168.30.39:8081`. No automated tests were run at the user's request. No commit, push, or deployment was made.
-
-**Scoped local update — 2026-10-22:** Behind the Dots was rebuilt from the approved V5 package with the three fixed scatter-plot cases, 20-second rounds, three hearts, and one evidence-based recommendation. Added the interactive-only tutorial, Egyptian colloquial story, animated cast, responsive chart and outcome screens, and a V5 save namespace that preserves older progress. Focused Node tests, both TypeScript projects, production build, and desktop/mobile browser QA passed. The `file://` prototype could not be opened under the browser policy; its code and reference screenshots were inspected. No commit, push, or deployment was made.
-
-**Scoped local update — 2026-10-22:** Reward Decision Analysis Room, Deduction Notebook, persistent case timer HUD, and all three result states received a responsive UI refinement. Follow-ups give desktop histograms more vertical space while retaining their aspect ratio, align the analysis tabs with the title row to raise the charts, and revise the opening celebration to congratulate Marwan’s team on the preliminary win while Sherif’s formal announcement and the ceremony remain pending. Real histogram data, questions, scoring, and saves were preserved. `npx tsc -p tsconfig.app.json --noEmit`, `npx tsc -p tsconfig.node.json --noEmit`, and `npm run build` passed. Isolated browser QA captured desktop/mobile screens, confirmed all five metric buttons toggle at 390×844, confirmed four notebook choices and no horizontal overflow through 360×740. Bun tests could not run because Bun is unavailable. No commit, push, or deployment was made.
-
-**Scoped local update — 2026-10-20:** Behind the Dots from approved source commit `b552bf1` is integrated locally as the authenticated third game at `/games/behind-the-dots`, with a selection card and per-user browser save namespace. Production build and app TypeScript check pass. The focused game tests could not run because Bun is not installed. No commit, push, or deployment was made.
-
-**Scoped local update — 2026-10-19:** The checkout was fast-forwarded to `origin/main` HEAD `25cb296639879ede73414466911768e79b7ddd65` (31 commits ahead of the prior local base). Reward Decision scene integration and automatic narration are reapplied as uncommitted local changes on that current base; `npm run build`, `npx tsc --noEmit`, targeted ESLint, and the isolated Playwright smoke passed. A safety stash `stash@{0}` preserves the pre-fast-forward working tree. No commit, push, or deployment was made. See [the integration record](REWARD_DECISION_CINEMATIC_INTEGRATION.md) and [acceptance brief](Reward_Decision_Final_Implementation_Brief_AR.md). The earlier review below remains historical for other surfaces; no database, Edge Function, or payment state was reverified here.
-
-**Reviewed:** 2026-10-13 (Africa/Cairo)
-
-**Historical local checkout review:** `main` at `23e7ee99be1fe522ecb9b37a2dc2990bd38b2457` (`Improve post-game subscription invitation`), reviewed 2026-10-13. Current checkout is recorded above.
-**Evidence note:** repository state was inspected locally; no cloud console, deployed site, or live database was queried for this review.
-
-## Confirmed in the checkout
-
-- Shared phone-authenticated platform with `/app`, Problem Framing (`/play`), and Reward Decision (`/games/reward-decision`). Both games currently retain the existing sign-in protection and remain accessible.
-- Work-profile onboarding/editing and Admin Users audience insights are implemented in source. `docs/USER_PROFILING_HANDOFF.md` reports that migrations `0008_user_profiling_audience.sql` and `0009_work_profile_column_comments.sql` were applied to Lovable Cloud and that the profile update/RPC checks passed on 2026-10-13. This report was not independently re-tested in this task.
-- A LAN-safe UUID fallback and non-blocking analytics transition are present in the current source; the user reported that the black-screen issue was resolved after this change.
-- `/plans`, annual subscription summary, “My subscription,” and the post-game invitation are interface/navigation only. The annual display rule is 1200 EGP, or 400 EGP for a confirmed Egyptian mobile number in Auth. The post-game invitation routes to `/plans`; payment remains unavailable.
-
-## Git and parallel work
-
-- Local `main` and the locally recorded `origin/main` ref were equal at review (`0` commits ahead/behind). No fetch was performed during this documentation task, so this is not a fresh remote check.
-- The Arabic context file and documentation edits predated the current subscription-pricing task. Pricing UI, its focused tests, and the handoff were subsequently changed locally without a commit or push. Preserve and review these separately from the earlier documentation work.
-- A managed worktree exists on `codex/post-game-upsell` at `bf1aee0`. That commit is an ancestor of current `main`; the separate worktree’s uncommitted status could not be inspected because Git rejected its ownership in this environment. Verify its status in the owning Windows session before reuse or archival.
-
-## Deployment and service state
-
-| Surface | Recorded state | What remains unverified here |
-| --- | --- | --- |
-| Git push | Current `main` HEAD is recorded equal to local `origin/main`; the remote was not fetched for this review. | Whether GitHub changed after the last local remote-ref update. |
-| Frontend deployment | No evidence in this checkout that `23e7ee9` was published to Lovable or the company domain. | Published commit/build, domain routing, and current PWA behavior. |
-| Database migrations | Profiling handoff reports `0008` and `0009` applied and selected checks passed in Lovable Cloud on 2026-10-13. | Direct confirmation of migration ledger and present grants/RLS. The handoff notes two email-only profiles with legacy-format phones whose profile updates fail until normalized. |
-| Edge Function | `phone-auth` source is in the repository. | Which function version/settings are deployed; no deployment is inferred from Git. |
-| Payments | Fawaterak is prospective; checkout, payment records, webhooks, and server entitlements are absent. Subscription payment action is disabled. The 400/1200 EGP rule is a frontend estimate only. | Merchant EGP acceptance/payment methods, test credentials, renewal/refund decisions, and server-side pricing. |
-
-## Pending decisions and blockers
-
-- The display prices are approved in EGP; actual EGP collection still needs merchant confirmation. Before payment work, confirm merchant/API access, enabled methods, fees, refunds/disputes, annual renewal behavior, and coverage of future games. No automatic renewal is approved.
-- Before limiting game access, implement and test server-owned entitlements; current `/app` access is intentionally open to both authenticated games during development.
-- The two legacy-format phone profiles described in the profiling handoff need a safe data correction plan before their work-profile updates can succeed. Do not delete accounts or normalize production data without an approved, account-specific procedure.
-- Existing security review findings and live authorization checks remain as documented in [SECURITY_REVIEW.md](SECURITY_REVIEW.md); a successful build or Git push does not close them.
-- The Arabic historical reference records outstanding Reward Decision narrative/visual follow-up. Recheck relevant code and approved production assets before treating those older items as current blockers.
-
-See [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) for the architecture map and [THE_ANALYST_PROJECT_CONTEXT_AR.md](THE_ANALYST_PROJECT_CONTEXT_AR.md) for detailed history and product rationale.
-
-## 2026-10-21 — Reward Decision V2 (not published)
-- New flow: story → Sales (two separate documents) and HR («ملف معيار الأداء») → Analysis Room (5 tools, real-data histograms) → two-question Deduction Notebook → Final Report → Mahmoud then Marwan calls → Game Results. Meeting and recommendation board retired from play.
-- Outcome: both answers correct → Mahmoud/success (2/2); otherwise Marwan/failure (1/2 or 0/2). Saves are schema v5 (`rowad-v3`); older saves migrate without granting success.
-- Server evaluator for `rowad-v3` is prepared in `docs/sql/reward-decision-v3-evaluation.sql` but NOT applied; `SERVER_V3_EVALUATION_ENABLED` stays false until the owner approves it. Admin win/loss still comes from the `complete` event outcome.
-
-**Scoped local update — 2026-10-22:** Integrated Abdulhakim Elsayed’s dependency-free Crack the Code source as the authenticated fourth game at `/games/crack-the-code`. The original HTML/CSS/JavaScript and assets are served separately inside a full-viewport iframe; saves are namespaced by authenticated player ID, and the game’s platform logo returns to `/app`. Production build and app TypeScript checks passed. The ZIP-supplied test suite passed; desktop and touch-enabled mobile browser checks confirmed keypad input, no horizontal overflow at 390 px and 360 px, and unauthenticated route redirection. Desktop and mobile screenshots are saved under `artifacts/crack-the-code/`. No commit, push, deployment, or backend change was made.
-
-
-
-**Scoped local update — 2026-10-22:** Replaced Crack the Code with the newer three-vault ZIP version. Preserved the authenticated route/card, per-player save namespace and mobile layout adaptation; existing level scores/unlocks remain compatible, while the active puzzle resumes only when its updated puzzle data is valid. The ZIP's full Node validation suite, both TypeScript checks, production build and git diff --check passed. No commit, push, or deployment was made.
+## Known risks / pending
+- `npm run lint` has pre-existing errors.
+- Unused shadcn UI packages remain installed (kept to avoid breaking generated UI components).
+- Root `sw.js` / `workbox-*.js` are PWA build outputs written by `vite.config.ts` (`swDest`); kept until the PWA output path is reviewed.
+- Search Console not connected; public `/games` page deferred.
