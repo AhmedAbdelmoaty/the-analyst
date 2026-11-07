@@ -7,8 +7,9 @@
 3. Read only those source files and their direct dependencies — no whole-repo scans for narrow tasks.
 4. Open broader references only when the task needs them: [CURRENT_STATE](docs/CURRENT_STATE.md), [security](docs/SECURITY_REVIEW.md), [profiling](docs/USER_PROFILING_HANDOFF.md), [subscription](docs/SUBSCRIPTION_UI_HANDOFF.md), [Paymob status](docs/PAYMOB_IMPLEMENTATION_STATUS.md), [Arabic full context](docs/THE_ANALYST_PROJECT_CONTEXT_AR.md). Setup/commands: [README](README.md).
 5. Make small, focused changes; preserve unrelated behavior.
-6. Verify proportionately: typecheck, build, and the game's targeted tests. Avoid full suites, repeated screenshots and long test loops for simple tasks.
+6. Choose checks by risk. FAST (isolated copy, CSS, UI or animation): edit directly and run only the relevant lint, typecheck or visual check. STANDARD (game flow or behavior): run typecheck/build and targeted tests; use one focused visual review when useful. CRITICAL (auth, payments, database, security, entitlement or save migration): validate affected boundaries more broadly, without touching production. Rerun a check only after a relevant fix; stop once the risk is resolved.
 7. A commit, push or build is not a publication or deployment.
+8. Keep completion reports brief: state the change, the checks actually run, and any remaining risk. For small tasks, do not create a planning document or repeat repository exploration. Use a skill only when its trigger matches the task; see [Codex skills setup](docs/CODEX_SKILLS.md).
 
 ## Safety and behavior boundaries
 
