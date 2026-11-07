@@ -11,6 +11,14 @@
 7. A commit, push or build is not a publication or deployment.
 8. Keep completion reports brief: state the change, the checks actually run, and any remaining risk. For small tasks, do not create a planning document or repeat repository exploration. Consider available Skill descriptions even when the user names no Skill; load only those that materially help the task. See [Codex skills setup](docs/CODEX_SKILLS.md).
 
+## Shared game development reference library
+
+- Consult the external library only when designing a new game, developing or substantially changing a complex game system, or when the existing project code does not provide enough guidance. Skip it for routine copy, styling, small fixes, and merely running tests or builds.
+- On the first need in a task, check `C:\Game-Development-Reference-Library` and then `D:\Game-Development-Reference-Library`. A candidate must contain `REFERENCE_INDEX.md` and `INVENTORY.csv`. If both qualify, inspect their Git remotes using read-only commands and select the one matching `https://github.com/AhmedAbdelmoaty/Game-Development-Reference-Library.git` (or its SSH equivalent); ask only if the choice remains ambiguous. If neither is available or access is denied, report that briefly and continue with available project context.
+- Remember the selected path and findings for the task. Do not repeat path discovery or reread references with every test or build; consult them again only when a new relevant question arises.
+- Read the selected library's `AGENTS.md` and `REFERENCE_INDEX.md`, then check `INVENTORY.csv` for availability and licensing before inspecting only the relevant examples. Adapt suitable ideas to The Analyst's architecture, requirements, and approved creative direction.
+- Keep the library external and use it as read-only reference material. Do not copy its contents into The Analyst, add it as a Git submodule, or create an automatic copy/sync step. Do not modify library files, run Git updates there, install dependencies, or run archived games, tests, or builds unless explicitly requested.
+
 ## Safety and behavior boundaries
 
 - Treat configured Supabase/Lovable services as production unless an isolated test environment is verified. Local frontend runs can still contact live services.
