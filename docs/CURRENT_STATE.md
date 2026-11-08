@@ -1,10 +1,10 @@
-# Current state — 2026-11-06
+# Current state — 2026-11-08
 
 Short, current status only. Detailed history lives in Git and in [THE_ANALYST_PROJECT_CONTEXT_AR.md](THE_ANALYST_PROJECT_CONTEXT_AR.md).
 
-## Games (7)
+## Games (8 in source)
 All are in source and in the shared catalog; details in [GAME_REGISTRY.md](GAME_REGISTRY.md).
-اسأل صح (free) · قرار التكريم · ورا النقط · الشفرة الأخيرة · مصفوفة القرار · ملف تحت التحقيق · أداء الفريق.
+اسأل صح (free) · قرار التكريم · ورا النقط · الشفرة الأخيرة · مصفوفة القرار · ملف تحت التحقيق · أداء الفريق · مفارقة الربح.
 
 ## Platform
 - Phone/password sign-up with WhatsApp OTP (`phone-auth`); admin via `user_roles`.
@@ -23,6 +23,7 @@ Paymob foundation exists (DB tables/RPCs and server functions reported deployed)
 
 ## Saves and limitations
 - Game progress is browser localStorage per user (does not sync across devices). Problem Framing also submits completion to the backend.
+- Profit Paradox is implemented in source as a five-level React game with the locked case, interactive margin and revenue-mix charts, local per-user checkpoint, and no backend changes. It is not published.
 - «أداء الفريق» has no saved progress and no automated tests yet.
 - Server evaluators trust client-submitted evidence.
 - Problem Framing now uses compact shared Home/Pause/Settings controls, game-only settings, and explicit handling when its saved checkpoint and timer cannot be reconciled. The office replay action was removed. Its existing per-user save keys remain unchanged.

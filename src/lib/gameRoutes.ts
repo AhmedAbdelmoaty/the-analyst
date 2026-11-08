@@ -6,6 +6,7 @@ const GAME_ROUTES = [
   "/games/decision-matrix",
   "/games/investigation-file",
   "/games/team-performance",
+  "/games/profit-paradox",
 ];
 
 export function isGameRoute(pathname: string) {

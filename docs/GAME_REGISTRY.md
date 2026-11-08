@@ -11,6 +11,7 @@ Source of truth: `src/features/discovery/catalog.ts` (`GAME_CATALOG`). Hub, land
 | 5 | `decision-matrix` | مصفوفة القرار | `/games/decision-matrix` | annual |
 | 6 | `investigation-file` | ملف تحت التحقيق | `/games/investigation-file` | annual |
 | 7 | `team-performance` | أداء الفريق | `/games/team-performance` | annual |
+| 8 | `profit-paradox` | مفارقة الربح | `/games/profit-paradox` | annual |
 
 ## 1. اسأل صح — Problem Framing
 - Source: `src/components/game/`, `src/contexts/PFGameContext.tsx`, `src/lib/pf-*`.
@@ -53,6 +54,12 @@ Source of truth: `src/features/discovery/catalog.ts` (`GAME_CATALOG`). Hub, land
 - Save: none (session only); mute preference `tp-muted`.
 - Constraints: answers are shuffled each round; a win requires choosing Team B in the final comparison.
 - Tests: none yet.
+
+## 8. مفارقة الربح — The Profit Paradox
+- Source: `src/features/profit-paradox/`, `src/pages/ProfitParadoxRoute.tsx`.
+- Assets: user-supplied character poses and office backgrounds in `public/profit-paradox/`; charts and report are live UI.
+- Save: separate per-user localStorage checkpoint (`profit-paradox-v1`) and mute preference (`pp-muted`); no backend scoring or entitlement changes.
+- Tests: `tests/profit-paradox.test.mts`.
 
 ## Adding a game
 1. Add an entry to `GAME_CATALOG`.
