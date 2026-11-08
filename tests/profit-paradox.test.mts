@@ -48,15 +48,14 @@ test('four unique revenue cells earn reveal; wrong or repeated input cannot bypa
   assert.equal(gameReducer(state, { type: 'revenue', key: 'jan-premium' }).revenueKeys.length, 4);
   state = gameReducer(state, { type: 'next' });
   assert.equal(state.level, 4);
-  for (const choice of ['A', 'B', 'C'] as Choice[]) {
-    state = gameReducer(state, { type: 'q3', choice });
-    assert.equal(gameReducer(state, { type: 'next' }).level, 4);
-    state = gameReducer(state, { type: 'retryQ3' });
-    assert.equal(state.q3, null);
-    assert.equal(mixRevealed(state), true);
+  for (const choice of ['A', 'B', 'C', 'D'] as Choice[]) {
+    const decided = gameReducer(state, { type: 'q3', choice });
+    assert.equal(decided.accepted, choice === 'D');
+    assert.equal(gameReducer(decided, { type: 'q3', choice: 'D' }).q3, choice);
+    const ended = gameReducer(decided, { type: 'next' });
+    assert.equal(ended.level, 5);
+    assert.equal(ended.q1, 'A');
+    assert.equal(ended.q2, 'B');
+    assert.equal(gameReducer(ended, { type: 'replay' }).level, 1);
   }
-  state = gameReducer(state, { type: 'q3', choice: 'D' });
-  state = gameReducer(state, { type: 'next' });
-  assert.equal(state.level, 5);
-  assert.equal(gameReducer(state, { type: 'replay' }).level, 1);
 });
