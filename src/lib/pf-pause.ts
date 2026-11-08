@@ -137,6 +137,10 @@ export function resumeGame() {
 }
 
 /** Ending a round: drop everything queued for resume so nothing restarts. */
-export function discardPausedWork() {
+export function discardPausedWork(clearTimers = false) {
+  if (clearTimers) {
+    timers.forEach((t) => { if (t.native != null) N.clearTimeout(t.native); });
+    timers.clear();
+  }
   resumeMedia.clear();
 }

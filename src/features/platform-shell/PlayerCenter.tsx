@@ -4,6 +4,7 @@ import { Settings2, ChevronDown, LogOut, ArrowLeft, Check } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useInstall } from '@/contexts/InstallContext';
 import type { GameAccessSnapshot } from '@/features/entitlement/useGameAccess';
 import WorkProfileFields from '@/features/profile/WorkProfileFields';
 import { validateWorkProfile, type WorkProfile } from '@/features/profile/workProfile';
@@ -39,6 +40,7 @@ function ProfileEditor({ onSaved }: { onSaved: () => void }) {
 
 export default function PlayerCenter({ snapshot }: { snapshot: GameAccessSnapshot | null }) {
   const { profile, signOut } = useAuth();
+  const { available, standalone, install, guidance } = useInstall();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -54,6 +56,8 @@ export default function PlayerCenter({ snapshot }: { snapshot: GameAccessSnapsho
       {editing ? <ProfileEditor onSaved={() => { setEditing(false); setSaved(true); }} /> : <button className="platform-button w-full" onClick={() => { setEditing(true); setSaved(false); }}>تعديل بياناتي<ArrowLeft /></button>}
       <section className="player-section"><h3>اشتراكي</h3><p className="platform-muted">{subscription}</p><Link className="platform-button mt-3 w-full" to="/subscription">تفاصيل الاشتراك<ArrowLeft /></Link></section>
       <section className="player-section" data-audio-settings><h3>الصوت والعرض</h3><AudioControls /></section>
+      <Link className="platform-button w-full" to="/">عن The Analyst<ArrowLeft /></Link>
+      {!standalone && (available || guidance) && <section className="player-section"><h3>تثبيت التطبيق</h3>{available ? <button className="platform-button mt-3 w-full" onClick={() => void install()}>تثبيت التطبيق</button> : <p className="platform-muted">{guidance}</p>}</section>}
       <button className="platform-button w-full" onClick={async () => { await signOut(); navigate('/'); }}><LogOut />تسجيل الخروج</button>
     </Dialog.Content></Dialog.Portal>
   </Dialog.Root>;

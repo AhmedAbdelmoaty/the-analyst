@@ -17,6 +17,7 @@ import mansourSeatedMaleImg from "@/assets/scenes/mansour-office-seated-male.web
 import mansourSeatedFemaleImg from "@/assets/scenes/mansour-office-seated-female.webp";
 import { MANSOUR_INTRO_DIALOGUES } from "@/data/pf-case";
 import { applyGenderToLine } from "@/lib/voiceover/genderedDialogue";
+import { readSceneProgress, writeSceneProgress } from '@/lib/pf-game-persistence';
 
 interface CompanyBriefingScreenProps {
   onComplete: () => void;
@@ -57,7 +58,11 @@ export const CompanyBriefingScreen = ({
   const g = (profile?.gender || "male") as "male" | "female";
   const { playSound } = useSound();
 
-  const [phase, setPhase] = useState<BriefingPhase>(isReviewMode ? "dialogue" : "exterior");
+  const [restored] = useState(() => readSceneProgress<{ phase: BriefingPhase; index: number }>('briefing'));
+  const [phase, setPhase] = useState<BriefingPhase>(() => isReviewMode ? 'dialogue' : restored && ['exterior', 'hallway', 'door-knock', 'dialogue', 'transition'].includes(restored.phase) ? restored.phase : 'exterior');
+  const [dialogueIndex, setDialogueIndex] = useState(() => Number.isInteger(restored?.index) ? Math.max(0, Math.min(restored!.index, MANSOUR_INTRO_DIALOGUES.length - 1)) : 0);
+  const advanceDialogue = (index: number) => { writeSceneProgress('briefing', { phase: 'dialogue', index }); setDialogueIndex(index); };
+  useEffect(() => { if (!isReviewMode) writeSceneProgress('briefing', { phase, index: dialogueIndex }); }, [phase, dialogueIndex, isReviewMode]);
 
   // Hallway footsteps — one-shot, plays once on entering hallway, stops on leave.
   useSceneOneShot("hallway_footsteps", phase === "hallway");
@@ -250,6 +255,8 @@ export const CompanyBriefingScreen = ({
         dialogues={dialogues}
         isActive={phase === "dialogue"}
         onComplete={handleDialogueComplete}
+        currentIndex={dialogueIndex}
+        onIndexChange={advanceDialogue}
         playerName={name}
         playerGender={g}
       />

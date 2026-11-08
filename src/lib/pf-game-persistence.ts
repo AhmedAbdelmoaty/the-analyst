@@ -28,7 +28,9 @@ export function readPFGameSnapshot(userId: string): PFGameSnapshot | null {
     const data = JSON.parse(raw) as PFGameSnapshot;
     if (data.version !== PF_SAVE_VERSION || !SCREENS.includes(data.screen) || !validState(data.gameState)) return null;
     const challenge = readTimeChallenge(userId);
+    // A clock without its matching narrative checkpoint is never resumable.
     if (data.roundId && challenge && data.roundId !== challenge.roundId) return null;
+    if (data.roundId && !challenge && !data.gameState.framingSubmitted) return null;
     // Inquiry is saved continuously; a finished inquiry resumes at the next scene.
     if (data.screen === 'inquiry' && data.gameState.isComplete) data.screen = 'reflection';
     if (data.screen === 'framing' && data.gameState.framingSubmitted) data.screen = 'email-send';
@@ -51,22 +53,26 @@ export function clearPFGameSnapshot(userId: string) {
 // Scoped to `${roundId}|${screen}` so progress never leaks into another scene or round.
 let scope = { uid: '', tag: '' };
 export function setSceneScope(uid: string, tag: string) { scope = { uid, tag }; }
+type SceneRecord = { tag: string; data: Record<string, unknown>; scenes?: Record<string, Record<string, unknown>> };
 export function readSceneProgress<T>(key: string): T | undefined {
   if (!scope.uid) return undefined;
   try {
     const raw = localStorage.getItem(sceneKeyFor(scope.uid));
     if (!raw) return undefined;
-    const d = JSON.parse(raw) as { tag: string; data: Record<string, unknown> };
-    return d.tag === scope.tag ? (d.data[key] as T) : undefined;
+    const d = JSON.parse(raw) as SceneRecord;
+    return (d.tag === scope.tag ? d.data : d.scenes?.[scope.tag])?.[key] as T | undefined;
   } catch { return undefined; }
 }
 export function writeSceneProgress(key: string, value: unknown) {
   if (!writable || !scope.uid) return;
   try {
     const raw = localStorage.getItem(sceneKeyFor(scope.uid));
-    let d = raw ? (JSON.parse(raw) as { tag: string; data: Record<string, unknown> }) : null;
-    if (!d || d.tag !== scope.tag) d = { tag: scope.tag, data: {} };
-    d.data[key] = value;
+    const old = raw ? (JSON.parse(raw) as SceneRecord) : null;
+    const scenes = old?.scenes ?? (old?.tag && old.data ? { [old.tag]: old.data } : {});
+    const data = scenes[scope.tag] ?? {};
+    data[key] = value;
+    scenes[scope.tag] = data;
+    const d: SceneRecord = { tag: scope.tag, data, scenes };
     localStorage.setItem(sceneKeyFor(scope.uid), JSON.stringify(d));
   } catch { /* storage unavailable */ }
 }

@@ -16,6 +16,7 @@ import {
   type CallTier,
 } from "@/lib/pf-case/mansour-call-images";
 import { applyGenderToLine } from "@/lib/voiceover/genderedDialogue";
+import { readSceneProgress, writeSceneProgress } from '@/lib/pf-game-persistence';
 
 interface PhoneCallDebriefScreenProps {
   onComplete: () => void;
@@ -45,8 +46,11 @@ const formatTime = (s: number) => {
 export const PhoneCallDebriefScreen = ({ onComplete }: PhoneCallDebriefScreenProps) => {
   const { state } = usePFGame();
   const { profile } = useAuth();
-  const [dialogueIndex, setDialogueIndex] = useState(0);
-  const [seconds, setSeconds] = useState(0);
+  const [restored] = useState(() => readSceneProgress<{ index: number; seconds: number }>('phone-call'));
+  const [dialogueIndex, setDialogueIndex] = useState(() => Number.isInteger(restored?.index) ? Math.max(0, restored!.index) : 0);
+  const [seconds, setSeconds] = useState(() => Number.isInteger(restored?.seconds) ? Math.max(0, restored!.seconds) : 0);
+  const advanceDialogue = (index: number) => { writeSceneProgress('phone-call', { index, seconds }); setDialogueIndex(index); };
+  useEffect(() => { writeSceneProgress('phone-call', { index: dialogueIndex, seconds }); }, [dialogueIndex, seconds]);
 
   useSceneAmbience(null);
 
@@ -71,6 +75,8 @@ export const PhoneCallDebriefScreen = ({ onComplete }: PhoneCallDebriefScreenPro
       }),
     [sourceLines, g]
   );
+
+  useEffect(() => { if (dialogueIndex >= dialogues.length) setDialogueIndex(Math.max(0, dialogues.length - 1)); }, [dialogueIndex, dialogues.length]);
 
   // Pre-compute, for each dialogue index, who speaks and which "mansour line index"
   // it corresponds to (so we can pick image A vs B based on Mansour-only progression).
@@ -147,7 +153,7 @@ export const PhoneCallDebriefScreen = ({ onComplete }: PhoneCallDebriefScreenPro
         isActive={true}
         onComplete={onComplete}
         currentIndex={dialogueIndex}
-        onIndexChange={setDialogueIndex}
+        onIndexChange={advanceDialogue}
         playerName={playerName}
         playerGender={g}
       />

@@ -25,6 +25,9 @@ Paymob foundation exists (DB tables/RPCs and server functions reported deployed)
 - Game progress is browser localStorage per user (does not sync across devices). Problem Framing also submits completion to the backend.
 - «أداء الفريق» has no saved progress and no automated tests yet.
 - Server evaluators trust client-submitted evidence.
+- Problem Framing now uses compact shared Home/Pause/Settings controls, game-only settings, and explicit handling when its saved checkpoint and timer cannot be reconciled. The office replay action was removed. Its existing per-user save keys remain unchanged.
+- Problem Framing scene checkpoints now retain dialogue phase and line for the Mansour briefing, VELARO arrival, and ending call. The scene-progress record reads the prior single-scene format; older saves that never recorded a line can only resume at that scene's start.
+- Remaining six games retain their own controls. React games can adapt lifecycle actions directly; iframe games need an origin-checked message bridge before a parent control may claim to pause or restart them.
 
 ## Known risks / pending
 - `npm run lint` has pre-existing errors.

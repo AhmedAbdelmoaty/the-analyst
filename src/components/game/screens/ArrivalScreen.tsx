@@ -15,6 +15,7 @@ import hishamOfficeSeatedMaleImg from "@/assets/scenes/hisham-office-seated-male
 import hishamOfficeSeatedFemaleImg from "@/assets/scenes/hisham-office-seated-female.webp";
 import { HISHAM_GREETING } from "@/data/pf-case";
 import { applyGenderToLine } from "@/lib/voiceover/genderedDialogue";
+import { readSceneProgress, writeSceneProgress } from '@/lib/pf-game-persistence';
 
 interface ArrivalScreenProps {
   onComplete: () => void;
@@ -40,8 +41,11 @@ export const ArrivalScreen = ({ onComplete }: ArrivalScreenProps) => {
   const { profile } = useAuth();
   const { playSound } = useSound();
   const g = (profile?.gender || "male") as "male" | "female";
-  const [phase, setPhase] = useState<Phase>("storefront");
-  const [dialogueIndex, setDialogueIndex] = useState(0);
+  const [restored] = useState(() => readSceneProgress<{ phase: Phase; index: number }>('arrival'));
+  const [phase, setPhase] = useState<Phase>(() => restored && ['storefront', 'entering', 'interior', 'dialogue'].includes(restored.phase) ? restored.phase : 'storefront');
+  const [dialogueIndex, setDialogueIndex] = useState(() => Number.isInteger(restored?.index) ? Math.max(0, Math.min(restored!.index, HISHAM_GREETING.length - 1)) : 0);
+  const advanceDialogue = (index: number) => { writeSceneProgress('arrival', { phase: 'dialogue', index }); setDialogueIndex(index); };
+  useEffect(() => { writeSceneProgress('arrival', { phase, index: dialogueIndex }); }, [phase, dialogueIndex]);
 
   const ambientScene: SceneAudioKey = phase === "storefront" ? "storefront_street" : "store_interior";
   useSceneAmbience(ambientScene);
@@ -181,7 +185,7 @@ export const ArrivalScreen = ({ onComplete }: ArrivalScreenProps) => {
             isActive={true}
             onComplete={onComplete}
             currentIndex={dialogueIndex}
-            onIndexChange={setDialogueIndex}
+            onIndexChange={advanceDialogue}
             playerName={profile?.display_name || "محلل"}
             playerGender={g}
           />

@@ -42,6 +42,7 @@ import { PauseOverlay } from "@/components/game/PauseOverlay";
 import { TimeUpScreen } from "@/components/game/screens/TimeUpScreen";
 import { AnalystBrandIntroScreen } from "@/components/game/AnalystBrandIntroScreen";
 import { PlayerSettingsPanel } from "@/components/game/PlayerSettingsPanel";
+import { PlatformGameControls } from "@/components/game/PlatformGameControls";
 import { useGamePlatformExit } from "@/lib/useGamePlatformExit";
 import { PFGameProvider, usePFGame } from "@/contexts/PFGameContext";
 import { ScreenTransition } from "@/components/game/ScreenTransition";
@@ -61,8 +62,7 @@ type Screen =
   | "mansour-receives"
   | "incoming-call"
   | "phone-call"
-  | "result"
-  | "replay-briefing";
+  | "result";
 
 /** Reads the saved round once per mount, reconciling it with the time challenge. */
 function bootRound(uid: string) {
@@ -70,10 +70,10 @@ function bootRound(uid: string) {
   const saved = readPFGameSnapshot(uid);
   let challenge = readTimeChallenge(uid);
   if (saved && !challenge && !saved.gameState.framingSubmitted) challenge = adoptLegacyRound(uid);
-  const resumable = !!saved && saved.screen !== "result";
+  const resumable = !!saved && saved.screen !== "result" && !!challenge;
   // Restored rounds wait for "متابعة اللعب" — nothing plays before the player's tap.
   if (resumable) { pauseGame(); pauseTimeChallenge(uid); }
-  return { saved, resumable };
+  return { saved, resumable, orphaned: !saved && !!challenge };
 }
 
 const GameContent = () => {
@@ -82,7 +82,8 @@ const GameContent = () => {
   const { user } = useAuth();
   const uid = user?.id ?? "";
   const introStorageKey = `the-analyst-brand-intro-seen:${uid}`;
-  const [{ saved }] = useState(() => bootRound(uid));
+  const [{ saved, orphaned }] = useState(() => bootRound(uid));
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
     return saved?.screen ?? "company-briefing";
@@ -99,7 +100,7 @@ const GameContent = () => {
     () => { try { return localStorage.getItem(challengeStorageKey(uid)); } catch { return null; } },
   );
   const challenge = challengeRaw ? readTimeChallenge(uid) : null;
-  const expired = challenge?.status === "expired";
+  const expired = !showBrandIntro && challenge?.status === "expired";
 
   // ---- Admin statistics: read-only observers that never change the round ----
   const statRound = challenge?.roundId;
@@ -108,7 +109,7 @@ const GameContent = () => {
     return c ? TIME_CHALLENGE_DURATION_MS - remainingMs(c) : undefined;
   }, [uid]);
   useEffect(() => {
-    if (!statRound || showBrandIntro || expired || currentScreen === "replay-briefing") return;
+    if (!statRound || showBrandIntro || expired) return;
     trackRound(uid, { game: "problem-framing", round_id: statRound, type: "stage", stage: currentScreen, active_ms: pfActiveMs() });
   }, [uid, statRound, currentScreen, showBrandIntro, expired, pfActiveMs]);
   useEffect(() => {
@@ -159,12 +160,12 @@ const GameContent = () => {
     return screen as PFScreen;
   }, [uid]);
 
-  const latest = useRef({ currentScreen, pfState, showBrandIntro, expired });
-  latest.current = { currentScreen, pfState, showBrandIntro, expired };
+  const latest = useRef({ currentScreen, pfState, showBrandIntro, expired, transitioning });
+  latest.current = { currentScreen, pfState, showBrandIntro, expired, transitioning };
 
   const saveNow = useCallback(() => {
     const l = latest.current;
-    if (l.expired || l.showBrandIntro || l.currentScreen === "replay-briefing" || l.pfState.restartFromBeginning) return;
+    if (l.expired || l.showBrandIntro || l.transitioning || l.pfState.restartFromBeginning) return;
     writePFGameSnapshot(uid, effectiveScreen(l.currentScreen, l.pfState), l.pfState, readTimeChallenge(uid)?.roundId);
   }, [uid, effectiveScreen]);
 
@@ -181,7 +182,7 @@ const GameContent = () => {
   }, [uid, pfActiveMs]);
   const [resetVersion, setResetVersion] = useState(0);
 
-  useEffect(() => { saveNow(); }, [currentScreen, showBrandIntro, pfState, expired, saveNow]);
+  useEffect(() => { if (!transitioning) saveNow(); }, [currentScreen, showBrandIntro, pfState, expired, transitioning, saveNow]);
 
   // ---- Pause: page hidden, app switched, screen locked, route left ----
   const pausable = !showBrandIntro && !expired && currentScreen !== "result";
@@ -242,7 +243,6 @@ const GameContent = () => {
   // start downloading the next screen's images and audio so transitions
   // never show half-loaded media.
   useEffect(() => {
-    if (currentScreen === "replay-briefing") return;
     const next = getNextScreen(currentScreen as keyof typeof SCREEN_ASSETS);
     if (!next) return;
     const group = SCREEN_ASSETS[next];
@@ -344,11 +344,10 @@ const GameContent = () => {
     [navigateWithTransition]
   );
 
-  const handleReplayBriefing = useCallback(() => {
-    setCurrentScreen("replay-briefing");
-  }, []);
-
   const handleResetProgress = useCallback(() => {
+    // Restart is allowed from the paused settings sheet; abandon the old scene's queued work.
+    discardPausedWork(true);
+    resumeGame();
     navigateWithTransition("company-briefing", {
       reset: true,
       clearStorage: true,
@@ -363,13 +362,15 @@ const GameContent = () => {
     );
   }
 
-  const showSettings = currentScreen !== "replay-briefing" && !showBrandIntro;
-  const showTimer = !showBrandIntro && challenge?.status === "active" && currentScreen !== "replay-briefing";
-  const showTimeline = !showBrandIntro && !["company-briefing", "replay-briefing", "result"].includes(currentScreen);
+  const showSettings = !showBrandIntro && currentScreen !== 'result';
+  const showTimer = !showBrandIntro && challenge?.status === "active";
+  const showTimeline = !showBrandIntro && !["company-briefing", "result"].includes(currentScreen);
 
   return (
     <div className="game-surface min-h-screen bg-background">
       <ScreenTransition isActive={transitioning} />
+
+      {orphaned && showBrandIntro && <div role="status" className="fixed inset-x-4 top-20 z-50 mx-auto max-w-lg rounded-lg border border-amber-500 bg-game-paper p-3 text-center text-game-ink">تعذّر استعادة الجولة السابقة لأن بيانات المشهد غير مكتملة. بدء جولة جديدة سيبدأ مؤقّتًا جديدًا.</div>}
 
       {showTimeline && <ProgressTimeline currentScreen={currentScreen} />}
 
@@ -379,13 +380,8 @@ const GameContent = () => {
         <PauseOverlay onContinue={handleContinue} onExit={exitGame} updatePending={updatePending && !stale} onUpdate={handleUpdateNow} />
       )}
 
-      {showSettings && (
-        <PlayerSettingsPanel
-          onReplayBriefing={handleReplayBriefing}
-          onResetProgress={handleResetProgress}
-          onExit={exitGame}
-        />
-      )}
+      <PlatformGameControls onHome={exitGame} onPause={doPause} onSettings={() => { doPause(); setSettingsOpen(true); }} canPause={pausable && !paused} canSettings={showSettings} />
+      <PlayerSettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} onResetProgress={handleResetProgress} />
 
       <div key={`${currentScreen}-${resetVersion}`}>
         {showBrandIntro && currentScreen === "company-briefing" && (
@@ -394,16 +390,6 @@ const GameContent = () => {
 
         {!showBrandIntro && currentScreen === "company-briefing" && (
           <CompanyBriefingScreen onComplete={() => handleNavigate("travel")} />
-        )}
-
-        {currentScreen === "replay-briefing" && (
-          <CompanyBriefingScreen
-            onComplete={() => {
-              const previous = readPFGameSnapshot(uid);
-              setCurrentScreen(previous?.screen ?? "company-briefing");
-            }}
-            isReviewMode
-          />
         )}
 
         {currentScreen === "travel" && (
