@@ -82,7 +82,7 @@ export default function Landing() {
     </section>
     <footer className="mx-auto max-w-7xl px-5 py-5 sm:px-8">
       <div className="flex flex-wrap items-center justify-between gap-4"><img src={analystLockup} alt="The Analyst" className="h-10 w-auto" /><Link to="/plans" className="text-sm font-bold text-primary">استعرض الخطط</Link><div dir="ltr" className="flex items-center gap-3"><span className="text-xs text-muted-foreground">An experience by IMP</span><img src="/imp-footer-logo.png" alt="IMP" className="h-9 w-auto" /></div></div>
-      <Link to="/privacy" className="mt-3 inline-block text-xs text-primary underline">سياسة الخصوصية</Link>
+      <div className="mt-3 flex gap-4"><Link to="/privacy" className="text-xs text-primary underline">سياسة الخصوصية</Link><Link to="/terms" className="text-xs text-primary underline">الشروط والأحكام وسياسة الدفع</Link></div>
     </footer>
   </div>;
 }

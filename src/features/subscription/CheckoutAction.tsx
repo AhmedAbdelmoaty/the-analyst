@@ -31,5 +31,6 @@ export default function CheckoutAction() {
       {loading ? "جاري تجهيز الدفع..." : error ? "إعادة المحاولة" : "المتابعة للدفع"}
     </Button>
     <p id="payment-status" role="status" className="mt-3 text-sm font-semibold text-primary">{!PAYMENT_UI_ENABLED ? "الاشتراك المدفوع متاح قريبًا" : error ? "تعذر بدء الدفع. حاول مرة أخرى؛ لو دفعت بالفعل، راجع صفحة اشتراكك." : "دفع سنوي لمرة واحدة، والتجديد باختيارك."}</p>
+    <p className="mt-2 text-xs text-muted-foreground">بالمتابعة للدفع، أنت توافق على <a href="/terms" target="_blank" rel="noopener" className="text-primary underline">الشروط والأحكام وسياسة الاسترجاع</a>.</p>
   </form>;
 }
