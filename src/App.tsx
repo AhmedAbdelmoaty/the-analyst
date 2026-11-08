@@ -14,6 +14,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminBoard from "./pages/AdminBoard";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import VisitTracker from "@/components/analytics/VisitTracker";
 import GaPageViews from "@/components/analytics/GaPageViews";
 import CanonicalLink from "@/components/analytics/CanonicalLink";
@@ -64,6 +65,7 @@ const App = () => (
             <Route path="/signup" element={<Landing />} />
             <Route path="/forgot-password" element={<Landing />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="/app" element={<AppEntry />} />
             <Route path="/plans" element={<PlanChoice />} />
             <Route path="/plans/choose" element={<Navigate to="/plans" replace />} />
