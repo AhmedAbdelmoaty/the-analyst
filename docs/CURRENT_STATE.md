@@ -23,7 +23,7 @@ Paymob foundation exists (DB tables/RPCs and server functions reported deployed)
 
 ## Saves and limitations
 - Game progress is browser localStorage per user (does not sync across devices). Problem Framing also submits completion to the backend.
-- Profit Paradox is implemented in source as a five-level React game with staged character/report/decision scenes, interactive margin and revenue-mix charts, win/loss decision endings, a personal three-choice learning review, and a local per-user checkpoint. No backend changes; it is not published.
+- Profit Paradox is implemented in source as a five-level React game with automatic focus shifts within office scenes, shuffled choice cards per round, interactive margin and revenue-mix charts, win/loss decision endings, a personal three-choice learning review, and a local per-user checkpoint. No backend changes; it is not published.
 - «أداء الفريق» has no saved progress and no automated tests yet.
 - Server evaluators trust client-submitted evidence.
 - Problem Framing now uses compact shared Home/Pause/Settings controls, game-only settings, and explicit handling when its saved checkpoint and timer cannot be reconciled. The office replay action was removed. Its existing per-user save keys remain unchanged.

@@ -1,6 +1,7 @@
 export type Month = 'jan' | 'feb';
 export type Product = 'premium' | 'basic';
 export type Choice = 'A' | 'B' | 'C' | 'D';
+export type Question = 'q1' | 'q2' | 'q3';
 export type RevenueKey = `${Month}-${Product}`;
 
 // The only financial inputs. Everything displayed in the game is derived from these.
@@ -40,8 +41,19 @@ export interface GameState {
   q3: Choice | null;
   accepted: boolean;
   month: Month;
+  choiceOrder: Record<Question, Choice[]>;
 }
-export const initialState = (): GameState => ({ level: 1, q1: null, q2: null, focused: null, revenueKeys: [], q3: null, accepted: false, month: 'jan' });
+const choices: Choice[] = ['A', 'B', 'C', 'D'];
+export function shuffledChoices(previous?: Choice[]): Choice[] {
+  const order = [...choices];
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  if (previous && order.every((choice, index) => choice === previous[index])) order.push(order.shift()!);
+  return order;
+}
+export const initialState = (previous?: GameState['choiceOrder']): GameState => ({ level: 1, q1: null, q2: null, focused: null, revenueKeys: [], q3: null, accepted: false, month: 'jan', choiceOrder: { q1: shuffledChoices(previous?.q1), q2: shuffledChoices(previous?.q2), q3: shuffledChoices(previous?.q3) } });
 export const mixRevealed = (state: GameState) => REVENUE_KEYS.every(key => state.revenueKeys.includes(key));
 
 export type Action =
@@ -70,6 +82,6 @@ export function gameReducer(state: GameState, action: Action): GameState {
       return ready ? { ...state, level: (state.level + 1) as GameState['level'] } : state;
     }
     case 'back': return state.level > 1 ? { ...state, level: (state.level - 1) as GameState['level'] } : state;
-    case 'replay': return initialState();
+    case 'replay': return initialState(state.choiceOrder);
   }
 }

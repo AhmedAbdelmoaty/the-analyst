@@ -19,6 +19,16 @@ test('the case figures and weighted margins stay exact', () => {
   assert.ok(Math.abs(weightedMargin('feb') - .125) < 1e-12);
 });
 
+test('choice cards reshuffle between rounds without changing their semantic answers', () => {
+  const first = initialState();
+  const second = gameReducer(first, { type: 'replay' });
+  for (const question of ['q1', 'q2', 'q3'] as const) {
+    assert.deepEqual([...first.choiceOrder[question]].sort(), ['A', 'B', 'C', 'D']);
+    assert.deepEqual([...second.choiceOrder[question]].sort(), ['A', 'B', 'C', 'D']);
+    assert.notDeepEqual(second.choiceOrder[question], first.choiceOrder[question]);
+  }
+});
+
 test('every original Q1 answer advances, Q2 is recorded once and never blocks review', () => {
   for (const choice of ['A', 'B', 'C', 'D'] as Choice[]) {
     let state = gameReducer(initialState(), { type: 'q1', choice });
