@@ -37,6 +37,7 @@ export default function PlanChoice() {
           <button className="platform-button primary" disabled={loading} onClick={() => choose('annual')}>اختار السنوية<ArrowLeft /></button>
         </section>
       </div>
+      <p className="platform-muted" style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '.85rem' }}><Link to="/terms" style={{ textDecoration: 'underline' }}>الشروط والأحكام وسياسة الدفع والاسترجاع</Link></p>
     </main>
   </div></div>;
 }
