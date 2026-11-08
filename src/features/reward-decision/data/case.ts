@@ -13,7 +13,7 @@ export const TEAMS: Record<TeamId, { name: string; members: { id: string; name: 
   mahmoud: { name: 'فريق محمود', members: [['b01','أحمد',85],['b02','إيهاب',86],['b03','رامي',87],['b04','سامح',87],['b05','شادي',88],['b06','عمر',88],['b07','فادي',89],['b08','محمد',89],['b09','هاني',90],['b10','يوسف',91]].map(([id,name,value]) => ({ id: String(id), name: String(name), value: Number(value) })) },
 };
 
-export const POLICY = 'يُعتبر الموظف محققًا لمعيار الأداء عند وصول نسبة إنجازه إلى 85% أو أكثر من مستهدفه خلال فترة التقييم.';
+export const POLICY = 'يُعتبر الموظف محققًا لمعيار الأداء عند وصول نسبة إنجازه إلى 85% أو أكثر من التارجت بتاعه خلال فترة التقييم.';
 
 export const DOCUMENTS: Record<DocumentId, { title: string; source: string }> = {
   'sales-summary': { title: 'تقرير المبيعات المجمع', source: 'إدارة المبيعات' },
