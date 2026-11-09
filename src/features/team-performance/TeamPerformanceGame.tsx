@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { PlatformGameControls } from '@/components/game/PlatformGameControls';
 import analyst from './assets/analyst.png.asset.json';
 import manager from './assets/manager.png.asset.json';
 
@@ -21,6 +22,25 @@ const pct = (v: readonly [number, number] | readonly number[]) => Math.round((v[
 
 type Phase = 'intro' | 'first' | 'inspect' | 'level' | 'why' | 'final' | 'result';
 type Option = { id: string; text: string; good: boolean; feedback: string };
+type OptionGroup = 'first' | 'level' | 'why' | 'final';
+type SavedRun = { version: 1; phase: Phase; score: number; pickedId: string | null; won: boolean; levelOk: boolean; order: Record<OptionGroup, string[]> };
+const saveKey = (userId: string) => `the-analyst:team-performance:v1:${encodeURIComponent(userId)}`;
+const optionGroups = () => ({ first: FIRST, level: LEVEL, why: WHY, final: FINAL });
+function loadRun(userId: string): SavedRun | null {
+  try {
+    const value = JSON.parse(localStorage.getItem(saveKey(userId)) || 'null') as SavedRun | null;
+    if (!value || value.version !== 1 || !['intro', 'first', 'inspect', 'level', 'why', 'final', 'result'].includes(value.phase)
+      || !Number.isInteger(value.score) || value.score < 0 || value.score > 100 || typeof value.won !== 'boolean' || typeof value.levelOk !== 'boolean') return null;
+    const groups = optionGroups();
+    for (const key of Object.keys(groups) as OptionGroup[]) {
+      const expected = groups[key].map(option => option.id);
+      if (!Array.isArray(value.order?.[key]) || value.order[key].length !== expected.length || !expected.every(id => value.order[key].includes(id))) return null;
+    }
+    const current = groups[value.phase as OptionGroup];
+    if (value.pickedId !== null && (!current || !current.some(option => option.id === value.pickedId))) return null;
+    return value;
+  } catch { return null; }
+}
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -112,26 +132,47 @@ function Choices({ options, onPick, picked }: { options: Option[]; onPick: (o: O
   );
 }
 
-export default function TeamPerformanceGame() {
-  const [phase, setPhase] = useState<Phase>('intro');
-  const [score, setScore] = useState(0);
-  const [picked, setPicked] = useState<Option | null>(null);
-  const [won, setWon] = useState(false);
+export default function TeamPerformanceGame({ userId }: { userId: string }) {
+  const navigate = useNavigate();
+  const [saved] = useState(() => loadRun(userId));
+  const [phase, setPhase] = useState<Phase>(saved?.phase ?? 'intro');
+  const [score, setScore] = useState(saved?.score ?? 0);
+  const [picked, setPicked] = useState<Option | null>(() => saved?.pickedId ? optionGroups()[saved.phase as OptionGroup]?.find(option => option.id === saved.pickedId) ?? null : null);
+  const [won, setWon] = useState(saved?.won ?? false);
   const [muted, setMuted] = useState(() => localStorage.getItem('tp-muted') === '1');
   const [pop, setPop] = useState<string | null>(null);
-  const [levelOk, setLevelOk] = useState(false);
-  const [round, setRound] = useState(0);
-  const opts = useMemo(() => ({ first: shuffle(FIRST), level: shuffle(LEVEL), why: shuffle(WHY), final: shuffle(FINAL) }), [round]);
+  const [levelOk, setLevelOk] = useState(saved?.levelOk ?? false);
+  const [opts, setOpts] = useState(() => {
+    const groups = optionGroups();
+    return Object.fromEntries((Object.keys(groups) as OptionGroup[]).map(key => [key, saved ? saved.order[key].map(id => groups[key].find(option => option.id === id)!) : shuffle(groups[key])])) as Record<OptionGroup, Option[]>;
+  });
+  const [paused, setPaused] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
+  const pendingTimers = useRef<number[]>([]);
+  const later = (callback: () => void, delay: number) => {
+    const id = window.setTimeout(() => { pendingTimers.current = pendingTimers.current.filter(timer => timer !== id); callback(); }, delay);
+    pendingTimers.current.push(id);
+  };
+  useEffect(() => {
+    if (paused) { pendingTimers.current.forEach(window.clearTimeout); pendingTimers.current = []; setPop(null); }
+  }, [paused]);
+  useEffect(() => () => { pendingTimers.current.forEach(window.clearTimeout); }, []);
 
   useEffect(() => { localStorage.setItem('tp-muted', muted ? '1' : '0'); }, [muted]);
   useEffect(() => { topRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); }, [phase]);
+  const persist = () => {
+    const order = Object.fromEntries((Object.keys(opts) as OptionGroup[]).map(key => [key, opts[key].map(option => option.id)])) as Record<OptionGroup, string[]>;
+    try { localStorage.setItem(saveKey(userId), JSON.stringify({ version: 1, phase, score, pickedId: picked?.id ?? null, won, levelOk, order } satisfies SavedRun)); } catch { /* Keep the current run playable when storage is unavailable. */ }
+  };
+  useEffect(persist, [userId, phase, score, picked, won, levelOk, opts]);
+  useEffect(() => { const onHide = () => { if (document.hidden) setPaused(true); }; document.addEventListener('visibilitychange', onHide); return () => document.removeEventListener('visibilitychange', onHide); }, []);
 
   const go = (p: Phase) => { play('page-turn', muted); setPicked(null); setPhase(p); };
   const pick = (o: Option, points: number) => {
     setPicked(o);
     if (phase === 'level') setLevelOk(o.good);
-    if (o.good) { setScore(s => s + points); play('pop', muted); setPop(`+${points}`); setTimeout(() => setPop(null), 900); }
+    if (o.good) { setScore(s => s + points); play('pop', muted); setPop(`+${points}`); later(() => setPop(null), 900); }
     else play('wrong', muted);
   };
   // Win = correct final decision AND correct reading of the table (level). Trap mistakes only lower the score.
@@ -141,10 +182,12 @@ export default function TeamPerformanceGame() {
     setScore(final);
     setWon(win);
     play(win ? 'win' : 'lose', muted);
-    if (win) setTimeout(() => play('confettipop', muted), 500);
+    if (win) later(() => play('confettipop', muted), 500);
     setPhase('result');
   };
-  const restart = () => { play('woosh', muted); setScore(0); setPicked(null); setWon(false); setLevelOk(false); setRound(r => r + 1); setPhase('intro'); };
+  const restart = () => { play('woosh', muted); setScore(0); setPicked(null); setWon(false); setLevelOk(false); setOpts({ first: shuffle(FIRST), level: shuffle(LEVEL), why: shuffle(WHY), final: shuffle(FINAL) }); setPhase('intro'); setPaused(false); setSettingsOpen(false); };
+  const confirmRestart = () => { if (phase === 'intro' || phase === 'result' || window.confirm('تبدأ من الأول؟ تقدم الجولة الحالية هيتمسح.')) restart(); };
+  const exit = () => { persist(); navigate('/app'); };
 
   const step = ['intro', 'first', 'inspect', 'level', 'why', 'final', 'result'].indexOf(phase);
 
@@ -152,18 +195,18 @@ export default function TeamPerformanceGame() {
     <div ref={topRef} dir="rtl" className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,#fef3c7,#fde68a_40%,#fb923c)] font-[Cairo,sans-serif] text-slate-900">
       <style>{`@keyframes tp-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes tp-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}@keyframes tp-rise{0%{opacity:0;transform:translateY(0) scale(.6)}30%{opacity:1;transform:translateY(-10px) scale(1.2)}100%{opacity:0;transform:translateY(-50px) scale(1)}}@keyframes tp-confetti{0%{transform:translateY(-10vh) rotate(0)}100%{transform:translateY(110vh) rotate(720deg)}}`}</style>
 
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b-4 border-slate-900 bg-slate-900 px-3 py-2 text-white">
-        <Link to="/app" aria-label="رجوع للألعاب" className="grid h-9 w-9 place-items-center rounded-lg bg-white/10 text-lg hover:bg-white/20">🏠</Link>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b-4 border-slate-900 bg-slate-900 py-3 pr-3 pl-[164px] text-white">
         <div className="hidden text-sm font-black sm:block">⚡ أداء الفريق</div>
         <div className="flex flex-1 justify-center gap-1">
-          {Array.from({ length: 7 }).map((_, i) => <span key={i} className={`h-2 w-6 rounded-full ${i <= step ? 'bg-yellow-400' : 'bg-white/20'}`} />)}
+          {Array.from({ length: 7 }).map((_, i) => <span key={i} className={`h-2 w-2 sm:w-6 rounded-full ${i <= step ? 'bg-yellow-400' : 'bg-white/20'}`} />)}
         </div>
         <div className="relative rounded-lg bg-yellow-400 px-3 py-1 text-sm font-black text-slate-900 tabular-nums">
           {score} نقطة
           {pop && <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-lg font-black text-emerald-300 animate-[tp-rise_.9s_ease-out_forwards]">{pop}</span>}
         </div>
-        <button onClick={() => setMuted(m => !m)} aria-label={muted ? 'تشغيل الصوت' : 'كتم الصوت'} className="rounded-lg bg-white/10 px-2 py-1 text-lg">{muted ? '🔇' : '🔊'}</button>
       </div>
+      <PlatformGameControls onHome={exit} onPause={() => setPaused(true)} onSettings={() => { setPaused(true); setSettingsOpen(true); }} canPause={phase !== 'intro' && phase !== 'result' && !paused} />
+      {paused && <div className="fixed inset-0 z-40 grid place-items-center bg-slate-950/70 p-4" role="dialog" aria-modal="true" aria-label={settingsOpen ? 'إعدادات اللعبة' : 'إيقاف مؤقت'}><div className="w-full max-w-sm space-y-3 rounded-2xl border-4 border-slate-900 bg-amber-100 p-5 text-center shadow-xl"><h2 className="text-xl font-black">{settingsOpen ? 'إعدادات اللعبة' : 'اللعبة متوقفة مؤقتًا'}</h2>{settingsOpen && <><button className="min-h-11 w-full rounded-lg bg-white font-bold" onClick={() => setMuted(value => !value)}>{muted ? 'تشغيل الصوت' : 'كتم الصوت'}</button><button className="min-h-11 w-full rounded-lg bg-white font-bold" onClick={confirmRestart}>ابدأ من جديد</button></>}<button className="min-h-11 w-full rounded-lg bg-slate-900 font-bold text-white" onClick={() => { setSettingsOpen(false); setPaused(false); }}>كمّل اللعب</button><button className="min-h-11 w-full rounded-lg bg-white font-bold" onClick={exit}>العودة إلى الألعاب</button></div></div>}
 
       <div className="mx-auto max-w-2xl space-y-5 p-4 pb-16">
         {phase === 'intro' && (
@@ -241,7 +284,7 @@ export default function TeamPerformanceGame() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <button onClick={restart} className="rounded-2xl border-4 border-slate-900 bg-yellow-400 py-3 text-lg font-black shadow-[4px_4px_0_#0f172a] active:translate-y-1 active:shadow-none">العب تاني ↻</button>
-              <Link to="/app" className="rounded-2xl border-4 border-slate-900 bg-white py-3 text-center text-lg font-black shadow-[4px_4px_0_#0f172a]">كل الألعاب</Link>
+              <button onClick={exit} className="rounded-2xl border-4 border-slate-900 bg-white py-3 text-center text-lg font-black shadow-[4px_4px_0_#0f172a]">كل الألعاب</button>
             </div>
           </div>
         )}

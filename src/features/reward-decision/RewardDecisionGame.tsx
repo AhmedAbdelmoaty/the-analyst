@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGamePlatformExit } from '@/lib/useGamePlatformExit';
+import { PlatformGameControls } from '@/components/game/PlatformGameControls';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { FileText, ClipboardList, NotebookPen, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,7 +51,7 @@ const ROOM_PHASES: RewardRun['phase'][] = ['workbench', 'notebook', 'report'];
 
 export default function RewardDecisionGame() {
   const { user, profile } = useAuth();
-  const { playSound } = useSound();
+  const { playSound, isSoundEnabled, toggleSound, masterVolume, setMasterVolume } = useSound();
   const uid = user?.id ?? '';
   const initial = useRef(inspectRun(uid));
   const [run, setRun] = useState<RewardRun>(() => initial.current.status === 'ok' ? initial.current.run : newRun(uid));
@@ -63,6 +64,7 @@ export default function RewardDecisionGame() {
   const [filePulse, setFilePulse] = useState(false);
   const [documentNotice, setDocumentNotice] = useState(false);
   const [otherTab, setOtherTab] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [storageOk, setStorageOk] = useState(true);
   const runRef = useRef(run); runRef.current = run;
   const saveTimer = useRef<number>();
@@ -182,7 +184,7 @@ export default function RewardDecisionGame() {
     commit(r => ({ ...r, paused: r.phase !== 'cover' && r.phase !== 'debrief' }));
     releaseOwnership();
   });
-  const replay = () => { clearRun(uid); start(); };
+  const replay = () => { setSettingsOpen(false); clearRun(uid); start(); };
   const frozen = run.paused || otherTab;
   useEffect(() => { if (frozen) setFlyingDoc(null); }, [frozen]);
   const sceneKey = resolveScene(run, gender, line);
@@ -202,8 +204,9 @@ export default function RewardDecisionGame() {
   const timer = <CaseTimer read={readTimer} running={!frozen && run.phase !== 'cover' && run.phase !== 'debrief'} />;
   const roomTabs = run.phase !== 'report' && <RoomTabs active={run.phase === 'notebook' ? 'notebook' : 'charts'} notebookLocked={!ready} onCharts={() => { gameSound('click'); commit(r => at(r, 'workbench')); }} onNotebook={() => { gameSound('pageFlip'); commit(r => at(r, 'notebook')); }} />;
   return <MotionConfig reducedMotion={frozen ? 'always' : 'user'}><main className={`rd-root ${frozen ? 'rd-paused' : ''}`} dir="rtl" data-phase={run.phase} data-stage={run.stage} data-scene={sceneKey}>
+    {run.phase === 'cover' && <PlatformGameControls onHome={exit} canPause={false} canSettings={false} />}
     <ScenePlayer sceneKey={sceneKey}>
-      {run.phase !== 'cover' && run.phase !== 'debrief' && <GameHud count={run.collectedDocs.length} pulse={filePulse} phase={run.phase} hideFile={inRoom} timer={timer} onFile={openFile} onPause={() => { gameSound('click'); commit(r => ({ ...r, paused: true })); }} onExit={() => { gameSound('click'); exit(); }} />}
+      {run.phase !== 'cover' && run.phase !== 'debrief' && <GameHud count={run.collectedDocs.length} pulse={filePulse} phase={run.phase} hideFile={inRoom} timer={timer} onFile={openFile} onPause={() => { gameSound('click'); commit(r => ({ ...r, paused: true })); }} onSettings={() => { commit(r => ({ ...r, paused: true })); setSettingsOpen(true); }} onExit={() => { gameSound('click'); exit(); }} />}
       <div className="rd-content"><AnimatePresence mode="wait"><motion.div key={`${inRoom ? 'room' : run.phase}-${inRoom ? '' : run.stage}-${run.endingCall}-${inRoom ? '' : sceneKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35 }}>
         {corrupt && run.phase === 'cover' && <section className="rd-cover"><h1>تعذر استعادة هذه الجولة</h1><span>يمكنك بدء جولة جديدة دون التأثير على حسابك أو اللعبة الأخرى.</span><ActionButton onClick={start}>بداية جديدة</ActionButton></section>}
         {!corrupt && run.phase === 'cover' && <section className="rd-cover"><img src={analystMark} alt="The Analyst" /><p>شركة روّاد للأجهزة الكهربائية</p><h1>قرار التكريم</h1><span>اقرأ المستندات، حلّل النتائج، وابعت تقريرك.</span><ActionButton onClick={start}>ابدأ الآن</ActionButton><img className="rd-imp" src={impLogo} alt="IMP" /></section>}
@@ -232,7 +235,7 @@ export default function RewardDecisionGame() {
     {fileOpen && <CaseFile docs={run.collectedDocs} tools={run.usedTools} submitted={run.submitted} onClose={closeFile} />}
     {focusDoc && <DocumentReader id={focusDoc} onClose={closeDocument} />}
     {otherTab && run.phase !== 'cover' && <OtherTabLayer onTake={takeControl} />}
-    {!otherTab && run.paused && run.phase !== 'cover' && <PauseLayer onContinue={() => commit(r => ({ ...r, paused: false }))} onExit={exit} />}
+    {!otherTab && run.paused && run.phase !== 'cover' && (settingsOpen ? <div className="rd-pause" dir="rtl" role="dialog" aria-modal="true" aria-label="إعدادات اللعبة"><div><h2>إعدادات اللعبة</h2><ActionButton variant="secondary" onClick={() => toggleSound(!isSoundEnabled)}>{isSoundEnabled ? 'كتم الصوت' : 'تشغيل الصوت'}</ActionButton><label className="rd-game-volume">مستوى الصوت <input type="range" min="0" max="1" step="0.05" value={masterVolume} onChange={event => setMasterVolume(Number(event.currentTarget.value))} /></label><ActionButton variant="secondary" onClick={() => { if (window.confirm('تبدأ القضية من الأول؟ تقدم الجولة الحالية هيتمسح.')) replay(); }}>ابدأ من جديد</ActionButton><ActionButton onClick={() => { setSettingsOpen(false); commit(r => ({ ...r, paused: false })); }}>متابعة اللعب</ActionButton><ActionButton variant="quiet" onClick={exit}>العودة إلى الألعاب</ActionButton></div></div> : <PauseLayer onContinue={() => commit(r => ({ ...r, paused: false }))} onExit={exit} />)}
     {!storageOk && <div className="rd-storage-warning">الاستكمال بعد إغلاق الصفحة غير متاح حاليًا.</div>}
   </main></MotionConfig>;
 }

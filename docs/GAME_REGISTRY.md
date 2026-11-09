@@ -45,13 +45,13 @@ Source of truth: `src/features/discovery/catalog.ts` (`GAME_CATALOG`). Hub, land
 ## 6. ملف تحت التحقيق — Investigation File
 - Source: `src/pages/InvestigationFileRoute.tsx` + static iframe `public/investigation-file/` ([handoff](INVESTIGATION_FILE_HANDOFF_AR.md)).
 - Assets: `public/investigation-file/assets/` (employee sprites loaded dynamically), `public/investigation-file/audio/`.
-- Save: per-user localStorage (display progress only).
+- Save: per-user localStorage v1 outcome plus optional scene/interaction checkpoint; older in-progress saves without a checkpoint restart at the introduction.
 - Tests: `node --test tests/investigation-file-integration.test.mjs`, `tests/e2e/investigation-file.spec.ts`.
 
 ## 7. أداء الفريق — Team Performance
 - Source: `src/features/team-performance/`, `src/pages/TeamPerformanceRoute.tsx`.
 - Assets: character images via Lovable asset pointers; sounds reuse `/investigation-file/audio/`, wrong answer uses `/assets/behind-dots/audio/wrong.ogg`.
-- Save: none (session only); mute preference `tp-muted`.
+- Save: per-user localStorage v1 round snapshot (phase, selected answer, score, outcome, option order); mute preference `tp-muted`.
 - Constraints: answers are shuffled each round; a win requires choosing Team B in the final comparison.
 - Tests: none yet.
 

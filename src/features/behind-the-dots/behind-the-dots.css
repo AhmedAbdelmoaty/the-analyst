@@ -1189,3 +1189,7 @@
   .btd-app .btd-main-plot .btd-scatter-svg { max-height: 100%; }
 }
 
+.btd-settings-action { display: flex; min-height: 44px; width: 100%; align-items: center; justify-content: center; gap: 8px; border: 1px solid #e0d5c5; border-radius: 10px; background: #fff; font: inherit; font-weight: 800; color: #3b3048; }
+.btd-settings-action svg { width: 18px; height: 18px; }
+.btd-app .btd-icon-button { min-width: 44px; min-height: 44px; }
+.btd-corner-home { position: fixed; z-index: 40; top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); }

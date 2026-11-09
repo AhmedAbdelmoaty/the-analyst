@@ -1,7 +1,7 @@
 import { records, rate, share, counterfactualRates, originalRates } from './case-data.mjs';
 import { resolveVerdict } from './engine.mjs';
 import { createAudioManager } from './audio.mjs';
-import { beginRun, finishRun, readRun } from './persistence.mjs';
+import { beginRun, finishRun, readRun, saveCheckpoint } from './persistence.mjs';
 
 const $ = id => document.getElementById(id);
 const pct = n => `${(n * 100).toFixed(1).replace('.0', '')}%`;
@@ -17,7 +17,10 @@ const state = {
 };
 const audio = createAudioManager();
 const playerId = window.name || 'guest';
-const sound = (cue = 'button') => audio.play(cue);
+let platformPaused = false;
+const platformEmbedded = window.parent !== window;
+if (platformEmbedded) document.body.classList.add('platform-embedded');
+const sound = (cue = 'button') => { if (!platformPaused) audio.play(cue); };
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const felfelAssets = {
   idle: 'idle', entrance: 'idle', talking: 'idle', thinking: 'inspect', magnifier: 'inspect', hint: 'inspect',
@@ -41,7 +44,9 @@ function reactFelfel(stateName, actor = 'deskFelfel') {
   }
 }
 
+let currentSceneId = 'intro';
 function scene(id) {
+  currentSceneId = id;
   for (const el of document.querySelectorAll('.scene')) el.classList.toggle('hidden', el.id !== id);
   $('hintBtn').classList.toggle('hidden', id !== 'investigation' && id !== 'confrontation');
   if (!$('hintPanel').classList.contains('hidden')) closeHint(true);
@@ -335,10 +340,13 @@ const dialogue = [
   ['المدير المالي', 'اتفضلوا. بس القلم مستني، والشاي قرب يبرد!'],
 ];
 $('nextIntro').addEventListener('click', () => {
-  beginRun(playerId);
+  if (state.introStep === -1) beginRun(playerId);
   state.introStep++;
   if (state.introStep >= dialogue.length) { sound('officeEntry'); scene('investigation'); return; }
   sound('sceneChange');
+  renderIntroStep();
+});
+function renderIntroStep() {
   const [who, words] = dialogue[state.introStep];
   $('introSpeech').classList.remove('speech-idle');
   $('introSpeech').setAttribute('aria-hidden', 'false');
@@ -350,7 +358,7 @@ $('nextIntro').addEventListener('click', () => {
   document.querySelector('.characters').classList.toggle('cfo-speaking', state.introStep !== 1);
   $('introHr').src = state.introStep === 1 ? '/investigation-file/assets/investigation/hr-concerned.png' : '/investigation-file/assets/investigation/hr.png';
   $('nextIntro').textContent = state.introStep === dialogue.length - 1 ? 'افتح التحقيق ←' : 'التالي ←';
-});
+}
 
 function resetMeeting() {
   state.decision = null; state.reason = null;
@@ -461,3 +469,58 @@ updateCards(); updateComparison(); renderHistoricalReadout(); updateMix();
 activateOfficeTab('evidenceTab');
 const savedRun = readRun(playerId);
 if (new URLSearchParams(location.search).get('showResult') === '1' && savedRun.status === 'completed') showEnding(savedRun.outcome, savedRun.failureReason);
+function checkpoint() {
+  if (state.introStep < 0 || currentSceneId === 'ending') return;
+  saveCheckpoint(playerId, { scene: currentSceneId, introStep: state.introStep, selected: [...state.selected], labVisited: state.labVisited, hint: state.hint,
+    decision: state.decision, reason: state.reason, trainedMix: Number($('trainedMix').value), untrainedMix: Number($('untrainedMix').value), tab: $('labTab').getAttribute('aria-selected') === 'true' ? 'lab' : 'evidence' });
+}
+if (savedRun.status === 'in-progress' && savedRun.checkpoint) {
+  const saved = savedRun.checkpoint;
+  state.introStep = saved.introStep;
+  state.selected = [...saved.selected];
+  state.labVisited = saved.labVisited;
+  state.hint = saved.hint;
+  state.decision = saved.decision ?? null;
+  state.reason = saved.reason ?? null;
+  $('trainedMix').value = String(saved.trainedMix);
+  $('untrainedMix').value = String(saved.untrainedMix);
+  updateCards(); updateComparison(); updateMix(); updateHintControl();
+  if (state.introStep >= 0 && state.introStep < dialogue.length) renderIntroStep();
+  if (saved.tab === 'lab' || saved.labVisited) activateOfficeTab(saved.tab === 'lab' ? 'labTab' : 'evidenceTab');
+  if (saved.scene !== 'intro') scene(saved.scene);
+  if (saved.scene === 'confrontation') {
+    document.querySelectorAll('[data-decision]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.decision === state.decision)));
+    document.querySelectorAll('[data-reason]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.reason === state.reason)));
+  }
+}
+function platformState() { const run = readRun(playerId); return { canPause: currentSceneId !== 'intro' && currentSceneId !== 'ending', paused: platformPaused, canSettings: !platformPaused, canRestart: true, progress: run.status === 'completed' ? 'complete' : run.status === 'in-progress' ? run.checkpoint ? 'resumable' : 'unavailable' : 'new' }; }
+function notifyPlatform(type = 'state', id) { if (platformEmbedded) window.parent.postMessage({ channel: 'the-analyst-game', version: 1, type, id, state: platformState() }, location.origin); }
+const settingsDialog = document.createElement('dialog');
+settingsDialog.className = 'platform-settings';
+settingsDialog.setAttribute('aria-label', 'إعدادات اللعبة');
+settingsDialog.innerHTML = '<h2>إعدادات اللعبة</h2><button type="button" data-platform-sound>الصوت</button><button type="button" data-platform-restart>ابدأ من جديد</button><button type="button" data-platform-close>إغلاق</button>';
+document.body.append(settingsDialog);
+const soundSetting = settingsDialog.querySelector('[data-platform-sound]');
+const syncSoundSetting = () => { soundSetting.textContent = audio.isMuted() ? 'تشغيل الصوت' : 'كتم الصوت'; };
+soundSetting.addEventListener('click', () => { $('muteBtn').click(); syncSoundSetting(); });
+settingsDialog.querySelector('[data-platform-restart]').addEventListener('click', () => { if (window.confirm('تبدأ التحقيق من الأول؟')) { beginRun(playerId); location.reload(); } });
+settingsDialog.querySelector('[data-platform-close]').addEventListener('click', () => settingsDialog.close());
+document.addEventListener('click', () => queueMicrotask(() => { checkpoint(); notifyPlatform(); }));
+document.addEventListener('input', checkpoint);
+window.addEventListener('pagehide', checkpoint);
+window.addEventListener('message', event => {
+  if (!platformEmbedded || event.source !== window.parent || event.origin !== location.origin) return;
+  const data = event.data;
+  if (data?.channel !== 'the-analyst-game' || data.version !== 1 || data.type !== 'command' || !Number.isInteger(data.id)) return;
+  switch (data.action) {
+    case 'state': break;
+    case 'pause': platformPaused = true; audio.stop(); document.body.classList.add('platform-paused'); break;
+    case 'resume': platformPaused = false; document.body.classList.remove('platform-paused'); break;
+    case 'settings': syncSoundSetting(); settingsDialog.showModal(); break;
+    case 'restart': if (window.confirm('تبدأ التحقيق من الأول؟')) { beginRun(playerId); location.reload(); } break;
+    case 'prepareExit': checkpoint(); audio.stop(); break;
+    default: return;
+  }
+  notifyPlatform('ack', data.id);
+});
+notifyPlatform();

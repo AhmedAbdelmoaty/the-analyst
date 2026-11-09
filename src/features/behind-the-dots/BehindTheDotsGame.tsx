@@ -24,7 +24,7 @@ function IconButton({ label, onClick, children }: { label: string; onClick: () =
   return <button className="btd-icon-button" type="button" aria-label={label} title={label} onClick={onClick}>{children}</button>;
 }
 
-function GameHeader({ state, time, paused, muted, audioVolumes, onPause, onExit, onMute, onVolumeChange }: { state: GameState; time?: number; paused: boolean; muted: boolean; audioVolumes: Record<AudioBus, number>; onPause: () => void; onExit: () => void; onMute: () => void; onVolumeChange: (bus: AudioBus, value: number) => void }) {
+function GameHeader({ state, time, paused, muted, audioVolumes, onPause, onExit, onMute, onVolumeChange, onRestart }: { state: GameState; time?: number; paused: boolean; muted: boolean; audioVolumes: Record<AudioBus, number>; onPause: () => void; onExit: () => void; onMute: () => void; onVolumeChange: (bus: AudioBus, value: number) => void; onRestart: () => void }) {
   const [audioOpen, setAudioOpen] = useState(false);
   const inChallenge = state.phase === "puzzle" || state.phase === "reveal";
   const timed = inChallenge && !state.practiceAfterCapture;
@@ -41,10 +41,11 @@ function GameHeader({ state, time, paused, muted, audioVolumes, onPause, onExit,
       <div className="btd-hud-tools">
         <IconButton label="العودة إلى الألعاب" onClick={onExit}><House /></IconButton>
         {!paused && <IconButton label="إيقاف مؤقت" onClick={onPause}><Pause /></IconButton>}
-        <IconButton label="إعدادات الصوت" onClick={() => setAudioOpen((open) => !open)}><SlidersHorizontal /></IconButton>
-        <IconButton label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</IconButton>
-        {audioOpen && <div className="btd-sound-panel" aria-label="مستويات الصوت">
+        <IconButton label="إعدادات اللعبة" onClick={() => setAudioOpen((open) => !open)}><SlidersHorizontal /></IconButton>
+        {audioOpen && <div className="btd-sound-panel" aria-label="إعدادات اللعبة">
+          <button type="button" className="btd-settings-action" onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}{muted ? "تشغيل الصوت" : "كتم الصوت"}</button>
           {(["music", "sfx", "ambience"] as const).map((bus) => <label key={bus}>{bus === "music" ? "الموسيقى" : bus === "sfx" ? "المؤثرات" : "أجواء العربية"}<input type="range" name={bus} min="0" max="1" step="0.05" value={audioVolumes[bus]} aria-label={bus === "music" ? "مستوى الموسيقى" : bus === "sfx" ? "مستوى المؤثرات" : "مستوى أجواء العربية"} onChange={(event) => onVolumeChange(bus, Number(event.currentTarget.value))} /></label>)}
+          <button type="button" className="btd-settings-action" onClick={onRestart}><RotateCcw /> ابدأ من جديد</button>
         </div>}
       </div>
     </header>
@@ -364,12 +365,13 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
       <div className="btd-shell">
         <MarketStage mood={worldMood} speaker={speaker} briefingStep={state.phase === "cover" ? -1 : state.phase === "briefing" ? state.briefingStep : undefined} className="btd-world" />
         {state.phase !== "cover" && state.phase !== "debrief" && (
-          <GameHeader state={state} time={state.phase === "reveal" ? settledTime : time} paused={state.paused} muted={meta.muted} audioVolumes={{ music: meta.musicVolume, sfx: meta.sfxVolume, ambience: meta.ambienceVolume }} onPause={() => dispatch({ type: "pause" })} onExit={exitGame} onMute={() => updateMeta({ muted: !meta.muted })} onVolumeChange={(bus, value) => {
+          <GameHeader state={state} time={state.phase === "reveal" ? settledTime : time} paused={state.paused} muted={meta.muted} audioVolumes={{ music: meta.musicVolume, sfx: meta.sfxVolume, ambience: meta.ambienceVolume }} onPause={() => dispatch({ type: "pause" })} onExit={exitGame} onMute={() => updateMeta({ muted: !meta.muted })} onRestart={() => { if (window.confirm("تبدأ من الأول؟ تقدم الجولة الحالية هيتمسح.")) dispatch({ type: "replay" }); }} onVolumeChange={(bus, value) => {
             if (bus === "music") updateMeta({ musicVolume: value });
             else if (bus === "sfx") updateMeta({ sfxVolume: value });
             else updateMeta({ ambienceVolume: value });
           }} />
         )}
+        {(state.phase === "cover" || state.phase === "debrief") && <div className="btd-corner-home"><IconButton label="العودة إلى الألعاب" onClick={exitGame}><House /></IconButton></div>}
 
         {state.phase === "cover" && (
           <section className="btd-cover screen-enter">

@@ -130,3 +130,15 @@ h1{color:#ffedca;text-shadow:0 3px 0 #111a26,0 0 24px rgba(255,190,93,.2)}h2{col
 .live-results h3{color:#ffe0a0}.hint-bubble:after{left:auto;right:-17px;border-left:0;border-right:5px solid #673c20;border-bottom:5px solid #673c20;transform:rotate(-45deg)}
 @media screen and (max-width:700px){.topbar{padding-inline:10px}.brand{white-space:nowrap;font-size:clamp(16px,4vw,20px)}.brand-mark{font-size:24px;margin-left:5px}.hint-bubble:after{left:auto;right:-12px;bottom:45px;width:17px;height:17px;border-width:3px;transform:rotate(-45deg)}}
 .end-card h1{font-size:clamp(27px,3.2vw,40px);line-height:1.25;text-shadow:1px 2px 0 #e4c89e}
+.platform-paused *, .platform-paused *::before, .platform-paused *::after { animation-play-state: paused !important; }
+.platform-embedded #muteBtn { display: none; }
+.platform-embedded .floating-controls { top: calc(max(12px, env(safe-area-inset-top)) + 54px); }
+.platform-settings { width: min(90vw, 350px); border: 3px solid #6f4a2d; border-radius: 16px; padding: 22px; background: #fff8e6; color: #2d261e; box-shadow: 6px 8px 0 #ad8760; }
+.platform-settings::backdrop { background: rgb(13 23 36 / 65%); }
+.platform-settings h2 { margin: 0 0 14px; font-size: 1.3rem; }
+.platform-settings button { display: block; width: 100%; min-height: 44px; margin-top: 9px; border: 2px solid #6f4a2d; border-radius: 9px; background: #ffe49d; font: inherit; font-weight: 700; cursor: pointer; }
+@media (max-width: 700px) {
+  .platform-embedded .desk-heading { display: block; }
+  .platform-embedded .desk-heading h1 { max-width: 100%; font-size: clamp(21px, 5.5vw, 25px); line-height: 1.3; white-space: normal; }
+  .platform-embedded .desk-guide { display: none; }
+}

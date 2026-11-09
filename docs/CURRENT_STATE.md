@@ -28,7 +28,9 @@ Paymob foundation exists (DB tables/RPCs and server functions reported deployed)
 - Server evaluators trust client-submitted evidence.
 - Problem Framing now uses compact shared Home/Pause/Settings controls, game-only settings, and explicit handling when its saved checkpoint and timer cannot be reconciled. The office replay action was removed. Its existing per-user save keys remain unchanged.
 - Problem Framing scene checkpoints now retain dialogue phase and line for the Mansour briefing, VELARO arrival, and ending call. The scene-progress record reads the prior single-scene format; older saves that never recorded a line can only resume at that scene's start.
-- Remaining six games retain their own controls. React games can adapt lifecycle actions directly; iframe games need an origin-checked message bridge before a parent control may claim to pause or restart them.
+- Reward Decision keeps its existing run controller and exact-position save; its HUD now opens game sound and restart settings. Behind the Dots keeps its own timed reducer and audio buses, with a compact settings entry and confirmed restart. Team Performance now saves its per-user round phase, selected answer, score, outcome, and option order locally.
+- Crack the Code, Decision Matrix, and Investigation File remain iframe games. `IframeGameShell` exposes only commands acknowledged by the same-origin game. Crack the Code and Decision Matrix pause their actual timers and narration; Investigation File has no round timer and pauses interactions/animations/audio. The external 3rem return strips were removed from Decision Matrix and Investigation File.
+- Investigation File now stores an optional owner-scoped checkpoint (scene, dialogue position, selections, hints, mix controls, and verdict choices) alongside the prior v1 progress record. Older in-progress records without a checkpoint still open at the introduction; completed outcomes remain intact.
 
 ## Known risks / pending
 - `npm run lint` has pre-existing errors.

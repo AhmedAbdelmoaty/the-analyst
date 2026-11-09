@@ -5,13 +5,13 @@ import test from 'node:test';
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 test('Problem Framing exposes an exit that saves and pauses before returning home', async () => {
-  const [page, settings] = await Promise.all([
+  const [page, controls] = await Promise.all([
     read('src/pages/Index.tsx'),
-    read('src/components/game/PlayerSettingsPanel.tsx'),
+    read('src/components/game/PlatformGameControls.tsx'),
   ]);
   assert.match(page, /useGamePlatformExit\(doPause\)/);
-  assert.match(settings, /onExit/);
-  assert.match(settings, /onClick=\{onExit\}/);
+  assert.match(page, /<PlatformGameControls onHome=\{exitGame\}/);
+  assert.match(controls, /onClick=\{onHome\}/);
 });
 
 test('Behind the Dots exposes exit and pauses briefing typewriter activity', async () => {
@@ -44,6 +44,6 @@ test('Crack the Code manual and hidden pauses require explicit resume', async ()
 
 test('Decision Matrix visibility handling does not restart narration while hidden', async () => {
   const game = await read('public/decision-matrix/app.js');
-  assert.match(game, /function syncSceneVoice\(\)\{\s*if\(document\.hidden\)return;/);
+  assert.match(game, /function syncSceneVoice\(\)\{\s*if\(document\.hidden\|\|platformPaused\)return;/);
   assert.match(game, /visibilitychange',\(\)=>\{if\(document\.hidden\)\{stopVoice\('paused'\)/);
 });

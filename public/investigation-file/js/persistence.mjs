@@ -17,7 +17,17 @@ export function readRun(userId, storage = globalThis.localStorage) {
         ...(value.outcome === 'failure' && validFailureReason ? { failureReason: validFailureReason } : {}),
       };
     }
-    return value.status === 'in-progress' ? { version: 1, status: 'in-progress' } : { status: 'new' };
+    if (value.status === 'in-progress') {
+      const c = value.checkpoint;
+      const valid = c && ['intro', 'investigation', 'confrontation'].includes(c.scene)
+        && Number.isInteger(c.introStep) && c.introStep >= -1 && c.introStep <= 3
+        && Array.isArray(c.selected) && c.selected.length <= 2 && c.selected.every(id => ['jt', 'ju', 'st', 'su'].includes(id))
+        && typeof c.labVisited === 'boolean' && Number.isInteger(c.hint) && c.hint >= 0 && c.hint <= 3
+        && Number.isFinite(c.trainedMix) && c.trainedMix >= 0 && c.trainedMix <= 1000
+        && Number.isFinite(c.untrainedMix) && c.untrainedMix >= 0 && c.untrainedMix <= 1000;
+      return { version: 1, status: 'in-progress', ...(valid ? { checkpoint: c } : {}) };
+    }
+    return { status: 'new' };
   } catch {
     return { status: 'new' };
   }
@@ -30,6 +40,11 @@ function writeRun(userId, value, storage) {
 
 export function beginRun(userId, storage = globalThis.localStorage) {
   writeRun(userId, { version: 1, status: 'in-progress' }, storage);
+}
+
+export function saveCheckpoint(userId, checkpoint, storage = globalThis.localStorage) {
+  if (readRun(userId, storage).status === 'completed') return;
+  writeRun(userId, { version: 1, status: 'in-progress', checkpoint }, storage);
 }
 
 export function finishRun(userId, outcome, storage = globalThis.localStorage, failureReason) {

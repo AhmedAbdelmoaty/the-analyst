@@ -65,5 +65,9 @@ export function createAudioManager() {
     return muted;
   }
 
-  return { play, toggleMuted, isMuted: () => muted };
+  function stop() {
+    for (const pool of players.values()) for (const player of pool) player.pause();
+  }
+
+  return { play, stop, toggleMuted, isMuted: () => muted };
 }

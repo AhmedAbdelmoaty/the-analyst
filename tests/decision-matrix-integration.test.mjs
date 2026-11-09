@@ -57,16 +57,18 @@ test('Decision Matrix preserves an existing account save before writing the repl
 });
 
 test('Decision Matrix stays authenticated and keeps its owner-bound iframe as the catalog grows', async () => {
-  const [app, catalog, route] = await Promise.all([
+  const [app, catalog, route, shell] = await Promise.all([
     readFile(path.join(root, 'src/App.tsx'), 'utf8'),
     readFile(path.join(root, 'src/features/discovery/catalog.ts'), 'utf8'),
     readFile(path.join(root, 'src/pages/DecisionMatrixRoute.tsx'), 'utf8'),
+    readFile(path.join(root, 'src/components/game/IframeGameShell.tsx'), 'utf8'),
   ]);
 
   assert.equal((catalog.match(/\{ id: '/g) ?? []).length, 7);
   assert.match(catalog, /id: 'decision-matrix'.*route: '\/games\/decision-matrix'.*cover: '\/decision-matrix\/assets\/boardroom-cartoon\.jpg'/);
   assert.match(app, /<Route path="\/games\/decision-matrix" element={<RequireProfile><GameGate game="decision-matrix"><DecisionMatrixRoute \/><\/GameGate><\/RequireProfile>} \/>/);
-  assert.match(route, /name=\{user\.id\}/);
+  assert.match(route, /<IframeGameShell userId=\{user\.id\}/);
+  assert.match(shell, /name=\{userId\}/);
   assert.match(route, /src=\{`\/decision-matrix\/index\.html\$\{showResult \? '\?showResult=1' : ''\}`\}/);
-  assert.match(route, /to="\/app"/);
+  assert.match(shell, /navigate\('\/app'\)/);
 });

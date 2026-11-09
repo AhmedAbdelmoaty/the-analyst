@@ -4556,3 +4556,5 @@ dialog.analysis-dialog::backdrop {
 
 /* Recorded dialogue controls */
 .scene-voice-toolbar{display:none !important}.scene-voice-status{display:none !important}.recorded-line-active{border-right:4px solid #a41f30;background:#a41f300c;padding-right:8px}
+.platform-embedded .top-tools > [data-action="settings"] { display: none; }
+@media (max-width: 720px) { .platform-embedded .chapter-track { display: none; } }

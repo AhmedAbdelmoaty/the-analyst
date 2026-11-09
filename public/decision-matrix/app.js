@@ -19,7 +19,11 @@ let state=fresh(),prefs={sound:false,voice:true,motion:!matchMedia('(prefers-red
 const showSavedResult=new URLSearchParams(location.search).get('showResult')==='1';
 try{const p=JSON.parse(localStorage.getItem(PREF));if(p)Object.keys(prefs).forEach(k=>{if(typeof p[k]==='boolean')prefs[k]=p[k];});const s=JSON.parse(localStorage.getItem(KEY));if(window.DM_MEETING.canLoad(s,levels)){state=s;saved=!!s.started;}}catch{}
 window.DM_MEETING.normalizeProgress(state,levels,freshCase);
-let home=true,modal=null,evidenceId=null,typing=null,typedFull='',typingDone=true,toastTimer,audio,returnFocus=null;
+let home=true,modal=null,evidenceId=null,typing=null,typedFull='',typingDone=true,toastTimer,audio,returnFocus=null,platformPaused=false;
+const platformEmbedded=!!window.parent&&window.parent!==window;
+if(platformEmbedded)document.body.classList.add('platform-embedded');
+function platformState(){return {canPause:!home&&c().mode!=='finished',paused:platformPaused,canSettings:!platformPaused,canRestart:true,progress:state.completed.length===levels.length?'complete':state.started?'resumable':'new'}}
+function notifyPlatform(type='state',id){if(platformEmbedded)window.parent.postMessage({channel:'the-analyst-game',version:1,type,id,state:platformState()},location.origin)}
 let lastUserAction=Date.now();
 const voicePlayer=new window.DM_VoicePlayer();
 let voiceStatus='idle',reactionTimer=null,reactionToken=0;
@@ -27,7 +31,7 @@ let sceneVoiceKey='',successVoiceIndex=0;
 const level=()=>levels[state.current.index],c=()=>state.current;
 const recorded=()=>window.DM_LEVEL_VOICES?.[c().index];
 const chapterClip=section=>recorded()?.group(section)[0];
-function persist(){try{const prior=localStorage.getItem(KEY);if(prior!==null&&localStorage.getItem(LEGACY_KEY)===null)localStorage.setItem(LEGACY_KEY,prior);localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem(PREF,JSON.stringify(prefs));saved=state.started;}catch{toast('المتصفح مش سامح بالحفظ. تقدر تكمل الجلسة الحالية.');}}
+function persist(){try{const prior=localStorage.getItem(KEY);if(prior!==null&&localStorage.getItem(LEGACY_KEY)===null)localStorage.setItem(LEGACY_KEY,prior);localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem(PREF,JSON.stringify(prefs));saved=state.started;}catch{toast('المتصفح مش سامح بالحفظ. تقدر تكمل الجلسة الحالية.');}if(typeof notifyPlatform==='function')notifyPlatform()}
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),3300);}
 function tone(type='tap'){if(!prefs.sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.connect(g);g.connect(audio.destination);o.type='sine';o.frequency.value=type==='success'?660:type==='fail'?160:420;g.gain.setValueAtTime(.025,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.15);o.start();o.stop(audio.currentTime+.16);}catch{}}
 function duration(t){return Math.floor(t/60).toString().padStart(2,'0')+':'+(t%60).toString().padStart(2,'0');}
@@ -228,7 +232,7 @@ function introNextLabel(){const l=level(),last=c().line===l.intro.length-1;retur
 function updateIntroNextLabel(){const action=$('[data-action="next"]');if(action)action.innerHTML=introNextLabel();}
 function dialogueView(){const l=level(),[who,text]=l.intro[c().line];return `<section class="dialogue" aria-label="حوار ${characters[who].name}"><div class="dialogue-inner">${avatar(who)}<div><div class="speaker-name">${characters[who].name}<small>${characters[who].role}</small></div><p class="speech" data-say aria-label="${esc(text)}">${esc(text)}</p></div></div><div class="dialogue-actions"><div>${c().line?btn('previous','رجوع','quiet'):''}${btn('skip',l.meeting?'اختصر الاجتماع':'انتقل للتحقيق','quiet')}</div><div class="dialogue-count">${c().line+1} / ${l.intro.length}</div>${btn('next',introNextLabel(),'primary')}</div></section>`;}
 function investigateView(){if(level().meeting)return meetingBar();return `<section class="investigate-bar"><div><div class="eyebrow" style="font-size:9px;margin-bottom:6px">${c().solved?'الربط اكتمل · فاضل القرار':'مرحلة التحقيق'}</div><h2>${c().solved?'الأرقام جاهزة. هتوصي بإيه؟':'اسأل. استكشف. وبعدها اربط.'}</h2><p>${c().solved?'راجع المقارنة وقدم توصيتك لعمر.':'اضغط على الفريق أو اللاب أو التقرير لجمع الأدلة.'}</p></div><div class="bar-actions">${btn('hint',`${icon('bulb')} تلميح`,'secondary')}${btn(c().solved?'decision':'analysis',`${icon('grid')} ${c().solved?'قدم قرارك':'افتح المصفوفة'}`,'primary')}</div></section>`;}
-function typeDialogue(){const node=$('[data-say]');if(!node)return;typedFull=level().intro[c().line][1];typingDone=!prefs.motion;updateIntroNextLabel();if(typingDone)return;node.textContent='';node.classList.add('type-cursor');let n=0;const chars=Array.from(typedFull);typing=setInterval(()=>{if(!node.isConnected){clearInterval(typing);return;}node.textContent=chars.slice(0,++n).join('');if(n>=chars.length)finishTyping();},20);}
+function typeDialogue(){const node=$('[data-say]');if(!node)return;typedFull=level().intro[c().line][1];typingDone=!prefs.motion||platformPaused;updateIntroNextLabel();if(typingDone)return;node.textContent='';node.classList.add('type-cursor');let n=0;const chars=Array.from(typedFull);typing=setInterval(()=>{if(!node.isConnected){clearInterval(typing);return;}node.textContent=chars.slice(0,++n).join('');if(n>=chars.length)finishTyping();},20);}
 function finishTyping(){clearInterval(typing);const node=$('[data-say]');if(node){node.textContent=typedFull;node.classList.remove('type-cursor');}typingDone=true;updateIntroNextLabel();}
 function dialog(title,body,footer='',small=false,eyebrow='مصفوفة القرار',cls=''){
   const currentLevel=level?level():levels[0];
@@ -873,7 +877,7 @@ function settingsView(){
       </div>
     </div>
   </div>`;
-  return dialog('إعدادات اللعبة', body, `${btn('home','شاشة البداية')}${btn('close','حفظ ورجوع','primary')}`, true, 'الإعدادات', 'settings-dialog custom-head');
+  return dialog('إعدادات اللعبة', body, `${btn('reset','ابدأ من جديد')}${btn('close','حفظ ورجوع','primary')}`, true, 'الإعدادات', 'settings-dialog custom-head');
 }
 
 function briefView(){
@@ -960,7 +964,7 @@ function sceneVoiceContext(){
  return null;
 }
 function syncSceneVoice(){
- if(document.hidden)return;
+ if(document.hidden||platformPaused)return;
  if(c().mode==='reaction'&&!home)return;
  const clip=sceneVoiceContext(),key=clip?clip.id+':'+prefs.voice:'';
  if(key===sceneVoiceKey)return;
@@ -979,7 +983,7 @@ function syncSceneVoice(){
 
 function completeSuccessVoice(){stopVoice();if(c().index===levels.length-1){c().mode='finished';persist();render();openModal('finish');}else renderModal();}
 function exportSummary(){const output={title:'حصيلة مصفوفة القرار',createdAt:new Date().toISOString(),completed:state.completed.map(i=>({case:levels[i].title,insight:levels[i].takeaway})),currentCase:level().title,notes:c().notes,reviewCount:state.totalAttempts,hintsUsed:state.totalHints};const blob=new Blob([JSON.stringify(output,null,2)],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='decision-matrix-summary.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('تم تصدير ملخص قراراتك.');}
-document.addEventListener('click',event=>{const target=event.target.closest('[data-action]');if(!target||target.disabled)return;lastUserAction=Date.now();const action=target.dataset.action;
+document.addEventListener('click',event=>{if(platformPaused)return;const target=event.target.closest('[data-action]');if(!target||target.disabled)return;lastUserAction=Date.now();const action=target.dataset.action;
 switch(action){
  case 'start':home=false;state.started=true;persist();render();if(c().mode==='finished')openModal('finish');else if(c().mode==='success')openModal('success');else if(c().mode==='reaction')playReaction();break;
  case 'home':stopVoice();home=true;closeModal();render();break;
@@ -1049,9 +1053,25 @@ switch(action){
  case 'export':exportSummary();break;
 }});
 document.addEventListener('input',event=>{if(event.target.id==='notes'){c().notes=event.target.value.slice(0,5000);persist();}});
-document.addEventListener('keydown',event=>{lastUserAction=Date.now();if(modal||home)return;if((event.key===' '||event.key==='Enter')&&c().mode==='intro'&&!event.target.closest('button,textarea')){event.preventDefault();next();}});
-setInterval(()=>{if(!home&&!modal&&document.visibilityState==='visible'&&Date.now()-lastUserAction<90000&&c().mode!=='finished'){state.elapsed++;const clock=$('[data-clock]');if(clock)clock.textContent=duration(state.elapsed);if(state.elapsed%10===0)persist();}},1000);
+document.addEventListener('keydown',event=>{if(platformPaused)return;lastUserAction=Date.now();if(modal||home)return;if((event.key===' '||event.key==='Enter')&&c().mode==='intro'&&!event.target.closest('button,textarea')){event.preventDefault();next();}});
+setInterval(()=>{if(!platformPaused&&!home&&!modal&&document.visibilityState==='visible'&&Date.now()-lastUserAction<90000&&c().mode!=='finished'){state.elapsed++;const clock=$('[data-clock]');if(clock)clock.textContent=duration(state.elapsed);if(state.elapsed%10===0)persist();}},1000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopVoice('paused');clearInterval(typing);typing=null;} });
 window.addEventListener('beforeunload',()=>{stopVoice();if(state.started)persist();});
 if(showSavedResult&&saved&&state.completed.length>=levels.length){home=false;render();openModal('finish')}else render();
+window.addEventListener('message',event=>{
+ if(!platformEmbedded||event.source!==window.parent||event.origin!==location.origin)return;
+ const data=event.data;
+ if(data?.channel!=='the-analyst-game'||data.version!==1||data.type!=='command'||!Number.isInteger(data.id))return;
+ switch(data.action){
+  case 'state':break;
+  case 'pause':if(!home&&c().mode!=='finished'){platformPaused=true;stopVoice();clearInterval(typing);typing=null;persist();}break;
+  case 'resume':platformPaused=false;lastUserAction=Date.now();render();if(c().mode==='reaction')playReaction();break;
+  case 'settings':if(!platformPaused)openModal('settings');break;
+  case 'restart':if(!platformPaused)openModal('reset');break;
+  case 'prepareExit':stopVoice();clearInterval(typing);typing=null;if(state.started)persist();break;
+  default:return;
+ }
+ notifyPlatform('ack',data.id);
+});
+notifyPlatform();
 })();
