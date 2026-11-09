@@ -64,7 +64,7 @@ test('Decision Matrix stays authenticated and keeps its owner-bound iframe as th
     readFile(path.join(root, 'src/components/game/IframeGameShell.tsx'), 'utf8'),
   ]);
 
-  assert.equal((catalog.match(/\{ id: '/g) ?? []).length, 7);
+  assert.equal((catalog.match(/\{ id: '/g) ?? []).length, 8);
   assert.match(catalog, /id: 'decision-matrix'.*route: '\/games\/decision-matrix'.*cover: '\/decision-matrix\/assets\/boardroom-cartoon\.jpg'/);
   assert.match(app, /<Route path="\/games\/decision-matrix" element={<RequireProfile><GameGate game="decision-matrix"><DecisionMatrixRoute \/><\/GameGate><\/RequireProfile>} \/>/);
   assert.match(route, /<IframeGameShell userId=\{user\.id\}/);
