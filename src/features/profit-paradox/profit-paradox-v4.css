@@ -1,0 +1,174 @@
+/* Full-viewport game presentation. The original stylesheet retains report/chart component rules. */
+.pp-root.pp-v3 {
+  width: 100%; height: 100dvh; min-height: 0; overflow: hidden;
+  background: #d8c7b5;
+}
+.pp-v3 .pp-shell {
+  width: 100%; height: 100%; min-height: 0; margin: 0; border: 0; border-radius: 0;
+  box-shadow: none; background: #eee7dd;
+}
+.pp-v3 .pp-header {
+  position: absolute; z-index: 30; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right));
+  width: auto; height: 48px; min-height: 48px; padding: 4px 8px; gap: 12px;
+  border: 2px solid #203858; border-radius: 15px;
+  background: #fffdf7ed; color: #203858;
+  box-shadow: 0 5px 0 #233959, 0 11px 22px #14213c33; backdrop-filter: blur(10px);
+}
+.pp-v3 .pp-header-title { gap: 6px; }
+.pp-v3 .pp-header-title strong { color: #1c3156; font-size: 13px; direction: rtl; }
+.pp-v3 .pp-header-title small { color: #6b487b; font-size: 10px; margin-top: 1px; }
+.pp-v3 .pp-mark { width: 31px; height: 31px; font-size: 20px; background: #ffc152; border: 1px solid #c48226; box-shadow: 1px 2px 0 #ac6525; }
+.pp-v3 .pp-header-progress { gap: 0; margin: 0; }
+.pp-v3 .pp-header-progress>div { display: flex; gap: 4px; }
+.pp-v3 .pp-header-progress i { width: 12px; height: 8px; border-radius: 4px; background: #b9c1ca; }
+.pp-v3 .pp-header-progress i.is-current { background: #f6b74e; box-shadow: inset 0 0 0 1px #d38b28; }
+.pp-v3 .pp-back {
+  position: static; width: auto; min-width: 44px; min-height: 40px; padding: 0 7px;
+  border: 2px solid #253d5d; border-radius: 10px; background: #eaf0f8; color: #243b5d;
+  font-size: 12px; font-weight: 900; box-shadow: 0 2px 0 #8197ae;
+}
+.pp-v3 .pp-scroll { width: 100%; min-width: 0; height: 100%; overflow-x: hidden; overflow-y: auto; scrollbar-width: thin; }
+.pp-v3 .pp-story {
+  min-height: 100dvh; padding: 74px max(22px, 4vw) 30px; gap: clamp(16px, 3vw, 48px);
+  background: #e9e2d8;
+}
+.pp-v3 .pp-story-room { background: linear-gradient(180deg,#c7c3d7 0 82%,#bca68e 82% 85%,#87664f 85%); }
+.pp-v3 .pp-story-room:before { background: linear-gradient(90deg,transparent 48%,#f8f6ef 48% 52%,transparent 52%),linear-gradient(#8cbfd6,#dcebef 70%,#a8c3ce); }
+.pp-v3 .pp-story-room:after { background: #f1e7d6; box-shadow: 0 0 0 3px #435879,8px 8px 0 #29384b24, inset 0 0 0 15px #f6f0e6; }
+.pp-v3 .pp-story-room .pp-desk { display: none; }
+.pp-v3 .pp-foreground-desk {
+  position: absolute; z-index: 5; left: 0; right: 0; bottom: 10%; height: 15%; pointer-events: none;
+  background: linear-gradient(180deg,#cfab7c 0 15%,#7e543f 15% 29%,#5d3c31 29% 35%,#79523c 35%);
+  border-top: 4px solid #523d3b; box-shadow: 0 -11px 20px #4a31202a;
+  opacity: 0; transition: opacity .4s;
+}
+.pp-v3 .pp-story.focus-0 .pp-foreground-desk { opacity: 1; }
+.pp-v3 .pp-story.focus-0 .pp-story-actor { z-index: 3; }
+.pp-v3 .pp-story.focus-0 .pp-story-actor .pp-actor>img {
+  height: clamp(290px, 58vh, 560px); width: clamp(215px, 27vw, 420px);
+  animation: pp-rise-from-desk .9s cubic-bezier(.15,1.34,.32,1) both;
+  transform-origin: bottom center;
+}
+.pp-v3 .pp-story-actor .pp-speech { z-index: 8; border-radius: 28px 28px 10px 28px; }
+.pp-v3 .pp-dialogue-text { min-height: 2.4em; }
+.pp-v3 .pp-dialogue-text>span { display: inline; font-size: inherit; color: inherit; font-weight: inherit; opacity: 0; transform: translateY(4px); transition: opacity .12s,transform .12s; }
+.pp-v3 .pp-dialogue-text>span.is-visible { opacity: 1; transform: none; }
+.pp-v3 .pp-story.focus-0 .pp-story-actor .pp-speech { animation: pp-bubble-in .35s .55s both; }
+.pp-v3 .pp-story.focus-0 .pp-story-data { opacity: 0; visibility: hidden; }
+.pp-v3 .pp-story.focus-1 .pp-story-data { animation: pp-report-enter .65s cubic-bezier(.16,1,.3,1) both; }
+.pp-v3 .pp-story.focus-2 .pp-story-data { opacity: 1; filter: none; }
+.pp-v3 .pp-story .pp-stage-screen,
+.pp-v3 .pp-story .pp-chart-paper,
+.pp-v3 .pp-decision-context { border: 3px solid #243c5d; border-radius: 16px; box-shadow: 7px 9px 0 #7d5a466b,0 16px 28px #1e2d3e22; background: #fffdf7; }
+.pp-v3 .pp-story .pp-stage-screen { transform: rotate(-.6deg); }
+.pp-v3 .pp-story .pp-stage-screen>span { font-size: clamp(14px,1.5vw,19px); }
+.pp-v3 .pp-story .pp-kpi { background: #f4f6fa; border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
+.pp-v3 .pp-story .pp-kpi+.pp-kpi { border-top: 0; }
+.pp-v3 .pp-story .pp-kpi em { background: #fff; border-radius: 8px; padding: 4px 8px; }
+.pp-v3 .pp-story-choice .pp-choice-board h2 {
+  background: #fffaf0; border: 3px solid #263e60; border-radius: 12px;
+  box-shadow: 3px 4px 0 #b99d78; padding: 8px 16px;
+}
+.pp-v3 .pp-story-choice .pp-choice {
+  border: 2px solid #293e5c; border-radius: 13px; background: #fffdf9;
+  box-shadow: 4px 5px 0 #af9c7d; transform: none;
+}
+.pp-v3 .pp-story-choice .pp-choice:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 5px 8px 0 #af9c7d; }
+.pp-v3 .pp-story-choice .pp-choice:active:not(:disabled) { transform: translateY(2px); box-shadow: 1px 2px 0 #af9c7d; }
+.pp-v3 .pp-story-choice .pp-choice.is-selected { background: #eae0f8; border-color: #6d419b; box-shadow: 4px 5px 0 #6d419b; }
+.pp-v3 .pp-story-choice .pp-letter { background: #eaf1f6; border-color: #253c5b; }
+.pp-v3 .pp-primary { background: linear-gradient(#b75ce0,#7d35b2); color: #fff; border-color: #492376; box-shadow: 0 5px 0 #48216b; }
+.pp-v3 .pp-primary:hover:not(:disabled) { box-shadow: 0 7px 0 #48216b; }
+.pp-v3 .pp-primary:disabled { box-shadow: 0 2px 0 #48216b; }
+.pp-v3 .pp-skip { border-radius: 12px; background: #fffdf7e8; box-shadow: 0 3px 0 #263b57; }
+.pp-v3 .pp-level-three { min-height: 100dvh; padding: 76px max(14px,3vw) 38px; background: linear-gradient(#f3eee6dc,#f3eee6dc),url('/profit-paradox/environments/analyst_office.png') center/cover; }
+.pp-v3 .pp-v3-work .pp-work-heading { padding-top: 0; margin-bottom: 9px; }
+.pp-v3 .pp-work-heading h1 { font-size: clamp(23px,2.3vw,32px); }
+.pp-v3 .pp-workspace { align-items: start; }
+.pp-v3 .pp-report { transform: none; }
+.pp-v3 .pp-workspace .pp-report { max-height: calc(100dvh - 150px); overflow: auto; }
+.pp-v3 .pp-v3-work .pp-work-right { min-height: 0; }
+.pp-v3 .pp-v3-work .pp-work-right>.pp-primary { align-self: stretch; }
+.pp-v3 .pp-builder { background: #e9f2f4; }
+.pp-v3 .pp-builder-head { justify-content: flex-start; }
+.pp-v3 .pp-builder-guide { flex: none; width: 49px; height: 49px; border: 2px solid #314763; border-radius: 50%; background: #f8e8c1; object-fit: cover; object-position: center 15%; box-shadow: 2px 3px 0 #607183; }
+.pp-v3 .pp-builder-head .pp-counter { margin-inline-start: auto; }
+.pp-v3 .pp-mix-slot.is-filled { background: #d9f2e8; }
+.pp-v3 .pp-mix-bar { height: 38px; }
+.pp-v3 .pp-v3-work .pp-discovery { border-color: #5d398c; background: #fcf8ff; box-shadow: 3px 4px 0 #ac92c4; }
+.pp-v3 .pp-level-five { min-height: 100dvh; padding: 0; }
+.pp-v3 .pp-ending-stage { min-height: 100dvh; padding-top: 68px; padding-bottom: max(24px,env(safe-area-inset-bottom)); }
+.pp-v3 .pp-ending-stage img { height: clamp(180px,31vh,300px); animation: pp-rise-from-desk .75s cubic-bezier(.15,1.34,.32,1) both; }
+.pp-v3 .pp-debrief { padding-top: 82px; }
+@keyframes pp-rise-from-desk { 0% { opacity: 0; transform: translateY(90%) scale(.62); } 75% { opacity: 1; transform: translateY(-4%) scale(1.04); } 100% { opacity: 1; transform: none; } }
+@keyframes pp-report-enter { from { opacity: 0; transform: translateY(28px) scale(.92) rotate(-2deg); } to { opacity: 1; transform: none; } }
+@media (max-width: 900px) {
+  .pp-v3 .pp-story { padding-inline: 16px; }
+  .pp-v3 .pp-story.focus-0 .pp-story-actor .pp-actor>img { height: clamp(235px,45vh,390px); width: auto; }
+}
+@media (max-width: 600px) {
+  .pp-v3 .pp-header { width: auto; max-width: calc(100% - 174px); height: 46px; min-height: 46px; right: 9px; top: max(8px,env(safe-area-inset-top)); gap: 5px; padding: 2px 6px; }
+  .pp-v3 .pp-mark { display: none; }
+  .pp-v3 .pp-header-title strong { font-size: 11px; white-space: normal; line-height: 1; }
+  .pp-v3 .pp-header-title small { display: none; }
+  .pp-v3 .pp-header-progress { display: flex; }
+  .pp-v3 .pp-header-progress i { width: 8px; height: 7px; }
+  .pp-v3 .pp-back { position: static; width: 36px; min-width: 36px; min-height: 38px; padding: 0; justify-content: center; }
+  .pp-v3 .pp-back span { display: none; }
+  .pp-v3 .pp-story { min-height: 100dvh; padding: 64px 11px max(14px,env(safe-area-inset-bottom)); gap: 6px; }
+  .pp-v3 .pp-story.focus-0 { height: 100dvh; overflow: hidden; justify-content: center; }
+  .pp-v3 .pp-story.focus-0 .pp-story-actor { height: min(76dvh,610px); width: 100%; }
+  .pp-v3 .pp-story.focus-0 .pp-story-actor .pp-actor { height: 100%; justify-content: center; }
+  .pp-v3 .pp-story.focus-0 .pp-story-actor .pp-actor>img { height: clamp(205px,37dvh,350px); width: auto; max-width: 100%; }
+  .pp-v3 .pp-story.focus-0 .pp-story-actor .pp-speech { width: min(100%,420px); max-width: 420px; min-height: 0; padding: 13px 15px; font-size: clamp(15px,4vw,19px); line-height: 1.55; }
+  .pp-v3 .pp-story.focus-0 .pp-story-data { display: none; }
+  .pp-v3 .pp-foreground-desk { bottom: 18%; height: 18%; }
+  .pp-v3 .pp-story.focus-0 .pp-story-actor { z-index: 6; }
+  .pp-v3 .pp-story.focus-0 .pp-story-actor .pp-actor>img { clip-path: inset(0 0 7%); }
+  .pp-v3 .pp-story.focus-1 .pp-story-actor { display: none; }
+  .pp-v3 .pp-story.focus-1 .pp-story-data { order: 1; margin: auto 0; }
+  .pp-v3 .pp-story.focus-2 .pp-story-actor { display: none; }
+  .pp-v3 .pp-story.focus-2 .pp-story-data { order: 1; margin: 0; }
+  .pp-v3 .pp-story.focus-2 .pp-story-choice { order: 2; }
+  .pp-v3 .pp-story .pp-stage-screen { border-width: 2px; padding: 9px; box-shadow: 3px 4px 0 #9b8369; }
+  .pp-v3 .pp-story .pp-stage-screen>span { font-size: 13px; }
+  .pp-v3 .pp-story .pp-kpi { padding: 6px; margin: 5px 0; }
+  .pp-v3 .pp-story .pp-kpi strong { font-size: 14px; }
+  .pp-v3 .pp-story-choice .pp-choice-board h2 { font-size: 18px; padding: 4px 9px; margin-bottom: 6px; box-shadow: 2px 3px 0 #b99d78; }
+  .pp-v3 .pp-story-choice .pp-choice { font-size: clamp(12px,3.15vw,14px); min-height: 51px; padding: 5px 8px; line-height: 1.45; box-shadow: 2px 3px 0 #af9c7d; }
+  .pp-v3 .pp-story-choice .pp-choices { gap: 7px; }
+  .pp-v3 .pp-story .pp-chart-paper { padding: 9px; box-shadow: 3px 4px 0 #9b8369; }
+  .pp-v3 .pp-story .pp-margin-chart { height: clamp(135px,21dvh,190px); }
+  .pp-v3 .pp-decision-context { box-shadow: 3px 4px 0 #9b8369; }
+  .pp-v3 .pp-level-three { padding: 66px 9px max(22px,env(safe-area-inset-bottom)); }
+  .pp-v3 .pp-work-heading p { font-size: 11px; line-height: 1.3; }
+  .pp-v3 .pp-work-tabs { margin: 7px 0; }
+  .pp-v3 .pp-work-tabs button { min-height: 44px; font-size: 12px; }
+  .pp-v3 .pp-report { padding: 9px; }
+  .pp-v3 .pp-workspace .pp-report { max-height: calc(100dvh - 207px); }
+  .pp-v3 .pp-month-tabs { display: none; }
+  .pp-v3 .pp-report-columns,.pp-v3 .pp-report-row { grid-template-columns: minmax(90px,1fr) minmax(0,2fr); }
+  .pp-v3 .pp-month-values { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 3px; }
+  .pp-v3 .pp-month-values>*:not(.is-active-month) { display: block; }
+  .pp-v3 .pp-report-columns { font-size: 11px; }
+  .pp-v3 .pp-report-row { font-size: 10px; }
+  .pp-v3 .pp-report-cell { font-size: 10px; }
+  .pp-v3 .pp-report-cell.pp-revenue-cell { min-height: 44px; }
+  .pp-v3 .pp-v3-work .pp-work-right>.pp-primary { position: sticky; bottom: max(10px,env(safe-area-inset-bottom)); z-index: 10; margin: 10px 0 0; }
+  .pp-v3 .pp-v3-work .pp-work-right { padding-bottom: 10px; }
+  .pp-v3 .pp-ending-stage { gap: 9px; padding-top: 64px; }
+  .pp-v3 .pp-ending-stage img { height: clamp(170px,27dvh,240px); }
+  .pp-v3 .pp-ending-stage small { font-size: 13px; line-height: 1.5; }
+  .pp-v3 .pp-debrief { padding-top: 70px; }
+}
+@media (max-width: 380px) {
+  .pp-v3 .pp-header-title { display: none; }
+  .pp-v3 .pp-story.focus-2 .pp-story-data { max-height: 160px; overflow: hidden; }
+  .pp-v3 .pp-report-row>span { font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-v3 .pp-story-actor .pp-actor>img,
+  .pp-v3 .pp-story .pp-story-data,
+  .pp-v3 .pp-ending-stage img { animation: none !important; }
+  .pp-v3 .pp-dialogue-text>span { transition: none; }
+}

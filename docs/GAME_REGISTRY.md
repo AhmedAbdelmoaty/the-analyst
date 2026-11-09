@@ -57,7 +57,7 @@ Source of truth: `src/features/discovery/catalog.ts` (`GAME_CATALOG`). Hub, land
 
 ## 8. مفارقة الربح — The Profit Paradox
 - Source: `src/features/profit-paradox/`, `src/pages/ProfitParadoxRoute.tsx`.
-- Assets: user-supplied character poses and office backgrounds in `public/profit-paradox/`; charts and report are live UI.
+- Assets: user-supplied character poses plus four matching edited expressions in `public/profit-paradox/characters/`; office scene and reference-inspired controls are code-native UI, and charts/report use live data. Asset origin is recorded beside the sprites.
 - Save: separate per-user localStorage checkpoint (`profit-paradox-v1`) and mute preference (`pp-muted`); no backend scoring or entitlement changes.
 - Tests: `tests/profit-paradox.test.mts`.
 

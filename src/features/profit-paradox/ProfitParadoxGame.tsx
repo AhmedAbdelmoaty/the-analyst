@@ -4,8 +4,13 @@ import { ArrowLeft, ArrowRight, Check, RotateCcw, Volume2, VolumeX, X } from 'lu
 import { PlatformGameControls } from '@/components/game/PlatformGameControls';
 import { Choice, GameState, Month, MONTHS, PRODUCTS, Product, Question, REVENUE_KEYS, RevenueKey, SOURCE, change, companyMetrics, gameReducer, initialState, mixRevealed, productMetrics, revenueShare, weightedMargin } from './model';
 import './profit-paradox.css';
+import './profit-paradox-v4.css';
 
 const ASSETS = '/profit-paradox/';
+const PORTRAITS = {
+  ceo: { neutral: 'ceo_neutral.png', surprised: 'ceo_surprised.png', approved: 'ceo_approved.png', thinking: 'ceo_thinking_v2.png', loss: 'ceo_loss_v2.png' },
+  sara: { neutral: 'sara_neutral.png', surprised: 'sara_surprised.png', explaining: 'sara_explaining.png', thinking: 'sara_thinking_v2.png', aha: 'sara_aha_v2.png' },
+} as const;
 const LABELS = { jan: 'يناير', feb: 'فبراير', premium: 'Premium', basic: 'Basic', total: 'إجمالي الشركة' } as const;
 const CHOICES: Choice[] = ['A', 'B', 'C', 'D'];
 const QUESTIONS = {
@@ -47,6 +52,29 @@ const LESSONS = [
 const cash = (value: number) => `$${value.toLocaleString('en-US')}`;
 const pct = (value: number, precise = false) => `${(value * 100).toLocaleString('en-US', { maximumFractionDigits: precise ? 1 : 0 })}%`;
 const savedKey = (userId: string) => `profit-paradox-v2:${userId}`;
+let toneContext: AudioContext | null = null;
+
+function playBoardTone(reveal: boolean) {
+  try {
+    toneContext ??= new AudioContext();
+    if (toneContext.state === 'suspended') void toneContext.resume();
+    const now = toneContext.currentTime;
+    const notes = reveal ? [392, 523, 659] : [360];
+    notes.forEach((frequency, index) => {
+      const start = now + index * (reveal ? .085 : 0);
+      const oscillator = toneContext!.createOscillator();
+      const gain = toneContext!.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(.0001, start);
+      gain.gain.exponentialRampToValueAtTime(reveal ? .035 : .022, start + .018);
+      gain.gain.exponentialRampToValueAtTime(.0001, start + (reveal ? .24 : .1));
+      oscillator.connect(gain).connect(toneContext!.destination);
+      oscillator.start(start);
+      oscillator.stop(start + (reveal ? .25 : .11));
+    });
+  } catch { /* Audio is optional; gameplay remains available. */ }
+}
 
 function restore(userId: string): GameState {
   try {
@@ -60,8 +88,9 @@ function restore(userId: string): GameState {
 }
 
 function useGameSound(muted: boolean, paused: boolean) {
-  return useCallback((name: 'click' | 'success' | 'lose') => {
+  return useCallback((name: 'click' | 'success' | 'lose' | 'place' | 'reveal') => {
     if (muted || paused || document.visibilityState !== 'visible') return;
+    if (name === 'place' || name === 'reveal') { playBoardTone(name === 'reveal'); return; }
     const file = { click: 'click', success: 'win', lose: 'lose' }[name];
     const sound = new Audio(`/investigation-file/audio/${file}.mp3`);
     sound.volume = name === 'success' || name === 'lose' ? 0.32 : 0.18;
@@ -80,10 +109,25 @@ function ChoiceBoard({ question, order, selected, onChoose, locked = false }: { 
   </section>;
 }
 
-function Actor({ person, pose, line, compact = false }: { person: 'ceo' | 'sara'; pose: string; line: string; compact?: boolean }) {
+function SpokenWords({ line, active }: { line: string; active: boolean }) {
+  const words = line.split(' ');
+  const [visible, setVisible] = useState(0);
+  useEffect(() => {
+    if (!active) { setVisible(words.length); return; }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setVisible(words.length); return; }
+    setVisible(0);
+    let count = 0;
+    const timer = window.setInterval(() => { count += 1; setVisible(count); if (count >= words.length) window.clearInterval(timer); }, 105);
+    return () => window.clearInterval(timer);
+  }, [line, active, words.length]);
+  return <span className="pp-dialogue-text" role="text" aria-label={line}>{words.map((word, index) => <span key={`${index}-${word}`} aria-hidden="true" className={index < visible ? 'is-visible' : ''}>{word} </span>)}</span>;
+}
+
+function Actor({ person, pose, line, compact = false, speaking = false }: { person: 'ceo' | 'sara'; pose: keyof typeof PORTRAITS.ceo | keyof typeof PORTRAITS.sara; line: string; compact?: boolean; speaking?: boolean }) {
+  const image = person === 'ceo' ? PORTRAITS.ceo[pose as keyof typeof PORTRAITS.ceo] : PORTRAITS.sara[pose as keyof typeof PORTRAITS.sara];
   return <div className={`pp-actor ${compact ? 'pp-actor-compact' : ''}`}>
-    <img src={`${ASSETS}characters/${person}_${pose}.png`} alt={person === 'ceo' ? 'كمال، مدير الشركة' : 'رانيا، من فريق المالية'} />
-    <p className="pp-speech"><span>{person === 'ceo' ? 'كمال' : 'رانيا'}</span><span className="pp-dialogue-text">{line}</span></p>
+    <img src={`${ASSETS}characters/${image}`} alt={person === 'ceo' ? 'كمال، مدير الشركة' : 'رانيا، من فريق المالية'} />
+    <p className="pp-speech"><span>{person === 'ceo' ? 'كمال' : 'رانيا'}</span><SpokenWords line={line} active={speaking} /></p>
   </div>;
 }
 
@@ -135,7 +179,7 @@ function Report({ state, dispatch, wrongCell, onRevenue, hint }: { state: GameSt
 function MixBuilder({ state }: { state: GameState }) {
   const revealed = mixRevealed(state);
   return <section className="pp-builder" aria-labelledby="pp-builder-title">
-    <div className="pp-builder-head"><h2 id="pp-builder-title">توزيع الإيرادات</h2><span className="pp-counter" aria-live="polite">{state.revenueKeys.length} من 4</span></div>
+    <div className="pp-builder-head"><img className="pp-builder-guide" src={`${ASSETS}characters/${revealed ? 'sara_aha_v2.png' : 'sara_thinking_v2.png'}`} alt="" /><h2 id="pp-builder-title">توزيع الإيرادات</h2><span className="pp-counter" aria-live="polite">{state.revenueKeys.length} من 4</span></div>
     <p>اختار إيرادات Premium وBasic لكل شهر علشان تبني المقارنة.</p>
     {MONTHS.map(month => <div className="pp-mix-month" key={month}><h3>{LABELS[month]}</h3><div className="pp-mix-slots">{PRODUCTS.map(product => {
       const key: RevenueKey = `${month}-${product}`;
@@ -196,25 +240,27 @@ export default function ProfitParadoxGame({ userId }: { userId: string }) {
   return <main className="pp-root pp-v3" dir="rtl" data-level={state.level} data-beat={beat}>
     <PlatformGameControls onHome={exit} onPause={() => setPaused(true)} onSettings={() => { setPaused(true); setSettings(true); }} canPause={!paused} />
     <div className="pp-shell">
-      <header className="pp-header"><div className="pp-header-title"><span className="pp-mark" aria-hidden="true">✦</span><div><strong>The Profit Paradox</strong><small>{levelName} · {state.level}/5</small></div></div><div className="pp-header-progress"><span dir="ltr">{state.level} / 5</span><div aria-hidden="true">{[1,2,3,4,5].map(level => <i key={level} className={level <= state.level ? 'is-current' : ''} />)}</div></div>{state.level > 1 && state.level < 5 && <button type="button" className="pp-back" aria-label="الرجوع" onClick={back}><ArrowRight size={18} />الرجوع</button>}</header>
+      <header className="pp-header"><div className="pp-header-title"><span className="pp-mark" aria-hidden="true">✦</span><div><strong>مفارقة الربح</strong><small>{levelName}</small></div></div><div className="pp-header-progress" aria-label={`المرحلة ${state.level} من 5`}><div aria-hidden="true">{[1,2,3,4,5].map(level => <i key={level} className={level <= state.level ? 'is-current' : ''} />)}</div></div>{state.level > 1 && state.level < 5 && <button type="button" className="pp-back" aria-label="الرجوع للمرحلة السابقة" onClick={back}><ArrowRight size={18} /><span>الرجوع</span></button>}</header>
       <div className="pp-scroll" key={state.level}>
         {state.level === 1 && <div className={`pp-story pp-story-one focus-${beat}`}>
           <div className="pp-story-room" aria-hidden="true"><span className="pp-window"/><span className="pp-desk"/><span className="pp-lamp"/></div>
-          <div className="pp-story-actor"><Actor person="ceo" pose="surprised" line="الإيرادات زادت 20%، بس الربح الإجمالي نزل للنص! استنوا... خلّينا نبص على التقرير." /></div>
+          <div className="pp-story-actor"><Actor person="ceo" pose={beat === 0 ? 'surprised' : 'thinking'} speaking={beat === 0} line="الإيرادات زادت 20%، بس الربح الإجمالي نزل للنص! استنوا... خلّينا نبص على التقرير." /></div>
+          <div className="pp-foreground-desk" aria-hidden="true" />
           <div className="pp-story-data"><section className="pp-stage-screen"><span>نتائج الشركة · يناير / فبراير</span><div className="pp-kpi"><small>الإيرادات</small><strong dir="ltr">{cash(companyMetrics('jan').revenue)} <ArrowRight size={18} /> {cash(companyMetrics('feb').revenue)}</strong><em className="pp-up" dir="ltr">+{pct(change('revenue'))}</em></div><div className="pp-kpi"><small>الربح الإجمالي</small><strong dir="ltr">{cash(companyMetrics('jan').grossProfit)} <ArrowRight size={18} /> {cash(companyMetrics('feb').grossProfit)}</strong><em className="pp-down" dir="ltr">{pct(change('grossProfit'))}</em></div><small>الربح الإجمالي قبل المصروفات التشغيلية.</small></section></div>
           {beat >= 2 && <div className="pp-story-choice"><ChoiceBoard question="q1" order={state.choiceOrder.q1} selected={state.q1} onChoose={choice => choose('q1', choice)} /></div>}
           {beat < 2 && <button className="pp-skip" type="button" onClick={skipAnimation}>تخطّي الحركة</button>}
         </div>}
         {state.level === 2 && <div className={`pp-story pp-story-two focus-${beat}`}>
           <div className="pp-story-room pp-finance-room" aria-hidden="true"><span className="pp-window"/><span className="pp-desk"/><span className="pp-lamp"/></div>
-          <div className="pp-story-actor"><Actor person="sara" pose="surprised" line="راجعت هامش ربح Premium وBasic. المفاجأة؟ هامش الاتنين اتحسن. بص على المقارنة دي!" /></div>
+          <div className="pp-story-actor"><Actor person="sara" pose={beat === 0 ? 'surprised' : 'aha'} speaking={beat === 0} line="راجعت هامش ربح Premium وBasic. المفاجأة؟ هامش الاتنين اتحسن. بص على المقارنة دي!" /></div>
+          <div className="pp-foreground-desk" aria-hidden="true" />
           <div className="pp-story-data"><MarginChart state={state} showTotal={chartTotal} focus={group => { dispatch({ type: 'focus', group }); play('click'); }} /></div>
           {beat >= 2 && <div className="pp-story-choice"><ChoiceBoard question="q2" order={state.choiceOrder.q2} selected={state.q2} onChoose={choice => choose('q2', choice)} /></div>}
           {beat < 2 && <button className="pp-skip" type="button" onClick={skipAnimation}>تخطّي الحركة</button>}
         </div>}
-        {state.level === 3 && <div className="pp-level pp-level-three pp-v3-work"><div className="pp-work-heading"><div><span className="pp-mini-label">مكتب التحليل</span><h1>فكّك الإيرادات</h1><p>ثبّت إيرادات Premium وBasic في يناير وفبراير. أربع قيم، واللوحة هتكشف التوزيع تلقائيًا.</p></div></div><nav className="pp-work-tabs" aria-label="مساحة التحليل"><button type="button" className={workspaceTab === 'report' ? 'active' : ''} onClick={() => setWorkspaceTab('report')}>التقرير</button><button type="button" className={workspaceTab === 'board' ? 'active' : ''} onClick={() => setWorkspaceTab('board')}>لوحة التوزيع · {state.revenueKeys.length}/4</button></nav><div className="pp-workspace"><div className={`pp-report-pane ${workspaceTab === 'report' ? 'visible' : ''}`}><Report state={state} dispatch={dispatch} wrongCell={wrongCell} hint={hint} onRevenue={key => { dispatch({ type: 'revenue', key }); setHint(state.revenueKeys.includes(key) ? 'اتشالت من المقارنة' : 'اتضافت للمقارنة'); play('click'); if (state.revenueKeys.length === 3 && !state.revenueKeys.includes(key)) setWorkspaceTab('board'); }} /></div><div className={`pp-work-right ${workspaceTab === 'board' ? 'visible' : ''}`}><MixBuilder state={state} />{revealed && <Primary onClick={next}>قدّم توصيتك</Primary>}</div></div></div>}
-        {state.level === 4 && <div className={`pp-story pp-story-four focus-${beat}`}><div className="pp-story-room" aria-hidden="true"><span className="pp-window"/><span className="pp-desk"/><span className="pp-lamp"/></div><div className="pp-story-actor"><Actor person="ceo" pose="neutral" line="فهمنا هامش الشركة نزل إزاي. دلوقتي توصيتك إيه؟ خلّينا نختار على أساس اللي عرفناه فعلًا." /></div><div className="pp-story-data pp-decision-context"><strong>اللي نعرفه من التقرير</strong><span>الإيرادات <bdi dir="ltr">+{pct(change('revenue'))}</bdi></span><span>الربح الإجمالي <bdi dir="ltr">{pct(change('grossProfit'))}</bdi></span><span>حصة Basic من الإيرادات كبرت</span></div>{beat >= 2 && <div className="pp-story-choice"><ChoiceBoard question="q3" order={state.choiceOrder.q3} selected={draft} locked={!!state.q3} onChoose={choice => { setDraft(choice); play('click'); }} /><div className="pp-decision-actions"><Primary disabled={!draft || !!state.q3} onClick={() => { if (!draft) return; dispatch({ type: 'q3', choice: draft }); dispatch({ type: 'next' }); setBeat(0); play(draft === 'D' ? 'success' : 'lose'); }}>اعتمد التوصية</Primary><button type="button" className="pp-secondary" onClick={() => setReview(true)}>راجع الأرقام</button></div></div>}{beat < 2 && <button className="pp-skip" type="button" onClick={skipAnimation}>تخطّي الحركة</button>}</div>}
-        {state.level === 5 && <div className={`pp-level pp-level-five ${state.accepted ? 'pp-win' : 'pp-loss'}`}>{!endingReview ? <div className="pp-ending-stage"><div className="pp-ending-sparks" aria-hidden="true">✦ ✧ ✦ ✧ ✦</div><img src={`${ASSETS}characters/ceo_${state.accepted ? 'approved' : 'surprised'}.png`} alt={state.accepted ? 'كمال فرحان بالتوصية' : 'كمال متفاجئ من التوصية'} /><span className="pp-ending-stamp">{state.accepted ? '✓ قرار مسؤول' : '✕ قرار متسرّع'}</span><h1>{state.accepted ? 'كسبت الجولة!' : 'الجولة دي راحت منك!'}</h1><p>كمال: «{state.q3 && Q3_FEEDBACK[state.q3]}»</p><small>{state.accepted ? 'فهمت المفارقة وقدّمت توصية يسندها الدليل.' : 'كمال اعتمد توصيتك، والمراجعة كشفت إن التقرير ما يكفيش للإجراء ده.'}</small><Primary onClick={() => { setEndingReview(true); }}>افتح مراجعة الجولة</Primary></div> : <div className="pp-debrief"><span className="pp-mini-label">مراجعة اختياراتك</span><h1>{state.accepted ? 'وصلت للقرار المسؤول' : 'تعال نفهم القرار اتعثر فين'}</h1><div className="pp-review-cards"><article><b>١ · بدأت منين؟</b><p>اخترت: {state.q1 && QUESTIONS.q1.options[CHOICES.indexOf(state.q1)]}</p><strong>{state.q1 && Q1_REVIEW[state.q1]}</strong></article><article><b>٢ · فرضيتك</b><p>اخترت: {state.q2 && QUESTIONS.q2.options[CHOICES.indexOf(state.q2)]}</p><strong>{state.q2 && Q2_FEEDBACK[state.q2]}</strong></article><article><b>٣ · توصيتك</b><p>اخترت: {state.q3 && QUESTIONS.q3.options[CHOICES.indexOf(state.q3)]}</p><strong>{state.q3 === 'A' ? 'Basic حقق ربحًا إجماليًا موجبًا في الشهرين. صغر هامشه وحده مش دليل لإيقافه.' : state.q3 === 'B' ? 'ما نعرفش إن سعر Premium سبب التغير، ولا أثر رفعه. القرار سبق الدليل.' : state.q3 === 'C' ? 'خفض التكاليف ممكن يتدرس، لكن التقرير مش دليل إنه الإجراء المناسب دلوقتي.' : 'فرّقت بين تفسير انخفاض الهامش وبين معرفة سبب تغيّر التوزيع. دي توصية مسؤولة قبل أي إجراء.'}</strong></article></div><section className="pp-lessons"><h2>الخمس حاجات اللي خرجنا بيها</h2><ol>{LESSONS.map(([title, body]) => <li key={title}><strong>{title}</strong><span>{body}</span></li>)}</ol></section><blockquote dir="ltr">Analysis Means Breaking Down the Whole, Understanding Its Parts, and Discovering How They Work Together.</blockquote><div className="pp-ending-actions"><button type="button" className="pp-primary" onClick={() => { dispatch({ type: 'replay' }); setBeat(0); setDraft(null); setEndingReview(false); setWorkspaceTab('report'); setChartTotal(false); play('click'); }}><RotateCcw size={18} />العب تاني</button><button type="button" className="pp-secondary" onClick={exit}>الرجوع للألعاب</button></div></div>}</div>}
+        {state.level === 3 && <div className="pp-level pp-level-three pp-v3-work"><div className="pp-work-heading"><div><span className="pp-mini-label">مكتب التحليل</span><h1>فكّك الإيرادات</h1><p>ثبّت إيرادات Premium وBasic في يناير وفبراير. أربع قيم، واللوحة هتكشف التوزيع تلقائيًا.</p></div></div><nav className="pp-work-tabs" aria-label="مساحة التحليل"><button type="button" className={workspaceTab === 'report' ? 'active' : ''} onClick={() => setWorkspaceTab('report')}>التقرير</button><button type="button" className={workspaceTab === 'board' ? 'active' : ''} onClick={() => setWorkspaceTab('board')}>لوحة التوزيع · {state.revenueKeys.length}/4</button></nav><div className="pp-workspace"><div className={`pp-report-pane ${workspaceTab === 'report' ? 'visible' : ''}`}><Report state={state} dispatch={dispatch} wrongCell={wrongCell} hint={hint} onRevenue={key => { const completing = state.revenueKeys.length === 3 && !state.revenueKeys.includes(key); dispatch({ type: 'revenue', key }); setHint(state.revenueKeys.includes(key) ? 'اتشالت من المقارنة' : 'اتضافت للمقارنة'); play(completing ? 'reveal' : 'place'); if (completing) setWorkspaceTab('board'); }} /></div><div className={`pp-work-right ${workspaceTab === 'board' ? 'visible' : ''}`}><MixBuilder state={state} />{revealed && <Primary onClick={next}>قدّم توصيتك</Primary>}</div></div></div>}
+        {state.level === 4 && <div className={`pp-story pp-story-four focus-${beat}`}><div className="pp-story-room" aria-hidden="true"><span className="pp-window"/><span className="pp-desk"/><span className="pp-lamp"/></div><div className="pp-story-actor"><Actor person="ceo" pose={beat === 0 ? 'neutral' : 'thinking'} speaking={beat === 0} line="فهمنا هامش الشركة نزل إزاي. دلوقتي توصيتك إيه؟ خلّينا نختار على أساس اللي عرفناه فعلًا." /></div><div className="pp-story-data pp-decision-context"><strong>اللي نعرفه من التقرير</strong><span>الإيرادات <bdi dir="ltr">+{pct(change('revenue'))}</bdi></span><span>الربح الإجمالي <bdi dir="ltr">{pct(change('grossProfit'))}</bdi></span><span>حصة Basic من الإيرادات كبرت</span></div>{beat >= 2 && <div className="pp-story-choice"><ChoiceBoard question="q3" order={state.choiceOrder.q3} selected={draft} locked={!!state.q3} onChoose={choice => { setDraft(choice); play('click'); }} /><div className="pp-decision-actions"><Primary disabled={!draft || !!state.q3} onClick={() => { if (!draft) return; dispatch({ type: 'q3', choice: draft }); dispatch({ type: 'next' }); setBeat(0); play(draft === 'D' ? 'success' : 'lose'); }}>اعتمد التوصية</Primary><button type="button" className="pp-secondary" onClick={() => setReview(true)}>راجع الأرقام</button></div></div>}{beat < 2 && <button className="pp-skip" type="button" onClick={skipAnimation}>تخطّي الحركة</button>}</div>}
+        {state.level === 5 && <div className={`pp-level pp-level-five ${state.accepted ? 'pp-win' : 'pp-loss'}`}>{!endingReview ? <div className="pp-ending-stage"><div className="pp-ending-sparks" aria-hidden="true">✦ ✧ ✦ ✧ ✦</div><img src={`${ASSETS}characters/${state.accepted ? 'ceo_approved.png' : 'ceo_loss_v2.png'}`} alt={state.accepted ? 'كمال فرحان بالتوصية' : 'كمال متفاجئ من التوصية'} /><span className="pp-ending-stamp">{state.accepted ? '✓ قرار مسؤول' : '✕ قرار متسرّع'}</span><h1>{state.accepted ? 'كسبت الجولة!' : 'الجولة دي راحت منك!'}</h1><p>كمال: «{state.q3 && Q3_FEEDBACK[state.q3]}»</p><small>{state.accepted ? 'فهمت المفارقة وقدّمت توصية يسندها الدليل.' : 'كمال اعتمد توصيتك، والمراجعة كشفت إن التقرير ما يكفيش للإجراء ده.'}</small><Primary onClick={() => { setEndingReview(true); }}>افتح مراجعة الجولة</Primary></div> : <div className="pp-debrief"><span className="pp-mini-label">مراجعة اختياراتك</span><h1>{state.accepted ? 'وصلت للقرار المسؤول' : 'تعال نفهم القرار اتعثر فين'}</h1><div className="pp-review-cards"><article><b>١ · بدأت منين؟</b><p>اخترت: {state.q1 && QUESTIONS.q1.options[CHOICES.indexOf(state.q1)]}</p><strong>{state.q1 && Q1_REVIEW[state.q1]}</strong></article><article><b>٢ · فرضيتك</b><p>اخترت: {state.q2 && QUESTIONS.q2.options[CHOICES.indexOf(state.q2)]}</p><strong>{state.q2 && Q2_FEEDBACK[state.q2]}</strong></article><article><b>٣ · توصيتك</b><p>اخترت: {state.q3 && QUESTIONS.q3.options[CHOICES.indexOf(state.q3)]}</p><strong>{state.q3 === 'A' ? 'Basic حقق ربحًا إجماليًا موجبًا في الشهرين. صغر هامشه وحده مش دليل لإيقافه.' : state.q3 === 'B' ? 'ما نعرفش إن سعر Premium سبب التغير، ولا أثر رفعه. القرار سبق الدليل.' : state.q3 === 'C' ? 'خفض التكاليف ممكن يتدرس، لكن التقرير مش دليل إنه الإجراء المناسب دلوقتي.' : 'فرّقت بين تفسير انخفاض الهامش وبين معرفة سبب تغيّر التوزيع. دي توصية مسؤولة قبل أي إجراء.'}</strong></article></div><section className="pp-lessons"><h2>الخمس حاجات اللي خرجنا بيها</h2><ol>{LESSONS.map(([title, body]) => <li key={title}><strong>{title}</strong><span>{body}</span></li>)}</ol></section><blockquote dir="ltr">Analysis Means Breaking Down the Whole, Understanding Its Parts, and Discovering How They Work Together.</blockquote><div className="pp-ending-actions"><button type="button" className="pp-primary" onClick={() => { dispatch({ type: 'replay' }); setBeat(0); setDraft(null); setEndingReview(false); setWorkspaceTab('report'); setChartTotal(false); play('click'); }}><RotateCcw size={18} />العب تاني</button><button type="button" className="pp-secondary" onClick={exit}>الرجوع للألعاب</button></div></div>}</div>}
       </div>
     </div>
     {review && <div className="pp-modal-backdrop" role="presentation"><div className="pp-modal" role="dialog" aria-modal="true" aria-labelledby="pp-review-title"><button type="button" className="pp-close" aria-label="إغلاق" onClick={() => setReview(false)}><X /></button><h2 id="pp-review-title">مراجعة الأرقام</h2>{MONTHS.map(month => <p key={month}>{LABELS[month]}: Premium <bdi dir="ltr">{pct(revenueShare(month, 'premium'), true)}</bdi> · Basic <bdi dir="ltr">{pct(revenueShare(month, 'basic'), true)}</bdi> · هامش الشركة <bdi dir="ltr">{pct(companyMetrics(month).margin, true)}</bdi></p>)}<p>التوزيع يفسر تغير الهامش؛ سبب تغير التوزيع يحتاج تحليلًا إضافيًا.</p><button type="button" className="pp-primary" onClick={() => setReview(false)}>العودة للتوصية</button></div></div>}
