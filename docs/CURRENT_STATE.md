@@ -1,9 +1,9 @@
-# Current state — 2026-11-08
+# Current state — 2026-11-10
 
 Short, current status only. Detailed history lives in Git and in [THE_ANALYST_PROJECT_CONTEXT_AR.md](THE_ANALYST_PROJECT_CONTEXT_AR.md).
 
 ## Investigation File
-- The approved Egyptian Arabic opening, responsive evidence/lab/decision layouts, two tab-specific Felfel hints, and six-step explanation are now on `main`. Case data, verdict rules, scoring, saves, and platform behavior are unchanged.
+- The approved Egyptian Arabic opening, responsive evidence/lab/decision layouts, two tab-specific Felfel hints, and six-step explanation are now on `main`. Felfel now roams safely between fixed screen positions, runs into and out of a hint, and has new run/jump poses; HR and CFO switch to contextual presenting poses. Reduced-motion preferences are respected. Case data, verdict rules, scoring, saves, and platform behavior are unchanged.
 
 ## Games (8 in source)
 All are in source and in the shared catalog; details in [GAME_REGISTRY.md](GAME_REGISTRY.md).

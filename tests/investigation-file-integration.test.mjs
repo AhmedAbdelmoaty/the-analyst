@@ -106,8 +106,15 @@ test('meeting needs no saved comparisons or experiment interpretation', async ()
 test('approved Felfel reference and transparent acting poses are packaged with the game work', async () => {
   const source = await readFile(path.join(root, 'docs/investigation-file/felfel-reference.png'));
   assert.equal(source.subarray(1, 4).toString(), 'PNG');
-  for (const pose of ['idle', 'inspect', 'celebrate', 'concerned', 'peek', 'ponder']) {
+  for (const pose of ['idle', 'inspect', 'celebrate', 'concerned', 'peek', 'ponder', 'run', 'jump']) {
     const image = await readFile(path.join(root, `public/investigation-file/assets/felfel/${pose}.png`));
+    assert.equal(image.subarray(1, 4).toString(), 'PNG');
+    assert.equal(image[25], 6, `${pose} must have an alpha channel`);
+    assert.equal(image.readUInt32BE(16), 1024);
+    assert.equal(image.readUInt32BE(20), 1536);
+  }
+  for (const pose of ['cfo-presenting', 'hr-presenting']) {
+    const image = await readFile(path.join(root, `public/investigation-file/assets/investigation/${pose}.png`));
     assert.equal(image.subarray(1, 4).toString(), 'PNG');
     assert.equal(image[25], 6, `${pose} must have an alpha channel`);
     assert.equal(image.readUInt32BE(16), 1024);

@@ -21,7 +21,7 @@
       <div class="scene-kicker">القضية ٣ · قرار قبل التوقيع</div>
       <h1 id="introTitle">نلغي برنامج تطوير الموظفين؟</h1>
       <div class="characters cfo-speaking">
-        <div class="character cfo"><img src="/investigation-file/assets/investigation/cfo.png" alt="المدير المالي"></div>
+        <div class="character cfo"><img id="introCfo" src="/investigation-file/assets/investigation/cfo.png" alt="المدير المالي"></div>
         <div class="report-paper" aria-label="تقرير إجمالي الترقيات">
           <div class="paper-pin"></div>
           <span class="report-label">تقرير الـCFO</span>
@@ -77,7 +77,7 @@
 
     <section id="confrontation" class="scene confrontation-scene hidden" aria-labelledby="finalTitle">
       <div class="scene-kicker">لحظة القرار</div><h1 id="finalTitle">إيه قرارك بخصوص البرنامج؟</h1>
-      <div class="final-characters"><img src="/investigation-file/assets/investigation/cfo.png" alt="المدير المالي"><div class="paper-panel final-paper"><div class="final-paper-heading"><h2>ورقة القرار</h2><img id="meetingFelfel" src="/investigation-file/assets/felfel/idle.png" alt="فِلفِل يراجع الملف" data-state="thinking"></div><p class="small">تقرير الشركة: حضروا <bdi dir="ltr">35%</bdi> · ماحضروش <bdi dir="ltr">65.7%</bdi></p></div><img src="/investigation-file/assets/investigation/hr.png" alt="مديرة الموارد البشرية"></div>
+      <div class="final-characters"><img id="meetingCfo" src="/investigation-file/assets/investigation/cfo.png" alt="المدير المالي"><div class="paper-panel final-paper"><div class="final-paper-heading"><h2>ورقة القرار</h2><img id="meetingFelfel" src="/investigation-file/assets/felfel/idle.png" alt="فِلفِل يراجع الملف" data-state="thinking"></div><p class="small">تقرير الشركة: حضروا <bdi dir="ltr">35%</bdi> · ماحضروش <bdi dir="ltr">65.7%</bdi></p></div><img id="meetingHr" src="/investigation-file/assets/investigation/hr.png" alt="مديرة الموارد البشرية"></div>
       <p id="verdictMessage" class="feedback verdict-message" aria-live="polite"></p>
       <div id="decisionStep" class="meeting-step"><h2>١. إيه قرارك؟</h2><div class="verdicts"><button data-decision="cancel-program" class="game-button verdict">نوافق على إلغاء البرنامج</button><button data-decision="pause-review" class="game-button verdict">نوقف الإلغاء مؤقتًا ونحقق أكتر</button><button data-decision="claim-causation" class="game-button verdict">نكمّل البرنامج؛ واضح إنه سبب زيادة الترقيات</button></div></div>
       <div id="reasonStep" class="meeting-step hidden" hidden><h2>٢. ليه اخترت القرار ده؟</h2><div class="verdicts"><button data-reason="aggregate" class="game-button verdict">الفرق في الإجمالي كفاية عشان نقرر.</button><button data-reason="composition" class="game-button verdict">تركيبة Junior وSenior مختلفة بين المجموعتين. الإجمالي ممكن يخدعنا، والسجلات وحدها ما تثبتش إن التدريب هو السبب.</button><button data-reason="causation" class="game-button verdict">الحاضرين أعلى جوّه كل مستوى، يبقى التدريب هو السبب.</button></div><button id="editDecision" class="text-button" type="button">غيّر قرارك</button></div><button id="submitVerdict" class="game-button primary hidden" hidden disabled>أكّد القرار النهائي</button>

@@ -23,22 +23,65 @@ if (platformEmbedded) document.body.classList.add('platform-embedded');
 const sound = (cue = 'button') => { if (!platformPaused) audio.play(cue); };
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const felfelAssets = {
-  idle: 'idle', entrance: 'peek', peek: 'peek', talking: 'ponder', thinking: 'ponder', magnifier: 'inspect', hint: 'ponder',
+  idle: 'idle', roaming: 'idle', entrance: 'jump', peek: 'peek', talking: 'ponder', thinking: 'ponder', magnifier: 'inspect', hint: 'ponder',
   surprise: 'celebrate', discovery: 'celebrate', celebration: 'celebrate', failure: 'concerned', exit: 'idle',
 };
 // Warm the alternate poses during the opening so the character never appears in pieces at a scene change.
-for (const pose of ['inspect', 'celebrate', 'concerned', 'peek', 'ponder']) {
+for (const pose of ['inspect', 'celebrate', 'concerned', 'peek', 'ponder', 'run', 'jump']) {
   const image = new Image();
   image.src = `/investigation-file/assets/felfel/${pose}.png`;
   image.decode().catch(() => {});
 }
 let deskFelfelTimer;
+let roamTimer;
+let roamResumeTimer;
+let roamIndex = 0;
+let felfelBusy = false;
+const actorAsset = (id, asset) => {
+  const actor = $(id);
+  if (!actor) return;
+  actor.src = `/investigation-file/assets/investigation/${asset}.png`;
+  actor.classList.remove('character-acting'); void actor.offsetWidth; actor.classList.add('character-acting');
+};
+function roamAnchors() {
+  const narrow = window.innerWidth <= 700;
+  return narrow
+    ? [[14, 27], [83, 34], [14, 58], [84, 70]]
+    : [[12, 27], [86, 31], [15, 63], [84, 67]];
+}
+function moveFelfel() {
+  if (currentSceneId !== 'investigation' || felfelBusy || prefersReducedMotion()) return;
+  const actor = $('deskFelfel');
+  const [x, y] = roamAnchors()[roamIndex++ % roamAnchors().length];
+  actor.src = '/investigation-file/assets/felfel/run.png';
+  actor.dataset.state = 'roaming';
+  actor.style.left = `${x}vw`; actor.style.top = `${y}svh`;
+  window.clearTimeout(deskFelfelTimer);
+  deskFelfelTimer = window.setTimeout(() => {
+    if (currentSceneId !== 'investigation' || felfelBusy) return;
+    actor.src = '/investigation-file/assets/felfel/idle.png'; actor.dataset.state = 'idle';
+  }, 840);
+}
+function stopRoaming() { window.clearInterval(roamTimer); roamTimer = undefined; }
+function startRoaming() {
+  stopRoaming();
+  window.clearTimeout(roamResumeTimer);
+  if (prefersReducedMotion()) return;
+  moveFelfel();
+  roamTimer = window.setInterval(moveFelfel, 5200);
+}
+function pauseRoaming(delay = 2600) {
+  stopRoaming();
+  window.clearTimeout(roamResumeTimer);
+  if (!prefersReducedMotion()) roamResumeTimer = window.setTimeout(() => { if (currentSceneId === 'investigation' && !$('hintPanel').classList.contains('hidden')) return; if (currentSceneId === 'investigation') startRoaming(); }, delay);
+}
 function reactFelfel(stateName, actor = 'deskFelfel') {
   const actorElement = $(actor);
   if (!actorElement) return;
   actorElement.src = `/investigation-file/assets/felfel/${felfelAssets[stateName] || 'idle'}.png`;
   actorElement.dataset.state = stateName;
   if (actor === 'deskFelfel') {
+    pauseRoaming();
     window.clearTimeout(deskFelfelTimer);
     if (stateName !== 'idle') deskFelfelTimer = window.setTimeout(() => reactFelfel('idle'), 1100);
   }
@@ -49,8 +92,10 @@ function scene(id) {
   currentSceneId = id;
   for (const el of document.querySelectorAll('.scene')) el.classList.toggle('hidden', el.id !== id);
   $('hintBtn').classList.toggle('hidden', id !== 'investigation');
+  document.body.classList.toggle('investigation-active', id === 'investigation');
   updateHintControl();
   if (!$('hintPanel').classList.contains('hidden')) closeHint(true);
+  if (id === 'investigation') startRoaming(); else stopRoaming();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -285,10 +330,44 @@ function nudgeHint(context) {
 }
 let hintScrollY = 0;
 let hintSequence = 0;
+const flight = () => {
+  let actor = $('felfelFlight');
+  if (actor) return actor;
+  actor = document.createElement('img');
+  actor.id = 'felfelFlight'; actor.alt = ''; actor.setAttribute('aria-hidden', 'true');
+  document.body.append(actor);
+  return actor;
+};
+function flyFelfel(from, to, pose, duration = 640) {
+  const actor = flight();
+  actor.src = `/investigation-file/assets/felfel/${pose}.png`;
+  actor.style.left = `${from.left}px`; actor.style.top = `${from.top}px`;
+  actor.style.width = `${from.width}px`; actor.style.height = `${from.height}px`;
+  actor.classList.add('flying');
+  const dx = to.left - from.left;
+  const dy = to.top - from.top;
+  actor.animate([
+    { transform: 'translate(0, 0) scale(.86) rotate(-4deg)', opacity: .95 },
+    { transform: `translate(${dx * .45}px, ${dy - 48}px) scale(1.45) rotate(4deg)`, opacity: 1, offset: .55 },
+    { transform: `translate(${dx}px, ${dy}px) scale(${to.width / from.width}) rotate(0deg)`, opacity: 1 },
+  ], { duration, easing: 'cubic-bezier(.2,.85,.22,1)', fill: 'forwards' });
+  return actor;
+}
+function restoreDeskFelfel() {
+  const actor = $('deskFelfel');
+  actor.classList.remove('on-hint-flight');
+  actor.src = '/investigation-file/assets/felfel/jump.png'; actor.dataset.state = 'entrance';
+  window.setTimeout(() => { if (!felfelBusy) reactFelfel('idle'); }, 520);
+}
 function closeHint(immediate = false) {
   const panel = $('hintPanel');
   if (panel.classList.contains('hidden')) return;
   hintSequence++;
+  felfelBusy = false;
+  const reduced = immediate || prefersReducedMotion();
+  const source = $('deskFelfel');
+  const from = $('hintFelfel').getBoundingClientRect();
+  const destination = source.getBoundingClientRect();
   $('hintVeil').classList.add('hidden');
   document.body.style.position = '';
   document.body.style.top = '';
@@ -297,11 +376,19 @@ function closeHint(immediate = false) {
   document.documentElement.style.scrollBehavior = 'auto';
   window.scrollTo(0, hintScrollY);
   document.documentElement.style.scrollBehavior = previousScrollBehavior;
-  if (immediate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (reduced) {
     panel.classList.add('hidden');
+    $('felfelFlight')?.classList.remove('flying');
+    restoreDeskFelfel();
   } else {
     panel.querySelector('.hint-character').dataset.state = 'exit';
-    window.setTimeout(() => panel.classList.add('hidden'), 260);
+    flyFelfel(from, destination, 'run', 500);
+    window.setTimeout(() => {
+      panel.classList.add('hidden');
+      $('felfelFlight')?.classList.remove('flying');
+      restoreDeskFelfel();
+      startRoaming();
+    }, 470);
   }
   if (!$('hintBtn').classList.contains('hidden')) ($('hintBtn').disabled ? $('muteBtn') : $('hintBtn')).focus();
 }
@@ -309,11 +396,16 @@ $('hintBtn').addEventListener('click', () => {
   if (!$('hintPanel').classList.contains('hidden')) return;
   const sequence = ++hintSequence;
   const context = activeHint();
+  const source = $('deskFelfel');
+  const from = source.getBoundingClientRect();
+  const landing = { left: window.innerWidth * .54, top: Math.max(90, window.innerHeight * .17), width: Math.min(window.innerWidth * .31, 240), height: Math.min(window.innerHeight * .48, 340) };
+  felfelBusy = true; stopRoaming(); source.classList.add('on-hint-flight');
   $('hintBtn').classList.remove('hint-available');
   $('hintFelfel').src = '/investigation-file/assets/felfel/peek.png';
   $('hintText').textContent = '';
   $('hintPanel').querySelector('.hint-bubble').classList.remove('speech-revealed');
   $('hintPanel').querySelector('.hint-character').dataset.state = 'entrance';
+  $('hintPanel').classList.add('hint-arriving');
   $('hintVeil').classList.remove('hidden');
   $('hintPanel').classList.remove('hidden');
   hintScrollY = window.scrollY;
@@ -322,18 +414,24 @@ $('hintBtn').addEventListener('click', () => {
   document.body.style.width = '100%';
   sound('sceneChange');
   const reduced = prefersReducedMotion();
+  if (!reduced) {
+    flyFelfel(from, landing, 'run', 640);
+    window.setTimeout(() => { const actor = $('felfelFlight'); if (actor) actor.src = '/investigation-file/assets/felfel/jump.png'; }, 330);
+  }
   window.setTimeout(() => {
     if (sequence !== hintSequence || $('hintPanel').classList.contains('hidden')) return;
-    $('hintFelfel').src = '/investigation-file/assets/felfel/ponder.png';
+    $('hintPanel').classList.remove('hint-arriving');
+    $('felfelFlight')?.classList.remove('flying');
+    $('hintFelfel').src = '/investigation-file/assets/felfel/jump.png';
     $('hintPanel').querySelector('.hint-character').dataset.state = 'inspect';
-  }, reduced ? 0 : 560);
+  }, reduced ? 0 : 650);
   window.setTimeout(() => {
     if (sequence !== hintSequence || $('hintPanel').classList.contains('hidden')) return;
     $('hintPanel').querySelector('.hint-character').dataset.state = 'talking';
     $('hintPanel').querySelector('.hint-bubble').classList.add('speech-revealed');
     $('hintText').textContent = hints[context];
     $('dismissHint').focus();
-  }, reduced ? 0 : 820);
+  }, reduced ? 0 : 900);
 });
 $('dismissHint').addEventListener('click', () => closeHint());
 $('hintVeil').addEventListener('click', () => closeHint());
@@ -369,7 +467,8 @@ function renderIntroStep() {
   $('introSpeech').classList.remove('speech-enter'); void $('introSpeech').offsetWidth; $('introSpeech').classList.add('speech-enter');
   document.querySelector('.characters').classList.toggle('hr-speaking', state.introStep === 1);
   document.querySelector('.characters').classList.toggle('cfo-speaking', state.introStep !== 1);
-  $('introHr').src = state.introStep === 1 ? '/investigation-file/assets/investigation/hr-concerned.png' : '/investigation-file/assets/investigation/hr.png';
+  actorAsset('introCfo', state.introStep === 0 || state.introStep === 2 ? 'cfo-presenting' : 'cfo');
+  actorAsset('introHr', state.introStep === 1 ? 'hr-presenting' : 'hr-concerned');
   $('nextIntro').textContent = state.introStep === dialogue.length - 1 ? 'افتح التحقيق ←' : 'التالي ←';
 }
 
@@ -391,6 +490,7 @@ function showMeetingStep(step) {
 $('faceCfo').addEventListener('click', () => {
   if (!state.labVisited) return;
   resetMeeting(); $('verdictMessage').textContent = '';
+  actorAsset('meetingCfo', 'cfo-presenting'); actorAsset('meetingHr', 'hr-presenting');
   reactFelfel('thinking', 'meetingFelfel');
   sound('sceneChange'); scene('confrontation');
 });
@@ -399,6 +499,7 @@ document.querySelectorAll('[data-decision]').forEach(button => button.addEventLi
   state.decision = button.dataset.decision;
   document.querySelectorAll('[data-decision]').forEach(option => option.setAttribute('aria-pressed', String(option === button)));
   showMeetingStep('reason');
+  actorAsset('meetingCfo', 'cfo-surprised'); actorAsset('meetingHr', 'hr-presenting');
   $('reasonStep').querySelector('[data-reason]').focus({ preventScroll: true });
   reactFelfel('surprise', 'meetingFelfel');
   sound('sceneChange');
@@ -406,6 +507,7 @@ document.querySelectorAll('[data-decision]').forEach(button => button.addEventLi
 document.querySelectorAll('[data-reason]').forEach(button => button.addEventListener('click', () => {
   state.reason = button.dataset.reason;
   reactFelfel('thinking', 'meetingFelfel');
+  actorAsset('meetingHr', button.dataset.reason === 'composition' ? 'hr-presenting' : 'hr-concerned');
   document.querySelectorAll('[data-reason]').forEach(option => option.setAttribute('aria-pressed', String(option === button)));
   $('submitVerdict').disabled = false;
   sound('button');
@@ -421,7 +523,7 @@ function showEnding(result, reason = 'unsupported-decision') {
   $('ending').classList.toggle('failure', result !== 'success');
   $('endingReaction').src = result === 'success' ? '/investigation-file/assets/investigation/cfo-surprised.png' : '/investigation-file/assets/investigation/cfo.png';
   $('endingReaction').alt = result === 'success' ? 'المدير المالي متفاجئ' : 'المدير المالي يفكر في القرار';
-  $('endingHr').src = result === 'success' ? '/investigation-file/assets/investigation/hr.png' : '/investigation-file/assets/investigation/hr-concerned.png';
+  $('endingHr').src = result === 'success' ? '/investigation-file/assets/investigation/hr-presenting.png' : '/investigation-file/assets/investigation/hr-concerned.png';
   $('endingHr').alt = result === 'success' ? 'مديرة الموارد البشرية ارتاحت' : 'مديرة الموارد البشرية قلقة';
   $('endingFelfel').src = result === 'success' ? '/investigation-file/assets/felfel/celebrate.png' : '/investigation-file/assets/felfel/concerned.png';
   $('endingIcon').src = result === 'success' ? '/investigation-file/assets/simpson/success-checkmark.png' : '/investigation-file/assets/simpson/failure-x.png';

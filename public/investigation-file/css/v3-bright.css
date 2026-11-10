@@ -603,3 +603,28 @@ button:focus-visible,input:focus-visible{outline:3px solid #236f90;outline-offse
 @keyframes felfelHintHop{0%{opacity:0;transform:translateX(70px) translateY(24px) scale(.84)}38%{opacity:1;transform:translateX(23px) translateY(-14px) scale(1.03)}68%{transform:translateX(4px) translateY(-19px) scale(1.06)}84%{transform:translateY(3px) scale(.97)}100%{transform:none}}
 @keyframes felfelRevealEnter{0%{opacity:0;transform:translateY(27px) scale(.86)}62%{opacity:1;transform:translateY(-10px) scale(1.04)}100%{transform:none}}
 @media(prefers-reduced-motion:reduce){.desk-guide img[data-state=peek],.hint-control.hint-available,.hint-character[data-state=entrance],.reveal-opening #revealFelfel{animation:none!important}}
+
+/* The detective has a visible route while the player scrolls: he travels between safe screen edges,
+   then crosses the screen before the hint opens. Character acting stays short so it reads as a beat. */
+body.investigation-active #deskFelfel{position:fixed;z-index:17;left:12vw;top:27svh;width:clamp(52px,7.2vw,84px)!important;height:auto!important;object-fit:contain;pointer-events:none;transition:left 1.05s cubic-bezier(.2,.85,.22,1),top 1.05s cubic-bezier(.2,.85,.22,1),opacity .16s;filter:drop-shadow(4px 7px 2px rgba(67,39,23,.28));will-change:left,top,transform}
+body.investigation-active #deskFelfel[data-state=roaming]{animation:felfelRunBounce .48s ease-in-out 2}
+body.investigation-active #deskFelfel.on-hint-flight{opacity:0}
+body.investigation-active .desk-guide .desk-note{opacity:0;pointer-events:none}
+#felfelFlight{display:none;position:fixed;z-index:22;object-fit:contain;object-position:center bottom;pointer-events:none;filter:drop-shadow(8px 12px 3px rgba(48,28,18,.35));transform-origin:center bottom;will-change:transform,opacity}
+#felfelFlight.flying{display:block}
+.hint-panel.hint-arriving .hint-character{opacity:0;transform:scale(.82)}
+.hint-panel.hint-arriving .hint-bubble{opacity:0!important;transform:translateY(22px) scale(.94)!important}
+.character-acting{animation:characterAct .45s cubic-bezier(.2,.85,.22,1)!important;transform-origin:center bottom}
+.final-characters>img.character-acting{animation:characterAct .45s cubic-bezier(.2,.85,.22,1)!important}
+@keyframes felfelRunBounce{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-10px) rotate(-3deg)}70%{transform:translateY(2px) rotate(2deg)}}
+@keyframes characterAct{0%{transform:translateY(6px) scale(.96)}58%{transform:translateY(-7px) scale(1.045)}100%{transform:translateY(0) scale(1)}}
+@media(max-width:700px){
+  body.investigation-active #deskFelfel{width:clamp(48px,15vw,66px)!important;z-index:17}
+  .hint-panel{z-index:24}
+  #felfelFlight{z-index:26}
+}
+@media(prefers-reduced-motion:reduce){
+  body.investigation-active #deskFelfel{transition:none!important;animation:none!important}
+  #felfelFlight{display:none!important}
+  .character-acting{animation:none!important}
+}
