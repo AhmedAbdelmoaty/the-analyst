@@ -2,6 +2,9 @@
 
 Short, current status only. Detailed history lives in Git and in [THE_ANALYST_PROJECT_CONTEXT_AR.md](THE_ANALYST_PROJECT_CONTEXT_AR.md).
 
+## Investigation File
+- The approved Egyptian Arabic opening, responsive evidence/lab/decision layouts, two tab-specific Felfel hints, and six-step explanation are now on `main`. Case data, verdict rules, scoring, saves, and platform behavior are unchanged.
+
 ## Games (8 in source)
 All are in source and in the shared catalog; details in [GAME_REGISTRY.md](GAME_REGISTRY.md).
 اسأل صح (free) · قرار التكريم · ورا النقط · الشفرة الأخيرة · مصفوفة القرار · ملف تحت التحقيق · أداء الفريق · مفارقة الربح.

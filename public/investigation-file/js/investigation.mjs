@@ -6,14 +6,14 @@ import { beginRun, finishRun, readRun, saveCheckpoint } from './persistence.mjs'
 const $ = id => document.getElementById(id);
 const pct = n => `${(n * 100).toFixed(1).replace('.0', '')}%`;
 const levelName = level => level === 'junior' ? 'Junior' : 'Senior';
-const name = r => `${levelName(r.level)} · ${r.attended ? 'حضر' : 'لم يحضر'}`;
+const name = r => `${levelName(r.level)} · ${r.attended ? 'حضر' : 'ماحضرش'}`;
 const comparisonCard = r => `<span class="comparison-card"><span class="comparison-name">${levelName(r.level)} · ${r.attended ? 'حضر' : 'ماحضرش'}</span><span class="comparison-count"><bdi dir="ltr">${r.promoted}/${r.total}</bdi> ترقّوا</span><strong dir="ltr">${pct(rate(r))}</strong></span>`;
 const comparisonView = ids => ids.length === 2
   ? `<span class="comparison-side">${comparisonCard(records.find(r => r.id === ids[0]))}</span><span class="comparison-vs" aria-label="مقابل">مقابل</span><span class="comparison-side">${comparisonCard(records.find(r => r.id === ids[1]))}</span>`
   : '<span class="clip-empty">اختار بطاقتين من سجلات HR واضغط هنا</span>';
 const state = {
   selected: [], labVisited: false,
-  introStep: -1, decision: null, reason: null, hint: 0,
+  introStep: -1, decision: null, reason: null, hintNudged: new Set(),
 };
 const audio = createAudioManager();
 const playerId = window.name || 'guest';
@@ -23,11 +23,11 @@ if (platformEmbedded) document.body.classList.add('platform-embedded');
 const sound = (cue = 'button') => { if (!platformPaused) audio.play(cue); };
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const felfelAssets = {
-  idle: 'idle', entrance: 'idle', talking: 'idle', thinking: 'inspect', magnifier: 'inspect', hint: 'inspect',
+  idle: 'idle', entrance: 'peek', peek: 'peek', talking: 'ponder', thinking: 'ponder', magnifier: 'inspect', hint: 'ponder',
   surprise: 'celebrate', discovery: 'celebrate', celebration: 'celebrate', failure: 'concerned', exit: 'idle',
 };
 // Warm the alternate poses during the opening so the character never appears in pieces at a scene change.
-for (const pose of ['inspect', 'celebrate', 'concerned']) {
+for (const pose of ['inspect', 'celebrate', 'concerned', 'peek', 'ponder']) {
   const image = new Image();
   image.src = `/investigation-file/assets/felfel/${pose}.png`;
   image.decode().catch(() => {});
@@ -48,7 +48,8 @@ let currentSceneId = 'intro';
 function scene(id) {
   currentSceneId = id;
   for (const el of document.querySelectorAll('.scene')) el.classList.toggle('hidden', el.id !== id);
-  $('hintBtn').classList.toggle('hidden', id !== 'investigation' && id !== 'confrontation');
+  $('hintBtn').classList.toggle('hidden', id !== 'investigation');
+  updateHintControl();
   if (!$('hintPanel').classList.contains('hidden')) closeHint(true);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -60,7 +61,6 @@ function activateOfficeTab(tabId, focus = false) {
   if (tabId === 'labTab') {
     state.labVisited = true;
     $('faceCfo').disabled = false;
-    $('meetingGuidance').textContent = 'الملف جاهز للاجتماع. تقدر تراجع الأدلة أو تكمّل.';
   }
   officeTabs.forEach(([id, panelId], index) => {
     const active = index === selectedIndex;
@@ -77,6 +77,7 @@ function activateOfficeTab(tabId, focus = false) {
       panel.classList.add('tab-enter');
     }
   });
+  updateHintControl();
   if (focus) $(tabId).focus();
 }
 for (const [tabId] of officeTabs) {
@@ -104,6 +105,7 @@ function updateCards() {
     updateComparison();
     if (state.selected.length === 2) {
       sound('clipAttach');
+      nudgeHint('evidence');
       if (window.matchMedia('(max-width: 700px)').matches) {
         const preview = $('mobileComparison');
         if (preview.getBoundingClientRect().bottom > innerHeight - 12) {
@@ -209,10 +211,10 @@ function updateMix({ playSound = false } = {}) {
     $(`${group}MixValue`).textContent = pct(junior);
     $(`${group}JuniorShare`).textContent = pct(junior);
     $(`${group}SeniorShare`).textContent = pct(1 - junior);
-    document.querySelector(`.${group}-junior`).style.width = `${junior * 100}%`;
-    document.querySelector(`.${group}-senior`).style.width = `${(1 - junior) * 100}%`;
+    $(`${group}Mix`).style.setProperty('--junior-share', `${junior * 100}%`);
     $(`${group}WhatIf`).textContent = pct(result);
     $(`${group}NearRate`).textContent = pct(result);
+    $(`${group}NearBar`).style.width = `${result * 100}%`;
     const bar = $(`${group}RateBar`);
     bar.style.width = `${result * 100}%`;
     const resultRow = bar.closest('.result-row');
@@ -224,7 +226,6 @@ function updateMix({ playSound = false } = {}) {
   $('balanceBeam').style.transform = `rotate(${Math.max(-12, Math.min(12, difference * 25))}deg)`;
   $('rateBalance').setAttribute('aria-label', `ميزان معدلات الترقية الافتراضية: الحاضرين ${pct(rates.trained)}، غير الحاضرين ${pct(rates.untrained)}`);
   maybeRevealParadox();
-  $('mixRelation').textContent = Math.abs(mix.trained - mix.untrained) < .0005 ? 'تركيبة المجموعتين متشابهة في التجربة دي' : 'تركيبة المجموعتين مختلفة في التجربة دي';
   if (playSound) sound('mixAdjustment');
 }
 
@@ -236,7 +237,7 @@ for (const id of ['trainedMix', 'untrainedMix']) {
     input.value = String(Math.round(Number(input.value) / 50) * 50);
     updateMix();
   });
-  $(id).addEventListener('change', () => { updateMix({ playSound: true }); reactFelfel('thinking'); });
+  $(id).addEventListener('change', () => { updateMix({ playSound: true }); reactFelfel('thinking'); nudgeHint('lab'); });
   $(id).addEventListener('keydown', event => {
     const input = event.currentTarget;
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
@@ -245,7 +246,7 @@ for (const id of ['trainedMix', 'untrainedMix']) {
     const nearest = Math.round(current / 50) * 50;
     const direction = ['ArrowRight', 'ArrowUp'].includes(event.key) ? 1 : -1;
     input.value = String(Math.max(0, Math.min(1000, current % 50 ? nearest : current + direction * 50)));
-    updateMix({ playSound: true }); reactFelfel('thinking');
+    updateMix({ playSound: true }); reactFelfel('thinking'); nudgeHint('lab');
   });
 }
 $('resetMix').addEventListener('click', () => {
@@ -260,16 +261,27 @@ $('equalMix').addEventListener('click', () => {
   updateMix({ playSound: true });
   $('scaleMessage').textContent = 'التوزيع الافتراضي بقى 50/50 في المجموعتين. قارن النتيجة بالسجل الأصلي.';
 });
-const hints = [
-  'لو رقم كبير قالك حكاية، اسأل الورق: مين اتحطّ مع مين في نفس المقارنة؟',
-  'جرّب تحرّك شريط مجموعة واحدة. معدلها بيتحرك، ولا ثابت مكانه؟ السجل الأصلي ما لمسناهوش.',
-  'قارن سجلين من نفس المستوى الوظيفي، وبعدين بص على نسبة Junior في المجموعتين.',
-];
+const hints = {
+  evidence: 'الرقم الكبير عامل دوشة، بس جرّب تقارن موظفين من نفس المستوى. الحكاية لسه زي ما هي؟',
+  lab: 'بصّ كل مجموعة فيها مين، وجرّب تغيّر التركيبة. رقم الترقيات هيفضل زي ما هو؟',
+};
+const activeHint = () => $('labTab').getAttribute('aria-selected') === 'true' ? 'lab' : 'evidence';
 function updateHintControl() {
-  const remaining = hints.length - state.hint;
-  $('hintCount').textContent = String(remaining).replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
-  $('hintBtn').disabled = remaining === 0;
-  $('hintBtn').setAttribute('aria-label', remaining ? `افتح تلميحًا، متبقي ${remaining}` : 'استخدمت التلميحات الثلاثة');
+  $('hintBtn').disabled = false;
+  $('hintBtn').setAttribute('aria-label', activeHint() === 'lab' ? 'افتح تلميح معمل التحليل' : 'افتح تلميح لوحة الأدلة');
+}
+let hintNudgeTimer;
+function nudgeHint(context) {
+  if (state.hintNudged.has(context) || activeHint() !== context || $('investigation').classList.contains('hidden')) return;
+  state.hintNudged.add(context);
+  const button = $('hintBtn');
+  if (button.classList.contains('hidden')) return;
+  button.classList.remove('hint-available');
+  void button.offsetWidth;
+  button.classList.add('hint-available');
+  reactFelfel('peek');
+  window.clearTimeout(hintNudgeTimer);
+  hintNudgeTimer = window.setTimeout(() => button.classList.remove('hint-available'), 1000);
 }
 let hintScrollY = 0;
 let hintSequence = 0;
@@ -294,11 +306,11 @@ function closeHint(immediate = false) {
   if (!$('hintBtn').classList.contains('hidden')) ($('hintBtn').disabled ? $('muteBtn') : $('hintBtn')).focus();
 }
 $('hintBtn').addEventListener('click', () => {
-  if (state.hint >= hints.length || !$('hintPanel').classList.contains('hidden')) return;
+  if (!$('hintPanel').classList.contains('hidden')) return;
   const sequence = ++hintSequence;
-  const index = state.hint++;
-  updateHintControl();
-  $('hintFelfel').src = index === 0 ? '/investigation-file/assets/felfel/idle.png' : '/investigation-file/assets/felfel/inspect.png';
+  const context = activeHint();
+  $('hintBtn').classList.remove('hint-available');
+  $('hintFelfel').src = '/investigation-file/assets/felfel/peek.png';
   $('hintText').textContent = '';
   $('hintPanel').querySelector('.hint-bubble').classList.remove('speech-revealed');
   $('hintPanel').querySelector('.hint-character').dataset.state = 'entrance';
@@ -312,15 +324,16 @@ $('hintBtn').addEventListener('click', () => {
   const reduced = prefersReducedMotion();
   window.setTimeout(() => {
     if (sequence !== hintSequence || $('hintPanel').classList.contains('hidden')) return;
+    $('hintFelfel').src = '/investigation-file/assets/felfel/ponder.png';
     $('hintPanel').querySelector('.hint-character').dataset.state = 'inspect';
-  }, reduced ? 0 : 445);
+  }, reduced ? 0 : 560);
   window.setTimeout(() => {
     if (sequence !== hintSequence || $('hintPanel').classList.contains('hidden')) return;
     $('hintPanel').querySelector('.hint-character').dataset.state = 'talking';
     $('hintPanel').querySelector('.hint-bubble').classList.add('speech-revealed');
-    $('hintText').textContent = hints[index];
+    $('hintText').textContent = hints[context];
     $('dismissHint').focus();
-  }, reduced ? 0 : 730);
+  }, reduced ? 0 : 820);
 });
 $('dismissHint').addEventListener('click', () => closeHint());
 $('hintVeil').addEventListener('click', () => closeHint());
@@ -335,9 +348,9 @@ $('hintPanel').addEventListener('keydown', event => {
 updateHintControl();
 
 const dialogue = [
-  ['المدير المالي', '٣٥٪ للحاضرين، و٦٥٫٧٪ للي ماحضروش. أوقّع على إلغاء البرنامج؟'],
-  ['مديرة الموارد البشرية', 'ثانية قبل التوقيع. السجلات المفصلة على المكتب؛ بصّ فيها الأول.'],
-  ['المدير المالي', 'اتفضلوا. بس القلم مستني، والشاي قرب يبرد!'],
+  ['المدير المالي', 'أنا هلغي برنامج التدريب. التقرير بيقول إن اللي ماحضروش اترقّوا أكتر، ومش هنكمّل نصرف عليه كده.'],
+  ['مديرة الموارد البشرية', 'طب استنى قبل ما تمضي. ملفات الموظفين على المكتب؛ نديها بصّة الأول.'],
+  ['المدير المالي', 'ماشي، عندك لحد ما الشاي يبرد. بعدها القلم هيشتغل!'],
 ];
 $('nextIntro').addEventListener('click', () => {
   if (state.introStep === -1) beginRun(playerId);
@@ -363,6 +376,17 @@ function renderIntroStep() {
 function resetMeeting() {
   state.decision = null; state.reason = null;
   document.querySelectorAll('[data-decision],[data-reason]').forEach(button => button.setAttribute('aria-pressed', 'false'));
+  showMeetingStep('decision');
+}
+function showMeetingStep(step) {
+  const reason = step === 'reason';
+  $('decisionStep').hidden = reason;
+  $('decisionStep').classList.toggle('hidden', reason);
+  $('reasonStep').hidden = !reason;
+  $('reasonStep').classList.toggle('hidden', !reason);
+  $('submitVerdict').hidden = !reason;
+  $('submitVerdict').classList.toggle('hidden', !reason);
+  $('submitVerdict').disabled = !reason || !state.reason;
 }
 $('faceCfo').addEventListener('click', () => {
   if (!state.labVisited) return;
@@ -374,6 +398,8 @@ $('backToDesk').addEventListener('click', () => { sound('sceneChange'); scene('i
 document.querySelectorAll('[data-decision]').forEach(button => button.addEventListener('click', () => {
   state.decision = button.dataset.decision;
   document.querySelectorAll('[data-decision]').forEach(option => option.setAttribute('aria-pressed', String(option === button)));
+  showMeetingStep('reason');
+  $('reasonStep').querySelector('[data-reason]').focus({ preventScroll: true });
   reactFelfel('surprise', 'meetingFelfel');
   sound('sceneChange');
 }));
@@ -381,8 +407,13 @@ document.querySelectorAll('[data-reason]').forEach(button => button.addEventList
   state.reason = button.dataset.reason;
   reactFelfel('thinking', 'meetingFelfel');
   document.querySelectorAll('[data-reason]').forEach(option => option.setAttribute('aria-pressed', String(option === button)));
+  $('submitVerdict').disabled = false;
   sound('button');
 }));
+$('editDecision').addEventListener('click', () => {
+  showMeetingStep('decision');
+  $('decisionStep').querySelector('[data-decision][aria-pressed="true"]')?.focus({ preventScroll: true });
+});
 
 function showEnding(result, reason = 'unsupported-decision') {
   finishRun(playerId, result, undefined, reason);
@@ -398,10 +429,10 @@ function showEnding(result, reason = 'unsupported-decision') {
   $('endingStampText').textContent = result === 'success' ? 'اعتراض في محلّه' : 'الحكم محتاج مراجعة';
   $('endingTitle').textContent = result === 'success' ? 'القرار اتوقف في وقته!' : 'الملف محتاج مراجعة';
   $('endingText').textContent = result === 'success'
-    ? 'وقّفت قرار متسرّع. دي مفارقة سيمبسون: الإجمالي أخفى فرق تركيبة Junior وSenior بين المجموعتين؛ نحتاج تحقيقًا أحسن قبل ما نحكم على تأثير التدريب.'
-    : reason === 'causation' ? 'السجلات ما تثبتش إن التدريب سبب الترقيات. اختلاف تركيبة Junior وSenior ممكن يقلب الصورة الإجمالية؛ لازم نحقق أكتر.'
-      : reason === 'aggregate' ? 'دي مفارقة سيمبسون: الرقم الإجمالي مضلّل لما تركيبة Junior وSenior تختلف بين المجموعتين. ما ينفعش نعتمد عليه وحده لإلغاء البرنامج.'
-        : 'قرار الإلغاء أو الاستمرار النهائي سابق لأوانه. تركيب المجموعتين مختلف، والسجلات وحدها ما تثبتش تأثير التدريب.';
+    ? 'أنقذت القرار من توقيع مستعجل! الأرقام الكبيرة خبّت اختلاف تركيبة المجموعتين. لسه محتاجين تحقيق أكتر قبل ما نحكم على التدريب.'
+    : reason === 'causation' ? 'اللي حضروا أعلى جوّه كل مستوى، بس ده لوحده ما يثبتش إن التدريب هو السبب. افتح الملف الأخير وشوف الصورة كلها.'
+      : reason === 'aggregate' ? 'القلم سبق التحقيق بشوية! الرقم الإجمالي لوحده ما يكفيش؛ بصّ على تركيبة المجموعتين جوّه الملف الأخير.'
+        : 'الحكم النهائي جه بدري. المجموعتين مش بنفس التركيبة، والسجلات وحدها ما تثبتش تأثير التدريب. افتح الملف الأخير.';
   $('revealStage').classList.add('hidden');
   document.querySelector('.end-card').classList.remove('hidden');
   scene('ending'); sound(result);
@@ -417,47 +448,44 @@ function renderReveal() {
   const seniorOther = records.find(r => r.id === 'su');
   const common = counterfactualRates(.5, .5);
   const beats = [
-    ['التقرير الأول', 'المدير المالي شاف ٣٥٪ قدّام ٦٥٫٧٪. رقم كبير... بس لسه مش الحكاية كلها.', revealBars('حضروا · ١٤٠/٤٠٠', originalRates.trained, 'ماحضروش · ٤٦٠/٧٠٠', originalRates.untrained)],
-    ['ملف Junior', 'لما نقارن Junior مع Junior، الحاضرين ٨٠ من ١٠٠، واللي ماحضروش ٤٥٠ من ٦٠٠.', revealBars('حضروا · ٨٠/١٠٠', rate(juniorTrained), 'ماحضروش · ٤٥٠/٦٠٠', rate(juniorOther))],
-    ['ملف Senior', 'ونفس الحركة في Senior: الحاضرين ٦٠ من ٣٠٠، واللي ماحضروش ١٠ من ١٠٠.', revealBars('حضروا · ٦٠/٣٠٠', rate(seniorTrained), 'ماحضروش · ١٠/١٠٠', rate(seniorOther))],
-    ['مين في كل مجموعة؟', 'آه! الحاضرين أغلبهم Senior، وغير الحاضرين أغلبهم Junior. خلطنا ناس بنِسَب مختلفة.', compositionBar('حضروا', share(true, 'junior')) + compositionBar('ماحضروش', share(false, 'junior'))],
-    ['تجربة على الورق', 'لو خلّينا التركيبة واحدة، نص Junior ونص Senior للطرفين، الحساب الافتراضي هيبان بشكل تاني. ده مش سجل الشركة الأصلي.', revealBars('حضروا · افتراضي', common.trained, 'ماحضروش · افتراضي', common.untrained)],
-    ['اسم الحيلة', 'دي مفارقة سيمبسون: الإجمالي بيقول اتجاه، وكل مستوى لوحده بيقول العكس. بس خد بالك، ده ما يثبتش إن التدريب سبب الترقيات؛ نحتاج تقييمًا إضافيًا.', '<div class="reveal-last">الإجمالي اتقلب بسبب اختلاف التركيبة. والسبب الحقيقي للترقيات لسه محتاج تحقيق.</div>'],
+    ['التقرير الكبير', 'التقرير قال: اللي ماحضروش أحسن. طب نفتح الملفات الصغيرة؟', revealBars('حضروا · ١٤٠/٤٠٠', originalRates.trained, 'ماحضروش · ٤٦٠/٧٠٠', originalRates.untrained)],
+    ['ملف Junior', 'بين الـJunior: اللي حضروا اترقّى منهم ٨٠٪، واللي ماحضروش ٧٥٪.', revealBars('حضروا · ٨٠/١٠٠', rate(juniorTrained), 'ماحضروش · ٤٥٠/٦٠٠', rate(juniorOther))],
+    ['ملف Senior', 'وبين الـSenior: اللي حضروا ٢٠٪، واللي ماحضروش ١٠٪. لحظة... ده عكس التقرير!', revealBars('حضروا · ٦٠/٣٠٠', rate(seniorTrained), 'ماحضروش · ١٠/١٠٠', rate(seniorOther))],
+    ['مين في كل مجموعة؟', 'السر هنا: المجموعتين مش بنفس التركيبة. واحدة فيها Junior أكتر بكتير.', compositionBar('حضروا', share(true, 'junior')) + compositionBar('ماحضروش', share(false, 'junior'))],
+    ['تجربة على الورق', 'لما نجرّب نفس التركيبة للمجموعتين، الصورة بتتغير. دي تجربة حسابية، مش تعديل للسجلات.', revealBars('حضروا · افتراضي', common.trained, 'ماحضروش · افتراضي', common.untrained)],
+    ['اسم الحيلة', 'دي مفارقة سيمبسون: الإجمالي خبّى اللي حصل جوّه كل مستوى. وبرضه السجلات وحدها ما تثبتش إن التدريب هو سبب الترقيات.', '<div class="reveal-last">الإجمالي اتقلب بسبب اختلاف التركيبة. سبب الترقيات الحقيقي لسه محتاج تحقيق.</div>'],
   ];
   const [title, speech, visual] = beats[revealStep];
   $('revealTitle').textContent = title;
   $('revealSpeech').textContent = speech;
   $('revealVisual').innerHTML = visual;
-  $('revealFelfel').src = revealStep === 3 || revealStep === 5 ? '/investigation-file/assets/felfel/celebrate.png' : '/investigation-file/assets/felfel/inspect.png';
+  $('revealFelfel').src = revealStep === 3 || revealStep === 5 ? '/investigation-file/assets/felfel/celebrate.png' : '/investigation-file/assets/felfel/ponder.png';
   $('revealFelfel').dataset.state = revealStep === 3 || revealStep === 5 ? 'discovery' : 'talking';
   $('revealProgress').textContent = `${revealStep + 1} / ${beats.length}`;
-  $('nextReveal').textContent = revealStep === beats.length - 1 ? 'ارجع للنهاية' : 'اللي بعده ←';
+  $('nextReveal').textContent = revealStep === beats.length - 1 ? 'العب من جديد' : 'اللي بعده ←';
   $('revealStage').classList.remove('reveal-pop'); void $('revealStage').offsetWidth; $('revealStage').classList.add('reveal-pop');
 }
 $('openReveal').addEventListener('click', () => {
   revealStep = 0;
   document.querySelector('.end-card').classList.add('hidden');
   $('revealStage').classList.remove('hidden');
+  $('revealStage').classList.add('reveal-opening');
   renderReveal(); sound('sceneChange'); $('nextReveal').focus();
+  window.setTimeout(() => $('revealStage').classList.remove('reveal-opening'), 700);
 });
 $('nextReveal').addEventListener('click', advanceReveal);
 function advanceReveal() {
   if (revealStep < 5) { revealStep++; renderReveal(); sound('sceneChange'); }
-  else {
-    $('revealStage').classList.add('hidden'); document.querySelector('.end-card').classList.remove('hidden'); $('openReveal').focus();
-    sound('sceneChange');
-  }
+  else restartGame();
 }
-$('closeReveal').addEventListener('click', () => {
-  $('revealStage').classList.add('hidden'); document.querySelector('.end-card').classList.remove('hidden'); $('openReveal').focus(); sound('sceneChange');
-});
 $('submitVerdict').addEventListener('click', () => {
   if (!$('confrontation').classList.contains('hidden') && !state.labVisited) return;
   const result = resolveVerdict(state.decision, state.reason);
   if (result.status === 'needs-choice') { $('verdictMessage').textContent = 'اختار القرار والتبرير قبل التأكيد.'; return; }
   showEnding(result.status, result.reason);
 });
-$('replay').addEventListener('click', () => { beginRun(playerId); sound('sceneChange'); window.setTimeout(() => location.reload(), 220); });
+function restartGame() { beginRun(playerId); sound('sceneChange'); window.setTimeout(() => location.reload(), 220); }
+$('replay').addEventListener('click', restartGame);
 $('muteBtn').addEventListener('click', () => {
   const muted = audio.toggleMuted();
   $('muteBtn').setAttribute('aria-pressed', String(muted));

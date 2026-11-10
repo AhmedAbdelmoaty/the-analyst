@@ -348,3 +348,258 @@ button:focus-visible,input:focus-visible{outline:3px solid #236f90;outline-offse
   .ending-scene{min-height:100svh}.end-card{padding:12px 8px 20px}.end-card>p{font-size:15px;line-height:1.55}
 }
 @media(prefers-reduced-motion:reduce){.intro-scene .character,.intro-scene .characters .speech{animation:none!important}}
+
+/* Case three: keep the active choice and its consequence in the first view. */
+.scene{padding-top:56px;padding-bottom:12px}
+.intro-scene h1,.confrontation-scene h1{margin:3px auto 6px;line-height:1.2}
+.intro-scene .characters{height:clamp(350px,52vh,475px);margin:2px auto 7px}
+.intro-scene .characters>.report-paper{top:30%;padding:12px 17px}
+.intro-scene .report-label{font-size:18px;padding-bottom:3px}
+.intro-scene .report-lines{padding:7px 0}
+.intro-scene .report-stamp{margin-top:8px}
+.intro-scene .characters .speech{min-height:82px;padding:8px 14px}
+.intro-scene #nextIntro{margin:6px auto 0}
+.investigation-scene{padding-top:8px}
+.desk-heading{min-height:56px;margin-bottom:0;align-items:center}
+.desk-heading h1{margin:0;font-size:clamp(22px,2.6vw,34px);line-height:1.15}
+.desk-heading .scene-kicker{font-size:13px;padding:0 10px}
+.desk-guide img{height:52px;width:42px}
+.desk-note{font-size:11px;padding:3px 6px}
+.desk-grid{padding:9px}
+.desk-grid>.office-work>.paper-panel{padding:10px}
+.source-panel h2,.clips-panel h2{margin:0 0 5px}
+.source-panel .cards{gap:6px}
+.record-card{min-height:95px;padding:7px}
+.record-numbers{margin:4px 0}
+.comparison-result,.mobile-comparison{padding:8px}
+.final-access{margin:8px 0 0}
+.final-access .game-button{min-height:46px;padding:4px 18px}
+.scale-panel{gap:0}
+.experiment-board{padding:8px 10px;gap:8px}
+.mix-controls h3 small{font-size:11px;font-weight:600;color:#6c5640;margin-inline-start:8px}
+.mix-group,.mix-group+.mix-group{padding:5px 7px 6px}
+.employee-population{height:148px;margin:1px 0 3px}
+.employee-token{height:74px}
+.mix-group label{display:none}
+.mix-legend{font-size:12px;margin-top:0}
+.mix-controls input[type=range]{height:39px;min-height:39px;--junior-share:50%;direction:ltr}
+.mix-controls input[type=range]::-webkit-slider-runnable-track{height:18px;border:2px solid #795335;background:linear-gradient(to right,#42bbb8 0 var(--junior-share),#ed927b var(--junior-share) 100%)}
+.mix-controls input[type=range]::-moz-range-track{height:18px;border:2px solid #795335;background:linear-gradient(to right,#42bbb8 0 var(--junior-share),#ed927b var(--junior-share) 100%)}
+.mix-controls input[type=range]::-webkit-slider-thumb{margin-top:-12px}
+.near-rate{display:none}
+.live-results{padding:7px}
+.result-row{padding:4px 7px}
+.rate-balance{height:56px}
+.balance-pivot{border-bottom-width:43px}
+.balance-beam{top:14px}
+.balance-pan{top:6px;height:30px}
+.historical-board{margin:7px 0 2px;padding:6px}
+.historical-readout{margin-top:4px}
+.history-row{padding:4px 7px}
+.experiment-actions{margin:6px 0 0}
+.confrontation-scene{text-align:center}
+.confrontation-scene>.scene-kicker{margin-top:0}
+.confrontation-scene .final-characters{max-width:900px;height:clamp(165px,29vh,235px);margin:2px auto 4px;gap:12px}
+.confrontation-scene .final-characters>img{height:100%;max-height:235px;width:22%}
+.confrontation-scene .final-paper{width:min(500px,56%);min-height:100px;padding:12px 20px;transform:rotate(-1deg)}
+.final-paper .final-paper-heading{display:flex;align-items:center;justify-content:space-between}
+.final-paper .final-paper-heading h2{font-size:21px;margin:0}
+.final-paper .final-paper-heading img{width:55px;height:62px;object-fit:contain}
+.final-paper p.small{margin:0;font-size:13px;line-height:1.35;color:#624831}
+.verdict-message:empty{display:none}
+.meeting-step{margin:4px auto 2px}
+.meeting-step h2{font-size:19px;margin:2px 0 7px}
+.verdicts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;max-width:1050px;margin:auto}
+.verdict{min-height:62px;max-width:none;width:100%;padding:8px 15px;font-size:14px;line-height:1.35}
+#reasonStep .verdict{font-size:13px}
+#editDecision{display:block;margin:3px auto 0;padding:3px 10px;min-height:32px}
+.confrontation-scene #submitVerdict{margin:6px auto 1px;min-height:48px;padding:5px 18px;font-size:17px}
+.confrontation-scene #backToDesk{display:block;margin:0 auto;padding:3px 10px;min-height:32px}
+.ending-scene{min-height:100svh}
+.end-card{padding:6px 10px 12px}
+.ending-people{height:clamp(130px,27vh,185px);margin:0 auto 3px}
+.ending-people img,.end-card .ending-people #endingReaction{max-height:185px}
+.end-card .ending-people #endingFelfel{max-height:190px}
+.ending-stamp{margin-bottom:3px;padding:2px 10px}
+.ending-stamp img{width:27px;height:27px}
+.end-card h1{margin:2px auto;font-size:clamp(27px,3vw,36px)}
+.end-card>p{max-width:760px;margin:5px auto 10px;padding:7px 12px;font-size:16px;line-height:1.4}
+.ending-actions{gap:10px}
+.ending-actions .game-button{min-height:49px;padding:5px 16px;font-size:16px}
+.reveal-stage{padding:18px 22px}
+.reveal-heading img{height:220px}
+.reveal-visual{min-height:150px;padding:12px}
+.reveal-stage>p{margin:4px 0 8px;line-height:1.5}
+
+@media(max-width:700px){
+  .scene{padding:calc(env(safe-area-inset-top) + 53px) 9px 12px}
+  .intro-scene h1{font-size:clamp(25px,6.5vw,32px);line-height:1.15;margin:4px auto}
+  .intro-scene .scene-kicker{font-size:12px;padding:0 8px}
+  .intro-scene .characters{grid-template-rows:minmax(66px,auto) minmax(115px,22vh) auto;row-gap:5px;height:auto;margin:3px auto 0;padding:0 3px}
+  .intro-scene .characters .speech,.intro-scene .characters #introSpeech[data-speaker=cfo],.intro-scene .characters #introSpeech[data-speaker=hr]{min-height:66px;padding:6px 10px}
+  .intro-scene .speech p{font-size:14px;line-height:1.3}
+  .intro-scene .characters>.character.cfo,.intro-scene .characters>.character.hr{height:100%;max-height:170px}
+  .intro-scene .characters>.character.cfo{grid-column:1}
+  .intro-scene .characters>.character.hr{grid-column:2}
+  .intro-scene .characters>.report-paper{top:auto;width:min(100%,400px);padding:7px 11px}
+  .intro-scene .report-label{font-size:16px}
+  .intro-scene .report-lines{padding:4px 0;font-size:12px}
+  .intro-scene .report-lines strong{font-size:12px}
+  .intro-scene .report-lines b{font-size:16px}
+  .intro-scene .report-stamp{margin-top:4px;font-size:11px;padding:1px 5px}
+  .intro-scene #nextIntro{margin:38px auto 0;min-height:44px;padding:4px 14px;font-size:17px}
+  .investigation-scene{padding-top:53px}
+  .desk-heading{min-height:38px;margin:0 0 2px;gap:5px}
+  .desk-heading h1{font-size:clamp(18px,5vw,23px)}
+  .desk-heading .scene-kicker{font-size:11px}
+  .desk-guide img{height:38px;width:30px}
+  .office-tab{min-height:40px;padding:4px 7px}
+  .desk-grid{padding:6px}
+  .desk-grid>.office-work>.paper-panel{padding:7px}
+  .source-panel h2{margin:0 0 3px;font-size:18px}
+  .source-panel .cards{gap:5px}
+  .record-card{min-height:83px;padding:5px}
+  .record-numbers{margin:3px 0}
+  .mobile-comparison{margin-top:6px;padding:6px}
+  .mobile-comparison .comparison-card{min-height:62px}
+  .experiment-board{padding:7px}
+  .mix-controls{gap:7px}
+  .mix-group,.mix-group+.mix-group{padding:4px 6px 5px}
+  .employee-population{height:clamp(105px,19vh,145px)}
+  .employee-token{height:66px}
+  .mix-controls input[type=range]{min-height:38px;height:38px}
+  .near-rate{display:flex;gap:6px;margin-top:3px;padding:4px 6px;font-size:12px}
+  .near-rate strong{font-size:17px}
+  .near-rate-meter{display:block;flex:1;height:9px;border:1px solid #8c6a4b;border-radius:8px;overflow:hidden;background:#e2d7bd}
+  .near-rate-meter i{display:block;height:100%;background:#43bbb9;border-radius:8px;transition:width .2s}
+  .untrained-chamber .near-rate-meter i{background:#d69848}
+  .live-results{padding:6px}
+  .live-results h3{font-size:15px}
+  .historical-board{margin:7px 0 2px}
+  .confrontation-scene h1{font-size:clamp(23px,6vw,30px);line-height:1.15;margin:3px auto}
+  .confrontation-scene .final-characters{display:grid;grid-template-columns:1fr minmax(0,1.5fr) 1fr;align-items:center;height:clamp(100px,17vh,145px);max-width:520px;gap:2px;margin:1px auto 4px}
+  .confrontation-scene .final-characters>img{grid-row:1;height:100%!important;max-height:145px;width:100%;object-fit:contain}
+  .confrontation-scene .final-characters>.final-paper{grid-column:2;grid-row:1;width:100%;min-height:0;padding:8px 9px}
+  .final-paper .final-paper-heading h2{font-size:15px}
+  .final-paper .final-paper-heading img{width:27px!important;height:35px!important}
+  .final-paper p.small{font-size:11px;line-height:1.25}
+  .meeting-step{margin:3px auto}
+  .meeting-step h2{font-size:17px;margin:1px 0 5px}
+  .verdicts{grid-template-columns:1fr;gap:6px;max-width:520px}
+  .verdict,#reasonStep .verdict{min-height:47px;padding:6px 17px;font-size:13px;line-height:1.25}
+  .confrontation-scene #submitVerdict{margin:5px auto 0;min-height:44px;font-size:15px}
+  .confrontation-scene #backToDesk{font-size:12px;min-height:28px}
+  .ending-scene{min-height:100svh}
+  .ending-people{height:clamp(115px,21vh,155px)}
+  .ending-people img,.end-card .ending-people #endingReaction{max-height:155px}
+  .end-card .ending-people #endingFelfel{max-height:160px}
+  .end-card>p{font-size:14px;line-height:1.35;margin:5px auto 8px;padding:6px 9px}
+  .ending-actions{gap:7px}
+  .ending-actions .game-button{min-height:43px;padding:4px 12px;font-size:14px}
+  .reveal-stage{padding:10px 12px}
+  .reveal-heading img{height:92px;width:75px}
+  .reveal-visual{min-height:110px;padding:8px}
+  .reveal-stage>p{font-size:14px;line-height:1.4}
+}
+
+/* Restore breathing room where the viewport allows it, without changing game flow. */
+@media(min-width:701px){
+  .desk-guide img{height:68px;width:52px}
+  .desk-note{max-width:160px;line-height:1.2}
+  .employee-population{height:184px}
+  .employee-token{height:84px}
+}
+@media(min-width:1051px){
+  .desk-guide{margin-left:clamp(230px,16vw,310px)}
+  #evidenceWork{min-height:min(55vh,470px)}
+  #evidenceWork .source-panel{display:flex;flex-direction:column}
+  #evidenceWork .cards{flex:1;grid-template-rows:repeat(2,minmax(0,1fr));align-items:stretch}
+  #evidenceWork .record-card{display:flex;flex-direction:column;justify-content:center;min-height:0}
+}
+@media(min-width:701px) and (max-height:800px){.employee-population{height:176px}.employee-token{height:78px}}
+@media(min-width:1051px) and (min-height:900px){
+  #evidenceWork{min-height:clamp(470px,46vh,520px)}
+  .ending-people{height:clamp(205px,30vh,275px)}
+  .ending-people img,.end-card .ending-people #endingReaction{max-height:270px}
+  .end-card .ending-people #endingFelfel{max-height:280px}
+  .ending-stamp{margin-bottom:8px}
+  .end-card h1{margin:7px auto;font-size:40px}
+  .end-card>p{font-size:18px;line-height:1.5;margin:10px auto 16px}
+  .ending-actions .game-button{min-height:56px;padding:7px 20px}
+}
+@media(max-width:700px){
+  .intro-scene .characters{row-gap:40px}
+  .record-tag{padding-top:13px;line-height:1.2}
+  .employee-population{height:176px}
+  .employee-token{height:74px}
+  .confrontation-scene #backToDesk{color:#58341d;background:#fff0c9;border:2px solid #8b542c;border-radius:8px;text-decoration:none;margin-top:7px;padding:3px 10px}
+}
+@media(max-width:700px) and (min-height:780px){
+  .confrontation-scene .final-characters{height:clamp(160px,21vh,185px)}
+  .confrontation-scene .final-characters>img{max-height:185px}
+  .confrontation-scene .meeting-step{margin:8px auto}
+  .confrontation-scene .verdict{min-height:52px}
+  .ending-people{height:clamp(155px,22vh,175px)}
+}
+
+/* Case-file choices respond to the player; character art rests between state changes. */
+.confrontation-scene .final-characters>img:first-child,
+.confrontation-scene .final-characters>img:last-child,
+.desk-guide img{animation:none}
+.confrontation-scene .final-paper .small{max-width:420px;margin:5px auto 0;padding:5px 9px;border-right:4px solid #bd8150;border-radius:5px;background:rgba(255,249,229,.84);color:#533923;line-height:1.45}
+.confrontation-scene .meeting-step h2{display:inline-block;margin:4px auto 12px;padding:2px 17px;border:2px solid #88532f;border-radius:7px;background:#ffe4a0;box-shadow:3px 4px 0 #a87042;transform:rotate(-1deg);color:#55341e}
+.confrontation-scene #backToDesk{display:block;width:max-content;margin:9px auto 0;padding:4px 12px;border:2px solid #88532f;border-radius:7px;background:#fff0ca;color:#58341d;text-decoration:none;line-height:1.4}
+.confrontation-scene #backToDesk:hover{background:#ffe2a1}
+.confrontation-scene .verdict{background:linear-gradient(155deg,#fff8e7,#eed9ae)!important;border:3px solid #76502d!important;box-shadow:inset 0 0 0 3px #fff9e8,4px 6px 0 #885938!important;color:#49301f!important;line-height:1.38;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+.confrontation-scene .verdict[aria-pressed=true]{background:linear-gradient(150deg,#ffe799,#f2bc52)!important;box-shadow:inset 0 0 0 3px #fff5d2,0 0 0 3px #704221,5px 7px 0 #8b552e!important;transform:translateY(-3px) rotate(0)!important}
+.confrontation-scene .verdict:hover:not([aria-pressed=true]){transform:translateY(-4px) rotate(0)!important;box-shadow:inset 0 0 0 3px #fff9e8,6px 10px 0 #885938!important}
+@media(min-width:701px){
+  .confrontation-scene .verdicts{max-width:1200px;gap:14px}
+  .confrontation-scene .verdict{min-height:84px;padding:20px 34px 13px;font-size:16px}
+  .confrontation-scene #reasonStep .verdict{min-height:105px;font-size:14px}
+  .confrontation-scene .verdict:nth-child(2){transform:rotate(.6deg)}
+  .confrontation-scene .verdict:nth-child(3){transform:rotate(-.5deg)}
+}
+@media(min-width:701px) and (max-height:800px){
+  .confrontation-scene .verdict{min-height:67px;padding:10px 31px;font-size:14px}
+  .confrontation-scene #reasonStep .verdict{min-height:80px;font-size:13px}
+  .confrontation-scene .meeting-step h2{margin:2px auto 6px}
+}
+@media(min-width:1051px) and (min-height:900px){
+  .confrontation-scene .final-characters{height:clamp(270px,33vh,350px);margin:12px auto 14px}
+  .confrontation-scene .final-characters>img{max-height:330px}
+  .confrontation-scene .final-paper{min-height:160px}
+  .confrontation-scene .meeting-step{margin:12px auto 6px}
+  .confrontation-scene .verdict{min-height:96px}
+}
+@media(max-width:700px){
+  .confrontation-scene .meeting-step h2{margin:3px auto 8px;padding:1px 10px;font-size:16px}
+  .confrontation-scene .verdict{min-height:48px;padding:7px 17px;font-size:13px}
+  .reveal-stage{padding:24px clamp(20px,5vw,32px) 30px;background-size:100% 100%}
+  .reveal-heading{gap:8px;margin-bottom:6px}
+  .reveal-heading>div{min-width:0;padding-inline:2px}
+  .reveal-heading h2{margin:4px 0 0;line-height:1.2}
+  .reveal-stage>p{margin:8px 2px 13px;font-size:14px;line-height:1.55;overflow-wrap:anywhere}
+  .reveal-visual{margin-inline:2px;padding:9px;min-height:110px}
+  .reveal-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:15px;padding:0 3px 2px}
+  .reveal-footer>span{flex:none;grid-column:auto}
+  .reveal-footer #nextReveal{width:auto;min-width:150px;min-height:47px;padding:5px 12px;font-size:16px}
+}
+
+/* Felfel acts only when the player creates a beat; his feet remain anchored while reading. */
+.desk-guide img[data-state=peek]{animation:felfelPeek .72s cubic-bezier(.2,.8,.25,1) both}
+.hint-control.hint-available{animation:hintInvite .7s cubic-bezier(.2,.8,.25,1) both}
+.hint-character img{object-fit:contain;object-position:center bottom}
+.hint-character[data-state=entrance]{animation:felfelHintHop .52s cubic-bezier(.2,.8,.25,1) both}
+.hint-character[data-state=inspect] img{animation:none}
+.hint-character[data-state=talking] img{animation:none}
+.hint-bubble.speech-revealed{animation:bubblePop .24s var(--motion-snap) both}
+.confrontation-scene .final-paper-heading #meetingFelfel{animation:none}
+.ending-people #endingFelfel,.success .ending-people #endingFelfel,.failure .ending-people #endingFelfel{animation:none}
+#revealFelfel,#revealFelfel[data-state=talking],#revealFelfel[data-state=discovery]{animation:none}
+.reveal-opening #revealFelfel{animation:felfelRevealEnter .65s cubic-bezier(.2,.8,.25,1) both}
+@keyframes felfelPeek{0%{opacity:.65;transform:translateX(18px) translateY(8px) scale(.88)}45%{opacity:1;transform:translateX(0) translateY(-7px) scale(1.06)}72%{transform:translateY(2px) scale(.98)}100%{transform:none}}
+@keyframes hintInvite{45%{transform:translateY(-5px) scale(1.05)}100%{transform:none}}
+@keyframes felfelHintHop{0%{opacity:0;transform:translateX(70px) translateY(24px) scale(.84)}38%{opacity:1;transform:translateX(23px) translateY(-14px) scale(1.03)}68%{transform:translateX(4px) translateY(-19px) scale(1.06)}84%{transform:translateY(3px) scale(.97)}100%{transform:none}}
+@keyframes felfelRevealEnter{0%{opacity:0;transform:translateY(27px) scale(.86)}62%{opacity:1;transform:translateY(-10px) scale(1.04)}100%{transform:none}}
+@media(prefers-reduced-motion:reduce){.desk-guide img[data-state=peek],.hint-control.hint-available,.hint-character[data-state=entrance],.reveal-opening #revealFelfel{animation:none!important}}

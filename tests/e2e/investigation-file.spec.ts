@@ -22,7 +22,7 @@ async function decide(page: Page, decision: string, reason: string) {
 test('opening dialogue remains separate from report and action', async ({ page }, testInfo) => {
   await page.goto('/investigation-file/index.html');
   await expect(page.locator('#introTitle')).toHaveText('نلغي برنامج تطوير الموظفين؟');
-  await expect(page.locator('#introSpeech')).toContainText('اسمع وجهتي النظر');
+  await expect(page.locator('#introSpeech')).toContainText('المدير المالي جاهز يمضي');
   if (process.env.INVESTIGATION_CAPTURE_PREVIEWS) await page.screenshot({ path: testInfo.outputPath('opening-idle.png'), fullPage: true });
   await page.locator('#nextIntro').click();
   for (const speaker of ['cfo', 'hr', 'cfo']) {
@@ -36,8 +36,15 @@ test('opening dialogue remains separate from report and action', async ({ page }
   await page.locator('#muteBtn').click();
   await expect(page.locator('#muteBtn')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#hintBtn').click();
-  await expect(page.locator('#hintText')).not.toBeEmpty();
+  await expect(page.locator('#hintText')).toContainText('نفس المستوى');
   await page.locator('#dismissHint').click();
+  await page.locator('#labTab').click();
+  await expect(page.locator('#hintBtn')).toHaveAttribute('aria-label', 'افتح تلميح معمل التحليل');
+  await page.locator('#hintBtn').click();
+  await expect(page.locator('#hintText')).toContainText('تغيّر التركيبة');
+  await page.locator('#dismissHint').click();
+  await page.locator('#faceCfo').click();
+  await expect(page.locator('#hintBtn')).toBeHidden();
 });
 
 test('comparison is immediate; visiting lab unlocks meeting from either tab', async ({ page }, testInfo) => {
@@ -74,13 +81,20 @@ test('independent lab controls update nearby rates and preserve historical recor
 test('two editable choices confirm once; replay resets the run', async ({ page }, testInfo) => {
   await desk(page); await lab(page); await page.locator('#faceCfo').click();
   await page.locator('[data-decision="cancel-program"]').click();
+  await page.locator('#editDecision').click();
   await page.locator('[data-decision="pause-review"]').click();
   await page.locator('[data-reason="composition"]').click();
   if (process.env.INVESTIGATION_CAPTURE_PREVIEWS) await page.screenshot({ path: testInfo.outputPath('meeting.png'), fullPage: true });
   await page.locator('#submitVerdict').click();
   await expect(page.locator('#endingTitle')).toHaveText('القرار اتوقف في وقته!');
   if (process.env.INVESTIGATION_CAPTURE_PREVIEWS) await page.screenshot({ path: testInfo.outputPath('win.png'), fullPage: true });
-  await page.locator('#replay').click();
+  await page.locator('#openReveal').click();
+  await expect(page.locator('#revealSpeech')).toContainText('نفتح الملفات الصغيرة');
+  await expect.poll(() => page.locator('#revealFelfel').evaluate(node => getComputedStyle(node).animationName)).toBe('none');
+  for (let step = 0; step < 5; step++) await page.locator('#nextReveal').click();
+  await expect(page.locator('#revealSpeech')).toContainText('السجلات وحدها ما تثبتش');
+  await expect(page.locator('#nextReveal')).toHaveText('العب من جديد');
+  await page.locator('#nextReveal').click();
   await expect(page.locator('#intro')).toBeVisible();
   await desk(page); await lab(page); await decide(page, 'pause-review', 'aggregate');
   await expect(page.locator('#endingTitle')).toHaveText('الملف محتاج مراجعة');
@@ -97,7 +111,7 @@ test('narrow mobile and larger desktop preserve readable boundaries', async ({ p
     await page.goto('/investigation-file/index.html');
     await page.locator('#nextIntro').click();
     const [speech, report] = await Promise.all(['#introSpeech', '.report-paper'].map(s => page.locator(s).boundingBox()));
-    expect(speech && report && speech.y + speech.height < report.y).toBeTruthy();
+    expect(speech && report && speech.y + speech.height < report.y, JSON.stringify({ size, speech, report })).toBeTruthy();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     for (let i = 0; i < 3; i++) await page.locator('#nextIntro').click();
     await page.locator('#labTab').click();
