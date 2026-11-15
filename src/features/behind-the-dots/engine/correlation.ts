@@ -1,15 +1,23 @@
 import type { Pattern } from "../data/cases";
 
 export const PATTERN_LABELS: Record<Pattern, string> = {
-  up: "النقط طالعة ↗",
-  down: "النقط نازلة ↘",
-  none: "مفيش اتجاه واضح ✨",
+  strongUp: "طردية قوية ↗",
+  weakUp: "طردية متوسطة ↗",
+  none: "لا علاقة خطية واضحة •••",
+  weakDown: "عكسية متوسطة ↘",
+  strongDown: "عكسية قوية ↘",
 };
 
 export function patternFor(r: number): Pattern {
-  if (r >= 0.45) return "up";
-  if (r <= -0.45) return "down";
+  if (r >= 0.7) return "strongUp";
+  if (r >= 0.3) return "weakUp";
+  if (r <= -0.7) return "strongDown";
+  if (r <= -0.3) return "weakDown";
   return "none";
+}
+
+export function pearsonWithoutIndex(xs: readonly number[], ys: readonly number[], index: number): number | null {
+  return pearson(xs.filter((_, i) => i !== index), ys.filter((_, i) => i !== index));
 }
 
 /** Sample Pearson correlation. Returns null when undefined (n<2, length mismatch, zero variance). */

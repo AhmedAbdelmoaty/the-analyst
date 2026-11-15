@@ -393,6 +393,8 @@
 .btd-brand-mark { width: 32px; height: 32px; object-fit: contain; }
 .btd-icon-button { display: grid; width: 37px; height: 37px; place-items: center; border: 1px solid #e0d5c5; border-radius: 12px; background: white; color: var(--ink); }
 .btd-icon-button svg { width: 17px; height: 17px; }
+.btd-hud-progress { width: clamp(48px, 8vw, 96px); height: 8px; overflow: hidden; border: 1px solid #704c75; border-radius: 999px; background: #fff3c4; }
+.btd-hud-progress span { display: block; width: calc(var(--progress) * 100%); height: 100%; border-radius: inherit; background: linear-gradient(90deg,#31aaa7,#dc3764); transition: width 1s linear; }
 .btd-icon-button:focus-visible, .btd-button:focus-visible, .btd-pattern-button:focus-visible, .btd-recommend-option:focus-visible { outline: 3px solid #27aeb1; outline-offset: 3px; }
 .btd-cover, .btd-story, .btd-tutorial, .btd-challenge, .btd-recommendation, .btd-results { position: relative; width: 100%; margin: 12px auto 0; }
 .btd-cover { display: grid; min-height: min(700px, calc(100dvh - 84px)); grid-template-columns: 1.15fr .85fr; align-items: center; overflow: hidden; border: 1px solid #fff8; border-radius: 28px; background: linear-gradient(105deg, #fff8e9f5 0 42%, #fff6e6d9 64%, #fff6e64c 100%); box-shadow: 0 22px 65px #13223b47; }
@@ -515,6 +517,8 @@
 .btd-pattern-button:active { transform: translateY(2px); box-shadow: 0 1px 0 #d0bba5; }
 .btd-pattern-button strong { display: block; font-size: clamp(.72rem, 1.2vw, .91rem); font-weight: 1000; line-height: 1.35; }
 .btd-pattern-button small { display: block; margin-top: 1px; color: #707383; font-size: .66rem; font-weight: 700; line-height: 1.25; }
+.btd-outlier-check { margin-top: 7px; border-top: 1px dashed #c99a61; padding-top: 7px; }
+.btd-outlier-check p { margin: 6px 0 0; color: #5a4568; font-size: .8rem; font-weight: 800; line-height: 1.5; }
 .btd-pattern-symbol { color: #a84c61; font: 1000 1.5rem/1 system-ui, sans-serif; }
 .btd-tutorial-options { margin-top: 8px; }
 .btd-tutorial-options .btd-pattern-button { min-height: 52px; }
@@ -635,7 +639,7 @@
   .btd-tutorial-step { font-size: .73rem; }
   .btd-pattern-button { min-height: 48px; gap: 3px; padding: 5px 3px; }
   .btd-pattern-button strong { font-size: .69rem; }
-  .btd-pattern-button small { display: none; }
+  .btd-pattern-button small { display: block; font-size: .55rem; }
   .btd-pattern-symbol { font-size: 1.25rem; }
   .btd-challenge { margin-top: 8px; }
   .btd-challenge-stage { position: fixed !important; top: 0; right: 0; bottom: 0; left: 0; height: 100dvh; min-height: 100dvh; overflow: hidden; border: 0; border-radius: 0; }
@@ -869,7 +873,7 @@
 .btd-app .btd-tutorial-sheet::after { position: absolute; z-index: 15; inset: 0; display: grid; place-items: center; content: "دفتر ليلى"; border-radius: 16px; background: linear-gradient(145deg,#ffdc88,#df8d5c); color: #5e335d; font-size: clamp(2rem,6vw,4rem); font-weight: 1000; transform-origin: right center; animation: btd-notebook-page .9s ease-in both; pointer-events: none; }
 .btd-app .btd-tutorial-step { flex: none; }
 .btd-app .btd-tutorial-plot { display: grid; min-height: 160px; flex: 1; place-items: center; }
-.btd-app .btd-tutorial-plot .btd-scatter-svg { width: 100%; height: 100%; max-height: 100%; }
+.btd-app .btd-tutorial-plot .btd-scatter-svg { width: auto; height: 100%; max-width: 100%; max-height: 100%; aspect-ratio: 4 / 3; }
 .btd-app .btd-tutorial-question { flex: none; }
 .btd-app .btd-tutorial-options { flex: none; }
 .btd-app .btd-tutorial-action { flex: none; min-height: 42px; margin-top: 6px; }
@@ -1175,9 +1179,15 @@
 .btd-app .btd-main-plot { position: relative; display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; }
 .btd-app .btd-main-plot .btd-scatter-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%; aspect-ratio: 4 / 3; }
 .btd-app .btd-tutorial-step span { direction: rtl; unicode-bidi: plaintext; }
+
+/* The tutorial keeps a reserved chart area; choices must never squeeze or cover its axes. */
+.btd-app .btd-tutorial { overflow-y: auto; }
+.btd-app .btd-tutorial-sheet { overflow-y: auto; }
+.btd-app .btd-tutorial-plot { flex: 0 0 min(40dvh, 400px); height: min(40dvh, 400px); min-height: 260px; }
+.btd-app .btd-tutorial-plot .btd-scatter-svg { width: 100%; height: 100%; max-height: 100%; }
 @media (max-width: 760px) {
   .btd-app .btd-tutorial-sheet { flex: none; }
-  .btd-app .btd-tutorial-plot { flex: none; aspect-ratio: 4 / 3; }
+  .btd-app .btd-tutorial-plot { flex: 0 0 auto; height: auto; min-height: 0; aspect-ratio: 4 / 3; }
   .btd-app .btd-tutorial-plot .btd-scatter-svg { width: min(100%, 58dvh); height: auto; max-height: none; }
   .btd-app .btd-chart-sheet { flex: 1; }
   .btd-app .btd-main-plot { flex: 1; }

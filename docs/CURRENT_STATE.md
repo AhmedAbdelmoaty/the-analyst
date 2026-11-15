@@ -9,6 +9,9 @@ Short, current status only. Detailed history lives in Git and in [THE_ANALYST_PR
 All are in source and in the shared catalog; details in [GAME_REGISTRY.md](GAME_REGISTRY.md).
 اسأل صح (free) · قرار التكريم · ورا النقط · الشفرة الأخيرة · مصفوفة القرار · ملف تحت التحقيق · أداء الفريق · مفارقة الربح.
 
+## Behind the Dots
+- V7 now assesses correlation direction and strength with five touch-friendly choices, five seeded cases, an inspectable outlier, and evidence-led rank feedback. Each correct classification earns one point (out of five); the third missed challenge ends the round immediately. The chase lane remains linked to the timer, while reaction overlays clear quickly. Saves use a new owner-scoped V7 localStorage key, preserving audio preferences while safely restarting obsolete V6 rounds.
+
 ## Platform
 - Phone/password sign-up with WhatsApp OTP (`phone-auth`); admin via `user_roles`.
 - Player setup (character, department, industry), branded arcade hub, public landing showcase, `/plans`.

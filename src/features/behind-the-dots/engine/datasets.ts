@@ -8,6 +8,7 @@ const Y_RANGES: Record<string, readonly [number, number]> = {
   C2: [2, 24],
   C3: [25, 80],
   C4: [40, 96],
+  C5: [40, 96],
 };
 const X_POOLS: Record<string, readonly number[]> = {
   // Each point is one day. Replays change the days while keeping the pattern clear.
@@ -15,6 +16,7 @@ const X_POOLS: Record<string, readonly number[]> = {
   C2: Array.from({ length: 48 }, (_, i) => i + 8),
   C3: Array.from({ length: 71 }, (_, i) => i + 50),
   C4: Array.from({ length: 21 }, (_, i) => i + 2),
+  C5: Array.from({ length: 21 }, (_, i) => i + 2),
 };
 
 function randomFor(seed: number) {
@@ -59,19 +61,23 @@ function makeYValues(c: StoryCase, xs: readonly number[], rand: () => number): n
   const xMax = Math.max(...xs);
   const direction = c.id === "C1" || c.id === "C2" ? 1 : -1;
   const spread = max - min;
-  return xs.map((x) => {
+  const jitterSize = c.id === "C1" || c.id === "C5" ? 0.72 : 1.45;
+  const values = xs.map((x) => {
     const signal = (x - xMin) / (xMax - xMin);
-    const jitter = (rand() - 0.5) * 0.72;
+    const jitter = (rand() - 0.5) * jitterSize;
     const value = direction > 0 ? signal + jitter : 1 - signal + jitter;
     return Math.round(min + Math.max(0, Math.min(1, value)) * spread);
   });
+  if (c.id === "C5") values[Math.floor(values.length * 0.72)] = Math.round(max - spread * 0.08);
+  return values;
 }
 
 function inBand(id: string, r: number | null): boolean {
   if (r === null) return false;
   if (id === "C1") return r >= 0.70 && r <= 0.92;
-  if (id === "C2") return r >= 0.70 && r <= 0.92;
+  if (id === "C2") return r >= 0.30 && r < 0.70;
   if (id === "C3") return Math.abs(r) <= 0.15;
+  if (id === "C4") return r > -0.70 && r <= -0.30;
   return r >= -0.92 && r <= -0.70;
 }
 

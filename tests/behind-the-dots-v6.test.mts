@@ -7,16 +7,16 @@ import { initialState, reducer, ROUND_SECONDS, totalScore } from "../src/feature
 import { hasLegacyProgress, loadState, saveState, sessionKey } from "../src/features/behind-the-dots/engine/persistence.ts";
 
 const run = (state: any, ...actions: any[]) => actions.reduce(reducer, state);
-const startChallenge = () => run(initialState, { type: "start", seed: 123 }, { type: "skipStory" }, { type: "revealTutorialPoint" }, { type: "showTutorialDays" }, { type: "setGuess", value: "up" }, { type: "submitTutorial" }, { type: "startChallenges" });
+const startChallenge = () => run(initialState, { type: "start", seed: 123 }, { type: "skipStory" }, { type: "revealTutorialPoint" }, { type: "showTutorialDays" }, { type: "setGuess", value: "strongUp" }, { type: "submitTutorial" }, { type: "startChallenges" });
 const correct = (c: (typeof CASES)[number]) => patternFor(pearson(c.xs, c.ys)!);
 const answerAndAttach = (state: any, guess: string) => run(state, { type: "answer", value: guess }, { type: "attach" });
 
-test("four approved cases keep their direction across 100 deterministic seeds", () => {
-  assert.deepEqual(CASES.map((c) => c.id), ["C1", "C2", "C3", "C4"]);
-  assert.deepEqual(CASES.map(correct), ["up", "up", "none", "down"]);
+test("five approved cases keep their strength category across 100 deterministic seeds", () => {
+  assert.deepEqual(CASES.map((c) => c.id), ["C1", "C2", "C3", "C4", "C5"]);
+  assert.deepEqual(CASES.map(correct), ["strongUp", "weakUp", "none", "weakDown", "strongDown"]);
   for (let seed = 0; seed < 100; seed++) {
     const generated = generateRunCases(seed);
-    assert.equal(generated.length, 4);
+    assert.equal(generated.length, 5);
     generated.forEach((c, index) => {
       assert.equal(patternFor(pearson(c.xs, c.ys)!), correct(CASES[index]!));
       if (c.id === "C3") c.ys.forEach((sold, i) => assert.ok(sold <= c.xs[i]!, `seed ${seed}, observation ${i}`));
@@ -24,19 +24,28 @@ test("four approved cases keep their direction across 100 deterministic seeds", 
   }
 });
 
-test("the four challenges use 20 seconds, three hearts, and award at most 12 points", () => {
+test("V7 classifies correlation by both direction and strength", () => {
+  assert.deepEqual(
+    [0.82, 0.42, 0.04, -0.48, -0.86].map(patternFor),
+    ["strongUp", "weakUp", "none", "weakDown", "strongDown"],
+  );
+  assert.equal(CASES.length, 5);
+  assert.equal(initialState.v, 7);
+});
+
+test("the five challenges use 20 seconds, three hearts, and one point per correct classification", () => {
   assert.equal(ROUND_SECONDS, 20);
   let state = startChallenge();
   assert.equal(state.hearts, 3);
   for (let index = 0; index < CASES.length; index++) state = answerAndAttach(state, correct(CASES[index]!));
-  assert.equal(state.evidence.length, 4);
-  assert.equal(totalScore(state), 12);
+  assert.equal(state.evidence.length, 5);
+  assert.equal(totalScore(state), 5);
   assert.equal(state.phase, "recommendation");
 });
 
-test("wrong answer or timeout removes exactly one heart; zero hearts enables practice", () => {
+test("the third missed challenge ends the round immediately", () => {
   const before = startChallenge();
-  const wrong = run(before, { type: "answer", value: "down" }, { type: "answer", value: "none" });
+  const wrong = run(before, { type: "answer", value: "strongDown" }, { type: "answer", value: "none" });
   assert.equal(wrong.hearts, 2);
   assert.equal(totalScore(wrong), 0);
   const timedOutTwice = run(before, { type: "timeout" }, { type: "timeout" });
@@ -45,31 +54,25 @@ test("wrong answer or timeout removes exactly one heart; zero hearts enables pra
   let state = before;
   for (let i = 0; i < 3; i++) {
     const actual = correct(CASES[i]!);
-    state = run(state, { type: "answer", value: actual === "up" ? "down" : "up" }, { type: "attach" });
+    state = run(state, { type: "answer", value: actual === "strongUp" ? "strongDown" : "strongUp" }, { type: "attach" });
   }
   assert.equal(state.hearts, 0);
-  assert.equal(state.practiceAfterCapture, true);
-  const practiceAnswer = run(state, { type: "answer", value: "down" });
-  assert.equal(practiceAnswer.phase, "reveal");
-  assert.equal(practiceAnswer.hearts, 0);
-  assert.equal(practiceAnswer.results.C4?.points, 0);
-  const review = run(practiceAnswer, { type: "attach" });
-  assert.equal(review.phase, "recommendation");
-  assert.equal(review.evidence.length, 4);
-  assert.equal(run(review, { type: "recommendationAnswer", choice: "B" }).ending, "glitch");
+  assert.equal(state.practiceAfterCapture, false);
+  assert.equal(state.phase, "ending");
+  assert.equal(state.ending, "glitch");
 });
 
-test("pause blocks answer resolution and supported choice B wins only with hearts remaining", () => {
+test("pause blocks answer resolution and a weak final recommendation does not erase earned progress", () => {
   const before = startChallenge();
   const paused = run(before, { type: "pause" });
-  assert.equal(run(paused, { type: "answer", value: "up" }), paused);
+  assert.equal(run(paused, { type: "answer", value: "strongUp" }), paused);
   let win = before;
   for (const c of CASES) win = answerAndAttach(win, correct(c));
   const ending = run(win, { type: "recommendationAnswer", choice: "B" });
   assert.equal(ending.phase, "ending");
   assert.equal(ending.ending, "perfect");
   assert.equal(run(ending, { type: "finishEnding" }).completed, true);
-  assert.equal(run(win, { type: "recommendationAnswer", choice: "A" }).ending, "glitch");
+  assert.equal(run(win, { type: "recommendationAnswer", choice: "A" }).ending, "saved");
 });
 
 test("user-scoped save resumes the ending sequence and rejects obsolete V5 state", () => {
@@ -83,7 +86,7 @@ test("user-scoped save resumes the ending sequence and rejects obsolete V5 state
   store.set("the-analyst:behind-dots:v5:u1", JSON.stringify({ phase: "puzzle", caseIndex: 2 }));
   assert.equal(hasLegacyProgress(storage, "u1"), true);
   assert.equal(loadState(storage, "u1").phase, "ending");
-  store.set(sessionKey("u1"), JSON.stringify({ ...state, v: 5 }));
+  store.set(sessionKey("u1"), JSON.stringify({ ...state, v: 6 }));
   assert.equal(loadState(storage, "u1").phase, "cover");
 });
 
@@ -111,7 +114,7 @@ test("V6 active saves without timer data fall back to 20 seconds", () => {
 test("a new challenge receives 20 seconds after attaching the previous result", () => {
   const active = startChallenge();
   const nearlyExpired = reducer(active, { type: "setTimer", seconds: 2 });
-  const reveal = reducer(nearlyExpired, { type: "answer", value: "down" });
+  const reveal = reducer(nearlyExpired, { type: "answer", value: "strongDown" });
   const nextChallenge = reducer(reveal, { type: "attach" });
   assert.equal(nextChallenge.caseIndex, 1);
   assert.equal(nextChallenge.remainingSeconds, 20);
