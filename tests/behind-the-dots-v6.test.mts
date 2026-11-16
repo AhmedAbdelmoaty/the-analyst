@@ -18,7 +18,7 @@ test("five approved cases keep their strength category across 100 deterministic 
     const generated = generateRunCases(seed);
     assert.equal(generated.length, 5);
     generated.forEach((c, index) => {
-      assert.equal(patternFor(pearson(c.xs, c.ys)!), correct(CASES[index]!));
+      assert.equal(patternFor(pearson(c.xs, c.ys)!), correct(CASES.find((original) => original.id === c.id)!));
       if (c.id === "C3") c.ys.forEach((sold, i) => assert.ok(sold <= c.xs[i]!, `seed ${seed}, observation ${i}`));
     });
   }
@@ -72,7 +72,8 @@ test("pause blocks answer resolution and a weak final recommendation does not er
   assert.equal(ending.phase, "ending");
   assert.equal(ending.ending, "perfect");
   assert.equal(run(ending, { type: "finishEnding" }).completed, true);
-  assert.equal(run(win, { type: "recommendationAnswer", choice: "A" }).ending, "saved");
+  assert.equal(run(win, { type: "recommendationAnswer", choice: "A" }).ending, "badDecision");
+  assert.equal(run(win, { type: "recommendationAnswer", choice: "C" }).ending, "badDecision");
 });
 
 test("user-scoped save resumes the ending sequence and rejects obsolete V5 state", () => {
