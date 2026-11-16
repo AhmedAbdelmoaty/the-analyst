@@ -1207,3 +1207,14 @@
 .ending-wrongPlan .btd-results-stage .btd-actor-glitch { animation: btd-glitch-peek .85s both; }
 .btd-results-relations .is-wrong b { color: #b3264f; }
 .btd-results-relations .is-right b { color: #16846d; }
+
+/* Desktop challenge chart only: restore the plot's available grid-row height.
+   Do not change the tutorial chart, mobile layout, or the shared SVG fit fix. */
+@media (min-width: 761px) {
+  .btd-app .btd-chart-sheet .btd-plot-frame.btd-main-plot {
+    flex: none;
+    align-self: stretch;
+    height: 100%;
+    min-height: 0;
+  }
+}
