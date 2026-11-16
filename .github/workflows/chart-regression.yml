@@ -2,6 +2,8 @@ name: Validate chart regression
 on:
   push:
     branches: [fix/desktop-challenge-chart-only]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 jobs:
   chart-check:
