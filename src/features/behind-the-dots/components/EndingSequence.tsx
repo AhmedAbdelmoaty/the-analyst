@@ -9,7 +9,7 @@ const file = (actor: "dotty" | "glitch" | "leila", pose: Pose, runFrame = 1) => 
 export function EndingSequence({ ending, paused, onComplete }: { ending: Ending; paused: boolean; onComplete: () => void }) {
   const root = useRef<HTMLElement>(null);
   const timeline = useRef<gsap.core.Timeline | null>(null);
-  const [poses, setPoses] = useState({ dotty: ending === "glitch" ? "stumble" : "run", glitch: "run", leila: "worried" } as Record<"dotty" | "glitch" | "leila", Pose>);
+  const [poses, setPoses] = useState({ dotty: (ending === "glitch" || ending === "wrongPlan") ? "stumble" : "run", glitch: "run", leila: "worried" } as Record<"dotty" | "glitch" | "leila", Pose>);
   const [runFrames, setRunFrames] = useState({ dotty: 1, glitch: 1 });
 
   useLayoutEffect(() => {

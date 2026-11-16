@@ -4,7 +4,7 @@ import { patternFor, pearson } from "./correlation";
 import { generateRunCases } from "./datasets";
 
 export type Phase = "cover" | "briefing" | "tutorial" | "tutorialReady" | "puzzle" | "reveal" | "recommendation" | "recommendationFeedback" | "ending" | "debrief";
-export type Ending = "perfect" | "saved" | "glitch";
+export type Ending = "perfect" | "saved" | "wrongPlan" | "glitch";
 
 export interface CaseResult {
   guess: Pattern | null;
@@ -92,12 +92,12 @@ function resolveCase(s: GameState, guess: Pattern | null, timedOut = false): Gam
   const coefficient = pearson(c.xs, c.ys);
   if (coefficient === null) return s;
   const actual = patternFor(coefficient);
-  const points: 0 | 3 = !s.practiceAfterCapture && guess === actual && !timedOut ? 3 : 0;
+  const points: 0 | 3 = guess === actual && !timedOut ? 3 : 0;
   return {
     ...s,
     phase: "reveal",
-    hearts: s.practiceAfterCapture || points === 3 ? s.hearts : Math.max(0, s.hearts - 1),
-    practiceAfterCapture: s.practiceAfterCapture || s.hearts === 1 && points === 0,
+    hearts: points === 3 ? s.hearts : Math.max(0, s.hearts - 1),
+    practiceAfterCapture: false,
     results: { ...s.results, [c.id]: { guess, actual, points, ...(timedOut ? { timedOut: true } : {}) } },
   };
 }
@@ -144,6 +144,7 @@ export function reducer(s: GameState, a: Action): GameState {
       if (s.phase !== "reveal") return s;
       const c = currentCase(s);
       const evidence = s.evidence.includes(c.id) ? s.evidence : [...s.evidence, c.id];
+      if (s.hearts === 0) return { ...s, evidence, phase: "ending", ending: "glitch", completed: false, paused: false };
       const next = s.caseIndex + 1;
       if (next >= CASES.length) return { ...s, evidence, phase: "recommendation", recommendationAttempts: [] };
       return { ...s, evidence, caseIndex: next, phase: "puzzle", paused: false, remainingSeconds: ROUND_SECONDS };
@@ -151,7 +152,7 @@ export function reducer(s: GameState, a: Action): GameState {
     case "recommendationAnswer": {
       if (s.phase !== "recommendation" || s.recommendationAttempts.length !== 0 || s.evidence.length !== CASES.length) return s;
       const attempts = [...s.recommendationAttempts, a.choice];
-      const ending: Ending = a.choice !== "B" || s.hearts === 0 ? "glitch" : totalScore(s) === 12 ? "perfect" : "saved";
+      const ending: Ending = s.hearts === 0 ? "glitch" : a.choice !== "B" ? "wrongPlan" : totalScore(s) === 12 ? "perfect" : "saved";
       return { ...s, phase: "ending", recommendationAttempts: attempts, ending, completed: false, paused: false };
     }
     case "finishEnding":

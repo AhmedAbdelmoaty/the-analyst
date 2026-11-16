@@ -34,8 +34,8 @@ export function ScatterPlot({ xs, ys, xLabel, yLabel, showFit, highlight, onDotC
   const H = compact ? 140 : 300;
   const m = compact ? { l: 14, r: 10, t: 10, b: 14 } : { l: 46, r: 16, t: 16, b: 48 };
   const { xT, yT, sx, sy } = useMemo(() => {
-    const xT = niceTicks(Math.max(0, Math.min(...xs) - 0.5), Math.max(...xs) + 0.5);
-    const yT = niceTicks(Math.max(0, Math.min(...ys) - 1), Math.max(...ys) + 1);
+    const xT = niceTicks(0, Math.max(...xs) + 0.5);
+    const yT = niceTicks(0, Math.max(...ys) + 1);
     const sx = (v: number) => m.l + ((v - xT.lo) / (xT.hi - xT.lo)) * (W - m.l - m.r);
     const sy = (v: number) => H - m.b - ((v - yT.lo) / (yT.hi - yT.lo)) * (H - m.t - m.b);
     return { xT, yT, sx, sy };
