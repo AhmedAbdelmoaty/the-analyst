@@ -34,7 +34,7 @@ test("the four challenges use 20 seconds, three hearts, and award at most 12 poi
   assert.equal(state.phase, "recommendation");
 });
 
-test("wrong answer or timeout removes exactly one heart; zero hearts enables practice", () => {
+test("wrong answer or timeout removes exactly one heart; losing the third heart ends the round immediately", () => {
   const before = startChallenge();
   const wrong = run(before, { type: "answer", value: "down" }, { type: "answer", value: "none" });
   assert.equal(wrong.hearts, 2);
@@ -48,15 +48,9 @@ test("wrong answer or timeout removes exactly one heart; zero hearts enables pra
     state = run(state, { type: "answer", value: actual === "up" ? "down" : "up" }, { type: "attach" });
   }
   assert.equal(state.hearts, 0);
-  assert.equal(state.practiceAfterCapture, true);
-  const practiceAnswer = run(state, { type: "answer", value: "down" });
-  assert.equal(practiceAnswer.phase, "reveal");
-  assert.equal(practiceAnswer.hearts, 0);
-  assert.equal(practiceAnswer.results.C4?.points, 0);
-  const review = run(practiceAnswer, { type: "attach" });
-  assert.equal(review.phase, "recommendation");
-  assert.equal(review.evidence.length, 4);
-  assert.equal(run(review, { type: "recommendationAnswer", choice: "B" }).ending, "glitch");
+  assert.equal(state.phase, "ending");
+  assert.equal(state.ending, "glitch");
+  assert.equal(state.evidence.length, 3);
 });
 
 test("pause blocks answer resolution and supported choice B wins only with hearts remaining", () => {
@@ -69,7 +63,7 @@ test("pause blocks answer resolution and supported choice B wins only with heart
   assert.equal(ending.phase, "ending");
   assert.equal(ending.ending, "perfect");
   assert.equal(run(ending, { type: "finishEnding" }).completed, true);
-  assert.equal(run(win, { type: "recommendationAnswer", choice: "A" }).ending, "glitch");
+  assert.equal(run(win, { type: "recommendationAnswer", choice: "A" }).ending, "wrongPlan");
 });
 
 test("user-scoped save resumes the ending sequence and rejects obsolete V5 state", () => {
