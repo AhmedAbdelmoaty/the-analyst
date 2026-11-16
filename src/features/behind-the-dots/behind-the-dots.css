@@ -1199,3 +1199,11 @@
 .btd-app .btd-plot-frame.btd-main-plot { position: relative; display: block; flex: 1 1 0; width: 100%; min-width: 0; min-height: 170px; height: auto; max-height: none; aspect-ratio: auto; overflow: hidden; }
 .btd-app .btd-plot-frame.btd-tutorial-plot > .btd-scatter-svg,
 .btd-app .btd-plot-frame.btd-main-plot > .btd-scatter-svg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: 100%; max-height: 100%; aspect-ratio: auto; }
+
+.ending-wrongPlan .btd-results-card h1 { color: #c25a12; }
+.ending-wrongPlan .btd-results-card { box-shadow: 0 0 0 4px #f0a14a66; }
+.ending-glitch .btd-results-card { box-shadow: 0 0 0 4px #98306166; }
+.ending-perfect .btd-results-card, .ending-saved .btd-results-card { box-shadow: 0 0 0 4px #2fbf8f66, 0 0 40px #ffd25a55; }
+.ending-wrongPlan .btd-results-stage .btd-actor-glitch { animation: btd-glitch-peek .85s both; }
+.btd-results-relations .is-wrong b { color: #b3264f; }
+.btd-results-relations .is-right b { color: #16846d; }
