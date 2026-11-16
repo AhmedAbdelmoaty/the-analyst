@@ -97,6 +97,13 @@ export function generateRunCases(seed: number): readonly StoryCase[] {
   const cached = caseCache.get(normalizedSeed);
   if (cached) return cached;
   const generated = CASES.map((c, index) => generateCase(c, (normalizedSeed + Math.imul(index + 1, 0x9e3779b9)) >>> 0));
+  // Preserve an approachable opening and a demanding finale, but prevent
+  // players from memorizing the answer sequence across runs.
+  const random = randomFor(normalizedSeed ^ 0xa5319e37);
+  for (let i = generated.length - 2; i > 0; i--) {
+    const j = 1 + Math.floor(random() * i);
+    [generated[i], generated[j]] = [generated[j]!, generated[i]!];
+  }
   caseCache.set(normalizedSeed, generated);
   if (caseCache.size > 8) caseCache.delete(caseCache.keys().next().value!);
   return generated;
