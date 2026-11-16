@@ -9,12 +9,12 @@ export type Ending = "perfect" | "saved" | "glitch";
 export interface CaseResult {
   guess: Pattern | null;
   actual: Pattern;
-  points: 0 | 1;
+  points: 0 | 3;
   timedOut?: boolean;
 }
 
 export interface GameState {
-  v: 7;
+  v: 6;
   phase: Phase;
   briefingStep: number;
   tutorialStep: 0 | 1 | 2;
@@ -35,7 +35,7 @@ export interface GameState {
 
 export const ROUND_SECONDS = 20;
 export const initialState: GameState = {
-  v: 7,
+  v: 6,
   phase: "cover",
   briefingStep: 0,
   tutorialStep: 0,
@@ -92,16 +92,12 @@ function resolveCase(s: GameState, guess: Pattern | null, timedOut = false): Gam
   const coefficient = pearson(c.xs, c.ys);
   if (coefficient === null) return s;
   const actual = patternFor(coefficient);
-  const correct = !s.practiceAfterCapture && guess === actual && !timedOut;
-  const points: 0 | 1 = correct ? 1 : 0;
-  const captured = !s.practiceAfterCapture && s.hearts === 1 && !correct;
+  const points: 0 | 3 = !s.practiceAfterCapture && guess === actual && !timedOut ? 3 : 0;
   return {
     ...s,
-    phase: captured ? "ending" : "reveal",
-    hearts: s.practiceAfterCapture || correct ? s.hearts : Math.max(0, s.hearts - 1),
-    practiceAfterCapture: false,
-    ending: captured ? "glitch" : s.ending,
-    paused: false,
+    phase: "reveal",
+    hearts: s.practiceAfterCapture || points === 3 ? s.hearts : Math.max(0, s.hearts - 1),
+    practiceAfterCapture: s.practiceAfterCapture || s.hearts === 1 && points === 0,
     results: { ...s.results, [c.id]: { guess, actual, points, ...(timedOut ? { timedOut: true } : {}) } },
   };
 }
@@ -155,8 +151,7 @@ export function reducer(s: GameState, a: Action): GameState {
     case "recommendationAnswer": {
       if (s.phase !== "recommendation" || s.recommendationAttempts.length !== 0 || s.evidence.length !== CASES.length) return s;
       const attempts = [...s.recommendationAttempts, a.choice];
-      const correctCount = Object.values(s.results).filter((result) => result && result.points > 0).length;
-      const ending: Ending = s.hearts === 0 ? "glitch" : a.choice === "B" && correctCount === CASES.length ? "perfect" : "saved";
+      const ending: Ending = a.choice !== "B" || s.hearts === 0 ? "glitch" : totalScore(s) === 12 ? "perfect" : "saved";
       return { ...s, phase: "ending", recommendationAttempts: attempts, ending, completed: false, paused: false };
     }
     case "finishEnding":

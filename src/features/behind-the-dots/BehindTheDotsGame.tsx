@@ -2,24 +2,22 @@ import { ArrowLeft, ArrowRight, Clock3, Heart, House, Pause, Play, RotateCcw, Sl
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import analystMark from "@/assets/brand/the-analyst-mark.png";
-import { CASES, MAX_SCORE, TUTORIAL, type Pattern } from "./data/cases";
+import { CASES, TUTORIAL, type Pattern } from "./data/cases";
 import { BRIEFING, CASE_LINES, CHOICES, ENDING_COPY, MEETING_LINE, REACTION_LINES, RELATION_LABELS, TUTORIAL_LINES } from "./data/dialogue";
 import { ScatterPlot } from "./components/ScatterPlot";
 import { EndingSequence } from "./components/EndingSequence";
 import { currentCase, initialState, reducer, ROUND_SECONDS, totalScore, type Action, type Ending, type GameState } from "./engine/gameState";
 import { createRunSeed } from "./engine/datasets";
 import { hasLegacyProgress, loadMeta, loadState, saveMeta, saveState, type Meta } from "./engine/persistence";
-import { formatR, patternFor, pearson, pearsonWithoutIndex } from "./engine/correlation";
+import { patternFor, pearson } from "./engine/correlation";
 import { gameAudio, type AudioBus, type SoundKind } from "./engine/sound";
 import { nextCountdownTick } from "./engine/audioManifest";
 import { useGamePlatformExit } from "@/lib/useGamePlatformExit";
 
 const patternChoices: { id: Pattern; symbol: string; label: string; detail: string }[] = [
-  { id: "strongUp", symbol: "↗↗", label: "طردية قوية", detail: "ميل واضح ومتناسق" },
-  { id: "weakUp", symbol: "↗", label: "طردية متوسطة", detail: "ميل صاعد مع تباين" },
-  { id: "none", symbol: "•••", label: "لا علاقة خطية", detail: "النقط متبعثرة" },
-  { id: "weakDown", symbol: "↘", label: "عكسية متوسطة", detail: "ميل نازل مع تباين" },
-  { id: "strongDown", symbol: "↘↘", label: "عكسية قوية", detail: "ميل واضح ومتناسق" },
+  { id: "up", symbol: "↗", label: "علاقة طردية", detail: "بيزيدوا مع بعض" },
+  { id: "down", symbol: "↘", label: "علاقة عكسية", detail: "واحد يزيد والتاني يقل" },
+  { id: "none", symbol: "•••", label: "مفيش اتجاه واضح", detail: "النقط متبعثرة" },
 ];
 
 function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
@@ -35,11 +33,10 @@ function GameHeader({ state, time, paused, muted, audioVolumes, onPause, onExit,
       <div className="btd-hud-lives" aria-label={`${state.hearts} من 3 قلوب`}>
         {[0, 1, 2].map((i) => <Heart key={i} aria-hidden="true" className={i < state.hearts ? "is-alive" : "is-broken"} fill="currentColor" />)}
       </div>
-        {inChallenge && <div className="btd-hud-case">التحدي <b dir="ltr">{state.caseIndex + 1} / {CASES.length}</b></div>}
+        {inChallenge && <div className="btd-hud-case">التحدي <b dir="ltr">{state.caseIndex + 1} / 4</b></div>}
       {timed && <div className={`btd-hud-clock ${time !== undefined && time <= 5 ? "is-urgent" : ""}`} aria-live="polite">
         <Clock3 aria-hidden="true" /><b dir="ltr">{time ?? "20"}</b><span>ثانية</span>
       </div>}
-      {timed && <div className="btd-hud-progress" aria-label={`تقدّم جليتش ${Math.round(((ROUND_SECONDS - (time ?? ROUND_SECONDS)) / ROUND_SECONDS) * 100)}%`}><span style={{ "--progress": Math.max(0, Math.min(1, (ROUND_SECONDS - (time ?? ROUND_SECONDS)) / ROUND_SECONDS)) } as CSSProperties} /></div>}
       <img className="btd-brand-mark" src={analystMark} alt="The Analyst" />
       <div className="btd-hud-tools">
         <IconButton label="العودة إلى الألعاب" onClick={onExit}><House /></IconButton>
@@ -160,7 +157,6 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   const [tutorialPlacementError, setTutorialPlacementError] = useState(false);
   const [readyCase, setReadyCase] = useState<number | null>(null);
   const [reactionVisible, setReactionVisible] = useState(false);
-  const [outlierExamined, setOutlierExamined] = useState(false);
   const [settledTime, setSettledTime] = useState(ROUND_SECONDS);
   const timeRef = useRef<number | undefined>(ROUND_SECONDS);
   const stateRef = useRef(state);
@@ -211,7 +207,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   }, [userId]);
 
   useEffect(() => { if (loaded) saveState(window.localStorage, userId, state); }, [state, loaded, userId]);
-  useEffect(() => { setTutorialPlacementError(false); setOutlierExamined(false); }, [state.phase, state.tutorialStep, state.caseIndex]);
+  useEffect(() => { setTutorialPlacementError(false); }, [state.phase, state.tutorialStep]);
   useEffect(() => {
     const onVisibility = () => {
       if (!document.hidden) return;
@@ -245,7 +241,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
     const id = window.setTimeout(() => {
       if (stateRef.current.hearts === 0) dispatchRef.current({ type: "attach" });
       else setReactionVisible(false);
-    }, 700);
+    }, revealResult?.timedOut ? 2900 : 2450);
     return () => window.clearTimeout(id);
   }, [isReveal, caseIndex, revealResult?.timedOut, reactionVisible, state.paused]);
   useEffect(() => {
@@ -358,7 +354,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   if (!loaded) return <div className="btd-loading" />;
 
   const activeResult = state.phase === "reveal" ? state.results[currentCase(state).id] : undefined;
-  const resultMood = activeResult ? activeResult.points > 0 ? "win" : activeResult.timedOut ? "timeout" : "wrong" : null;
+  const resultMood = activeResult ? activeResult.points === 3 ? "win" : activeResult.timedOut ? "timeout" : "wrong" : null;
   const shot = state.phase === "briefing" ? "dialogue" : state.phase === "tutorial" ? "notebook" : state.phase === "puzzle" ? "chart" : state.phase === "reveal" ? reactionVisible ? "reaction" : "chart" : state.phase === "ending" ? "ending" : state.phase === "debrief" ? "results" : state.phase === "cover" ? "cover" : "plan";
   const speaker = state.phase === "briefing" ? BRIEFING[state.briefingStep]!.speaker : undefined;
   const worldMood = resultMood ?? (state.phase === "debrief" ? state.ending === "glitch" ? "ending-glitch" : state.ending === "perfect" ? "ending-win" : "ending-saved" : state.phase === "puzzle" && (time ?? ROUND_SECONDS) <= 5 ? "urgent" : state.phase === "tutorialReady" ? "win" : "calm");
@@ -472,7 +468,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
             <div className="btd-ready-card">
               <span className="btd-eyebrow">الدفتر اتفتح · التدريب من غير وقت</span>
               <h1>{state.tutorialAttempts > 1 ? "دلوقتي عرفنا الاتجاه" : "بالضبط!"}</h1>
-              <p>{state.tutorialAttempts > 1 ? `النقط طالعة بقوة: ${RELATION_LABELS.strongUp}. دلوقتي نقرأ الحالات الخمس براحتنا.` : "المهم الاتجاه والقوة، مش إن كل نقطة تبقى على نفس الخط."}</p>
+              <p>{state.tutorialAttempts > 1 ? `النقط طالعة لفوق: ${RELATION_LABELS.up}. دلوقتي نقرأ الحالات الأربعة براحتنا.` : "المهم الاتجاه العام، مش إن كل نقطة تبقى على نفس الخط."}</p>
               <div className="btd-ready-rules"><HeartsBadge count={3} /><span>٣ قلوب</span><i /><Clock3 /><span>٢٠ ثانية لكل تحدي</span></div>
               <p>جليتش: «تقدر تلحق دوتّي قبل ما أوصلها؟»</p>
               <button className="btd-button btd-button-primary" data-audio-kind="menuOpen" onClick={() => dispatch({ type: "startChallenges" })}>ابدأ التحديات <ArrowLeft /></button>
@@ -483,11 +479,11 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
         {(state.phase === "puzzle" || state.phase === "reveal") && (() => {
           const storyCase = currentCase(state);
           const result = state.phase === "reveal" ? state.results[storyCase.id] : undefined;
-          const mood = result ? (result.points > 0 ? "win" : result.timedOut ? "timeout" : "wrong") : time !== undefined && time <= 5 ? "urgent" : "calm";
+          const mood = result ? (result.points === 3 ? "win" : result.timedOut ? "timeout" : "wrong") : time !== undefined && time <= 5 ? "urgent" : "calm";
           return (
             <section className={`btd-challenge screen-enter ${result ? `is-${mood}` : ""}`}>
               <div className="btd-challenge-content">
-                <div className="btd-case-heading"><span className="btd-eyebrow">صفحة {state.caseIndex + 1} من {CASES.length} · {storyCase.title}{state.practiceAfterCapture ? " · تدريب بعد الإمساك" : ""}</span>{!result && <p>{CASE_LINES[storyCase.id]}</p>}</div>
+                <div className="btd-case-heading"><span className="btd-eyebrow">صفحة {state.caseIndex + 1} من 4 · {storyCase.title}{state.practiceAfterCapture ? " · تدريب بعد الإمساك" : ""}</span>{!result && <p>{CASE_LINES[storyCase.id]}</p>}</div>
                 <div className="btd-chart-sheet" key={`page-${state.caseIndex}`}>
                   <div className="btd-sheet-topline"><span className="btd-sticker">دفتر ليلى</span><span className="btd-chart-label">Scatter Plot</span></div>
                   <div className="btd-plot-frame btd-main-plot">
@@ -497,14 +493,13 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
                     <h1 className="btd-case-question">{storyCase.question}</h1>
                     {result ? (
                       <div className={`btd-result-reaction reaction-${mood}`} aria-live="polite">
-                        <div className="btd-reaction-stamp">{result.timedOut ? "خلص الوقت!" : result.points > 0 ? "صح جدًا!" : "الاختيار اتقفل"}</div>
-                        <p>{REACTION_LINES[storyCase.id][result.timedOut ? "timeout" : result.points > 0 ? "win" : "wrong"]}</p>
-                        <div className="btd-reaction-footer"><strong className="btd-relation-reveal">{RELATION_LABELS[result.actual]} · r = {formatR(pearson(storyCase.xs, storyCase.ys))}</strong><HeartsBadge count={state.hearts} />{result.points > 0 && <b className="btd-score-pop">+1</b>}</div>
-                        {storyCase.outlierIndex !== undefined && <div className="btd-outlier-check"><button type="button" className="btd-button btd-button-quiet" onClick={() => setOutlierExamined((examined) => !examined)}>{outlierExamined ? "إخفاء الفحص" : "فحص القراءة غير المعتادة"}</button>{outlierExamined && <p>من دون هذه القراءة يصبح <b dir="ltr">r = {formatR(pearsonWithoutIndex(storyCase.xs, storyCase.ys, storyCase.outlierIndex))}</b> — نفحص سبب الاختلاف، ولا نحذف البيانات تلقائيًا.</p>}</div>}
+                        <div className="btd-reaction-stamp">{result.timedOut ? "خلص الوقت!" : result.points === 3 ? "صح جدًا!" : "الاختيار اتقفل"}</div>
+                        <p>{REACTION_LINES[storyCase.id][result.timedOut ? "timeout" : result.points === 3 ? "win" : "wrong"]}</p>
+                        <div className="btd-reaction-footer"><strong className="btd-relation-reveal">{RELATION_LABELS[result.actual]}</strong><HeartsBadge count={state.hearts} />{result.points === 3 && <b className="btd-score-pop">+3</b>}</div>
                         <button className="btd-button btd-button-primary btd-next-button" data-audio-kind="none" onClick={() => dispatch({ type: "attach" })}>{state.caseIndex === CASES.length - 1 ? "ساعد ليلى تختار خطة بكرة" : "اقلب الصفحة"} <ArrowLeft /></button>
                       </div>
                     ) : (
-                      <div className="btd-pattern-options" aria-label="اختار اتجاه العلاقة وقوتها">
+                      <div className="btd-pattern-options" aria-label="اختار اتجاه العلاقة">
                         {patternChoices.map((choice) => <button key={choice.id} type="button" className="btd-pattern-button" disabled={!challengeReady} onClick={() => dispatch({ type: "answer", value: choice.id })}><span className="btd-pattern-symbol">{choice.symbol}</span><span><strong>{choice.label}</strong></span></button>)}
                       </div>
                     )}
@@ -552,19 +547,19 @@ function Results({ state, onReplay }: { state: GameState; onReplay: () => void }
   const navigate = useNavigate();
   const ending: Ending = state.ending ?? "glitch";
   const copy = ENDING_COPY[ending];
-  const correctCount = Object.values(state.results).filter((result) => (result?.points ?? 0) > 0).length;
+  const correctCount = Object.values(state.results).filter((result) => result?.points === 3).length;
   const recommendation = CHOICES.find((choice) => choice.id === state.recommendationAttempts[0]);
   return (
     <section className={`btd-results screen-enter ending-${ending}`}>
       <div className="btd-results-card">
-        <span className="btd-eyebrow">{ending === "perfect" ? "جولة كاملة · قرار قائم على الدليل" : ending === "saved" ? "تقدّم تحليلي · قرار قابل للتجربة" : "تدريب مكتمل · راجع الدليل"}</span>
+        <span className="btd-eyebrow">{ending === "perfect" ? "٣ نجوم · جولة كاملة" : ending === "saved" ? "فوز · دوتّي نجت" : "انتهت الجولة · جليتش كسب"}</span>
         <h1>{copy.title}</h1>
         <p>{copy.line}</p>
-        <div className="btd-ending-medals" role="img" aria-label={`${correctCount} نجوم من ${CASES.length} لإجابات الشارت`}>
-          {CASES.map((_, star) => <span key={star} className={star < correctCount ? "is-earned" : ""} style={{ "--medal-order": star } as CSSProperties}>★</span>)}
-          <small>{correctCount} من {CASES.length} إجابات صح</small>
+        <div className="btd-ending-medals" role="img" aria-label={`${correctCount} نجوم من 4 لإجابات الشارت`}>
+          {[0, 1, 2].map((star) => <span key={star} className={star < correctCount ? "is-earned" : ""} style={{ "--medal-order": star } as CSSProperties}>★</span>)}
+          <small>{correctCount} من 4 إجابات صح</small>
         </div>
-        <div className="btd-results-score"><strong>{totalScore(state)}<small>/ {MAX_SCORE}</small></strong><span>{totalScore(state) === 5 ? "خبير بيانات" : totalScore(state) >= 3 ? "محلل واعد" : "محلل متدرب"}</span><HeartsBadge count={state.hearts} /></div>
+        <div className="btd-results-score"><strong>{totalScore(state)}<small>/ 12</small></strong><span>النقاط</span><HeartsBadge count={state.hearts} /></div>
         <div className="btd-results-dialogue"><img src="/assets/behind-dots/glitch-v5.png" alt="" /><span>جليتش:</span> {copy.glitch}</div>
         <div className="btd-ending-choice"><b>التوصية النهائية</b><p>{recommendation ? <>{recommendation.supported ? "اختيار مدعوم: " : "اختيار غير مدعوم: "}{recommendation.text}</> : "انتهت القلوب قبل ما ليلى تختار التوصية."}</p></div>
         <div className="btd-results-relations">{state.evidence.map((id) => {

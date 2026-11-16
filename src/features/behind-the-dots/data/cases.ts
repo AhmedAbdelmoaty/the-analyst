@@ -1,5 +1,5 @@
-export type CaseId = "T0" | "C1" | "C2" | "C3" | "C4" | "C5";
-export type Pattern = "strongUp" | "weakUp" | "none" | "weakDown" | "strongDown";
+export type CaseId = "T0" | "C1" | "C2" | "C3" | "C4";
+export type Pattern = "up" | "down" | "none";
 
 export interface StoryCase {
   id: CaseId;
@@ -16,24 +16,23 @@ export interface StoryCase {
   evidenceTitle: string;
   evidenceSummary: string;
   patternTip: string;
-  outlierIndex?: number;
 }
 
 export const TUTORIAL: StoryCase = {
   id: "T0",
   title: "تدريب: النقط طالعة",
-  question: "كل نقطة يوم. بص على الأيام كلها: العلاقة قوية ولا ضعيفة؟",
+  question: "كل نقطة يوم. بص على الأيام كلها: النقط ماشية فين؟",
   xLabel: "عدد اللي زاروا العربية",
   yLabel: "كوبايات اتباعت",
   xLabelEn: "Visitors",
   yLabelEn: "Ice cream cups sold",
   xs: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
   ys: [3, 5, 4, 6, 7, 7, 9, 8, 10, 11],
-  insight: "النقط طالعة بقوة. أيام الزوّار الكتير فيها بيع أكتر غالباً.",
+  insight: "النقط طالعة لفوق. أيام الزوّار الكتير فيها بيع أكتر غالباً.",
   halaAfter: "عاش! دلوقتي نفتح دفتر العربية الحقيقي. من هنا جليتش هيجري، ومعاك ٢٠ ثانية في كل صفحة.",
   evidenceTitle: "تدريب",
   evidenceSummary: "",
-  patternTip: "من الشمال لليمين، النقط طالعة ومتقاربة من اتجاه واحد.",
+  patternTip: "من الشمال لليمين، النقط طالعة.",
 };
 
 export const CASES: readonly StoryCase[] = [
@@ -51,7 +50,7 @@ export const CASES: readonly StoryCase[] = [
     halaAfter: "نقدّر الطلب حسب الجو ونجرّب، وبعدها نراجع النتيجة. الارتباط لوحده ما يثبتش السبب.",
     evidenceTitle: "الحر ↔ الكوبايات",
     evidenceSummary: "الأيام الأحر ارتبطت بمبيعات أعلى في البيانات دي.",
-    patternTip: "من الشمال لليمين، النقط طالعة بقوة.",
+    patternTip: "من الشمال لليمين، النقط طالعة.",
   },
   {
     id: "C2",
@@ -62,12 +61,12 @@ export const CASES: readonly StoryCase[] = [
     xLabelEn: "Customers per hour",
     yLabelEn: "Average wait (minutes)",
     xs: [8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52],
-    ys: [8, 15, 8, 16, 10, 18, 9, 20, 13, 21, 14, 19],
-    insight: "في الساعات اللي فيها زباين أكتر، يميل الانتظار للزيادة لكن العلاقة ليست حاسمة.",
-    halaAfter: "وقت الزحمة والانتظار يميلان للتحرك سوا؛ نحتاج تجربة تحسين الخدمة ومراجعة النتيجة.",
+    ys: [3, 7, 5, 9, 10, 12, 11, 15, 14, 18, 17, 22],
+    insight: "في الساعات اللي فيها زباين أكتر، كان متوسط الانتظار أطول.",
+    halaAfter: "وقت الزحمة والانتظار بيتحركوا سوا في السجل؛ نحتاج نحسن سرعة الخدمة ونراجعها.",
     evidenceTitle: "الزحمة ↔ الانتظار",
-    evidenceSummary: "الساعات المزدحمة تميل لانتظار أطول، لكن القوة متوسطة.",
-    patternTip: "في ميل صاعد، لكنه متبعثر عن الحالة الأولى.",
+    evidenceSummary: "الساعات المزدحمة ارتبطت بانتظار أطول في العينة.",
+    patternTip: "من الشمال لليمين، النقط طالعة.",
   },
   {
     id: "C3",
@@ -94,31 +93,14 @@ export const CASES: readonly StoryCase[] = [
     xLabelEn: "Average wait (minutes)",
     yLabelEn: "Purchase completion (%)",
     xs: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 21, 22],
-    ys: [85, 71, 93, 63, 83, 78, 65, 81, 60, 75, 58, 69],
-    insight: "في السجل، الانتظار الأطول يميل لارتباط عكسي متوسط بإتمام الشراء.",
+    ys: [95, 91, 87, 83, 80, 74, 69, 64, 59, 53, 49, 44],
+    insight: "في السجل، الانتظار الأطول ارتبط بإتمام شراء أقل.",
     halaAfter: "تقليل الانتظار يستحق التجربة، وهنراجع هل نسبة إتمام الشراء اتحسنت فعلًا.",
     evidenceTitle: "الانتظار ↔ إتمام الشراء",
-    evidenceSummary: "الانتظار الأطول يميل لنسبة إتمام أقل، مع تباين يستحق المراجعة.",
-    patternTip: "في ميل نازل، لكنه ليس خطًا حادًا.",
-  },
-  {
-    id: "C5",
-    title: "الانتظار والشراء: يوم غير معتاد",
-    question: "ما طبيعة العلاقة وقوتها؟ افحص القراءة غير المعتادة قبل أن تحكم.",
-    xLabel: "متوسط الانتظار (دقيقة)",
-    yLabel: "الزباين اللي كملوا الشراء (%)",
-    xLabelEn: "Average wait (minutes)",
-    yLabelEn: "Purchase completion (%)",
-    xs: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 21, 22],
-    ys: [96, 91, 88, 82, 78, 74, 69, 64, 92, 53, 49, 44],
-    insight: "الاتجاه العام عكسي قوي، لكن يومًا واحدًا خالف النمط. نفحصه قبل اتخاذ قرار أو استبعاده.",
-    halaAfter: "القراءة غير المعتادة لا تُحذف تلقائيًا: نسأل أولًا هل هي خطأ تسجيل أم حدث حقيقي؟",
-    evidenceTitle: "انتظار ↔ شراء (فحص قراءة)",
-    evidenceSummary: "الاتجاه العام عكسي قوي؛ توجد قراءة واحدة تحتاج تفسيرًا قبل استخدامها.",
-    patternTip: "رغم نقطة مرتفعة، أغلب النقط تنزل بوضوح من الشمال لليمين.",
-    outlierIndex: 8,
+    evidenceSummary: "الانتظار الأطول ارتبط بنسبة إتمام شراء أقل في العينة.",
+    patternTip: "من الشمال لليمين، النقط نازلة.",
   },
 ];
 
 export const ALL_CASE_IDS = CASES.map((c) => c.id);
-export const MAX_SCORE = CASES.length;
+export const MAX_SCORE = CASES.length * 3;

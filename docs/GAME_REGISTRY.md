@@ -28,8 +28,8 @@ Source of truth: `src/features/discovery/catalog.ts` (`GAME_CATALOG`). Hub, land
 ## 3. ورا النقط — Behind the Dots
 - Source: `src/features/behind-the-dots/`, `src/pages/BehindTheDotsRoute.tsx`.
 - Assets: `public/assets/behind-dots/` (sprites loaded by string path from `v6/`).
-- Save: per-user localStorage (V7; V6 active runs restart safely).
-- Tests: `npm test` (V7 + audio), `tests/behind-the-dots*.test.*`, `tests/e2e/behind-the-dots.spec.ts`.
+- Save: per-user localStorage.
+- Tests: `npm test` (v6 + audio), `tests/behind-the-dots*.test.*`, `tests/e2e/behind-the-dots.spec.ts`.
 
 ## 4. الشفرة الأخيرة — Crack the Code
 - Source: `src/pages/CrackTheCodeRoute.tsx` + static iframe `public/crack-the-code/`.
