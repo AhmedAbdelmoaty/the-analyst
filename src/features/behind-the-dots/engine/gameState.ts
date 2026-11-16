@@ -4,7 +4,7 @@ import { patternFor, pearson } from "./correlation";
 import { generateRunCases } from "./datasets";
 
 export type Phase = "cover" | "briefing" | "tutorial" | "tutorialReady" | "puzzle" | "reveal" | "recommendation" | "recommendationFeedback" | "ending" | "debrief";
-export type Ending = "perfect" | "saved" | "glitch";
+export type Ending = "perfect" | "saved" | "glitch" | "badDecision";
 
 export interface CaseResult {
   guess: Pattern | null;
@@ -156,7 +156,7 @@ export function reducer(s: GameState, a: Action): GameState {
       if (s.phase !== "recommendation" || s.recommendationAttempts.length !== 0 || s.evidence.length !== CASES.length) return s;
       const attempts = [...s.recommendationAttempts, a.choice];
       const correctCount = Object.values(s.results).filter((result) => result && result.points > 0).length;
-      const ending: Ending = s.hearts === 0 ? "glitch" : a.choice === "B" && correctCount === CASES.length ? "perfect" : "saved";
+      const ending: Ending = s.hearts === 0 ? "glitch" : a.choice !== "B" ? "badDecision" : correctCount === CASES.length ? "perfect" : "saved";
       return { ...s, phase: "ending", recommendationAttempts: attempts, ending, completed: false, paused: false };
     }
     case "finishEnding":
@@ -170,7 +170,7 @@ export function reducer(s: GameState, a: Action): GameState {
     case "setTimer":
       return s.phase === "puzzle" && !s.paused ? { ...s, remainingSeconds: Math.max(0, Math.min(ROUND_SECONDS, Math.floor(a.seconds))) } : s;
     case "replay":
-      return { ...initialState, runSeed: s.runSeed };
+      return { ...initialState };
     case "__hydrate":
       return a.s;
     default:
