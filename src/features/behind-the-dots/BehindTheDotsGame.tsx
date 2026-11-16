@@ -361,7 +361,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   const resultMood = activeResult ? activeResult.points > 0 ? "win" : activeResult.timedOut ? "timeout" : "wrong" : null;
   const shot = state.phase === "briefing" ? "dialogue" : state.phase === "tutorial" ? "notebook" : state.phase === "puzzle" ? "chart" : state.phase === "reveal" ? reactionVisible ? "reaction" : "chart" : state.phase === "ending" ? "ending" : state.phase === "debrief" ? "results" : state.phase === "cover" ? "cover" : "plan";
   const speaker = state.phase === "briefing" ? BRIEFING[state.briefingStep]!.speaker : undefined;
-  const worldMood = resultMood ?? (state.phase === "debrief" ? state.ending === "glitch" ? "ending-glitch" : state.ending === "perfect" ? "ending-win" : "ending-saved" : state.phase === "puzzle" && (time ?? ROUND_SECONDS) <= 5 ? "urgent" : state.phase === "tutorialReady" ? "win" : "calm");
+  const worldMood = resultMood ?? (state.phase === "debrief" ? (state.ending === "glitch" || state.ending === "badDecision") ? "ending-glitch" : state.ending === "perfect" ? "ending-win" : "ending-saved" : state.phase === "puzzle" && (time ?? ROUND_SECONDS) <= 5 ? "urgent" : state.phase === "tutorialReady" ? "win" : "calm");
 
   return (
     <div className={`behind-dots btd-app shot-${shot} ${state.paused ? "is-paused" : ""} ${resultMood ? `outcome-${resultMood}` : ""}`} dir="rtl" lang="ar" onPointerDownCapture={() => gameAudio.unlock()} onClickCapture={handleAudioClickCapture}>
@@ -557,14 +557,14 @@ function Results({ state, onReplay }: { state: GameState; onReplay: () => void }
   return (
     <section className={`btd-results screen-enter ending-${ending}`}>
       <div className="btd-results-card">
-        <span className="btd-eyebrow">{ending === "perfect" ? "جولة كاملة · قرار قائم على الدليل" : ending === "saved" ? "تقدّم تحليلي · قرار قابل للتجربة" : "تدريب مكتمل · راجع الدليل"}</span>
+        <span className="btd-eyebrow">{ending === "perfect" ? "جولة كاملة · قرار قائم على الدليل" : ending === "saved" ? "تقدّم تحليلي · قرار قابل للتجربة" : ending === "badDecision" ? "خسارة القرار · راجع توصيتك" : "خسارة المحاولات · راجع الدليل"}</span>
         <h1>{copy.title}</h1>
         <p>{copy.line}</p>
         <div className="btd-ending-medals" role="img" aria-label={`${correctCount} نجوم من ${CASES.length} لإجابات الشارت`}>
           {CASES.map((_, star) => <span key={star} className={star < correctCount ? "is-earned" : ""} style={{ "--medal-order": star } as CSSProperties}>★</span>)}
           <small>{correctCount} من {CASES.length} إجابات صح</small>
         </div>
-        <div className="btd-results-score"><strong>{totalScore(state)}<small>/ {MAX_SCORE}</small></strong><span>{totalScore(state) === 5 ? "خبير بيانات" : totalScore(state) >= 3 ? "محلل واعد" : "محلل متدرب"}</span><HeartsBadge count={state.hearts} /></div>
+        <div className="btd-results-score"><strong>{totalScore(state)}<small>/ {MAX_SCORE}</small></strong><span>{ending === "badDecision" ? "قرار غير مدعوم" : ending === "glitch" ? "انتهت المحاولات" : totalScore(state) === 5 ? "خبير بيانات" : totalScore(state) >= 4 ? "محلل متمكن" : totalScore(state) >= 3 ? "محلل واعد" : "محلل متدرب"}</span><HeartsBadge count={state.hearts} /></div>
         <div className="btd-results-dialogue"><img src="/assets/behind-dots/glitch-v5.png" alt="" /><span>جليتش:</span> {copy.glitch}</div>
         <div className="btd-ending-choice"><b>التوصية النهائية</b><p>{recommendation ? <>{recommendation.supported ? "اختيار مدعوم: " : "اختيار غير مدعوم: "}{recommendation.text}</> : "انتهت القلوب قبل ما ليلى تختار التوصية."}</p></div>
         <div className="btd-results-relations">{state.evidence.map((id) => {
