@@ -1203,3 +1203,49 @@
 .btd-settings-action svg { width: 18px; height: 18px; }
 .btd-app .btd-icon-button { min-width: 44px; min-height: 44px; }
 .btd-corner-home { position: fixed; z-index: 40; top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); }
+
+/* Behind the Dots: canonical tutorial chart sizing. Keep this block last.
+   The older responsive overrides use conflicting height/overflow rules. */
+.btd-app .btd-tutorial,
+.btd-app .btd-tutorial-sheet {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+.btd-app .btd-tutorial-sheet {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.btd-app .btd-tutorial-plot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: auto;
+  overflow: visible;
+}
+.btd-app .btd-tutorial-plot .btd-scatter-svg {
+  display: block;
+  flex: none;
+  width: min(100%, 720px);
+  height: auto;
+  min-width: 0;
+  max-width: 100%;
+  max-height: none;
+  aspect-ratio: 4 / 3;
+  overflow: visible;
+}
+@media (max-height: 540px) and (orientation: landscape) {
+  .btd-app .btd-tutorial-sheet { display: flex; flex-direction: column; }
+  .btd-app .btd-tutorial-plot { height: auto; min-height: 0; }
+  .btd-app .btd-tutorial-plot .btd-scatter-svg {
+    width: min(100%, 560px);
+    height: auto;
+    max-height: none;
+  }
+}
