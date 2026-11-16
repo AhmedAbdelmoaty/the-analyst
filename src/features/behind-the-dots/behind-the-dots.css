@@ -1203,3 +1203,63 @@
 .btd-settings-action svg { width: 18px; height: 18px; }
 .btd-app .btd-icon-button { min-width: 44px; min-height: 44px; }
 .btd-corner-home { position: fixed; z-index: 40; top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); }
+
+/* Tutorial layout: a single, scrollable notebook instead of competing fixed
+   heights. The SVG retains its full 4:3 viewport (including axis labels). */
+.btd-app .btd-tutorial {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: calc(100dvh - 100px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+.btd-app .btd-tutorial-sheet {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 6px;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+}
+.btd-app .btd-tutorial-plot {
+  display: flex;
+  position: relative;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  grid-column: auto;
+  grid-row: auto;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: auto;
+  padding: 8px;
+  overflow: visible;
+}
+.btd-app .btd-tutorial-plot .btd-scatter-svg {
+  display: block;
+  flex: 0 1 auto;
+  width: min(100%, 680px);
+  height: auto;
+  min-width: 0;
+  max-width: 100%;
+  max-height: none;
+  aspect-ratio: 4 / 3;
+  overflow: visible;
+}
+@media (max-width: 760px) {
+  .btd-app .btd-tutorial { max-height: calc(100dvh - 80px); }
+  .btd-app .btd-tutorial-sheet { display: flex; }
+  .btd-app .btd-tutorial-plot { width: 100%; height: auto; padding: 4px; }
+  .btd-app .btd-tutorial-plot .btd-scatter-svg { width: 100%; height: auto; max-height: none; }
+}
+@media (max-height: 540px) and (orientation: landscape) {
+  .btd-app .btd-tutorial { max-height: calc(100dvh - 60px); }
+  .btd-app .btd-tutorial-plot { height: auto; min-height: 0; }
+  .btd-app .btd-tutorial-plot .btd-scatter-svg { width: min(100%, 540px); height: auto; max-height: none; }
+}

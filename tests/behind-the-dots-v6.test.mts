@@ -3,7 +3,7 @@ import test from "node:test";
 import { CASES } from "../src/features/behind-the-dots/data/cases.ts";
 import { generateRunCases } from "../src/features/behind-the-dots/engine/datasets.ts";
 import { patternFor, pearson } from "../src/features/behind-the-dots/engine/correlation.ts";
-import { initialState, reducer, ROUND_SECONDS, totalScore } from "../src/features/behind-the-dots/engine/gameState.ts";
+import { currentCase, initialState, reducer, ROUND_SECONDS, totalScore } from "../src/features/behind-the-dots/engine/gameState.ts";
 import { hasLegacyProgress, loadState, saveState, sessionKey } from "../src/features/behind-the-dots/engine/persistence.ts";
 
 const run = (state: any, ...actions: any[]) => actions.reduce(reducer, state);
@@ -18,7 +18,7 @@ test("five approved cases keep their strength category across 100 deterministic 
     const generated = generateRunCases(seed);
     assert.equal(generated.length, 5);
     generated.forEach((c, index) => {
-      assert.equal(patternFor(pearson(c.xs, c.ys)!), correct(CASES[index]!));
+      assert.equal(patternFor(pearson(c.xs, c.ys)!), correct(CASES.find((original) => original.id === c.id)!));
       if (c.id === "C3") c.ys.forEach((sold, i) => assert.ok(sold <= c.xs[i]!, `seed ${seed}, observation ${i}`));
     });
   }
@@ -37,7 +37,7 @@ test("the five challenges use 20 seconds, three hearts, and one point per correc
   assert.equal(ROUND_SECONDS, 20);
   let state = startChallenge();
   assert.equal(state.hearts, 3);
-  for (let index = 0; index < CASES.length; index++) state = answerAndAttach(state, correct(CASES[index]!));
+  for (let index = 0; index < CASES.length; index++) state = answerAndAttach(state, correct(currentCase(state)));
   assert.equal(state.evidence.length, 5);
   assert.equal(totalScore(state), 5);
   assert.equal(state.phase, "recommendation");
@@ -53,7 +53,7 @@ test("the third missed challenge ends the round immediately", () => {
   assert.equal(timedOutTwice.results.C1?.timedOut, true);
   let state = before;
   for (let i = 0; i < 3; i++) {
-    const actual = correct(CASES[i]!);
+    const actual = correct(currentCase(state));
     state = run(state, { type: "answer", value: actual === "strongUp" ? "strongDown" : "strongUp" }, { type: "attach" });
   }
   assert.equal(state.hearts, 0);
@@ -67,19 +67,20 @@ test("pause blocks answer resolution and a weak final recommendation does not er
   const paused = run(before, { type: "pause" });
   assert.equal(run(paused, { type: "answer", value: "strongUp" }), paused);
   let win = before;
-  for (const c of CASES) win = answerAndAttach(win, correct(c));
+  for (let i = 0; i < CASES.length; i++) win = answerAndAttach(win, correct(currentCase(win)));
   const ending = run(win, { type: "recommendationAnswer", choice: "B" });
   assert.equal(ending.phase, "ending");
   assert.equal(ending.ending, "perfect");
   assert.equal(run(ending, { type: "finishEnding" }).completed, true);
-  assert.equal(run(win, { type: "recommendationAnswer", choice: "A" }).ending, "saved");
+  assert.equal(run(win, { type: "recommendationAnswer", choice: "A" }).ending, "badDecision");
+  assert.equal(run(win, { type: "recommendationAnswer", choice: "C" }).ending, "badDecision");
 });
 
 test("user-scoped save resumes the ending sequence and rejects obsolete V5 state", () => {
   const store = new Map<string, string>();
   const storage = { getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => { store.set(key, value); }, removeItem: (key: string) => { store.delete(key); } };
   let state = startChallenge();
-  for (const c of CASES) state = answerAndAttach(state, correct(c));
+  for (let i = 0; i < CASES.length; i++) state = answerAndAttach(state, correct(currentCase(state)));
   state = run(state, { type: "recommendationAnswer", choice: "B" });
   saveState(storage, "u1", state);
   assert.equal(loadState(storage, "u1").phase, "ending");
@@ -125,4 +126,17 @@ test("pausing a challenge preserves its time and rejects a queued countdown tick
   const paused = reducer(active, { type: "pause" });
   assert.equal(paused.remainingSeconds, 9);
   assert.equal(reducer(paused, { type: "setTimer", seconds: 8 }), paused);
+});
+
+test("shuffled cases are deterministic per seed, keep fixed endpoints, and vary their middle order", () => {
+  const orders = new Set<string>();
+  for (let seed = 0; seed < 40; seed++) {
+    const cases = generateRunCases(seed);
+    assert.equal(cases[0]?.id, "C1");
+    assert.equal(cases[4]?.id, "C5");
+    assert.deepEqual(new Set(cases.map((c) => c.id)), new Set(CASES.map((c) => c.id)));
+    assert.deepEqual(generateRunCases(seed).map((c) => c.id), cases.map((c) => c.id));
+    orders.add(cases.map((c) => c.id).join(","));
+  }
+  assert.ok(orders.size > 1, "different rounds should vary case order");
 });

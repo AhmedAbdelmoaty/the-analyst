@@ -11,7 +11,7 @@ import "../src/features/behind-the-dots/behind-the-dots.css";
 
 const userId = "behind-dots-isolated-visual-qa";
 const send = (state: GameState, ...actions: Action[]) => actions.reduce(reducer, state);
-const start = () => send(initialState, { type: "start", seed: 123 }, { type: "skipStory" }, { type: "revealTutorialPoint" }, { type: "showTutorialDays" }, { type: "setGuess", value: "up" }, { type: "submitTutorial" }, { type: "startChallenges" });
+const start = () => send(initialState, { type: "start", seed: 123 }, { type: "skipStory" }, { type: "revealTutorialPoint" }, { type: "showTutorialDays" }, { type: "setGuess", value: "strongUp" }, { type: "submitTutorial" }, { type: "startChallenges" });
 const answer = (state: GameState, value: Pattern | null) => send(state, value ? { type: "answer", value } : { type: "timeout" }, { type: "attach" });
 function createScenario(name: string): GameState {
   if (name === "cover") return initialState;
@@ -22,17 +22,17 @@ function createScenario(name: string): GameState {
     for (let index = 0; index < 3; index++) {
       const storyCase = currentCase(state);
       const actual = patternFor(pearson(storyCase.xs, storyCase.ys)!);
-      state = send(state, { type: "answer", value: actual === "up" ? "down" : "up" }, { type: "attach" });
+      state = send(state, { type: "answer", value: actual === "strongUp" ? "strongDown" : "strongUp" }, { type: "attach" });
     }
     return state;
   }
-  if (["win", "wrong", "timeout"].includes(name)) return send(state, name === "win" ? { type: "answer", value: "up" } : name === "wrong" ? { type: "answer", value: "down" } : { type: "timeout" });
+  if (["win", "wrong", "timeout"].includes(name)) return send(state, name === "win" ? { type: "answer", value: "strongUp" } : name === "wrong" ? { type: "answer", value: "strongDown" } : { type: "timeout" });
   if (["ending-perfect", "ending-saved", "ending-glitch", "perfect", "saved", "glitch"].includes(name)) {
     for (let index = 0; index < CASES.length; index++) {
       const storyCase = currentCase(state);
       const actual = patternFor(pearson(storyCase.xs, storyCase.ys)!);
       const guess = name === "ending-saved" && index === 0 || name === "saved" && index === 0
-        ? actual === "up" ? "down" : "up"
+        ? actual === "strongUp" ? "strongDown" : "strongUp"
         : actual;
       state = send(state, { type: "answer", value: guess });
       state = send(state, { type: "attach" });
@@ -41,7 +41,7 @@ function createScenario(name: string): GameState {
     if (name === "ending-saved" || name === "saved") return send(state, { type: "recommendationAnswer", choice: "B" });
     if (name === "ending-glitch" || name === "glitch") return send(state, { type: "recommendationAnswer", choice: "A" });
   }
-  for (let index = 0; index < CASES.length; index++) state = answer(state, currentCase(state) ? patternFor(pearson(currentCase(state).xs, currentCase(state).ys)!) : "up");
+  for (let index = 0; index < CASES.length; index++) state = answer(state, currentCase(state) ? patternFor(pearson(currentCase(state).xs, currentCase(state).ys)!) : "strongUp");
   if (name === "recommendation") return state;
   if (name === "feedback") state = send(state, { type: "recommendationAnswer", choice: "B" });
   if (name === "feedback") return state;
