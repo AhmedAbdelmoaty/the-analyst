@@ -14,6 +14,11 @@ import { gameAudio, type AudioBus, type SoundKind } from "./engine/sound";
 import { nextCountdownTick } from "./engine/audioManifest";
 import { useGamePlatformExit } from "@/lib/useGamePlatformExit";
 
+function seededOrder<T>(items: readonly T[], seed: number): T[] {
+  const out = [...items]; let x = (Math.abs(Math.floor(seed)) % 2147483646) + 1;
+  for (let i = out.length - 1; i > 0; i--) { x = (x * 16807) % 2147483647; const j = x % (i + 1); [out[i], out[j]] = [out[j]!, out[i]!]; }
+  return out;
+}
 const patternChoices: { id: Pattern; symbol: string; label: string; detail: string }[] = [
   { id: "up", symbol: "↗", label: "علاقة طردية", detail: "بيزيدوا مع بعض" },
   { id: "down", symbol: "↘", label: "علاقة عكسية", detail: "واحد يزيد والتاني يقل" },
@@ -143,7 +148,7 @@ function ReactionCinema({ kind, practiceCapture, onSkip }: { kind: "win" | "wron
     <div className="btd-cinema-dotty" aria-hidden="true"><img src={`/assets/behind-dots/v6/dotty_${dottyPose}.png`} alt="" /></div>
     {(kind === "timeout" || practiceCapture) && <div className="btd-cinema-net" aria-hidden="true" />}
     <div className="btd-cinema-stamp">{practiceCapture ? "جليتش لحق دوتّي!" : kind === "win" ? "صح جدًا!" : kind === "wrong" ? "جليتش قرب!" : "خلص الوقت!"}</div>
-    <div className="btd-cinema-impact">{practiceCapture ? "نكمل الأدلة الباقية تدريب" : kind === "win" ? "+3 نجوم ✦" : kind === "timeout" ? "لقطتها! 💥" : "قلب اتكسر ♡"}</div>
+    <div className="btd-cinema-impact">{practiceCapture ? "القلوب خلصت! 💔" : kind === "win" ? "+25 نقطة ✦" : kind === "timeout" ? "لقطتها! 💥" : "قلب اتكسر ♡"}</div>
     <button type="button" className="btd-cinema-skip" onClick={onSkip}>كمّل ←</button>
   </div>;
 }
@@ -357,7 +362,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
   const resultMood = activeResult ? activeResult.points === 3 ? "win" : activeResult.timedOut ? "timeout" : "wrong" : null;
   const shot = state.phase === "briefing" ? "dialogue" : state.phase === "tutorial" ? "notebook" : state.phase === "puzzle" ? "chart" : state.phase === "reveal" ? reactionVisible ? "reaction" : "chart" : state.phase === "ending" ? "ending" : state.phase === "debrief" ? "results" : state.phase === "cover" ? "cover" : "plan";
   const speaker = state.phase === "briefing" ? BRIEFING[state.briefingStep]!.speaker : undefined;
-  const worldMood = resultMood ?? (state.phase === "debrief" ? state.ending === "glitch" ? "ending-glitch" : state.ending === "perfect" ? "ending-win" : "ending-saved" : state.phase === "puzzle" && (time ?? ROUND_SECONDS) <= 5 ? "urgent" : state.phase === "tutorialReady" ? "win" : "calm");
+  const worldMood = resultMood ?? (state.phase === "debrief" ? state.ending === "glitch" || state.ending === "wrongPlan" ? "ending-glitch" : state.ending === "perfect" ? "ending-win" : "ending-saved" : state.phase === "puzzle" && (time ?? ROUND_SECONDS) <= 5 ? "urgent" : state.phase === "tutorialReady" ? "win" : "calm");
 
   return (
     <div className={`behind-dots btd-app shot-${shot} ${state.paused ? "is-paused" : ""} ${resultMood ? `outcome-${resultMood}` : ""}`} dir="rtl" lang="ar" onPointerDownCapture={() => gameAudio.unlock()} onClickCapture={handleAudioClickCapture}>
@@ -487,7 +492,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
                 <div className="btd-chart-sheet" key={`page-${state.caseIndex}`}>
                   <div className="btd-sheet-topline"><span className="btd-sticker">دفتر ليلى</span><span className="btd-chart-label">Scatter Plot</span></div>
                   <div className="btd-plot-frame btd-main-plot">
-                    <ScatterPlot xs={storyCase.xs} ys={storyCase.ys} xLabel={storyCase.xLabel} yLabel={storyCase.yLabel} showFit={Boolean(result && result.actual !== "none")} />
+                    <ScatterPlot xs={storyCase.xs} ys={storyCase.ys} xLabel={storyCase.xLabel} yLabel={storyCase.yLabel} showFit={Boolean(result && result.points === 3 && result.actual !== "none")} />
                   </div>
                   <div className="btd-challenge-side">
                     <h1 className="btd-case-question">{storyCase.question}</h1>
@@ -495,12 +500,12 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
                       <div className={`btd-result-reaction reaction-${mood}`} aria-live="polite">
                         <div className="btd-reaction-stamp">{result.timedOut ? "خلص الوقت!" : result.points === 3 ? "صح جدًا!" : "الاختيار اتقفل"}</div>
                         <p>{REACTION_LINES[storyCase.id][result.timedOut ? "timeout" : result.points === 3 ? "win" : "wrong"]}</p>
-                        <div className="btd-reaction-footer"><strong className="btd-relation-reveal">{RELATION_LABELS[result.actual]}</strong><HeartsBadge count={state.hearts} />{result.points === 3 && <b className="btd-score-pop">+3</b>}</div>
-                        <button className="btd-button btd-button-primary btd-next-button" data-audio-kind="none" onClick={() => dispatch({ type: "attach" })}>{state.caseIndex === CASES.length - 1 ? "ساعد ليلى تختار خطة بكرة" : "اقلب الصفحة"} <ArrowLeft /></button>
+                        <div className="btd-reaction-footer">{result.points === 3 && <strong className="btd-relation-reveal">{RELATION_LABELS[result.actual]}</strong>}<HeartsBadge count={state.hearts} />{result.points === 3 && <b className="btd-score-pop">+25</b>}</div>
+                        <button className="btd-button btd-button-primary btd-next-button" data-audio-kind="none" onClick={() => dispatch({ type: "attach" })}>{state.hearts === 0 ? "شوف اللي حصل" : state.caseIndex === CASES.length - 1 ? "ساعد ليلى تختار خطة بكرة" : "اقلب الصفحة"} <ArrowLeft /></button>
                       </div>
                     ) : (
                       <div className="btd-pattern-options" aria-label="اختار اتجاه العلاقة">
-                        {patternChoices.map((choice) => <button key={choice.id} type="button" className="btd-pattern-button" disabled={!challengeReady} onClick={() => dispatch({ type: "answer", value: choice.id })}><span className="btd-pattern-symbol">{choice.symbol}</span><span><strong>{choice.label}</strong></span></button>)}
+                        {seededOrder(patternChoices, (state.runSeed ?? 7) + state.caseIndex * 31 + 1).map((choice) => <button key={choice.id} type="button" className="btd-pattern-button" disabled={!challengeReady} onClick={() => dispatch({ type: "answer", value: choice.id })}><span className="btd-pattern-symbol">{choice.symbol}</span><span><strong>{choice.label}</strong></span></button>)}
                       </div>
                     )}
                   </div>
@@ -521,14 +526,14 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
               <div className="btd-evidence-strip" aria-label="ملخص العلاقات">
                 {state.evidence.map((id) => {
                   const c = CASES.find((item) => item.id === id)!;
-                  const trend = state.results[id]?.actual;
-                  return <div className="btd-evidence-chip" key={id}><b>{c.title}</b><span>{trend ? RELATION_LABELS[trend] : ""}</span></div>;
+                  const r = state.results[id];
+                  return <div className="btd-evidence-chip" key={id}><b>{c.title}</b><span>{r?.points === 3 ? `✓ ${RELATION_LABELS[r.actual]}` : "✗ الصفحة دي فاتتك"}</span></div>;
                 })}
               </div>
               <h2>أنهي خطة أنسب نبدأ نجربها بناءً على البيانات اللي شفناها؟</h2>
               <div className="btd-recommend-once">اختيار واحد بس · ركّز في الدليل وخد قرارك</div>
               <div className="btd-recommend-options">
-                {CHOICES.map((choice) => <button type="button" key={choice.id} onClick={() => dispatch({ type: "recommendationAnswer", choice: choice.id })} className="btd-recommend-option"><span>{choice.id}</span>{choice.text}<ArrowLeft /></button>)}
+                {seededOrder(CHOICES, (state.runSeed ?? 7) + 97).map((choice, index) => <button type="button" key={choice.id} onClick={() => dispatch({ type: "recommendationAnswer", choice: choice.id })} className="btd-recommend-option"><span>{["أ", "ب", "ج"][index]}</span>{choice.text}<ArrowLeft /></button>)}
               </div>
             </div>
           </section>
@@ -552,19 +557,20 @@ function Results({ state, onReplay }: { state: GameState; onReplay: () => void }
   return (
     <section className={`btd-results screen-enter ending-${ending}`}>
       <div className="btd-results-card">
-        <span className="btd-eyebrow">{ending === "perfect" ? "٣ نجوم · جولة كاملة" : ending === "saved" ? "فوز · دوتّي نجت" : "انتهت الجولة · جليتش كسب"}</span>
+        <span className="btd-eyebrow">{ending === "perfect" ? "فوز كامل · ٤ نجوم" : ending === "saved" ? "فوز · دوتّي نجت" : ending === "wrongPlan" ? "خسارة · الخطة غلط" : "خسارة · القلوب خلصت"}</span>
         <h1>{copy.title}</h1>
         <p>{copy.line}</p>
         <div className="btd-ending-medals" role="img" aria-label={`${correctCount} نجوم من 4 لإجابات الشارت`}>
-          {[0, 1, 2].map((star) => <span key={star} className={star < correctCount ? "is-earned" : ""} style={{ "--medal-order": star } as CSSProperties}>★</span>)}
+          {[0, 1, 2, 3].map((star) => <span key={star} className={star < correctCount ? "is-earned" : ""} style={{ "--medal-order": star } as CSSProperties}>★</span>)}
           <small>{correctCount} من 4 إجابات صح</small>
         </div>
-        <div className="btd-results-score"><strong>{totalScore(state)}<small>/ 12</small></strong><span>النقاط</span><HeartsBadge count={state.hearts} /></div>
+        <div className="btd-results-score"><strong>{correctCount * 25}<small>/ 100</small></strong><span>النقاط</span><HeartsBadge count={state.hearts} /></div>
         <div className="btd-results-dialogue"><img src="/assets/behind-dots/glitch-v5.png" alt="" /><span>جليتش:</span> {copy.glitch}</div>
-        <div className="btd-ending-choice"><b>التوصية النهائية</b><p>{recommendation ? <>{recommendation.supported ? "اختيار مدعوم: " : "اختيار غير مدعوم: "}{recommendation.text}</> : "انتهت القلوب قبل ما ليلى تختار التوصية."}</p></div>
+        <div className="btd-ending-choice"><b>التوصية النهائية</b><p>{recommendation ? <>{recommendation.supported ? "اختيار مدعوم: " : "اختيار غير مدعوم: "}{recommendation.text}</> : "القلوب خلصت قبل ما نوصل لخطة بكرة."}</p></div>
         <div className="btd-results-relations">{state.evidence.map((id) => {
           const c = CASES.find((item) => item.id === id)!;
-          return <div key={id}><b>{c.title}</b><span>{state.results[id] ? RELATION_LABELS[state.results[id]!.actual] : ""}</span></div>;
+          const r = state.results[id];
+          return <div key={id} className={r?.points === 3 ? "is-right" : "is-wrong"}><b>{r?.points === 3 ? "✓" : "✗"} {c.title}</b><span>{r ? (r.points === 3 ? RELATION_LABELS[r.actual] : `الصح: ${RELATION_LABELS[r.actual]}`) : ""}</span></div>;
         })}</div>
         <p className="btd-causality-note">النقط بتوضح ارتباط في الأيام اللي سجلناها؛ التجربة والقياس يساعدوا نعرف أكتر.</p>
         <div className="btd-results-actions"><button className="btd-button btd-button-primary" data-audio-kind="none" onClick={onReplay}><RotateCcw /> العب مرة تانية</button><button className="btd-button btd-button-quiet" onClick={() => navigate("/app")}>ارجع للألعاب <ArrowRight /></button></div>

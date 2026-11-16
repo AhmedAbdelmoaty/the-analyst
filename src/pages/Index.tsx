@@ -86,7 +86,8 @@ const GameContent = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
-    return saved?.screen ?? "company-briefing";
+    const restored = saved?.screen;
+    return !restored || restored === "replay-briefing" ? "company-briefing" : restored;
   });
 
   // Every new round starts from the cover's «ابدأ الآن», which starts the timer.
