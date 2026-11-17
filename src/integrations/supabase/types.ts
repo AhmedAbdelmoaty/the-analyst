@@ -184,6 +184,66 @@ export type Database = {
         }
         Relationships: []
       }
+      game_feedback: {
+        Row: {
+          category: string
+          created_at: string
+          device: string | null
+          game_id: string
+          id: string
+          note: string | null
+          option: string
+          screen: string | null
+          user_id: string
+          viewport: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          device?: string | null
+          game_id: string
+          id?: string
+          note?: string | null
+          option: string
+          screen?: string | null
+          user_id: string
+          viewport?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          device?: string | null
+          game_id?: string
+          id?: string
+          note?: string | null
+          option?: string
+          screen?: string | null
+          user_id?: string
+          viewport?: string | null
+        }
+        Relationships: []
+      }
+      game_ratings: {
+        Row: {
+          game_id: string
+          stars: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          game_id: string
+          stars: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          game_id?: string
+          stars?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       game_rounds: {
         Row: {
           active_ms: number | null
@@ -745,6 +805,14 @@ export type Database = {
         }[]
       }
       backfill_legacy_results: { Args: never; Returns: number }
+      game_rating_summary: {
+        Args: never
+        Returns: {
+          avg_stars: number
+          game_id: string
+          total: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
