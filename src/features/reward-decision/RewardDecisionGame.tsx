@@ -2,14 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGamePlatformExit } from '@/lib/useGamePlatformExit';
 import { PlatformGameControls } from '@/components/game/PlatformGameControls';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
-import { FileText, ClipboardList, NotebookPen, BarChart3 } from 'lucide-react';
+import { FileText, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { DOCUMENTS, type DocumentId, type QuestionId, type ToolId } from './data/case';
+import { DOCUMENTS, LEVEL_1_TOOLS, type DocumentId, type Level1Decision, type ToolId } from './data/case';
 import { scriptFor, type Line, type ScriptKey } from './data/script';
 import { endingCalls } from './data/endingCalls';
 import { addActiveMs, readActiveMs, trackRound } from '@/lib/analytics/rounds';
-import { canSubmit, newRun, salesReady, type RewardRun } from './engine/model';
-import { evaluateDeduction, SERVER_V3_EVALUATION_ENABLED } from './engine/deduction';
+import { newRun, salesReady, type RewardRun } from './engine/model';
+import { evaluateLevel1Decision, SERVER_V3_EVALUATION_ENABLED } from './engine/deduction';
 import { narrativeSpec, useNarrativeClock } from './engine/narrativeClock';
 import { resolveScene } from './engine/resolveScene';
 import { clearRun, inspectRun, saveRun } from './engine/persistence';
@@ -18,9 +18,8 @@ import { ScenePlayer } from './components/ScenePlayer';
 import { DialoguePanel } from './components/DialoguePanel';
 import { ActionButton, GameHud, OtherTabLayer, Panel, PauseLayer, ReplayButton } from './components/Ui';
 import { CaseFile } from './components/CaseFile';
-import { CaseTimer, ChartBoard, RoomFrame, RoomTabs } from './components/AnalysisRoom';
-import { DeductionNotebook } from './components/DeductionNotebook';
-import { FinalReport } from './components/FinalReport';
+import { CaseTimer, ChartBoard, RoomFrame } from './components/AnalysisRoom';
+import { DecisionBoard } from './components/Meeting';
 import { GameResults } from './components/GameResults';
 import { DocumentReader } from './components/DocumentReader';
 import { OfficeCorridor } from './components/OfficeCorridor';
@@ -35,7 +34,7 @@ import './reward-decision.v2.css';
 import { useSound } from '@/hooks/useSoundEffects';
 
 const at = (r: RewardRun, phase: RewardRun['phase'], stage = ''): RewardRun => ({ ...r, phase, stage, dialogueIndex: 0, visibleGraphemes: 0 });
-const TALK: Partial<Record<RewardRun['phase'], ScriptKey>> = { celebration: 'celebration', debate: 'debate', briefing: 'briefing', sales: 'sales', hr: 'hr' };
+const TALK: Partial<Record<RewardRun['phase'], ScriptKey>> = { celebration: 'celebration', debate: 'debate', briefing: 'briefing', sales: 'sales', hr: 'hr', meeting: 'meeting' };
 function dialogueFor(r: RewardRun, script: Record<ScriptKey, Line[]>): Line[] | null {
   const key = TALK[r.phase];
   return key && r.stage === 'talk' ? script[key] : null;
@@ -45,9 +44,10 @@ function afterDialogue(r: RewardRun): RewardRun {
   if (r.phase === 'debate') return at(r, 'debate', 'door');
   if (r.phase === 'briefing') return at(r, 'briefing', 'done');
   if (r.phase === 'sales' || r.phase === 'hr') return at(r, 'hub');
+  if (r.phase === 'meeting') return at(r, 'meeting', 'decision');
   return r;
 }
-const ROOM_PHASES: RewardRun['phase'][] = ['workbench', 'notebook', 'report'];
+const ROOM_PHASES: RewardRun['phase'][] = ['workbench'];
 
 export default function RewardDecisionGame() {
   const { user, profile } = useAuth();
@@ -109,7 +109,7 @@ export default function RewardDecisionGame() {
 
   const gender = profile?.gender === 'female' ? 'female' : 'male';
   const script = useMemo(() => scriptFor(gender), [gender]);
-  const calls = useMemo(() => run.evaluation ? endingCalls(run.evaluation.success, gender) : null, [run.evaluation, gender]);
+  const calls = useMemo(() => run.evaluation ? endingCalls(run.decision ?? run.evaluation.success, gender) : null, [run.decision, run.evaluation, gender]);
   const linesOf = useCallback((r: RewardRun) => r.phase === 'resolution' && r.stage === 'talking' ? calls?.[r.endingCall]?.lines ?? null : dialogueFor(r, script), [calls, script]);
   const lines = useMemo(() => linesOf(run), [run, linesOf]);
   const line = lines && run.dialogueIndex < lines.length ? lines[run.dialogueIndex] : null;
@@ -165,20 +165,21 @@ export default function RewardDecisionGame() {
   };
   useEffect(() => { if (!documentNotice && !filePulse) return; const timer = window.setTimeout(() => { setDocumentNotice(false); setFilePulse(false); }, 1800); return () => clearTimeout(timer); }, [documentNotice, filePulse]);
   const toggleTool = (id: ToolId) => commit(r => {
-    if (r.paused || !salesReady(r.collectedDocs)) return r;
+    if (r.paused || !salesReady(r.collectedDocs) || !LEVEL_1_TOOLS.includes(id)) return r;
     const usedTools = r.usedTools.includes(id) ? r.usedTools : [...r.usedTools, id];
     const turningOn = !r.visibleTools.includes(id);
     const visibleTools = turningOn ? [...r.visibleTools, id] : r.visibleTools.filter(x => x !== id);
     return { ...r, usedTools, visibleTools, activeTool: turningOn ? id : visibleTools[visibleTools.length - 1] ?? null };
   });
-  const answer = (q: QuestionId, id: string) => commit(r => r.submitted || r.paused ? r : { ...r, answers: { ...r.answers, [q]: id } });
-  const submit = () => act(r => {
-    if (!canSubmit(r)) return r;
-    const answers = { center: r.answers.center as string, spread: r.answers.spread as string };
-    // Frozen here: the evaluation is computed once from stable ids and never recomputed.
-    return { ...r, phase: 'report', stage: 'sending', submitted: { answers, submittedAt: new Date().toISOString() }, evaluation: evaluateDeduction(answers) };
+  const selectDecision = (decision: Level1Decision) => {
+    gameSound('pageFlip');
+    commit(r => r.phase === 'meeting' && r.stage === 'decision' ? { ...r, decision } : r);
+  };
+  const confirmDecision = () => act(r => {
+    if (r.phase !== 'meeting' || r.stage !== 'decision' || !r.decision) return r;
+    gameSound('stamp');
+    return { ...at(r, 'resolution', 'office'), evaluation: evaluateLevel1Decision(r.decision), endingCall: 0, callAnswered: false };
   });
-  const sent = useCallback(() => commit(r => r.phase === 'report' && r.stage === 'sending' ? { ...at(r, 'resolution', 'office'), endingCall: 0, callAnswered: false } : r), [commit]);
   const takeControl = () => { takeOwnership(); const result = inspectRun(uid); const latest = result.status === 'ok' && result.run.runId === runRef.current.runId && result.run.revision >= runRef.current.revision ? result.run : runRef.current; const next = { ...latest, paused: false, revision: latest.revision + 1 }; runRef.current = next; setRun(next); setOtherTab(false); persist(next); };
   const exit = useGamePlatformExit(() => {
     commit(r => ({ ...r, paused: r.phase !== 'cover' && r.phase !== 'debrief' }));
@@ -202,31 +203,24 @@ export default function RewardDecisionGame() {
   const inRoom = ROOM_PHASES.includes(run.phase);
   const ready = salesReady(run.collectedDocs);
   const timer = <CaseTimer read={readTimer} running={!frozen && run.phase !== 'cover' && run.phase !== 'debrief'} />;
-  const roomTabs = run.phase !== 'report' && <RoomTabs active={run.phase === 'notebook' ? 'notebook' : 'charts'} notebookLocked={!ready} onCharts={() => { gameSound('click'); commit(r => at(r, 'workbench')); }} onNotebook={() => { gameSound('pageFlip'); commit(r => at(r, 'notebook')); }} />;
   return <MotionConfig reducedMotion={frozen ? 'always' : 'user'}><main className={`rd-root ${frozen ? 'rd-paused' : ''}`} dir="rtl" data-phase={run.phase} data-stage={run.stage} data-scene={sceneKey}>
     {run.phase === 'cover' && <PlatformGameControls onHome={exit} canPause={false} canSettings={false} />}
     <ScenePlayer sceneKey={sceneKey}>
       {run.phase !== 'cover' && run.phase !== 'debrief' && <GameHud count={run.collectedDocs.length} pulse={filePulse} phase={run.phase} hideFile={inRoom} timer={timer} onFile={openFile} onPause={() => { gameSound('click'); commit(r => ({ ...r, paused: true })); }} onSettings={() => { commit(r => ({ ...r, paused: true })); setSettingsOpen(true); }} onExit={() => { gameSound('click'); exit(); }} />}
       <div className="rd-content"><AnimatePresence mode="wait"><motion.div key={`${inRoom ? 'room' : run.phase}-${inRoom ? '' : run.stage}-${run.endingCall}-${inRoom ? '' : sceneKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35 }}>
         {corrupt && run.phase === 'cover' && <section className="rd-cover"><h1>تعذر استعادة هذه الجولة</h1><span>يمكنك بدء جولة جديدة دون التأثير على حسابك أو اللعبة الأخرى.</span><ActionButton onClick={start}>بداية جديدة</ActionButton></section>}
-        {!corrupt && run.phase === 'cover' && <section className="rd-cover"><img src={analystMark} alt="The Analyst" /><p>شركة روّاد للأجهزة الكهربائية</p><h1>قرار التكريم</h1><span>اقرأ المستندات، حلّل النتائج، وابعت تقريرك.</span><ActionButton onClick={start}>ابدأ الآن</ActionButton><img className="rd-imp" src={impLogo} alt="IMP" /></section>}
+        {!corrupt && run.phase === 'cover' && <section className="rd-cover"><img src={analystMark} alt="The Analyst" /><p>شركة روّاد للأجهزة الكهربائية</p><h1>قرار التكريم</h1><span>راجع البيانات، اسمع الأطراف، واحسم القرار.</span><ActionButton onClick={start}>ابدأ الآن</ActionButton><img className="rd-imp" src={impLogo} alt="IMP" /></section>}
         {run.phase === 'celebration' && run.stage === 'draft' && <div className="rd-document-card"><p>ترشيح تكريم فريق المبيعات</p><b>بانتظار الاعتماد</b></div>}
         {line && <DialoguePanel line={line} lines={lines ?? []} index={run.dialogueIndex} total={lines?.length ?? 0} visible={run.visibleGraphemes} paused={frozen || fileOpen || Boolean(focusDoc)} gender={profile?.gender ?? null} delivered={line.documentId ? run.collectedDocs.includes(line.documentId) : false} onVisible={onVisible} onOpenDocument={openDocument} />}
         {run.phase === 'hub' && <OfficeCorridor visited={run.visited} docs={run.collectedDocs} gender={gender} playSound={gameSound} onVisit={place => place === 'workbench' ? act(r => at(r, 'workbench')) : visit(place)} />}
-        {run.phase === 'workbench' && <RoomFrame kicker="محطة فحص البيانات" title="غرفة التحليل" subtitle="شغّل أدواتك عشان تقرأ شكل التوزيع لكل فريق." icon={<BarChart3 aria-hidden="true" />} onBack={toHub} onFile={openFile} tabs={roomTabs}>
-          <ChartBoard ready={ready} used={run.usedTools} visible={run.visibleTools} active={run.activeTool} onToggle={toggleTool} onBack={toHub} playSound={gameSound} />
+        {run.phase === 'workbench' && <RoomFrame kicker="المستوى الأول" title="غرفة التحليل" subtitle="افحص المتوسط والوسيط فقط قبل الاجتماع." icon={<BarChart3 aria-hidden="true" />} onBack={toHub} onFile={openFile}>
+          <ChartBoard ready={ready} used={run.usedTools} visible={run.visibleTools} active={run.activeTool} onToggle={toggleTool} onBack={toHub} onMeeting={() => act(r => at(r, 'meeting', 'talk'))} playSound={gameSound} />
         </RoomFrame>}
-        {run.phase === 'notebook' && <RoomFrame kicker="محطة فحص البيانات" title="دفتر الاستنتاجات" subtitle="سجّل ملاحظاتك التحليلية قبل تثبيت المراجعة." icon={<NotebookPen aria-hidden="true" />} onBack={toHub} onFile={openFile} tabs={roomTabs}>
-          {ready ? <DeductionNotebook answers={run.answers} order={run.choiceOrder} page={run.notebookPage} used={run.usedTools} locked={Boolean(run.submitted)} onAnswer={answer} onPage={p => commit(r => ({ ...r, notebookPage: p }))} onCharts={() => commit(r => at(r, 'workbench'))} onReview={() => act(r => at(r, 'report'))} playSound={gameSound} />
-            : <ChartBoard ready={false} used={[]} visible={[]} active={null} onToggle={() => undefined} onBack={toHub} />}
-        </RoomFrame>}
-        {run.phase === 'report' && <RoomFrame kicker="محطة فحص البيانات" title="تقديم التقرير النهائي" subtitle="راجع الاستنتاجات وبعدين ابعت التقرير لشريف." icon={<ClipboardList aria-hidden="true" />} onBack={toHub} onFile={openFile} className="rd2-room-report">
-          <FinalReport runId={run.runId} answers={run.answers} docs={run.collectedDocs} sending={run.stage === 'sending'} onReview={() => act(r => r.submitted ? r : { ...at(r, 'notebook'), notebookPage: 0 })} onSubmit={submit} onSent={sent} playSound={gameSound} />
-        </RoomFrame>}
-        {run.phase === 'resolution' && run.stage === 'office' && <section className="rd-office-return" aria-label="العودة إلى مكتب المحلل"><p>بعد إرسال التقرير</p><h2>مكتب المحلل</h2></section>}
+        {run.phase === 'meeting' && run.stage === 'decision' && <DecisionBoard selected={run.decision} onSelect={selectDecision} onConfirm={confirmDecision} />}
+        {run.phase === 'resolution' && run.stage === 'office' && <section className="rd-office-return" aria-label="العودة إلى مكتب المحلل"><p>بعد اعتماد القرار</p><h2>مكتب المحلل</h2></section>}
         {run.phase === 'resolution' && run.stage === 'gap' && <section className="rd-call-gap" aria-label="انتهت المكالمة"><span>انتهت المكالمة</span></section>}
         {run.phase === 'resolution' && run.stage === 'incoming' && calls && <IncomingCall caller={calls[run.endingCall].caller} paused={frozen} onAnswer={() => act(r => r.phase === 'resolution' && r.stage === 'incoming' && !r.callAnswered ? { ...at(r, 'resolution', 'talking'), callAnswered: true } : r)} />}
-        {run.phase === 'debrief' && run.evaluation && <GameResults score={run.evaluation.score} activeMs={readActiveMs(uid, run.runId)} onReplay={replay} onExit={exit} playSound={gameSound} />}
+        {run.phase === 'debrief' && run.evaluation && <GameResults score={run.evaluation.score} decision={run.decision} activeMs={readActiveMs(uid, run.runId)} onReplay={replay} onExit={exit} playSound={gameSound} />}
         {run.phase === 'debrief' && !run.evaluation && <Panel title="الجولة السابقة انتهت"><p className="rd2-legacy">الجولة دي اتلعبت بنسخة أقدم من القضية. ابدأ جولة جديدة عشان تجرب القصة الجديدة.</p><div className="rd-actions"><ReplayButton onClick={replay} /><ActionButton onClick={exit}>الألعاب</ActionButton></div></Panel>}
       </motion.div></AnimatePresence></div>
     </ScenePlayer>

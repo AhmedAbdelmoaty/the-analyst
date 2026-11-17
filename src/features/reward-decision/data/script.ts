@@ -1,5 +1,5 @@
 import { renderGenderText, v, type Gender, type GenderText } from '@/lib/genderText';
-import type { DocumentId } from './case';
+import { LEVEL_1_MEETING, type DocumentId } from './case';
 
 export type Speaker = 'sherif' | 'hossam' | 'dalia' | 'marwan' | 'mahmoud' | 'player' | 'narrator';
 /** A rendered line: one dialogue turn, one bubble. Gendered source text is rendered before display. */
@@ -45,6 +45,7 @@ export const SOURCE_SCRIPT = {
     L('hr_02', 'player', 'تمام، هضيفه مع باقي المستندات.'),
     L('hr_03', 'dalia', 'كويس. يهمني التقرير يكون واضح، سواء اتفق مع الترشيح الموجود أو لأ.'),
   ],
+  meeting: LEVEL_1_MEETING.map(line => L(line.id, line.speaker, line.text)),
 } satisfies Record<string, SourceLine[]>;
 
 export type ScriptKey = keyof typeof SOURCE_SCRIPT;

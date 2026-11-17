@@ -17,11 +17,12 @@ export function resolveScene(run: RewardRun, gender: 'male' | 'female', line: Li
     case 'report': case 'recommendation': return `report-${g}`;
     case 'meeting': return 'meeting-opening';
     case 'resolution': {
-      const ok = run.evaluation?.success ?? false;
+      const calm = run.decision === 'defer' || run.decision === 'mahmoud' || (!run.decision && (run.evaluation?.success ?? false));
       if (run.stage !== 'talking' || !line) return `analyst-${g}`;
-      if (line.speaker === 'player') return `phone-player-${g}-${ok ? 'calm' : 'concerned'}`;
-      if (line.speaker === 'mahmoud') return ok ? 'phone-mahmoud-happy' : 'phone-mahmoud-upset';
-      if (line.speaker === 'marwan') return ok ? 'phone-marwan-upset' : 'phone-marwan-happy';
+      if (line.speaker === 'player') return `phone-player-${g}-${calm ? 'calm' : 'concerned'}`;
+      if (line.speaker === 'mahmoud') return run.decision === 'mahmoud' || (!run.decision && (run.evaluation?.success ?? false)) ? 'phone-mahmoud-happy' : 'phone-mahmoud-upset';
+      if (line.speaker === 'marwan') return run.decision === 'marwan' || (!run.decision && !(run.evaluation?.success ?? false)) ? 'phone-marwan-happy' : 'phone-marwan-upset';
+      if (line.speaker === 'sherif') return 'meeting-neutral';
       return `analyst-${g}`;
     }
     case 'debrief': return 'completed-folder';

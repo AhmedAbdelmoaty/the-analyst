@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, BarChart3, Calculator, FolderOpen, Hourglass, Inbox, MoveHorizontal, NotebookPen, Sigma, SquareDashed, Users } from 'lucide-react';
-import { TEAMS, TOOLS, TOOL_ORDER, type TeamId, type ToolId } from '../data/case';
+import { LEVEL_1_TOOLS, TEAMS, TOOLS, TOOL_ORDER, type TeamId, type ToolId } from '../data/case';
 import { stats, toolValue } from '../engine/statistics';
 import { HIST_MAX, HIST_MIN, histogramBins } from '../presentation';
 
@@ -120,22 +120,24 @@ export function TeamPanel({ team, visible, leaving }: { team: TeamId; visible: T
 }
 
 /** Analysis Room chart board (Reference 1). */
-export function ChartBoard({ ready, used, visible, active, onToggle, onBack, playSound }: { ready: boolean; used: ToolId[]; visible: ToolId[]; active: ToolId | null; onToggle: (id: ToolId) => void; onBack: () => void; playSound?: (s: 'tick' | 'click') => void }) {
-  const leaving = useLeaving(visible);
+export function ChartBoard({ ready, used, visible, active, onToggle, onBack, onMeeting, playSound }: { ready: boolean; used: ToolId[]; visible: ToolId[]; active: ToolId | null; onToggle: (id: ToolId) => void; onBack: () => void; onMeeting?: () => void; playSound?: (s: 'tick' | 'click') => void }) {
+  const levelVisible = visible.filter(id => LEVEL_1_TOOLS.includes(id));
+  const leaving = useLeaving(levelVisible);
   if (!ready) return <div className="rd2-board rd2-empty" data-testid="rd-workbench-empty">
     <Inbox aria-hidden="true" /><h3>لسه بيانات المبيعات ما وصلتش لملف التحليل.</h3>
     <button className="rd2-btn rd2-btn-gold" onClick={onBack}>رجوع للممر<ArrowLeft aria-hidden="true" /></button>
   </div>;
-  const shownActive = active && visible.includes(active) ? active : null;
+  const shownActive = active && LEVEL_1_TOOLS.includes(active) && levelVisible.includes(active) ? active : null;
   const ActiveIcon = shownActive ? TOOL_ICON[shownActive] : Calculator;
   return <div className="rd2-board" data-testid="rd-workbench">
-    <p className="rd2-instruction">البيانات قدامك. شغّل أدواتك، وقارن النتائج، وسجّل اللي وصلت له في دفتر الاستنتاجات.</p>
+    <p className="rd2-instruction">البيانات قدامك. قارن المتوسط والوسيط للفريقين، وبعدها اتجه لقاعة الاجتماعات عشان تحسم القرار.</p>
     <motion.section className="rd2-summary" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
       <span className="rd2-ribbon">المقياس النشط</span>
       <div className="rd2-summary-tool"><span className="rd2-summary-icon"><ActiveIcon aria-hidden="true" /></span><div><b>{shownActive ? TOOLS[shownActive].title : 'اختار أداة'}</b><small>{shownActive ? TOOL_HINT[shownActive] : 'شغّل أداة عشان تشوف قيمتها للفريقين.'}</small></div></div>
       {TEAM_SIDE.map(team => <div key={team} className={`rd2-summary-team rd2-tint-${team}`}><span className="rd2-team-icon" aria-hidden="true"><Users /></span><div><small>{TEAMS[team].name}</small><motion.b key={`${shownActive}-${team}`} initial={{ scale: .8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} dir="ltr">{shownActive ? toolValue(shownActive, team).replace(' نقطة مئوية', '') : '—'}</motion.b></div></div>)}
     </motion.section>
-    <div className="rd2-tools" role="group" aria-label="أدوات التحليل">{TOOL_ORDER.map((id, i) => { const isOn = visible.includes(id); const Icon = TOOL_ICON[id]; return <motion.button key={id} type="button" data-tool-toggle={id} aria-pressed={isOn} className={`rd2-tool ${isOn ? 'is-on' : ''} ${used.includes(id) ? 'is-used' : ''}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .04 * i }} whileTap={{ scale: .94, y: 2 }} onClick={() => { playSound?.(isOn ? 'click' : 'tick'); onToggle(id); }}><Icon aria-hidden="true" />{TOOLS[id].title}</motion.button>; })}</div>
-    <div className="rd2-teams">{TEAM_SIDE.map(team => <TeamPanel key={team} team={team} visible={visible} leaving={leaving} />)}</div>
+    <div className="rd2-tools" role="group" aria-label="أدوات التحليل">{LEVEL_1_TOOLS.map((id, i) => { const isOn = levelVisible.includes(id); const Icon = TOOL_ICON[id]; return <motion.button key={id} type="button" data-tool-toggle={id} aria-pressed={isOn} className={`rd2-tool ${isOn ? 'is-on' : ''} ${used.includes(id) ? 'is-used' : ''}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .04 * i }} whileTap={{ scale: .94, y: 2 }} onClick={() => { playSound?.(isOn ? 'click' : 'tick'); onToggle(id); }}><Icon aria-hidden="true" />{TOOLS[id].title}</motion.button>; })}</div>
+    <div className="rd2-teams">{TEAM_SIDE.map(team => <TeamPanel key={team} team={team} visible={levelVisible} leaving={leaving} />)}</div>
+    {onMeeting && <div className="rd2-meeting-action"><button className="rd2-btn rd2-btn-gold rd2-btn-lg" onClick={onMeeting}>التوجه لقاعة الاجتماعات <ArrowLeft aria-hidden="true" /></button></div>}
   </div>;
 }

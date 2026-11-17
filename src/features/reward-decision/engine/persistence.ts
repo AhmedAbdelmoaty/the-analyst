@@ -28,7 +28,7 @@ function normaliseV2(d: Raw): Raw {
 /**
  * Any older save becomes a valid v5 run. Unfinished rounds keep their progress (dialogue scenes restart
  * at their first line because the script changed); a finished pre-V2 round is shown as ended and never
- * becomes a V2 success. Retired phases (recommendation/meeting) cannot reappear.
+ * becomes a Level 1 success. Retired recommendation/report screens cannot reappear as active gameplay.
  */
 export function migrateToV5(d: Raw, uid: string): RewardRun {
   const base = newRun(uid);
@@ -63,7 +63,7 @@ function sanitizeV5(r: RewardRun, uid: string): RewardRun {
   const next: RewardRun = { ...base, ...r, answers: { ...base.answers, ...r.answers }, choiceOrder: r.choiceOrder?.center?.length === 4 && r.choiceOrder?.spread?.length === 4 ? r.choiceOrder : base.choiceOrder, paused: r.phase !== 'cover' };
   // The send animation is presentation only; a reload after the frozen submission continues in the office.
   if (next.phase === 'report' && next.stage === 'sending' && next.submitted) return { ...next, phase: 'resolution', stage: 'office', dialogueIndex: 0, visibleGraphemes: 0, endingCall: 0, callAnswered: false };
-  if (next.phase === 'recommendation' || next.phase === 'meeting') return { ...next, phase: next.submitted ? 'debrief' : 'workbench', stage: '' };
+  if (next.phase === 'recommendation' || next.phase === 'notebook' || (next.phase === 'report' && !next.submitted)) return { ...next, phase: 'workbench', stage: '' };
   return next;
 }
 

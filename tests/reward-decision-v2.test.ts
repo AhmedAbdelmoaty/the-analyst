@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { ANSWER_KEY, DOCUMENTS, POLICY, QUESTIONS, TEAMS } from '../src/features/reward-decision/data/case';
+import { ANSWER_KEY, DOCUMENTS, LEVEL_1_MEETING, LEVEL_1_TOOLS, POLICY, QUESTIONS, TEAMS, type DocumentId, type QuestionId } from '../src/features/reward-decision/data/case';
 import { SOURCE_SCRIPT, scriptFor } from '../src/features/reward-decision/data/script';
 import { endingCalls } from '../src/features/reward-decision/data/endingCalls';
-import { evaluateDeduction, shuffledOrder, SERVER_V3_EVALUATION_ENABLED } from '../src/features/reward-decision/engine/deduction';
+import { evaluateDeduction, evaluateLevel1Decision, shuffledOrder, SERVER_V3_EVALUATION_ENABLED } from '../src/features/reward-decision/engine/deduction';
 import { canSubmit, newRun, salesReady } from '../src/features/reward-decision/engine/model';
 import { stats } from '../src/features/reward-decision/engine/statistics';
 import { histogramBins } from '../src/features/reward-decision/presentation';
@@ -17,7 +17,7 @@ import { GameResults } from '../src/features/reward-decision/components/GameResu
 import { GameHud } from '../src/features/reward-decision/components/Ui';
 
 const mem = new Map<string, string>();
-(globalThis as any).localStorage = { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => mem.set(k, v), removeItem: (k: string) => mem.delete(k) };
+Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => mem.set(k, v), removeItem: (k: string) => mem.delete(k) } });
 beforeEach(() => mem.clear());
 const uid = 'u-1';
 
@@ -43,6 +43,12 @@ describe('approved data unchanged', () => {
 });
 
 describe('deduction contract', () => {
+  test('Level 1 exposes only center tools and evaluates the boardroom decision', () => {
+    expect(LEVEL_1_TOOLS).toEqual(['mean', 'median']);
+    expect(evaluateLevel1Decision('defer')).toEqual({ success: true, score: 100, outcome: 'supported' });
+    expect(evaluateLevel1Decision('marwan')).toEqual({ success: false, score: 35, outcome: 'insufficient' });
+    expect(evaluateLevel1Decision('mahmoud')).toEqual({ success: false, score: 35, outcome: 'insufficient' });
+  });
   test('two questions, four choices, one correct each', () => {
     expect(Object.keys(QUESTIONS)).toEqual(['center', 'spread']);
     for (const q of ['center', 'spread'] as const) {
@@ -67,7 +73,7 @@ describe('deduction contract', () => {
     const r = { ...newRun(uid), answers: { center: 'center_a', spread: 'spread_c' } };
     expect(canSubmit({ ...r, collectedDocs: ['sales-summary', 'individual-records'] })).toBe(false);
     expect(canSubmit({ ...r, collectedDocs: ['sales-summary', 'individual-records', 'policy'] })).toBe(true);
-    expect(canSubmit({ ...r, collectedDocs: ['sales-summary', 'individual-records', 'policy'], submitted: { answers: r.answers as any, submittedAt: 'x' } })).toBe(false);
+    expect(canSubmit({ ...r, collectedDocs: ['sales-summary', 'individual-records', 'policy'], submitted: { answers: r.answers as Record<QuestionId, string>, submittedAt: 'x' } })).toBe(false);
     expect(salesReady(['sales-summary'])).toBe(false);
     expect(salesReady(['individual-records', 'sales-summary'])).toBe(true);
   });
@@ -78,31 +84,35 @@ describe('story', () => {
   test('separate document handoffs and line counts', () => {
     expect(SOURCE_SCRIPT.sales.map(l => l.documentId ?? null)).toEqual(['sales-summary', null, 'individual-records']);
     expect(SOURCE_SCRIPT.hr[0].documentId).toBe('policy');
-    expect(SOURCE_SCRIPT.debate).toHaveLength(4);
+    expect(SOURCE_SCRIPT.debate).toHaveLength(3);
+    expect(SOURCE_SCRIPT.meeting).toHaveLength(5);
+    expect(SOURCE_SCRIPT.meeting.map(line => line.text)).toEqual(LEVEL_1_MEETING.map(line => line.text));
   });
   test('gender variants render', () => {
     expect(scriptFor('female').briefing[0].text).toStartWith('بصي،');
     expect(scriptFor('male').briefing[0].text).toStartWith('بص،');
     expect(scriptFor('female').sales[1].text).toContain('محتاجة');
   });
-  test('calls: Mahmoud then Marwan, five turns, both branches and genders', () => {
-    for (const ok of [true, false]) for (const g of ['male', 'female'] as const) {
-      const [a, b] = endingCalls(ok, g);
-      expect([a.caller, b.caller]).toEqual(['mahmoud', 'marwan']);
-      expect(a.lines).toHaveLength(5); expect(b.lines).toHaveLength(5);
+  test('calls: two short calls for all three decisions and both genders', () => {
+    const callers = { marwan: ['marwan', 'mahmoud'], mahmoud: ['mahmoud', 'marwan'], defer: ['marwan', 'sherif'] } as const;
+    for (const decision of ['marwan', 'mahmoud', 'defer'] as const) for (const g of ['male', 'female'] as const) {
+      const [a, b] = endingCalls(decision, g);
+      expect([a.caller, b.caller]).toEqual([...callers[decision]]);
+      expect(a.lines).toHaveLength(3); expect(b.lines).toHaveLength(3);
     }
-    expect(endingCalls(true, 'female')[0].lines[4].text).toContain('تسلمي يا نجمة!');
-    expect(endingCalls(false, 'male')[0].lines[2].text).toContain('إنت فاهم إحصاء');
+    expect(endingCalls('mahmoud', 'female')[0].lines[2].text).toContain('سلام يا نجمة!');
+    expect(endingCalls('defer', 'female')[1].lines[0].text).toContain('الله ينور عليكِ');
+    expect(endingCalls(false, 'male')[0].caller).toBe('marwan');
   });
   test('phone scenes follow the frozen outcome', () => {
-    const r = { ...newRun(uid), phase: 'resolution' as const, stage: 'talking', evaluation: evaluateDeduction({ center: 'center_b', spread: 'spread_c' }) };
+    const r = { ...newRun(uid), phase: 'resolution' as const, stage: 'talking', decision: 'marwan' as const, evaluation: evaluateLevel1Decision('marwan') };
     expect(resolveScene(r, 'male', { id: 'x', speaker: 'mahmoud', text: '' })).toBe('phone-mahmoud-upset');
     expect(resolveScene(r, 'male', { id: 'x', speaker: 'marwan', text: '' })).toBe('phone-marwan-happy');
   });
 });
 
 describe('no spoilers before submission', () => {
-  const base = { runId: 'abcd-1', docs: ['sales-summary', 'individual-records', 'policy'] as any, sending: false, onReview() {}, onSubmit() {}, onSent() {} };
+  const base = { runId: 'abcd-1', docs: ['sales-summary', 'individual-records', 'policy'] as DocumentId[], sending: false, onReview() {}, onSubmit() {}, onSent() {} };
   test('report shows chosen statements, not a team', () => {
     const html = renderToStaticMarkup(createElement(FinalReport, { ...base, answers: { center: 'center_b', spread: 'spread_c' } }));
     expect(html).toContain(QUESTIONS.center.choices[1].text);
@@ -117,8 +127,10 @@ describe('no spoilers before submission', () => {
   });
   test('analysis room is empty before sales data and has no KDE', () => {
     expect(renderToStaticMarkup(createElement(ChartBoard, { ready: false, used: [], visible: [], active: null, onToggle() {}, onBack() {} }))).toContain('لسه بيانات المبيعات ما وصلتش لملف التحليل.');
-    const html = renderToStaticMarkup(createElement(ChartBoard, { ready: true, used: [], visible: ['mean', 'median', 'range', 'sd', 'iqr'], active: 'mean', onToggle() {}, onBack() {} }));
-    for (const name of ['المتوسط الحسابي', 'الوسيط', 'المدى', 'الانحراف المعياري', 'المدى الربيعي']) expect(html).toContain(name);
+    const html = renderToStaticMarkup(createElement(ChartBoard, { ready: true, used: [], visible: ['mean', 'median', 'range', 'sd', 'iqr'], active: 'mean', onToggle() {}, onBack() {}, onMeeting() {} }));
+    for (const name of ['المتوسط الحسابي', 'الوسيط']) expect(html).toContain(name);
+    for (const name of ['الانحراف المعياري', 'المدى الربيعي']) expect(html).not.toContain(name);
+    expect(html).toContain('التوجه لقاعة الاجتماعات');
     expect(html).not.toMatch(/density|kde/i);
   });
   test('results never name the questions', () => {

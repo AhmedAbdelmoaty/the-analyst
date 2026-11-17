@@ -1,5 +1,5 @@
-import { ANSWER_KEY, QUESTION_ORDER, type QuestionId } from '../data/case';
-import type { DeductionResult } from './model';
+import { ANSWER_KEY, QUESTION_ORDER, type Level1Decision, type QuestionId } from '../data/case';
+import type { DeductionResult, Level1DecisionResult } from './model';
 
 /** Server parity flag: the rowad-v3 submit event is only sent after the backend evaluator is approved and applied. */
 export const SERVER_V3_EVALUATION_ENABLED = false;
@@ -15,4 +15,9 @@ export function evaluateDeduction(answers: Record<QuestionId, string | null>): D
   const score = QUESTION_ORDER.filter(q => answers[q] === ANSWER_KEY[q]).length as 0 | 1 | 2;
   const success = score === 2;
   return { score, success, outcome: success ? 'supported' : 'insufficient', awardedTeam: success ? 'mahmoud' : 'marwan' };
+}
+
+export function evaluateLevel1Decision(decision: Level1Decision): Level1DecisionResult {
+  const success = decision === 'defer';
+  return { success, score: success ? 100 : 35, outcome: success ? 'supported' : 'insufficient' };
 }

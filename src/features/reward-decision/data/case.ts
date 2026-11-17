@@ -1,5 +1,7 @@
 export type TeamId = 'marwan' | 'mahmoud';
 export type ToolId = 'mean' | 'median' | 'range' | 'sd' | 'iqr';
+export const LEVEL_1_TOOLS: ToolId[] = ['mean', 'median'];
+export type Level1Decision = 'marwan' | 'mahmoud' | 'defer';
 export type DocumentId = 'sales-summary' | 'individual-records' | 'policy';
 export type ArgumentKind = 'performance' | 'spread' | 'weak';
 export type ArgumentId =
@@ -29,6 +31,14 @@ export const TOOLS: Record<ToolId, { title: string; short: string }> = {
   iqr: { title: 'المدى الربيعي', short: 'IQR' },
 };
 export const TOOL_ORDER = Object.keys(TOOLS) as ToolId[];
+
+export const LEVEL_1_MEETING = [
+  { id: 'meeting_01', speaker: 'sherif', text: 'دلوقتي إحنا عايزين ناخد قرار التكريم.. فريق مروان محقق مبيعات أعلى، بس محمود معترض وشايف فريقه الأحق. حابب أسمع وجهة نظر كل واحد قبل ما نعتمد أي قرار رسمي.' },
+  { id: 'meeting_02', speaker: 'marwan', text: 'يا فندم الأرقام قدام الكل على الشاشات! إحنا متوسط مبيعاتنا 95% وأعلى من فريق محمود، كل حاجة واضحة والطبيعي إن فريقي هو اللي يستاهل المكافأة والتكريم، غير كده يبقى بنظلم الناس اللي شقيت!' },
+  { id: 'meeting_03', speaker: 'mahmoud', text: 'شقيت إيه يا مروان؟! هو فيه حد بيتعب ويشقى قد فريقي؟! كل واحد عامل اللي عليه، وسيط فريقي 88% والتيم كله شغال كويس من أول واحد لآخر واحد! المكافأة دي من حقنا إحنا مش حد تاني.' },
+  { id: 'meeting_04', speaker: 'dalia', text: 'بالراحة يا جماعة، الموضوع مش بالخناق ولا بالصوت العالي. السياسة واضحة: التكريم للأداء الجماعي الحقيقي. المتوسط مش كفاية لتكريم مروان وفريقه، وأنا شايفة نوقف التكريم ده مؤقتاً لحد ما نراجع البيانات تاني ونشوف مؤشرات تانية.' },
+  { id: 'meeting_05', speaker: 'sherif', text: 'تمام، دلوقتي عندنا اختلاف في وجهات النظر، وأنا عايزك أنت كمحلل تقولي شايف إيه الصح.. وخد بالك، الكلام اللي هاخده منك هو اللي هيحسم القرار.' },
+] as const;
 
 export const ARGUMENTS: Record<ArgumentId, { text: string; kind: ArgumentKind; correct: boolean; tool?: ToolId; document?: DocumentId }> = {
   'median-mahmoud': { text: 'وسيط فريق محمود 88% مقابل 83% لفريق مروان؛ مستوى الأداء الأوسط أعلى.', kind: 'performance', correct: true, tool: 'median' },

@@ -1,12 +1,13 @@
-import { ARGUMENTS, QUESTIONS, type ArgumentId, type DocumentId, type Outcome, type QuestionId, type TeamId, type ToolId } from '../data/case';
+import { ARGUMENTS, QUESTIONS, type ArgumentId, type DocumentId, type Level1Decision, type Outcome, type QuestionId, type TeamId, type ToolId } from '../data/case';
 import { randomUuid } from '../../../lib/random-uuid';
 import { shuffledOrder } from './deduction';
 
-/** Active V2 phases. 'recommendation' and 'meeting' are retired and only exist for old saves. */
+/** Level 1 uses meeting; notebook/report/recommendation remain for save and test compatibility. */
 export type Phase = 'cover' | 'celebration' | 'debate' | 'briefing' | 'hub' | 'sales' | 'hr' | 'workbench' | 'notebook' | 'report' | 'resolution' | 'debrief' | 'recommendation' | 'meeting';
 export type Answers = Record<QuestionId, string | null>;
 export interface Submission { answers: Record<QuestionId, string>; submittedAt: string }
 export interface DeductionResult { score: 0 | 1 | 2; success: boolean; outcome: 'supported' | 'insufficient'; awardedTeam: TeamId }
+export interface Level1DecisionResult { score: 35 | 100; success: boolean; outcome: 'supported' | 'insufficient' }
 /** A finished pre-V2 round kept only to show that it ended; it never maps to a V2 result. */
 export interface LegacyResult { outcome: Outcome }
 
@@ -17,7 +18,8 @@ export interface RewardRun {
   visited: ('sales' | 'hr')[]; collectedDocs: DocumentId[];
   usedTools: ToolId[]; visibleTools: ToolId[]; activeTool: ToolId | null;
   answers: Answers; choiceOrder: Record<QuestionId, string[]>; notebookPage: 0 | 1;
-  submitted: Submission | null; evaluation: DeductionResult | null; legacy: LegacyResult | null;
+  submitted: Submission | null; evaluation: DeductionResult | Level1DecisionResult | null; legacy: LegacyResult | null;
+  decision?: Level1Decision;
   endingCall: 0 | 1; callAnswered: boolean;
   paused: boolean; savedAt: string;
 }

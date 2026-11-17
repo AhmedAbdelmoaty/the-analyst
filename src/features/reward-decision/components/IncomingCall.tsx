@@ -5,7 +5,7 @@ import { PORTRAITS } from '../data/assets';
 import { SPEAKERS, type Speaker } from '../data/script';
 
 export function IncomingCall({ caller, paused, onAnswer }: {
-  caller: Extract<Speaker, 'mahmoud' | 'marwan'>;
+  caller: Extract<Speaker, 'mahmoud' | 'marwan' | 'sherif'>;
   paused: boolean;
   onAnswer: () => void;
 }) {
