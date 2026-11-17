@@ -1,3 +1,4 @@
+import { FeedbackButton, StarRating } from "@/features/feedback/GameFeedback";
 import { ArrowLeft, ArrowRight, Clock3, Heart, House, Pause, Play, RotateCcw, SlidersHorizontal, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
@@ -540,7 +541,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
         )}
 
         {state.phase === "ending" && state.ending && <EndingSequence ending={state.ending} paused={state.paused} onComplete={finishEnding} />}
-        {state.phase === "debrief" && state.ending && <Results state={state} onReplay={() => dispatch({ type: "replay" })} />}
+        {state.phase === "debrief" && state.ending && <><Results state={state} onReplay={() => dispatch({ type: "replay" })} /><div className="btd-rating-wrap"><StarRating gameId="behind-the-dots" /></div></>}
 
         {state.paused && <div className="btd-pause-overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title"><div className="btd-pause-card"><span className="btd-eyebrow">وقفة صغيرة</span><h2 id="pause-title">دوتّي مستنية</h2><p>الوقت وقف. كل حاجة محفوظة.</p><button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "resume" })}><Play /> كمّل اللعب</button><button className="btd-button btd-button-quiet" onClick={exitGame}>ارجع للألعاب <ArrowRight /></button></div></div>}
       </div>

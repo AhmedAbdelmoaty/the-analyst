@@ -1,3 +1,4 @@
+import { useRatingSummary } from '@/features/feedback/GameFeedback';
 import { ArrowLeft, Play, LockKeyhole, CircleHelp } from 'lucide-react';
 import type { CatalogGame } from '@/features/discovery/catalog';
 import type { GameProgress } from '@/features/discovery/progress';
@@ -10,6 +11,7 @@ export default function GameCoverCard({ game, progress = { status: 'new' }, snap
   game: CatalogGame; progress?: GameProgress; snapshot?: GameAccessSnapshot | null; teaser?: boolean; onChoose: () => void;
 }) {
   const access = cardAccess(game, progress, snapshot);
+  const rating = useRatingSummary()[game.id];
   const action = teaser ? 'اكتشف المغامرة' : access.action;
   return <button type="button" className="game-cover-card" data-game={game.id} data-status={progress.status} data-access={access.decision} aria-label={`${action}: ${game.title}`} onPointerEnter={event => platformAudio.hover(event.pointerType)} onPointerMove={event => {
     if (event.pointerType !== 'mouse' || window.matchMedia('(prefers-reduced-motion: reduce)').matches || platformAudio.snapshot().reducedMotion) return;
@@ -21,7 +23,7 @@ export default function GameCoverCard({ game, progress = { status: 'new' }, snap
       <span className="game-access">{teaser ? (game.tier === 'free' ? 'مجانية' : 'الخطة السنوية') : access.label}</span>
       <span className="game-cover-title">{game.title}</span>
     </span>
-    <span className="game-cover-details"><span className="game-cover-meta"><span>{game.category}</span>{!teaser && <span className="game-status">{statusLabels[progress.status]}</span>}</span>
+    <span className="game-cover-details"><span className="game-cover-meta"><span>{game.category}</span>{rating && rating.total >= 3 && <span className="game-rating-badge">★ {rating.avg.toFixed(1)}</span>}{!teaser && <span className="game-status">{statusLabels[progress.status]}</span>}</span>
       <span className="game-cover-bottom"><span className="game-cover-action">{!teaser && (access.decision === 'deny' ? <LockKeyhole /> : access.decision === 'verify' ? <CircleHelp /> : <Play />)}{action}<ArrowLeft /></span>
       {!teaser && progress.hint && <span className="game-hint">{progress.hint}</span>}</span>
     </span>

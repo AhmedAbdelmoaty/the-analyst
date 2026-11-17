@@ -1,3 +1,4 @@
+import { StarRating } from '@/features/feedback/GameFeedback';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlatformGameControls } from '@/components/game/PlatformGameControls';
@@ -269,6 +270,7 @@ export default function TeamPerformanceGame({ userId }: { userId: string }) {
 
         {phase === 'result' && (
           <div className="space-y-4 animate-scale-in">
+            <div className="rounded-3xl border border-border bg-card"><StarRating gameId="team-performance" /></div>
             {won && <Confetti />}
             <div className={`rounded-3xl border-4 border-slate-900 p-5 text-center shadow-[8px_8px_0_#0f172a] ${won ? 'bg-emerald-300' : 'bg-rose-300'}`}>
               <div className="text-5xl">{won ? '🏆' : '💥'}</div>
