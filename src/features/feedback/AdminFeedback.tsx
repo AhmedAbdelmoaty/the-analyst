@@ -31,8 +31,9 @@ export default function AdminFeedback() {
     return m;
   }, [d]);
   const rating = (uid: string, g: string) => d?.ratings.find(r => r.user_id === uid && r.game_id === g)?.stars ?? '';
-  const exportCsv = () => downloadCsv({ name: 'feedback', headers: ['التاريخ', 'اللاعب', 'الهاتف', 'اللعبة', 'النوع', 'الاختيار', 'النص', 'التقييم', 'الجهاز', 'الشاشة'],
-    rows: rows.map(r => [cairoDateTime(r.created_at), name(r.user_id), d?.people[r.user_id]?.phone ?? '', gameLabel(r.game_id), CAT[r.category] ?? r.category, r.option, r.note ?? '', rating(r.user_id, r.game_id), r.device ?? '', r.screen ?? '']) } as any, 'player-feedback.csv');
+  const H = ['التاريخ', 'اللاعب', 'الهاتف', 'اللعبة', 'النوع', 'الاختيار', 'النص', 'التقييم', 'الجهاز', 'الشاشة'];
+  const exportCsv = () => downloadCsv({ name: 'feedback', columns: H.map((h, i) => ({ key: `c${i}`, header: h, text: true })),
+    rows: rows.map(r => Object.fromEntries([cairoDateTime(r.created_at), name(r.user_id), d?.people[r.user_id]?.phone ?? '', gameLabel(r.game_id), CAT[r.category] ?? r.category, r.option, r.note ?? '', String(rating(r.user_id, r.game_id)), r.device ?? '', r.screen ?? ''].map((v, i) => [`c${i}`, v]))) }, 'player-feedback.csv');
   if (q.isLoading) return <p className="py-6 text-muted-foreground">جارٍ التحميل...</p>;
   if (q.error) return <p className="py-6 text-destructive">تعذر تحميل الآراء.</p>;
   return <div className="space-y-4 py-4">
@@ -41,10 +42,10 @@ export default function AdminFeedback() {
       {!Object.keys(stats).length && <p className="text-sm text-muted-foreground">لا توجد تقييمات بعد.</p>}
     </div>
     <div className="flex flex-wrap items-center gap-2">
-      <select value={game} onChange={e => setGame(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"><option value="all">كل الألعاب</option>{GAMES.map((g: any) => <option key={g.id ?? g} value={g.id ?? g}>{gameLabel(g.id ?? g)}</option>)}</select>
+      <select value={game} onChange={e => setGame(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"><option value="all">كل الألعاب</option>{GAMES.map(g => <option key={g.key} value={g.key}>{g.label}</option>)}</select>
       <select value={cat} onChange={e => setCat(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"><option value="all">كل الأنواع</option>{Object.entries(CAT).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
       <span className="text-sm text-muted-foreground">{rows.length} ملاحظة</span>
-      <Button variant="outline" size="sm" className="ms-auto" onClick={exportCsv} disabled={!rows.length}>تصدير CSV</Button>
+      <Button className="ms-auto rounded-md border border-border px-3 py-1.5 text-sm" onClick={exportCsv} disabled={!rows.length}>تصدير CSV</Button>
     </div>
     <div className="overflow-x-auto rounded-lg border border-border"><table className="w-full text-sm"><thead className="bg-muted/50"><tr>{['التاريخ', 'اللاعب', 'الهاتف', 'اللعبة', 'النوع', 'الاختيار', 'النص', 'التقييم', 'الجهاز'].map(h => <th key={h} className="p-2 text-start">{h}</th>)}</tr></thead>
       <tbody>{rows.map(r => <tr key={r.id} className="border-t border-border align-top"><td className="p-2 whitespace-nowrap" dir="ltr">{cairoDateTime(r.created_at)}</td><td className="p-2">{name(r.user_id)}</td><td className="p-2" dir="ltr">{d?.people[r.user_id]?.phone ?? '—'}</td><td className="p-2">{gameLabel(r.game_id)}</td><td className="p-2">{CAT[r.category]}</td><td className="p-2">{r.option}</td><td className="p-2 max-w-xs whitespace-pre-wrap">{r.note ?? '—'}</td><td className="p-2">{rating(r.user_id, r.game_id) ? `★ ${rating(r.user_id, r.game_id)}` : '—'}</td><td className="p-2">{r.device}</td></tr>)}
