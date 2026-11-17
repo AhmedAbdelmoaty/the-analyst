@@ -1218,3 +1218,4 @@
     min-height: 0;
   }
 }
+.btd-rating-wrap{position:relative;z-index:5;margin:0 auto 16px;max-width:380px;border-radius:16px;background:hsl(var(--card)/.92)}

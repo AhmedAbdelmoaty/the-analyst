@@ -13,11 +13,12 @@ import { resultLabel, roundResult, completionRate } from "@/features/admin-stats
 import { Button } from "@/components/ui/button";
 import { DEPARTMENTS, INDUSTRIES, KNOWN_COUNTRIES } from "@/features/profile/workProfile";
 import { audienceLabel, audienceRows, EMPTY_AUDIENCE_FILTERS, userReportArgs, type AudienceFilters } from "@/features/admin-stats/audience";
+import AdminFeedback from "@/features/feedback/AdminFeedback";
 import "@/styles/auth.css";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Filters = { from: string; to: string; game: string; include: boolean };
-type Tab = "overview" | "users" | "games";
+type Tab = "overview" | "users" | "games" | "feedback";
 const PAGE = 25;
 const rpc = async (fn: string, args: Record<string, unknown>) => {
   const { data, error } = await (supabase.rpc as any)(fn, args);
@@ -199,7 +200,7 @@ export default function AdminStats() {
         </div>
 
         <nav className="flex gap-1 border-b border-border" role="tablist">
-          {([["overview", "نظرة عامة"], ["users", "المستخدمون"], ["games", "الألعاب"]] as const).map(([k, l]) => (
+          {([["overview", "نظرة عامة"], ["users", "المستخدمون"], ["games", "الألعاب"], ["feedback", "آراء وتقييمات اللاعبين"]] as const).map(([k, l]) => (
             <Button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold ${tab === k ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{l}</Button>))}
         </nav>
 
@@ -258,6 +259,7 @@ export default function AdminStats() {
           </State>
         </Section>}
 
+        {tab === "feedback" && <AdminFeedback />}
         {tab === "games" && <State q={activity}>
           <div className="flex justify-end gap-2"><ExportBtns kind="games" /><ExportBtns kind="rounds" /></div>
           <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{metrics.map((g: any) => (

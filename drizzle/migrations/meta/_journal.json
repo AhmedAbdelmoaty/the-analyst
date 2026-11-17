@@ -85,6 +85,13 @@
       "when": 1792931455102,
       "tag": "0011_game_access_and_admin_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794901865295,
+      "tag": "0012_game_feedback_and_ratings",
+      "breakpoints": true
     }
   ]
 }

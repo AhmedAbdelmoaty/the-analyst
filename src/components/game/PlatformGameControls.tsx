@@ -1,4 +1,5 @@
 import { House, Pause, Settings } from 'lucide-react';
+import { FeedbackButton } from '@/features/feedback/GameFeedback';
 
 /** Shared platform actions; each game supplies lifecycle actions that it actually supports. */
 export interface GameLifecycleControls {
@@ -17,5 +18,6 @@ export function PlatformGameControls({ onHome, onPause, onSettings, canPause, ca
     <button type="button" className={button} onClick={onHome} aria-label="العودة إلى الألعاب" title="العودة إلى الألعاب"><House size={20} /></button>
     {canPause && onPause && <button type="button" className={button} onClick={onPause} aria-label="إيقاف مؤقت" title="إيقاف مؤقت"><Pause size={20} /></button>}
     {canSettings && onSettings && <button type="button" className={button} onClick={onSettings} aria-label="إعدادات اللعبة" title="إعدادات اللعبة"><Settings size={20} /></button>}
+    <FeedbackButton className={button} onOpen={canPause ? onPause : undefined} />
   </nav>;
 }
