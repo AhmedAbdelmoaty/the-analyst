@@ -1,4 +1,5 @@
-import { FeedbackButton, StarRating } from "@/features/feedback/GameFeedback";
+import { FeedbackButton } from "@/features/feedback/GameFeedback";
+import { PostGameRating } from "@/features/feedback/PostGameRating";
 import { ArrowLeft, ArrowRight, Clock3, Heart, House, Pause, Play, RotateCcw, SlidersHorizontal, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
@@ -48,6 +49,7 @@ function GameHeader({ state, time, paused, muted, audioVolumes, onPause, onExit,
         <IconButton label="العودة إلى الألعاب" onClick={onExit}><House /></IconButton>
         {!paused && <IconButton label="إيقاف مؤقت" onClick={onPause}><Pause /></IconButton>}
         <IconButton label="إعدادات اللعبة" onClick={() => setAudioOpen((open) => !open)}><SlidersHorizontal /></IconButton>
+        <FeedbackButton className="btd-icon-button" onOpen={paused ? undefined : onPause} />
         {audioOpen && <div className="btd-sound-panel" aria-label="إعدادات اللعبة">
           <button type="button" className="btd-settings-action" onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}{muted ? "تشغيل الصوت" : "كتم الصوت"}</button>
           {(["music", "sfx", "ambience"] as const).map((bus) => <label key={bus}>{bus === "music" ? "الموسيقى" : bus === "sfx" ? "المؤثرات" : "أجواء العربية"}<input type="range" name={bus} min="0" max="1" step="0.05" value={audioVolumes[bus]} aria-label={bus === "music" ? "مستوى الموسيقى" : bus === "sfx" ? "مستوى المؤثرات" : "مستوى أجواء العربية"} onChange={(event) => onVolumeChange(bus, Number(event.currentTarget.value))} /></label>)}
@@ -541,7 +543,7 @@ export function BehindTheDotsGame({ userId }: { userId: string }) {
         )}
 
         {state.phase === "ending" && state.ending && <EndingSequence ending={state.ending} paused={state.paused} onComplete={finishEnding} />}
-        {state.phase === "debrief" && state.ending && <><Results state={state} onReplay={() => dispatch({ type: "replay" })} /><div className="btd-rating-wrap"><StarRating gameId="behind-the-dots" /></div></>}
+        {state.phase === "debrief" && state.ending && <Results state={state} onReplay={() => dispatch({ type: "replay" })} />}
 
         {state.paused && <div className="btd-pause-overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title"><div className="btd-pause-card"><span className="btd-eyebrow">وقفة صغيرة</span><h2 id="pause-title">دوتّي مستنية</h2><p>الوقت وقف. كل حاجة محفوظة.</p><button className="btd-button btd-button-primary" onClick={() => dispatch({ type: "resume" })}><Play /> كمّل اللعب</button><button className="btd-button btd-button-quiet" onClick={exitGame}>ارجع للألعاب <ArrowRight /></button></div></div>}
       </div>
@@ -574,7 +576,7 @@ function Results({ state, onReplay }: { state: GameState; onReplay: () => void }
           return <div key={id} className={r?.points === 3 ? "is-right" : "is-wrong"}><b>{r?.points === 3 ? "✓" : "✗"} {c.title}</b><span>{r ? (r.points === 3 ? RELATION_LABELS[r.actual] : `الصح: ${RELATION_LABELS[r.actual]}`) : ""}</span></div>;
         })}</div>
         <p className="btd-causality-note">النقط بتوضح ارتباط في الأيام اللي سجلناها؛ التجربة والقياس يساعدوا نعرف أكتر.</p>
-        <div className="btd-results-actions"><button className="btd-button btd-button-primary" data-audio-kind="none" onClick={onReplay}><RotateCcw /> العب مرة تانية</button><button className="btd-button btd-button-quiet" onClick={() => navigate("/app")}>ارجع للألعاب <ArrowRight /></button></div>
+        <div className="btd-results-actions"><PostGameRating gameId="behind-the-dots"><button className="gf-endflow-action is-primary" data-audio-kind="none" onClick={onReplay}><RotateCcw /> العب مرة تانية</button><button className="gf-endflow-action" onClick={() => navigate("/app")}>ارجع للألعاب <ArrowRight /></button></PostGameRating></div>
       </div>
     </section>
   );

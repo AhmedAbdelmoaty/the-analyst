@@ -7,5 +7,5 @@ export default function CrackTheCodeRoute() {
   const showResult = new URLSearchParams(useLocation().search).get('showResult') === '1';
   if (!user) return null;
 
-  return <IframeGameShell userId={user.id} title="Crack the Code — الشفرة الأخيرة" src={`/crack-the-code/index.html${showResult ? '?showResult=1' : ''}`} background="#fff6e7" />;
+  return <IframeGameShell userId={user.id} gameId="crack-the-code" title="Crack the Code — الشفرة الأخيرة" src={`/crack-the-code/index.html${showResult ? '?showResult=1' : ''}`} background="#fff6e7" />;
 }

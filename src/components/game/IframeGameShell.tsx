@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlatformGameControls } from './PlatformGameControls';
+import { PostGameRating } from '@/features/feedback/PostGameRating';
+import type { GameId } from '@/features/discovery/catalog';
 
 type Action = 'state' | 'pause' | 'resume' | 'settings' | 'restart' | 'prepareExit';
 type GameState = { canPause: boolean; paused: boolean; canSettings: boolean; canRestart: boolean; progress: 'new' | 'resumable' | 'complete' | 'unavailable' };
 type Reply = { channel: 'the-analyst-game'; version: 1; type: 'state' | 'ack'; id?: number; state?: GameState };
 
 /** The iframe owns gameplay and persistence. The host exposes only acknowledged capabilities. */
-export function IframeGameShell({ userId, title, src, background }: { userId: string; title: string; src: string; background: string }) {
+export function IframeGameShell({ userId, gameId, title, src, background }: { userId: string; gameId: GameId; title: string; src: string; background: string }) {
   const navigate = useNavigate();
   const frame = useRef<HTMLIFrameElement>(null);
   const sequence = useRef(0);
@@ -48,9 +50,13 @@ export function IframeGameShell({ userId, title, src, background }: { userId: st
     exitTimer.current = window.setTimeout(() => navigate('/app'), 800);
   };
 
-  return <main className="relative h-[100dvh] w-full overflow-hidden" style={{ background }}>
-    <iframe ref={frame} key={userId} name={userId} title={title} src={src} allow="autoplay" className="block h-full w-full border-0" onLoad={() => { setState(null); command('state'); }} />
+  return <main className="relative flex h-[100dvh] w-full flex-col overflow-hidden" style={{ background }}>
+    <iframe ref={frame} key={userId} name={userId} title={title} src={src} allow="autoplay" className="block min-h-0 w-full flex-1 border-0" onLoad={() => { setState(null); command('state'); }} />
     <PlatformGameControls onHome={exit} onPause={state?.canPause && !state.paused ? () => command('pause') : undefined} onSettings={state?.canSettings ? () => command('settings') : undefined} canPause={Boolean(state?.canPause && !state.paused)} canSettings={Boolean(state?.canSettings)} />
+    {state?.progress === 'complete' && <div className="gf-iframe-finish-dock" dir="rtl"><PostGameRating gameId={gameId}>
+      {state.canRestart && <button type="button" className="gf-endflow-action is-primary" onClick={() => command('restart')}>العب مرة تانية</button>}
+      <button type="button" className="gf-endflow-action" onClick={exit}>العودة إلى الألعاب</button>
+    </PostGameRating></div>}
     {state?.paused && <div className="absolute inset-0 z-40 grid place-items-center bg-black/55 p-4" dir="rtl"><div className="w-full max-w-sm rounded-xl bg-white p-5 text-center shadow-xl"><h2 className="text-xl font-bold">اللعبة متوقفة مؤقتًا</h2><button type="button" className="mt-4 min-h-11 rounded-lg bg-slate-900 px-6 font-bold text-white" onClick={() => command('resume')}>كمّل اللعب</button></div></div>}
   </main>;
 }

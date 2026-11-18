@@ -41,6 +41,7 @@
 .rd-root .rd-document-policy .rd-department-seal{display:grid;place-items:center;width:6.5rem;height:6.5rem;border-radius:50%;text-align:center}
 .rd-root .rd-document-individual-records .rd-file-records section>div{border:1px solid hsl(var(--rd-line))}
 .rd-root .rd-document-individual-records .rd-file-records section span{padding:.35rem .5rem;min-height:2rem}.rd-root .rd-document-individual-records .rd-file-records section span:nth-child(even){background:hsl(var(--rd-ivory))}
+.rd-root .rd-records-summary{display:block;padding:.65rem .55rem;border-top:2px solid hsl(var(--rd-charcoal));background:hsl(var(--rd-gold)/.18);font-size:.82rem;line-height:1.55;text-align:center}
 .rd-root .rd-document-individual-records .rd-department-seal{color:hsl(var(--rd-charcoal));border-color:hsl(var(--rd-charcoal));transform:none}
 .rd-root .rd-file{border:3px solid var(--g-ink);box-shadow:5px 7px 0 var(--g-ink)}
 .rd-root .rd-file-page.rd-official-document{box-shadow:0 6px 0 hsl(var(--rd-line)/.4)}

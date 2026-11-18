@@ -15,9 +15,10 @@ import { DeductionNotebook } from '../src/features/reward-decision/components/De
 import { CaseTimer, ChartBoard } from '../src/features/reward-decision/components/AnalysisRoom';
 import { GameResults } from '../src/features/reward-decision/components/GameResults';
 import { GameHud } from '../src/features/reward-decision/components/Ui';
+import { DocumentPage } from '../src/features/reward-decision/components/DocumentPage';
 
 const mem = new Map<string, string>();
-Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => mem.set(k, v), removeItem: (k: string) => mem.delete(k) } });
+Object.defineProperty(globalThis, 'localStorage', { configurable: true, writable: true, value: { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => mem.set(k, v), removeItem: (k: string) => mem.delete(k) } });
 beforeEach(() => mem.clear());
 const uid = 'u-1';
 
@@ -89,8 +90,9 @@ describe('story', () => {
     expect(SOURCE_SCRIPT.meeting.map(line => line.text)).toEqual(LEVEL_1_MEETING.map(line => line.text));
   });
   test('gender variants render', () => {
-    expect(scriptFor('female').briefing[0].text).toStartWith('بصي،');
-    expect(scriptFor('male').briefing[0].text).toStartWith('بص،');
+    expect(scriptFor('female').briefing[0].text).toBe('عندنا ترشيح لتكريم فريق من المبيعات، بس فيه خلاف بين قادة الفرق. عايزاكِ تمري على حسام وداليا تستلمي تقرير المبيعات وسياسة التكريم، وتيجي قاعة الاجتماعات.');
+    expect(scriptFor('male').briefing[0].text).toBe('عندنا ترشيح لتكريم فريق من المبيعات، بس فيه خلاف بين قادة الفرق. عايزك تمر على حسام وداليا تستلم تقرير المبيعات وسياسة التكريم، وتيجي قاعة الاجتماعات.');
+    expect(scriptFor('female').briefing[2].text).toContain('وخلي بالكِ');
     expect(scriptFor('female').sales[1].text).toContain('محتاجة');
   });
   test('calls: two short calls for all three decisions and both genders', () => {
@@ -108,6 +110,14 @@ describe('story', () => {
     const r = { ...newRun(uid), phase: 'resolution' as const, stage: 'talking', decision: 'marwan' as const, evaluation: evaluateLevel1Decision('marwan') };
     expect(resolveScene(r, 'male', { id: 'x', speaker: 'mahmoud', text: '' })).toBe('phone-mahmoud-upset');
     expect(resolveScene(r, 'male', { id: 'x', speaker: 'marwan', text: '' })).toBe('phone-marwan-happy');
+  });
+  test('each boardroom line resolves to its own visual stage', () => {
+    const run = { ...newRun(uid), phase: 'meeting' as const, stage: 'talk' };
+    expect(resolveScene(run, 'male', { id: 'meeting_01', speaker: 'sherif', text: '' })).toBe('meeting-opening');
+    expect(resolveScene(run, 'male', { id: 'meeting_02', speaker: 'marwan', text: '' })).toBe('meeting-marwan');
+    expect(resolveScene(run, 'male', { id: 'meeting_03', speaker: 'mahmoud', text: '' })).toBe('meeting-mahmoud');
+    expect(resolveScene(run, 'male', { id: 'meeting_04', speaker: 'dalia', text: '' })).toBe('meeting-dalia');
+    expect(resolveScene(run, 'female', { id: 'meeting_05', speaker: 'sherif', text: '' })).toBe('meeting-player-female');
   });
 });
 
@@ -141,6 +151,26 @@ describe('no spoilers before submission', () => {
       expect(html).not.toContain('المركز');
       expect(html).not.toContain('center_');
     }
+  });
+  test('Level 1 results use decisive win/loss presentation without old quiz artifacts', () => {
+    const win = renderToStaticMarkup(createElement(GameResults, { score: 100, decision: 'defer', activeMs: 61000, onReplay() {}, onExit() {} }));
+    expect(win).toContain('المهمة نجحت — قرار استراتيجي ذكي!');
+    expect(win).toContain('3/3 نجوم');
+    expect(win).toContain('3 من 3 نجوم');
+    expect(win).toContain('100%');
+    const loss = renderToStaticMarkup(createElement(GameResults, { score: 35, decision: 'marwan', activeMs: 61000, onReplay() {}, onExit() {} }));
+    expect(loss).toContain('تسرعت في القرار!');
+    expect(loss).toContain('0 من 3 نجوم');
+    expect(loss).toContain('0%');
+    expect(loss).toContain('جرّب تاني وقرر صح');
+    expect(loss).not.toContain('35%');
+    expect(loss).not.toContain('1/2');
+  });
+  test('individual records end each team with its approved total and mean', () => {
+    const html = renderToStaticMarkup(createElement(DocumentPage, { id: 'individual-records' }));
+    expect(html).toContain('إجمالي مبيعات الفريق = 950% (متوسط 95%).');
+    expect(html).toContain('إجمالي مبيعات الفريق = 880% (متوسط 88%).');
+    expect((html.match(/rd-records-summary/g) ?? [])).toHaveLength(2);
   });
 });
 

@@ -15,6 +15,7 @@ import femaleWeakMascot from "@/assets/results/result-mascot-female-weak.webp";
 import maleStrongMascot from "@/assets/results/result-mascot-male-strong.webp";
 import maleWeakMascot from "@/assets/results/result-mascot-male-weak.webp";
 import analystMark from "@/assets/brand/the-analyst-mark.png";
+import { PostGameRating } from "@/features/feedback/PostGameRating";
 
 interface ResultScreenProps {
   onNavigate: (screen: string) => void;
@@ -189,7 +190,7 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
       <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col items-center justify-center px-3 py-3 sm:px-5 sm:py-4">
         <section
           className={cn(
-            "relative grid min-h-[min(700px,82dvh)] w-full grid-rows-[auto_minmax(0,1fr)_auto_auto] gap-3 overflow-hidden rounded-md border p-3 shadow-xl sm:gap-4 sm:p-5",
+            "relative grid min-h-[min(700px,82dvh)] w-full grid-rows-[auto_minmax(0,1fr)_auto] gap-3 overflow-hidden rounded-md border p-3 shadow-xl sm:gap-4 sm:p-5",
             view.stage
           )}
         >
@@ -356,39 +357,14 @@ export const ResultScreen = ({ onNavigate }: ResultScreenProps) => {
                 <li className="inline-flex items-center gap-1"><CircleCheck aria-hidden="true" className="h-3.5 w-3.5 text-primary" />قرّر</li>
               </ul>
             </div>
-            <div className="flex flex-col items-stretch gap-1.5 sm:min-w-48 sm:items-center">
-              <Link
-                to="/plans"
-                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              >
-                استكشف الألعاب والخطط
-                <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-              </Link>
-              <Link to="/app" className="inline-flex min-h-7 items-center justify-center px-2 text-xs font-semibold text-game-muted underline-offset-4 hover:text-game-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                العودة للألعاب
-              </Link>
+            <div className="flex min-w-0 flex-col items-stretch sm:min-w-56 sm:items-center">
+              <PostGameRating gameId="problem-framing">
+                <button type="button" onClick={() => onNavigate("company-briefing")} className="gf-endflow-action is-primary"><RotateCcw />{replayCopy[playerGender]}</button>
+                <Link to="/app" className="gf-endflow-action">العودة للألعاب</Link>
+                <Link to="/plans" className="gf-endflow-action">استكشف الألعاب والخطط<ArrowLeft aria-hidden="true" /></Link>
+              </PostGameRating>
             </div>
           </motion.section>
-
-          <motion.div
-            className="mx-auto flex w-full max-w-[320px] justify-center"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.25, duration: 0.35 }}
-          >
-            <motion.button
-              onClick={() => onNavigate("company-briefing")}
-              className={cn(
-                "flex h-11 w-full items-center justify-center gap-2 rounded-md px-5 text-sm font-bold shadow-lg outline-none ring-offset-2 transition-transform focus-visible:ring-2 focus-visible:ring-primary sm:h-12 sm:text-base",
-                view.button
-              )}
-              whileHover={{ scale: 1.035 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5" />
-              {replayCopy[playerGender]}
-            </motion.button>
-          </motion.div>
         </section>
       </main>
     </div>

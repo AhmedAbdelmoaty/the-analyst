@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, FileText } from 'lucide-react';
 import { DOCUMENTS } from '../data/case';
 import { PORTRAITS } from '../data/assets';
@@ -18,13 +18,15 @@ export function DialoguePanel({ line, lines, index, total, visible, paused, gend
   const who = SPEAKERS[line.speaker];
   const portrait = line.speaker === 'player' ? PORTRAITS[gender === 'female' ? 'player_female' : 'player_male']
     : line.speaker === 'narrator' ? null : PORTRAITS[line.speaker];
+  const [imgFailed, setImgFailed] = useState(false);
   const done = shown >= parts.length;
+  useEffect(() => setImgFailed(false), [portrait]);
   useEffect(() => {
     if (done && !paused && line.documentId && cardRef.current) onCardShown?.(line.documentId, cardRef.current);
   }, [done, paused, line.documentId, onCardShown]);
 
   return <section className={`rd-dialogue rd-dialogue-${dialogueTone(lines, line.speaker)}`} data-line={line.id} data-speaker={line.speaker}>
-    {portrait ? <span className="rd-portrait" aria-hidden="true"><b>{who.name.slice(0, 1)}</b><img src={portrait} alt="" onError={event => { event.currentTarget.hidden = true; }}/></span>
+    {portrait ? <span className="rd-portrait" aria-hidden="true">{imgFailed ? <b>{who.name.slice(0, 1)}</b> : <img src={portrait} alt="" onError={() => setImgFailed(true)}/>}</span>
       : <span className="rd-initial" aria-hidden="true">{who.name.slice(0, 1)}</span>}
     <div><header><span>{who.name}</span><small>{who.role}</small><em>{index + 1}/{total}</em></header>
       <button className="rd-dialogue-copy" disabled={done || paused} onClick={() => onVisible(parts.length)}

@@ -7,5 +7,5 @@ export default function InvestigationFileRoute() {
   const showResult = new URLSearchParams(useLocation().search).get('showResult') === '1';
   if (!user) return null;
 
-  return <IframeGameShell userId={user.id} title="ملف تحت التحقيق — مفارقة سمبسون" src={`/investigation-file/index.html${showResult ? '?showResult=1' : ''}`} background="#fbf7ee" />;
+  return <IframeGameShell userId={user.id} gameId="investigation-file" title="ملف تحت التحقيق — مفارقة سمبسون" src={`/investigation-file/index.html${showResult ? '?showResult=1' : ''}`} background="#fbf7ee" />;
 }

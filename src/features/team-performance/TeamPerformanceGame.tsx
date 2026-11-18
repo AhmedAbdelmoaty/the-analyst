@@ -1,4 +1,4 @@
-import { StarRating } from '@/features/feedback/GameFeedback';
+import { PostGameRating } from '@/features/feedback/PostGameRating';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlatformGameControls } from '@/components/game/PlatformGameControls';
@@ -270,7 +270,6 @@ export default function TeamPerformanceGame({ userId }: { userId: string }) {
 
         {phase === 'result' && (
           <div className="space-y-4 animate-scale-in">
-            <div className="rounded-3xl border border-border bg-card"><StarRating gameId="team-performance" /></div>
             {won && <Confetti />}
             <div className={`rounded-3xl border-4 border-slate-900 p-5 text-center shadow-[8px_8px_0_#0f172a] ${won ? 'bg-emerald-300' : 'bg-rose-300'}`}>
               <div className="text-5xl">{won ? '🏆' : '💥'}</div>
@@ -284,10 +283,10 @@ export default function TeamPerformanceGame({ userId }: { userId: string }) {
               <h3 className="mb-2 text-lg font-black text-rose-600">💡 مفارقة سيمبسون</h3>
               <p className="font-bold leading-relaxed">ممكن مجموعة تكون أحسن في كل فئة لوحدها، ومع ذلك إجماليها يطلع أقل — لأن توزيعها على الفئات مختلف. قبل ما تقارن نسب إجمالية، اسأل: <b>"هل الخلطة واحدة؟"</b></p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={restart} className="rounded-2xl border-4 border-slate-900 bg-yellow-400 py-3 text-lg font-black shadow-[4px_4px_0_#0f172a] active:translate-y-1 active:shadow-none">العب تاني ↻</button>
-              <button onClick={exit} className="rounded-2xl border-4 border-slate-900 bg-white py-3 text-center text-lg font-black shadow-[4px_4px_0_#0f172a]">كل الألعاب</button>
-            </div>
+            <PostGameRating gameId="team-performance">
+              <button onClick={restart} className="gf-endflow-action is-primary">العب تاني ↻</button>
+              <button onClick={exit} className="gf-endflow-action">كل الألعاب</button>
+            </PostGameRating>
           </div>
         )}
       </div>

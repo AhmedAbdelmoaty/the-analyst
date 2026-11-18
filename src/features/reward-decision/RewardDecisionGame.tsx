@@ -204,7 +204,7 @@ export default function RewardDecisionGame() {
   const ready = salesReady(run.collectedDocs);
   const timer = <CaseTimer read={readTimer} running={!frozen && run.phase !== 'cover' && run.phase !== 'debrief'} />;
   return <MotionConfig reducedMotion={frozen ? 'always' : 'user'}><main className={`rd-root ${frozen ? 'rd-paused' : ''}`} dir="rtl" data-phase={run.phase} data-stage={run.stage} data-scene={sceneKey}>
-    {run.phase === 'cover' && <PlatformGameControls onHome={exit} canPause={false} canSettings={false} />}
+    {(run.phase === 'cover' || run.phase === 'debrief') && <PlatformGameControls onHome={exit} canPause={false} canSettings={false} />}
     <ScenePlayer sceneKey={sceneKey}>
       {run.phase !== 'cover' && run.phase !== 'debrief' && <GameHud count={run.collectedDocs.length} pulse={filePulse} phase={run.phase} hideFile={inRoom} timer={timer} onFile={openFile} onPause={() => { gameSound('click'); commit(r => ({ ...r, paused: true })); }} onSettings={() => { commit(r => ({ ...r, paused: true })); setSettingsOpen(true); }} onExit={() => { gameSound('click'); exit(); }} />}
       <div className="rd-content"><AnimatePresence mode="wait"><motion.div key={`${inRoom ? 'room' : run.phase}-${inRoom ? '' : run.stage}-${run.endingCall}-${inRoom ? '' : sceneKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35 }}>

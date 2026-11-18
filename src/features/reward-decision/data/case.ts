@@ -17,9 +17,16 @@ export const TEAMS: Record<TeamId, { name: string; members: { id: string; name: 
 
 export const POLICY = 'يُعتبر الموظف محققًا لمعيار الأداء عند وصول نسبة إنجازه إلى 85% أو أكثر من التارجت بتاعه خلال فترة التقييم.';
 
-export const DOCUMENTS: Record<DocumentId, { title: string; source: string }> = {
+export const DOCUMENTS: Record<DocumentId, { title: string; source: string; teamSummaries?: Partial<Record<TeamId, string>> }> = {
   'sales-summary': { title: 'تقرير المبيعات المجمع', source: 'إدارة المبيعات' },
-  'individual-records': { title: 'كشف نتائج الأفراد', source: 'إدارة المبيعات' },
+  'individual-records': {
+    title: 'كشف نتائج الأفراد',
+    source: 'إدارة المبيعات',
+    teamSummaries: {
+      marwan: 'إجمالي مبيعات الفريق = 950% (متوسط 95%).',
+      mahmoud: 'إجمالي مبيعات الفريق = 880% (متوسط 88%).',
+    },
+  },
   policy: { title: 'ملف معيار الأداء', source: 'إدارة الموارد البشرية — شركة روّاد' },
 };
 

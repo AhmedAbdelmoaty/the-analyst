@@ -15,7 +15,17 @@ export function resolveScene(run: RewardRun, gender: 'male' | 'female', line: Li
     case 'hr': return line?.id === 'hr_03' ? 'hr-guidance' : `hr-${g}`;
     case 'workbench': case 'notebook': return `analyst-${g}`;
     case 'report': case 'recommendation': return `report-${g}`;
-    case 'meeting': return 'meeting-opening';
+    case 'meeting': {
+      if (!line) return 'meeting-opening';
+      switch (line.id) {
+        case 'meeting_01': return 'meeting-opening';
+        case 'meeting_02': return 'meeting-marwan';
+        case 'meeting_03': return 'meeting-mahmoud';
+        case 'meeting_04': return 'meeting-dalia';
+        case 'meeting_05': return gender === 'female' ? 'meeting-player-female' : 'meeting-player-male';
+        default: return 'meeting-opening';
+      }
+    }
     case 'resolution': {
       const calm = run.decision === 'defer' || run.decision === 'mahmoud' || (!run.decision && (run.evaluation?.success ?? false));
       if (run.stage !== 'talking' || !line) return `analyst-${g}`;

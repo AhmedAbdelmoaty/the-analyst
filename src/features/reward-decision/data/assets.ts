@@ -30,6 +30,9 @@ export const SCENES = {
   // Delivered portrait omits the initial "r"; preserve it and map the real filename.
   'report-male': pair('rd-a17-analyst-reviews-report-male-L.webp', 'd-a17-analyst-reviews-report-male-P.webp'),
   'meeting-opening': pair('rd-a18-meeting-opening-L.webp', 'rd-a18-meeting-opening-P.webp'),
+  'meeting-marwan': pair('rd-a19-meeting-hossam-neutral-response-L.webp', 'rd-a19-meeting-hossam-neutral-response-P.webp'),
+  'meeting-mahmoud': pair('rd-a20-meeting-hossam-concerned-response-L.webp', 'rd-a20-meeting-hossam-concerned-response-P.webp'),
+  'meeting-dalia': pair('rd-a14-dalia-final-guidance-L.webp', 'rd-a14-dalia-final-guidance-P.webp'),
   'meeting-player-female': pair('rd-a18-player-presents-female-L.webp', 'rd-a18-player-presents-female-P.webp'),
   'meeting-player-male': pair('rd-a18-player-presents-male-L.webp', 'rd-a18-player-presents-male-P.webp'),
   'meeting-neutral': pair('rd-a19-meeting-hossam-neutral-response-L.webp', 'rd-a19-meeting-hossam-neutral-response-P.webp'),
