@@ -12,3 +12,6 @@
 .imp-voucher:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0 2px,transparent 2px 12px)}
 .imp-voucher .shine{position:absolute;inset:-50%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.25) 50%,transparent 60%);animation:impShine 3.5s ease-in-out infinite}
 @keyframes impShine{from{transform:translateX(-60%)}to{transform:translateX(60%)}}
+
+.event-end-actions{width:100%;text-align:center}.event-end-actions .imp-voucher{width:min(100%,400px)}
+@media(prefers-reduced-motion:reduce){.imp-pulse,.imp-marquee>div,.imp-voucher .shine{animation:none}}

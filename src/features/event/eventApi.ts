@@ -32,16 +32,18 @@ export function usePublicState(pollMs = 10000) {
   return { state, reload: load };
 }
 
-/** The signed-in player's own status and voucher; updates live when the admin announces winners. */
+/** Owner-only voucher; refresh after a successful local submission and a challenge reset. */
 export function useMyStatus(enabled: boolean) {
   const [status, setStatus] = useState<MyStatus>(null);
   const load = useCallback(async () => { const { data } = await rpc("event_my_status"); setStatus((data as MyStatus) ?? null); }, []);
   useEffect(() => {
     if (!enabled) { setStatus(null); return; }
     void load();
+    const refresh = () => void load();
+    window.addEventListener("event-result-saved", refresh);
     const ch = supabase.channel(`event-me-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "event_challenge" }, () => void load()).subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { supabase.removeChannel(ch); window.removeEventListener("event-result-saved", refresh); };
   }, [enabled, load]);
   return status;
 }

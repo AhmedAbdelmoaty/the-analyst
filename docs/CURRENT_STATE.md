@@ -43,5 +43,5 @@ Paymob foundation exists (DB tables/RPCs and server functions reported deployed)
 
 ## The HR Café event (2026-11-25)
 - Training Evaluation (`/games/training-evaluation`) is first and the only open game; others show "Coming Soon".
-- Live screen `/event/arena`, admin control `/admin/event-arena` (start/reset, step reveal, Excel leads), offer page `/event/offer`, voucher card for top 50 (code IMP-HRC-2026).
+- Live screen `/event/arena`: admin-only start on the same screen; correct finishes appear automatically (2-second refresh), no staged reveal. Server ranking and owner vouchers are immediate (migration 0016 applied); top 50 retain existing discounts and code IMP-HRC-2026. Voucher appears below the full finale before Continue and remains available on the account. `/admin/event-arena` retains Excel leads; no event reset was performed and frontend publication is separate.
 - phone-auth: 500 code requests/hour per IP, 30s resend; leaked-password check off. Deployed to the live backend.

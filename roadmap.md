@@ -1,4 +1,6 @@
 # Current tasks
+- [x] HR Café: automatic server-ranked leaderboard, admin-only start on arena, immediate owner voucher after finale; 9 isolated tests passed and public/synthetic mobile/desktop arena reviewed; no event reset or publication.
+- [ ] HR Café real-account start → correct finish → voucher check: blocked by unavailable owner preview session; no production test players/results created.
 - [x] Premium discovery landing, shared five-game catalog, first-signup plans and selected-game journey; 50 rule/regression tests and safe mock signup/login/all-five-route checks at desktop/mobile (no Cloud changes or publication; real OTP deliberately untested).
 - [x] Paymob: disabled server foundation, review-only SQL, subscription UI, synthetic security tests and merchant handoff; no cloud changes.
 - [ ] Paymob activation: blocked by merchant Test credentials, explicit isolated SQL/function deployment approval, webhook setup and sandbox E2E sign-off; no Live checkout or game restrictions authorized.
