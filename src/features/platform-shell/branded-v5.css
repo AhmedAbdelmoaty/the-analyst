@@ -287,3 +287,16 @@
 .discovery.platform .showcase-strip .game-cover-details { background: linear-gradient(120deg,#fff7eb,#f0c6bd); color: #571e28; }
 .discovery.platform .showcase-strip .game-cover-meta { color: #683239; }
 .discovery.platform .showcase-strip .game-cover-action { background: linear-gradient(#ee5d61,#a61e25); color: white; }
+
+/* Coming Soon locked cards */
+.game-cover-card[data-locked]{position:relative;cursor:default}
+.game-cover-card[data-locked] .game-cover-art img{filter:saturate(.55) brightness(.78)}
+.game-cover-card[data-locked] .game-cover-art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(40,8,12,.05),rgba(40,8,12,.55));pointer-events:none}
+.game-cover-card[data-locked] .game-access{background:linear-gradient(135deg,#1c1a1f,#3a0f14)!important;color:#ffd9a8!important;border:1px solid #ffcf8a88!important;letter-spacing:.04em;font-weight:800;display:inline-flex;align-items:center;gap:5px;direction:ltr}
+.game-cover-card[data-locked] .soon-ribbon{position:absolute;top:50%;left:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:14px;display:grid;place-items:center;z-index:2;color:#fff;background:linear-gradient(145deg,#c42a34,#6e1218);border:2px solid #ffffffb0;box-shadow:0 5px 0 #4a1015,0 12px 22px #0008;animation:soon-bob 2.6s ease-in-out infinite}
+.game-cover-card[data-locked] .soon-ribbon svg{width:22px;height:22px}
+.game-cover-card[data-locked] .game-cover-action{direction:ltr;letter-spacing:.05em;opacity:.9}
+.game-cover-card[data-locked]:hover .soon-ribbon{animation:soon-shake .5s ease}
+@keyframes soon-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes soon-shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+@media (prefers-reduced-motion:reduce){.game-cover-card[data-locked] .soon-ribbon{animation:none}}

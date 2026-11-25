@@ -45,7 +45,7 @@ export function validateWorkProfile(value: WorkProfile): { value: WorkProfile; e
 }
 export const hasWorkProfile = (p?: Partial<WorkProfile> | null) => !!(p?.department && p?.industry);
 export function isIdentityProfileComplete(profile?: { first_name?: string | null; last_name?: string | null; gender?: string | null } | null) {
-  return !!(profile?.first_name && profile.last_name && (profile.gender === "male" || profile.gender === "female"));
+  return !!(profile?.first_name && profile.last_name);
 }
 
 /** Builds only the self-editable profile columns; database RLS still scopes the actual update to auth.uid(). */

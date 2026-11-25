@@ -1,5 +1,4 @@
 import { toast } from 'sonner';
-import { LockKeyhole } from 'lucide-react';
 import '@/features/event/event.css';
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
@@ -37,7 +36,7 @@ export default function Games() {
     <main>
       <div className="hub-intro platform-heading"><div><p className="platform-kicker">مغامراتك</p><h1>اختار مغامرتك</h1></div><span className="hub-library-label">٦ حكايات تستحق التجربة<ArrowLeft /></span></div>
       {needsWork && <aside className="platform-note mb-4 flex items-center justify-between gap-3"><span>ضيف القسم وقطاع العمل من مركز اللاعب.</span><button aria-label="إخفاء الدعوة" className="platform-icon" onClick={() => void updateProfile({ work_details_prompt_dismissed_at: new Date().toISOString() })}><X /></button></aside>}
-      <div className="hub-grid">{GAME_CATALOG.map(game => game.locked ? <div key={game.id} className="locked-card"><GameCoverCard game={game} progress={progress[game.id]} snapshot={snapshot} onChoose={() => toast("Coming Soon")} /><span className="lock-badge" aria-hidden><span><LockKeyhole /></span></span></div> : <GameCoverCard key={game.id} game={game} progress={progress[game.id]} snapshot={snapshot} onChoose={() => {
+      <div className="hub-grid">{GAME_CATALOG.map(game => game.locked ? <GameCoverCard key={game.id} game={game} progress={progress[game.id]} snapshot={snapshot} onChoose={() => toast("Coming Soon — قريباً جداً 🔒")} /> : <GameCoverCard key={game.id} game={game} progress={progress[game.id]} snapshot={snapshot} onChoose={() => {
         if (cardAccess(game, progress[game.id], snapshot).decision === 'deny') { selectGame(game.id); navigate('/plans'); }
         else navigate(`${game.route}${progress[game.id].status === 'completed' ? '?showResult=1' : ''}`);
       }} />)}</div>

@@ -13,7 +13,7 @@ import saraImg from '@/assets/characters/sara.webp';
 import AudioControls from '@/features/platform-audio/AudioControls';
 import { platformAudio } from '@/features/platform-audio/mixer';
 
-function ProfileEditor({ onSaved }: { onSaved: () => void }) {
+export function ProfileEditor({ onSaved }: { onSaved: () => void }) {
   const { profile, updateProfile } = useAuth();
   const [firstName, setFirstName] = useState(profile?.first_name ?? '');
   const [lastName, setLastName] = useState(profile?.last_name ?? '');
@@ -38,26 +38,16 @@ function ProfileEditor({ onSaved }: { onSaved: () => void }) {
   </form>;
 }
 
-export default function PlayerCenter({ snapshot }: { snapshot: GameAccessSnapshot | null }) {
+export default function PlayerCenter(_props: { snapshot: GameAccessSnapshot | null }) {
   const { profile, signOut } = useAuth();
-  const { available, standalone, install, guidance } = useInstall();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const avatar = profile?.avatar_choice === 'sara' || profile?.gender === 'female' ? saraImg : analystImg;
-  const subscription = snapshot?.entitled === true ? 'الوصول السنوي متاح حسب التحقق الحالي' : snapshot?.entitled === false ? 'لا يوجد وصول سنوي فعّال حسب التحقق الحالي' : 'حالة الاشتراك تحتاج التحقق';
-  return <Dialog.Root open={open} onOpenChange={value => { setOpen(value); if (value) platformAudio.play('panel'); if (!value) { setEditing(false); setSaved(false); } }}>
-    <Dialog.Trigger asChild><button className="player-trigger" aria-label={`مركز اللاعب: ${profile?.first_name ?? ''}`}><img src={avatar} alt="" /><span>{profile?.first_name}<small>مركز اللاعب</small></span><ChevronDown className="h-4 w-4" /></button></Dialog.Trigger>
-    <Dialog.Portal><Dialog.Overlay className="player-overlay" /><Dialog.Content dir="rtl" className="platform player-center"><Dialog.Close className="platform-icon player-close" aria-label="إغلاق مركز اللاعب"><X /></Dialog.Close>
-      <div className="!text-right"><Dialog.Title data-player-title className="flex items-center gap-2 !text-xl"><Settings2 className="h-5 w-5" />مركز اللاعب</Dialog.Title><Dialog.Description className="sr-only">بيانات الحساب والاشتراك وإعدادات الصوت والعرض.</Dialog.Description></div>
-      <div className="player-identity"><img src={avatar} alt="شخصيتك الحالية" /><div><h2>{profile?.first_name} {profile?.last_name}</h2></div></div>
-      {saved && <p role="status" className="platform-note">✓ تعديلاتك اتحفظت.</p>}
-      {editing ? <ProfileEditor onSaved={() => { setEditing(false); setSaved(true); }} /> : <button className="platform-button w-full" onClick={() => { setEditing(true); setSaved(false); }}>تعديل بياناتي<ArrowLeft /></button>}
-      <section className="player-section"><h3>اشتراكي</h3><p className="platform-muted">{subscription}</p><Link className="platform-button mt-3 w-full" to="/subscription">تفاصيل الاشتراك<ArrowLeft /></Link></section>
+  return <Dialog.Root open={open} onOpenChange={value => { setOpen(value); if (value) platformAudio.play('panel'); }}>
+    <Dialog.Trigger asChild><button className="player-trigger" aria-label="الإعدادات"><Settings2 className="h-5 w-5" /><span>{profile?.first_name}<small>الإعدادات</small></span><ChevronDown className="h-4 w-4" /></button></Dialog.Trigger>
+    <Dialog.Portal><Dialog.Overlay className="player-overlay" /><Dialog.Content dir="rtl" className="platform player-center"><Dialog.Close className="platform-icon player-close" aria-label="إغلاق الإعدادات"><X /></Dialog.Close>
+      <div className="!text-right"><Dialog.Title data-player-title className="flex items-center gap-2 !text-xl"><Settings2 className="h-5 w-5" />الإعدادات</Dialog.Title><Dialog.Description className="sr-only">إعدادات الصوت وتسجيل الخروج.</Dialog.Description></div>
       <section className="player-section" data-audio-settings><h3>الصوت والعرض</h3><AudioControls /></section>
       <Link className="platform-button w-full" to="/">عن The Analyst<ArrowLeft /></Link>
-      {!standalone && (available || guidance) && <section className="player-section"><h3>تثبيت التطبيق</h3>{available ? <button className="platform-button mt-3 w-full" onClick={() => void install()}>تثبيت التطبيق</button> : <p className="platform-muted">{guidance}</p>}</section>}
       <button className="platform-button w-full" onClick={async () => { await signOut(); navigate('/'); }}><LogOut />تسجيل الخروج</button>
     </Dialog.Content></Dialog.Portal>
   </Dialog.Root>;

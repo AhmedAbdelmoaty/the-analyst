@@ -14,6 +14,7 @@ export default function AppEntry() {
   if (!user) return <Navigate to="/" replace />;
   if (onboardingFor(user.id)?.stage === 'plans') return <Navigate to="/plans" replace />;
   if (!isProfileComplete) return <Navigate to="/setup" replace />;
-  if (!standalone && !deferred && (available || !!guidance)) return <InstallPrompt />;
+  // Install prompt paused during the HR Café event.
+  void InstallPrompt; void available; void standalone; void deferred; void guidance;
   return <Games />;
 }

@@ -75,7 +75,8 @@ export default function Game({ onSubmit, endActions }: { onSubmit?: (s: State) =
   return (
     <div className="g600 g-training-eval" dir="rtl">
       <Scene k={scene} />
-      {state.phase !== "intro" && <Hud state={state} muted={muted} remaining={remaining} timerOn={timerOn} onMute={() => setMute((v) => !v)} onRestart={() => travel({ type: "restart" })} onThink={() => dispatch({ type: "backToThink" })} />}
+      {state.phase === "intro" && <a href="/app" className="g-home-exit" aria-label="الرجوع للألعاب"><Home /></a>}
+      {state.phase !== "intro" && <Hud state={state} muted={muted} remaining={remaining} timerOn={timerOn} onMute={() => setMute((v) => !v)} onRestart={() => { window.location.href = "/app"; }} onThink={() => dispatch({ type: "backToThink" })} />}
       {timerOn && messageCount > 0 && <PhoneNotifier count={messageCount} open={phoneOpen} onToggle={() => setPhoneOpen((v) => !v)} />}
       {timerOn && remaining < 15 && <div className="g-urgency-vignette" aria-hidden />}
       <AnimatePresence mode="wait">
@@ -100,7 +101,7 @@ function Scene({ k }: { k: SceneKey }) {
 
 function Hud({ state, muted, remaining, timerOn, onMute, onRestart, onThink }: { state: State; muted: boolean; remaining: number; timerOn: boolean; onMute: () => void; onRestart: () => void; onThink: () => void }) {
   const urgency = remaining < 20 ? "red" : remaining < 45 ? "amber" : "calm";
-  return <header className="g-hud"><div className="g-hud-tools"><button aria-label="ابدأ من الأول" onClick={onRestart}><Home /></button><button aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</button><button className="g-test-nav-btn" title="الرجوع لخيارات التفكير" onClick={onThink}>🔄 <span>رجوع للتفكير</span></button></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerOn ? <div className={`g-timer ${urgency}`} role="timer"><b>{`${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`}</b><i><em style={{ width: `${(remaining / DEADLINE_SECONDS) * 100}%` }} /></i></div> : <span />}</header>;
+  return <header className="g-hud"><div className="g-hud-tools"><button aria-label="الرجوع للألعاب" onClick={onRestart}><Home /></button><button aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</button><button className="g-test-nav-btn" title="الرجوع لخيارات التفكير" onClick={onThink}>🔄 <span>رجوع للتفكير</span></button></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerOn ? <div className={`g-timer ${urgency}`} role="timer"><b>{`${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`}</b><i><em style={{ width: `${(remaining / DEADLINE_SECONDS) * 100}%` }} /></i></div> : <span />}</header>;
 }
 
 function Cover({ go }: { go: () => void }) {

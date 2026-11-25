@@ -13,19 +13,19 @@ export default function GameCoverCard({ game, progress = { status: 'new' }, snap
   const access = cardAccess(game, progress, snapshot);
   const rating = useRatingSummary()[game.id];
   const locked = Boolean((game as { locked?: boolean }).locked);
-  const action = locked ? 'قريباً' : teaser ? 'اكتشف المغامرة' : access.action;
-  return <button type="button" className="game-cover-card" style={locked ? { opacity: .55, filter: 'grayscale(.7)' } : undefined} data-locked={locked || undefined} data-game={game.id} data-status={progress.status} data-access={access.decision} aria-label={`${action}: ${game.title}`} onPointerEnter={event => platformAudio.hover(event.pointerType)} onPointerMove={event => {
+  const action = locked ? 'Coming Soon' : teaser ? 'اكتشف المغامرة' : access.action;
+  return <button type="button" className="game-cover-card" data-locked={locked || undefined} data-game={game.id} data-status={progress.status} data-access={access.decision} aria-label={`${action}: ${game.title}`} onPointerEnter={event => platformAudio.hover(event.pointerType)} onPointerMove={event => {
     if (event.pointerType !== 'mouse' || window.matchMedia('(prefers-reduced-motion: reduce)').matches || platformAudio.snapshot().reducedMotion) return;
     const rect = event.currentTarget.getBoundingClientRect();
     event.currentTarget.style.setProperty('--card-tilt-x', `${((event.clientY - rect.top) / rect.height - .5) * -5}deg`);
     event.currentTarget.style.setProperty('--card-tilt-y', `${((event.clientX - rect.left) / rect.width - .5) * 5}deg`);
   }} onPointerLeave={event => { event.currentTarget.style.removeProperty('--card-tilt-x'); event.currentTarget.style.removeProperty('--card-tilt-y'); }} onFocus={() => platformAudio.play('hover')} onPointerDown={() => { platformAudio.unlock(); platformAudio.play(teaser ? 'click' : access.decision === 'deny' ? 'locked' : 'launch'); }} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { platformAudio.unlock(); platformAudio.play('click'); } }} onClick={onChoose}>
-    <span className="game-cover-art"><img src={game.cover} alt="" loading="lazy" draggable={false} /><span className="game-cover-sheen" />
-      <span className="game-access">{locked ? <><LockKeyhole size={14} /> قريباً</> : teaser ? (game.tier === 'free' ? 'مجانية' : 'الخطة السنوية') : access.label}</span>
+    <span className="game-cover-art"><img src={game.cover} alt="" loading="lazy" draggable={false} /><span className="game-cover-sheen" />{locked && <span className="soon-ribbon" aria-hidden><LockKeyhole /></span>}
+      <span className="game-access">{locked ? <><LockKeyhole size={13} /> Coming Soon</> : teaser ? (game.tier === 'free' ? 'مجانية' : 'الخطة السنوية') : access.label}</span>
       <span className="game-cover-title">{game.title}</span>
     </span>
     <span className="game-cover-details"><span className="game-cover-meta"><span>{game.category}</span>{rating && rating.total >= 3 && <span className="game-rating-badge">★ {rating.avg.toFixed(1)}</span>}{!teaser && <span className="game-status">{statusLabels[progress.status]}</span>}</span>
-      <span className="game-cover-bottom"><span className="game-cover-action">{!teaser && (access.decision === 'deny' ? <LockKeyhole /> : access.decision === 'verify' ? <CircleHelp /> : <Play />)}{action}<ArrowLeft /></span>
+      <span className="game-cover-bottom"><span className="game-cover-action">{!locked && !teaser && (access.decision === 'deny' ? <LockKeyhole /> : access.decision === 'verify' ? <CircleHelp /> : <Play />)}{action}<ArrowLeft /></span>
       {!teaser && progress.hint && <span className="game-hint">{progress.hint}</span>}</span>
     </span>
   </button>;
