@@ -403,3 +403,52 @@
 @media (max-width:640px){.g-sayes-avatar{width:6.6rem}.g-sayes-bubble p{font-size:.93rem}}
 
 .g-home-exit{position:fixed;top:14px;right:14px;z-index:40;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(20,12,12,.72);color:#fff;border:1px solid rgba(255,255,255,.35);box-shadow:0 6px 16px rgba(0,0,0,.4)}.g-home-exit svg{width:20px;height:20px}
+
+/* ===== Cinematic scene system ===== */
+.g-cine{position:absolute;inset:0;overflow:hidden;background:hsl(var(--ink))}
+.g-cine-layer{position:absolute;inset:0}
+.g-cine-amb{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(28px) brightness(.55) saturate(1.1);transform:scale(1.05);display:none}
+.g-cine-frame{position:absolute;inset:0;overflow:hidden}
+.g-cine-rig{position:absolute;inset:-1.5%;will-change:transform}
+.g-cine-img{width:100%;height:100%;object-fit:cover;will-change:transform;animation:g-cine-kb 20s cubic-bezier(.4,0,.2,1) infinite alternate}
+@keyframes g-cine-kb{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.045) translate3d(0,-.8%,0)}}
+.preset-briefing .g-cine-img{animation-duration:22s}
+.preset-travel .g-cine-img{animation-name:g-cine-travel;animation-duration:9s}
+@keyframes g-cine-travel{from{transform:scale(1) translate3d(1.2%,0,0)}to{transform:scale(1.05) translate3d(-1.2%,-.5%,0)}}
+.preset-drive .g-cine-img{animation-name:g-cine-drive;animation-duration:12s}
+@keyframes g-cine-drive{from{transform:scale(1.02)}to{transform:scale(1.09)}}
+.preset-parking .g-cine-img{animation-name:g-cine-travel;animation-duration:14s}
+.preset-thinking .g-cine-img{animation-duration:30s}
+.preset-analysis .g-cine-img,.preset-submission .g-cine-img{animation:none}
+.preset-victory .g-cine-img,.preset-failure .g-cine-img,.preset-timeout .g-cine-img{animation:g-cine-impact .7s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes g-cine-impact{from{transform:scale(1.08)}to{transform:scale(1.01)}}
+.g-cine-streaks i{position:absolute;right:-40%;width:30%;height:1px;background:linear-gradient(90deg,transparent,#ffffff55,transparent);animation:g-streak 1s linear infinite}
+@keyframes g-streak{to{transform:translateX(-260vw)}}
+.g-cine-scrim{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,hsl(var(--ink)/.2) 0%,transparent 35%,hsl(var(--ink)/.5) 100%)}
+.preset-analysis .g-cine-scrim,.preset-thinking .g-cine-scrim{background:linear-gradient(180deg,hsl(var(--ink)/.45),hsl(var(--ink)/.6))}
+.preset-analysis .g-cine-scrim{background:hsl(var(--ink)/.68)}
+.g-cine-fx{position:absolute;inset:0;pointer-events:none}
+.fx-victory{box-shadow:inset 0 0 120px hsl(150 60% 40%/.55);animation:g-pulse-g 1.6s ease-out 2}
+.fx-failure{box-shadow:inset 0 0 110px #A61E25aa;animation:g-pulse-r 1.2s ease-out 2}
+.fx-timeout{box-shadow:inset 0 0 130px #A61E25cc;animation:g-pulse-r .9s ease-in-out 3}
+@keyframes g-pulse-g{0%{opacity:0}30%{opacity:1}100%{opacity:.55}}
+@keyframes g-pulse-r{0%{opacity:.2}35%{opacity:1}100%{opacity:.5}}
+.g-cine-fx i{position:absolute;top:-10px;width:7px;height:7px;border-radius:2px;animation:g-fall 3.2s ease-in forwards;opacity:0}
+.fx-victory i:nth-child(odd){background:hsl(var(--gold))}.fx-victory i:nth-child(even){background:hsl(150 60% 45%)}
+.fx-failure i{background:#A61E25;width:5px;height:5px;border-radius:50%}
+@keyframes g-fall{0%{opacity:0;transform:translateY(0) rotate(0)}15%{opacity:1}100%{opacity:0;transform:translateY(105vh) rotate(540deg)}}
+@media (min-width:900px) and (min-aspect-ratio:1/1){
+  .g-cine-amb{display:block}
+  .g-cine-frame{left:50%;right:auto;width:min(100vw,calc(100dvh*9/16*1.25));transform:translateX(-50%);box-shadow:0 0 80px #000c;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+}
+/* Phone-call ending */
+.g-call-chip{display:inline-flex;align-items:center;gap:.4rem;margin-bottom:.35rem;padding:.2rem .6rem;border-radius:999px;background:#A61E25;color:#fff;font-size:.75rem;font-weight:900}
+.g-call-chip svg{width:14px;height:14px;animation:g-ring 1.2s ease-in-out infinite}
+.g-call-waves{display:inline-flex;gap:2px;align-items:center}.g-call-waves i{width:2px;height:8px;background:#fff;border-radius:2px;animation:g-wave .9s ease-in-out infinite}.g-call-waves i:nth-child(2){animation-delay:.15s}.g-call-waves i:nth-child(3){animation-delay:.3s}
+@keyframes g-ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg)}40%{transform:rotate(12deg)}}
+@keyframes g-wave{50%{transform:scaleY(.35)}}
+.g-portrait.is-call{border-radius:50%;box-shadow:0 0 0 3px #A61E2555,0 0 0 7px #A61E2522}
+.g-sayes-pose{position:relative}.g-sayes-pose img{position:absolute;inset:0}
+.g-path-card,.g-choice-list button,.g-sayes-choices .g-btn{transition:transform .14s,box-shadow .14s,border-color .14s}
+.g-path-card:focus-visible,.g-choice-list button:focus-visible{outline:3px solid #A61E25;outline-offset:3px}
+@media (prefers-reduced-motion:reduce){.g-cine-img,.g-cine-fx,.g-cine-fx i,.g-cine-streaks i,.g-call-chip svg,.g-call-waves i{animation:none!important}}

@@ -1,6 +1,8 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ChevronDown, ChevronLeft, DoorOpen, Home, Mail, RotateCcw, Send, Smartphone, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronLeft, DoorOpen, Home, Mail, Phone, RotateCcw, Send, Smartphone, Volume2, VolumeX } from "lucide-react";
+import { CinematicScene } from "./CinematicScene";
+import { PRELOAD_GROUPS, preloadAll, type CineKey } from "./cinematic";
 import { DATA_PREPARATION_SECONDS, DEADLINE_SECONDS, claimsFor, initialState, reduce, timeLeft, type Action, type EvidenceId, type State } from "./engine";
 import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, LOSS_GUESS, LOSS_SUPERFICIAL, MEETING, METRICS, METRICS_LIST, QUESTIONS, SEIF_MESSAGES, TAKEAWAYS, THOUGHTS, TIMEOUT, TITLE, WIN, type Ending, type Line, type Metric, type Speaker } from "./content";
 import { PORTRAITS, SAYES_ART, SCENES, type SceneKey } from "./assets";
@@ -70,11 +72,22 @@ export default function Game({ onSubmit, endActions }: { onSubmit?: (s: State) =
   }, [state.phase, state.officeEntered]);
 
   const messageCount = remaining <= 20 ? 2 : remaining <= 45 ? 1 : 0;
-  const scene: SceneKey = state.phase === "intro" ? "cover" : state.phase === "brief" || state.phase === "verdict" ? "ceo" : state.phase === "road" ? (roadStep === "drive" ? "drive" : "parking") : state.phase === "meeting" ? "meeting" : "desk";
+  // Visual-only sub-beats (no gameplay effect): car entry → driving, parking in progress → completed.
+  const [travelBeat, setTravelBeat] = useState(0);
+  useEffect(() => { setTravelBeat(0); if ((state.phase === "road" && (roadStep === "drive" || roadStep === "park"))) { const id = window.setTimeout(() => setTravelBeat(1), 1600); return () => window.clearTimeout(id); } }, [state.phase, roadStep]);
+  useEffect(() => { preloadAll(PRELOAD_GROUPS.start); }, []);
+  useEffect(() => { if (state.phase === "brief" || state.phase === "road") preloadAll(PRELOAD_GROUPS.road); if (state.phase === "meeting") preloadAll(PRELOAD_GROUPS.meeting); if (state.phase === "office") { preloadAll(PRELOAD_GROUPS.office); preloadAll(PRELOAD_GROUPS.endings); } }, [state.phase]);
+  const cine: CineKey | null = state.phase === "intro" ? null
+    : state.phase === "brief" ? "briefing"
+    : state.phase === "road" ? (roadStep === "drive" ? (travelBeat ? "driving" : "enterCar") : roadStep === "park" ? (travelBeat ? "parkingDone" : "parkingProgress") : roadStep === "ask" || !state.sayes ? "paymentRequest" : state.sayes === "later" ? "payLater" : state.sayes === "ten" ? "payTen" : "payFifty")
+    : state.phase === "meeting" ? (state.line < 2 ? "tarekWelcome" : "tarekReport")
+    : state.phase === "office" ? (!state.officeEntered ? "officeEntry" : state.view === "think" ? "thinking" : state.view === "guess" || state.view === "ask" ? "investigation" : state.view === "email" ? "sending" : "dashboard")
+    : state.timedOut ? "timeout" : state.outcome === "win" ? "victory" : "failure";
+  const scene: SceneKey = "cover";
 
   return (
     <div className="g600 g-training-eval" dir="rtl">
-      <Scene k={scene} />
+      {cine ? <CinematicScene k={cine} zoom={state.phase === "brief" && state.line > 0} /> : <Scene k={scene} />}
       {state.phase === "intro" && <a href="/app" className="g-home-exit" aria-label="الرجوع للألعاب"><Home /></a>}
       {state.phase !== "intro" && <Hud state={state} muted={muted} remaining={remaining} timerOn={timerOn} onMute={() => setMute((v) => !v)} onRestart={() => { window.location.href = "/app"; }} onThink={() => dispatch({ type: "backToThink" })} />}
       {timerOn && messageCount > 0 && <PhoneNotifier count={messageCount} open={phoneOpen} onToggle={() => setPhoneOpen((v) => !v)} />}
@@ -161,7 +174,7 @@ function Cover({ go }: { go: () => void }) {
 type RoadStep = "drive" | "park" | "ask" | "reply";
 
 function SayesLine({ pose, text, children }: { pose: SayesPose; text: string; children?: ReactNode }) {
-  return <motion.section className="g-dialogue dark g-sayes-line" initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><motion.span key={pose} className={`g-portrait g-sayes-pose pose-${pose}`} initial={POSE_ANIM[pose].initial} animate={POSE_ANIM[pose].animate} transition={{ duration: .55 }}><img src={SAYES_ART[pose]} alt="" /></motion.span><div><header><span>{SAYES_NAME}</span></header><motion.p key={text} className="g-sayes-text" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>{text}</motion.p><footer className="g-sayes-actions">{children}</footer></div></motion.section>;
+  return <motion.section className="g-dialogue dark g-sayes-line" initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><span className="g-portrait g-sayes-pose"><AnimatePresence initial={false}><motion.img key={pose} src={SAYES_ART[pose]} alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .2 }} /></AnimatePresence></span><div><header><span>{SAYES_NAME}</span></header><motion.p key={text} className="g-sayes-text" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>{text}</motion.p><footer className="g-sayes-actions">{children}</footer></div></motion.section>;
 }
 
 const POSE_ANIM: Record<SayesPose, { initial: Record<string, number | string>; animate: Record<string, number | string | number[]> }> = {
@@ -210,14 +223,14 @@ function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispat
   </motion.div>;
 }
 
-function Dialogue({ line, index, total, onNext, nextLabel }: { line: Line; index: number; total: number; onNext: () => void; nextLabel: string }) {
+function Dialogue({ line, index, total, onNext, nextLabel, call = false }: { line: Line; index: number; total: number; onNext: () => void; nextLabel: string; call?: boolean }) {
   const who = WHO[line.who];
   const chars = useMemo(() => Array.from(line.text), [line.text]);
   const [shown, setShown] = useState(0);
   const done = shown >= chars.length;
   useEffect(() => { setShown(0); }, [line.text]);
   useEffect(() => { if (done) return; const id = window.setTimeout(() => setShown((n) => Math.min(chars.length, n + 3)), 22); return () => window.clearTimeout(id); }, [shown, done, chars.length]);
-  return <div className="g-stage"><motion.section className={`g-dialogue ${who.tone}`} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><span className="g-portrait"><img src={PORTRAITS[line.who]} alt="" /></span><div><header><span>{who.name}</span><small>{who.role}</small><em>{index + 1}/{total}</em></header><button className="g-copy" onClick={() => done ? onNext() : setShown(chars.length)}><p>{chars.slice(0, shown).join("")}{!done && <i />}</p></button><footer>{done && <button className="g-btn primary" onClick={onNext}>{nextLabel}<ChevronLeft /></button>}</footer></div></motion.section></div>;
+  return <div className="g-stage"><motion.section className={`g-dialogue ${who.tone}`} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><motion.span key={line.who} className={`g-portrait ${call ? "is-call" : ""}`} initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .25 }}><img src={PORTRAITS[line.who]} alt="" /></motion.span><div>{call && <span className="g-call-chip"><Phone />مكالمة من {who.name}<span className="g-call-waves"><i /><i /><i /></span></span>}<header><span>{who.name}</span><small>{who.role}</small><em>{index + 1}/{total}</em></header><button className="g-copy" onClick={() => done ? onNext() : setShown(chars.length)}><p>{chars.slice(0, shown).join("")}{!done && <i />}</p></button><footer>{done && <button className="g-btn primary" onClick={onNext}>{nextLabel}<ChevronLeft /></button>}</footer></div></motion.section></div>;
 }
 
 function PhoneNotifier({ count, open, onToggle }: { count: number; open: boolean; onToggle: () => void }) {
@@ -454,7 +467,7 @@ function Verdict({ state, dispatch, travel, endActions }: { state: State; dispat
       else sfx.lose();
     }, 1400);
   };
-  if (stage === "talk") return <Dialogue line={result.lines[0] ?? { who: "seif", text: "" }} index={0} total={1} nextLabel="شوف النتيجة" onNext={finishDialogue} />;
+  if (stage === "talk") return <Dialogue line={result.lines[0] ?? { who: "seif", text: "" }} index={0} total={1} nextLabel="شوف النتيجة" onNext={finishDialogue} call />;
   if (stage === "stamp") return <motion.div className="g-stage center" animate={{ x: [0, -7, 7, -5, 5, 0], y: [0, 4, -4, 2, 0] }} transition={{ delay: .2, duration: .4 }}><motion.div className={`g-stamp ${won ? "good" : "bad"}`} initial={{ scale: 3.5, rotate: -25, opacity: 0 }} animate={{ scale: 1, rotate: -10, opacity: 1 }} transition={{ type: "spring", damping: 10, stiffness: 220 }}>{result.stamp}</motion.div></motion.div>;
   const confetti = won ? Array.from({ length: 34 }, (_, n) => ({ n, x: (n * 37) % 100, d: 2.6 + (n % 5) * .45, delay: (n % 7) * .16, r: (n * 53) % 360, c: n % 3 })) : [];
   const takeaways = won ? TAKEAWAYS.win : TAKEAWAYS.loss;
