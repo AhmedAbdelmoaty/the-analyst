@@ -1,0 +1,1 @@
+GRANT UPDATE (lead_status, lead_at) ON public.profiles TO authenticated;
