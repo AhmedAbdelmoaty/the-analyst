@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Anyone reads challenge status" ON public.event_challenge;
+CREATE POLICY "Anyone reads the single live challenge row" ON public.event_challenge FOR SELECT TO anon, authenticated USING (id = 1);
