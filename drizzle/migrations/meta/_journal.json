@@ -120,6 +120,13 @@
       "when": 1795625262211,
       "tag": "0016_hr_cafe_live_ranking",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795632206140,
+      "tag": "0017_hr_cafe_duration_ranking",
+      "breakpoints": true
     }
   ]
 }

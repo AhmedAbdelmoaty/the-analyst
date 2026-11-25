@@ -40,6 +40,7 @@ export function ProfileEditor({ onSaved }: { onSaved: () => void }) {
 
 export default function PlayerCenter(_props: { snapshot: GameAccessSnapshot | null }) {
   const { profile, signOut } = useAuth();
+  const { available, standalone, install, guidance } = useInstall();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   return <Dialog.Root open={open} onOpenChange={value => { setOpen(value); if (value) platformAudio.play('panel'); }}>
@@ -47,6 +48,7 @@ export default function PlayerCenter(_props: { snapshot: GameAccessSnapshot | nu
     <Dialog.Portal><Dialog.Overlay className="player-overlay" /><Dialog.Content dir="rtl" className="platform player-center"><Dialog.Close className="platform-icon player-close" aria-label="إغلاق الإعدادات"><X /></Dialog.Close>
       <div className="!text-right"><Dialog.Title data-player-title className="flex items-center gap-2 !text-xl"><Settings2 className="h-5 w-5" />الإعدادات</Dialog.Title><Dialog.Description className="sr-only">إعدادات الصوت وتسجيل الخروج.</Dialog.Description></div>
       <section className="player-section" data-audio-settings><h3>الصوت والعرض</h3><AudioControls /></section>
+      {!standalone && (available || guidance) && <section className="player-section"><h3>تثبيت التطبيق</h3>{available ? <button className="platform-button mt-3 w-full" onClick={() => void install()}>تثبيت التطبيق</button> : <p className="platform-muted">{guidance}</p>}</section>}
       <Link className="platform-button w-full" to="/">عن The Analyst<ArrowLeft /></Link>
       <button className="platform-button w-full" onClick={async () => { await signOut(); navigate('/'); }}><LogOut />تسجيل الخروج</button>
     </Dialog.Content></Dialog.Portal>

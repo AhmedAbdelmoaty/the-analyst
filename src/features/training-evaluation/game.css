@@ -452,3 +452,15 @@
 .g-path-card,.g-choice-list button,.g-sayes-choices .g-btn{transition:transform .14s,box-shadow .14s,border-color .14s}
 .g-path-card:focus-visible,.g-choice-list button:focus-visible{outline:3px solid #A61E25;outline-offset:3px}
 @media (prefers-reduced-motion:reduce){.g-cine-img,.g-cine-fx,.g-cine-fx i,.g-cine-streaks i,.g-call-chip svg,.g-call-waves i{animation:none!important}}
+
+/* Readable headings on every scene + end-of-game booth card */
+.g-work-head{width:fit-content;max-width:100%;margin-inline:auto;padding:.6rem 1.2rem;border:1px solid hsl(var(--paper)/.24);border-radius:1rem;background:hsl(var(--charcoal)/.9);color:hsl(var(--paper));box-shadow:0 12px 32px hsl(var(--ink)/.32);backdrop-filter:blur(8px)}
+.g-work-head h2{color:inherit}.g-work-head small{color:#ff8a8f}.g-work-head p{color:hsl(var(--paper)/.85)}
+.g-pick-hint{width:100%;text-align:center;font-weight:900;padding:.55rem;border-radius:.8rem;background:hsl(var(--charcoal)/.88);color:hsl(var(--paper));animation:gHintBob 1.6s ease-in-out infinite}
+@keyframes gHintBob{50%{transform:translateY(-4px)}}
+.g-booth{position:relative;overflow:hidden;width:min(92vw,30rem);text-align:center;padding:2rem 1.5rem 1.6rem;border-radius:1.4rem;background:hsl(var(--paper));color:hsl(var(--ink));border-top:6px solid #A61E25;box-shadow:0 24px 60px hsl(var(--ink)/.45);display:flex;flex-direction:column;align-items:center;gap:1rem}
+.g-booth-icon{font-size:3.4rem;line-height:1;filter:drop-shadow(0 6px 12px rgb(166 30 37/.3))}
+.g-booth h2{font-size:clamp(1.35rem,4.5vw,1.9rem);font-weight:900;line-height:1.5;color:#A61E25}
+.g-booth-status{font-size:.9rem;opacity:.8}
+.g-booth-bar{position:absolute;bottom:0;left:0;height:5px;width:100%;background:#A61E25;transform-origin:left;animation:gBoothBar 5s linear forwards}
+@keyframes gBoothBar{from{transform:scaleX(0)}to{transform:scaleX(1)}}

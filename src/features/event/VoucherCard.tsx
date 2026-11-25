@@ -18,12 +18,12 @@ export function VoucherCard({ voucher }: { voucher: Voucher }) {
   </div>;
 }
 
-export function VoucherModal({ voucher, onClose, celebrate = false }: { voucher: Voucher; onClose: () => void; celebrate?: boolean }) {
+export function VoucherModal({ voucher, onClose, celebrate = false, onDownloaded }: { voucher: Voucher; onClose: () => void; celebrate?: boolean; onDownloaded?: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const download = async () => {
     if (!ref.current) return; setBusy(true);
-    try { const url = await toPng(ref.current, { pixelRatio: 3, cacheBust: true }); const a = document.createElement("a"); a.href = url; a.download = "IMP-voucher.png"; a.click(); } finally { setBusy(false); }
+    try { const url = await toPng(ref.current, { pixelRatio: 3, cacheBust: true }); const a = document.createElement("a"); a.href = url; a.download = "IMP-voucher.png"; a.click(); onDownloaded?.(); } finally { setBusy(false); }
   };
   const confetti = celebrate ? Array.from({ length: 40 }, (_, n) => n) : [];
   return <div className="imp-event fixed inset-0 z-[100] grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true" onClick={onClose}>

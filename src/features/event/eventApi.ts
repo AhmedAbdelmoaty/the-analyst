@@ -6,7 +6,7 @@ export const IMP_RED = "#A61E25";
 export const FAST_TRACK_KEY = "analyst-event-fasttrack";
 
 export type Winner = { rank: number; name: string; discount: number };
-export type PublicState = { started_at: string | null; reveal_step: number; revealed: boolean; count: number; winners: Winner[] };
+export type PublicState = { started_at: string | null; revealed_at: string | null; reveal_step: number; revealed: boolean; count: number; finished: number; now: string; winners: Winner[] };
 export type Voucher = { name: string; rank: number; discount: number; code: string };
 export type MyStatus = { submitted: boolean; revealed: boolean; voucher?: Voucher } | null;
 
@@ -16,6 +16,10 @@ export const eventJoin = () => rpc("event_join");
 export const eventSubmit = (claim: string | null, evidence: string | null) => rpc("event_submit", { _claim: claim ?? "", _evidence: evidence ?? "" });
 export const adminStart = () => rpc("event_admin_start");
 export const adminReveal = (step: number) => rpc("event_admin_reveal", { _step: step });
+export const adminAnnounce = () => rpc("event_admin_announce");
+export const eventBegin = () => rpc("event_begin");
+export const voucherDownloaded = () => rpc("event_voucher_downloaded");
+export const ANNOUNCE_AFTER_MS = 5 * 60 * 1000;
 export const adminExport = () => rpc("event_admin_export");
 
 /** Live challenge status: refetches on every change to the single challenge row (and every 10s for the player count). */
@@ -41,9 +45,10 @@ export function useMyStatus(enabled: boolean) {
     void load();
     const refresh = () => void load();
     window.addEventListener("event-result-saved", refresh);
+    window.addEventListener("event-voucher-downloaded", refresh);
     const ch = supabase.channel(`event-me-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "event_challenge" }, () => void load()).subscribe();
-    return () => { supabase.removeChannel(ch); window.removeEventListener("event-result-saved", refresh); };
+    return () => { supabase.removeChannel(ch); window.removeEventListener("event-result-saved", refresh); window.removeEventListener("event-voucher-downloaded", refresh); };
   }, [enabled, load]);
   return status;
 }

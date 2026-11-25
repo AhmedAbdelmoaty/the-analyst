@@ -40,3 +40,7 @@
 .o-done .big{width:min(78%,330px)}
 .o-done h1{text-align:center;font-weight:900;font-size:clamp(44px,13vw,70px);line-height:1;letter-spacing:-.03em}.o-done h1 b{display:block;color:var(--red)}
 .o-done .soon{width:100%;background:var(--soft);border-radius:999px;padding:16px;text-align:center;color:var(--red);font-weight:800;font-size:clamp(20px,6vw,32px)}
+
+.o-home{position:fixed;top:14px;right:14px;z-index:20;display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:#fff;color:#A61E25;box-shadow:0 6px 18px rgb(0 0 0/.15)}
+.o-home svg{width:22px;height:22px}
+.o-back{display:inline-block;margin-top:18px;padding:12px 28px;border-radius:999px;background:#A61E25;color:#fff;font-weight:800;text-decoration:none;position:relative;z-index:2}

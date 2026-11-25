@@ -1,10 +1,10 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ChevronDown, ChevronLeft, DoorOpen, Home, Mail, Phone, RotateCcw, Send, Smartphone, Volume2, VolumeX } from "lucide-react";
+import { ChevronDown, ChevronLeft, DoorOpen, Home, Mail, Phone, RotateCcw, Send, Smartphone, Volume2, VolumeX } from "lucide-react";
 import { CinematicScene } from "./CinematicScene";
 import { PRELOAD_GROUPS, preloadAll, type CineKey } from "./cinematic";
 import { DATA_PREPARATION_SECONDS, DEADLINE_SECONDS, claimsFor, initialState, reduce, timeLeft, type Action, type EvidenceId, type State } from "./engine";
-import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, LOSS_GUESS, LOSS_SUPERFICIAL, MEETING, METRICS, METRICS_LIST, QUESTIONS, SEIF_MESSAGES, TAKEAWAYS, THOUGHTS, TIMEOUT, TITLE, WIN, type Ending, type Line, type Metric, type Speaker } from "./content";
+import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, MEETING, METRICS, METRICS_LIST, QUESTIONS, SEIF_MESSAGES, SAYES_LOSS_CALL, BOOTH_MESSAGE, THOUGHTS, TITLE, WIN, type Line, type Metric, type Speaker } from "./content";
 import { PORTRAITS, SAYES_ART, SCENES, type SceneKey } from "./assets";
 import { DashChart, InlineReportCard, OfficialReportModal } from "./Chart";
 import { setMuted, sfx, startBgm, tick, whoosh } from "./audio";
@@ -21,14 +21,8 @@ const WHO: Record<Speaker, { name: string; role: string; tone: "dark" | "light" 
 const STATION: Record<State["phase"], string> = { intro: "", brief: "مكتب المدير العام", road: "الطريق لمكتب التدريب", meeting: "مكتب التدريب", office: "مكتب التحليل", verdict: "القرار النهائي" };
 const TEST_MODE = true;
 
-const ending = (s: State): Ending => {
-  if (s.timedOut) return TIMEOUT;
-  if (s.outcome === "win") return WIN;
-  if (s.outcome === "lossGuess") return LOSS_GUESS;
-  return LOSS_SUPERFICIAL;
-};
 
-export default function Game({ onSubmit, endActions }: { onSubmit?: (s: State) => void; endActions?: ReactNode } = {}) {
+export default function Game({ onSubmit, onStart, onDone, endActions }: { onSubmit?: (s: State) => void; onStart?: () => void; onDone?: () => void; endActions?: ReactNode } = {}) {
   const [state, raw] = useReducer(reduce, undefined, initialState);
   const [muted, setMute] = useState(false);
   const [fade, setFade] = useState(false);
@@ -74,7 +68,7 @@ export default function Game({ onSubmit, endActions }: { onSubmit?: (s: State) =
   const messageCount = remaining <= 20 ? 2 : remaining <= 45 ? 1 : 0;
   // Visual-only sub-beats (no gameplay effect): car entry → driving, parking in progress → completed.
   const [travelBeat, setTravelBeat] = useState(0);
-  useEffect(() => { setTravelBeat(0); if ((state.phase === "road" && (roadStep === "drive" || roadStep === "park"))) { const id = window.setTimeout(() => setTravelBeat(1), 1600); return () => window.clearTimeout(id); } }, [state.phase, roadStep]);
+  useEffect(() => { setTravelBeat(0); if (state.phase !== "road") return; if (roadStep === "drive") { const a = window.setTimeout(() => setTravelBeat(1), 2600); const b = window.setTimeout(() => setRoadStep("park"), 7600); return () => { window.clearTimeout(a); window.clearTimeout(b); }; } if (roadStep === "park") { const id = window.setTimeout(() => setTravelBeat(1), 1600); return () => window.clearTimeout(id); } }, [state.phase, roadStep]);
   useEffect(() => { preloadAll(PRELOAD_GROUPS.start); }, []);
   useEffect(() => { if (state.phase === "brief" || state.phase === "road") preloadAll(PRELOAD_GROUPS.road); if (state.phase === "meeting") preloadAll(PRELOAD_GROUPS.meeting); if (state.phase === "office") { preloadAll(PRELOAD_GROUPS.office); preloadAll(PRELOAD_GROUPS.endings); } }, [state.phase]);
   const cine: CineKey | null = state.phase === "intro" ? null
@@ -94,12 +88,12 @@ export default function Game({ onSubmit, endActions }: { onSubmit?: (s: State) =
       {timerOn && remaining < 15 && <div className="g-urgency-vignette" aria-hidden />}
       <AnimatePresence mode="wait">
         <motion.main key={`${state.phase}-${state.view}`} className="g-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .25 }}>
-          {state.phase === "intro" && <Cover go={() => { startBgm(); sfx.tap(); travel({ type: "start" }); }} />}
+          {state.phase === "intro" && <Cover go={() => { startBgm(); sfx.tap(); travel({ type: "start" }); onStart?.(); }} />}
           {state.phase === "brief" && <Dialogue line={BRIEF[state.line] ?? BRIEF[0] ?? { who: "seif", text: "" }} index={state.line} total={BRIEF.length} onNext={() => state.line + 1 < BRIEF.length ? dispatch({ type: "next" }) : travel({ type: "next" })} nextLabel={state.line + 1 < BRIEF.length ? "التالي" : "روح لمكتب التدريب"} />}
           {state.phase === "road" && <Road step={roadStep} setStep={setRoadStep} pay={(pay) => dispatch({ type: "paySayes", pay })} next={() => travel({ type: "next" })} />}
           {state.phase === "meeting" && <Dialogue line={MEETING[state.line] ?? MEETING[0] ?? { who: "tarek", text: "" }} index={state.line} total={MEETING.length} onNext={() => state.line + 1 < MEETING.length ? dispatch({ type: "next" }) : travel({ type: "next" })} nextLabel={state.line + 1 < MEETING.length ? "التالي" : "ادخل مكتبك"} />}
           {state.phase === "office" && <Office state={state} dispatch={dispatch} onSend={() => raw({ type: "send" })} sayesShown={sayesShown} markSayes={() => setSayesShown(true)} />}
-          {state.phase === "verdict" && <Verdict state={state} dispatch={dispatch} travel={travel} endActions={endActions} />}
+          {state.phase === "verdict" && <Verdict state={state} dispatch={dispatch} travel={travel} endActions={endActions} onDone={onDone} />}
         </motion.main>
       </AnimatePresence>
       <AnimatePresence>{fade && <motion.div className="g-dip" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35 }} />}</AnimatePresence>
@@ -188,7 +182,7 @@ const POSE_ANIM: Record<SayesPose, { initial: Record<string, number | string>; a
 function Road({ step, setStep, pay, next }: { step: RoadStep; setStep: (s: RoadStep) => void; pay: (p: "later" | "ten" | "fifty") => void; next: () => void }) {
   const [choice, setChoice] = useState<(typeof SAYES_CHOICES)[number] | null>(null);
   const [line, setLine] = useState(0);
-  if (step === "drive") return <div className="g-stage center g-drive"><motion.button className="g-road-cta" onClick={() => setStep("park")} initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} whileTap={{ scale: .96 }}>اركن العربية <ArrowLeft /></motion.button></div>;
+  if (step === "drive") return <div className="g-stage center g-drive" aria-hidden />;
   if (step === "park") return <div className="g-stage"><SayesLine pose="whistle" text={SAYES_PARK}><button className="g-btn primary" onClick={() => setStep("ask")}>انزل من العربية <ChevronLeft /></button></SayesLine></div>;
   if (step === "ask" || !choice) return <div className="g-stage"><SayesLine pose="money" text={SAYES_ASK}><div className="g-sayes-choices">{SAYES_CHOICES.map((c, i) => <motion.button key={c.pay} className="g-btn secondary" initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .15 + i * .08 }} whileTap={{ scale: .95 }} onClick={() => { pay(c.pay); setChoice(c); setLine(0); setStep("reply"); }}>{c.text}</motion.button>)}</div></SayesLine></div>;
   const last = line + 1 >= choice.reply.length;
@@ -203,8 +197,9 @@ function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispat
   const [kindAtOpen] = useState(kind);
   const data = SAYES_POPUP[kindAtOpen];
   useEffect(() => { const id = window.setTimeout(() => setStage("offer"), 900); return () => window.clearTimeout(id); }, []);
+  useEffect(() => { if (stage !== "offer" || !("auto" in data)) return; const id = window.setTimeout(onSend, 2800); return () => window.clearTimeout(id); }, [stage, data, onSend]);
   useEffect(() => { if (stage !== "skipped") return; const id = window.setTimeout(onSend, 2600); return () => window.clearTimeout(id); }, [stage, onSend]);
-  const pose: SayesPose = stage === "intro" ? "whistle" : stage === "paid" ? "smart" : stage === "skipped" ? "smug" : data.pose;
+  const pose: SayesPose = stage === "intro" ? "whistle" : "auto" in data ? "smart" : stage === "paid" ? "smart" : stage === "skipped" ? "smug" : data.pose;
   const text = stage === "intro" ? "" : stage === "paid" && "paid" in data ? data.paid : stage === "skipped" && "skipped" in data ? data.skipped : data.text;
   const review = () => { onClose(); dispatch({ type: "backFromEmail" }); };
   return <motion.div className="g-sayes-pop-wrap" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -212,8 +207,8 @@ function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispat
       <motion.div key={pose} className={`g-sayes-avatar pose-${pose}`} initial={POSE_ANIM[pose].initial} animate={POSE_ANIM[pose].animate} transition={{ duration: pose === "whistle" ? .5 : .6 }}><img src={SAYES_ART[pose]} alt="" /></motion.div>
       <div className="g-sayes-bubble-col">
         {text && <motion.div key={text} className={`g-sayes-bubble ${stage === "paid" || (kindAtOpen === "fifty" && stage === "offer") ? "glow" : ""}`} initial={{ scale: .6, opacity: 0, originX: 1, originY: 1 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 420, damping: 20 }}><b>{SAYES_NAME}</b><p>{text}</p></motion.div>}
-        {stage === "offer" && <motion.div className="g-sayes-choices" initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .25 }}>
-          {"ok" in data ? <button className="g-btn primary" onClick={review}>{data.ok}</button> : <>
+        {stage === "offer" && !("auto" in data) && <motion.div className="g-sayes-choices" initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .25 }}>
+          {"pay" in data && <>
             <button className="g-btn primary" onClick={() => { dispatch({ type: "sayesFifty" }); setStage("paid"); }}>{data.pay}</button>
             <button className="g-btn secondary" onClick={() => setStage("skipped")}>{data.skip}</button></>}
         </motion.div>}
@@ -223,14 +218,14 @@ function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispat
   </motion.div>;
 }
 
-function Dialogue({ line, index, total, onNext, nextLabel, call = false }: { line: Line; index: number; total: number; onNext: () => void; nextLabel: string; call?: boolean }) {
-  const who = WHO[line.who];
+function Dialogue({ line, index, total, onNext, nextLabel, call = false, caller }: { line: Line; index: number; total: number; onNext: () => void; nextLabel: string; call?: boolean; caller?: { name: string; role: string; img: string } }) {
+  const who = caller ? { ...caller, tone: "dark" as const } : WHO[line.who];
   const chars = useMemo(() => Array.from(line.text), [line.text]);
   const [shown, setShown] = useState(0);
   const done = shown >= chars.length;
   useEffect(() => { setShown(0); }, [line.text]);
   useEffect(() => { if (done) return; const id = window.setTimeout(() => setShown((n) => Math.min(chars.length, n + 3)), 22); return () => window.clearTimeout(id); }, [shown, done, chars.length]);
-  return <div className="g-stage"><motion.section className={`g-dialogue ${who.tone}`} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><motion.span key={line.who} className={`g-portrait ${call ? "is-call" : ""}`} initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .25 }}><img src={PORTRAITS[line.who]} alt="" /></motion.span><div>{call && <span className="g-call-chip"><Phone />مكالمة من {who.name}<span className="g-call-waves"><i /><i /><i /></span></span>}<header><span>{who.name}</span><small>{who.role}</small><em>{index + 1}/{total}</em></header><button className="g-copy" onClick={() => done ? onNext() : setShown(chars.length)}><p>{chars.slice(0, shown).join("")}{!done && <i />}</p></button><footer>{done && <button className="g-btn primary" onClick={onNext}>{nextLabel}<ChevronLeft /></button>}</footer></div></motion.section></div>;
+  return <div className="g-stage"><motion.section className={`g-dialogue ${who.tone}`} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><motion.span key={caller?.name ?? line.who} className={`g-portrait ${call ? "is-call" : ""}`} initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .25 }}><img src={caller?.img ?? PORTRAITS[line.who]} alt="" /></motion.span><div>{call && <span className="g-call-chip"><Phone />مكالمة من {who.name}<span className="g-call-waves"><i /><i /><i /></span></span>}<header><span>{who.name}</span><small>{who.role}</small><em>{index + 1}/{total}</em></header><button className="g-copy" onClick={() => done ? onNext() : setShown(chars.length)}><p>{chars.slice(0, shown).join("")}{!done && <i />}</p></button><footer>{done && <button className="g-btn primary" onClick={onNext}>{nextLabel}<ChevronLeft /></button>}</footer></div></motion.section></div>;
 }
 
 function PhoneNotifier({ count, open, onToggle }: { count: number; open: boolean; onToggle: () => void }) {
@@ -421,10 +416,10 @@ function DataView({ state, dispatch, openReport }: { state: State; dispatch: (a:
 
   if (!picking) return <><section className="g-dash-board" dir="ltr"><header><b>Training Dashboard</b><span><i className="bar-a" />المجموعة الأولى <i className="bar-b" />المجموعة الثانية</span></header>{sourceNote}<div className="g-dash-grid">{METRICS_LIST.map((m) => <DashChart key={m.id} metric={m} />)}</div></section>
     <div className="g-row-actions"><GameButton className="primary" onClick={() => { sfx.tap(); setPicking(true); }}>اختار الدليل والاستنتاج</GameButton><GameButton className="secondary" onClick={restart}>ارجع للبداية</GameButton></div></>;
-  return <><header className="g-work-head compact"><h2>استكشف البيانات المتاحة</h2></header>
+  return <><header className="g-work-head compact"><small>الخطوة الجاية</small><h2>استكشف البيانات واختار الملاحظة اللي هتعتمد عليها</h2><p>اضغط على أي مؤشر.. وهتظهرلك الاستنتاجات تحت عشان تختار منها</p></header>
     {sourceNote}
     <div className="g-dash-grid g-pick-grid">{METRICS_LIST.map((m) => <DashChart key={m.id} metric={m} selected={state.evidence === m.id} onSelect={() => dispatch({ type: "evidence", id: m.id })} onZoom={() => openReport(m)} />)}</div>
-    {state.evidence ? <ClaimPicker key={state.evidence} state={state} dispatch={dispatch} extra={<GameButton className="secondary" onClick={restart}>ارجع للبداية</GameButton>} /> : <div className="g-row-actions"><GameButton className="secondary" onClick={() => setPicking(false)}>رجوع للداشبورد</GameButton><GameButton className="secondary" onClick={restart}>ارجع للبداية</GameButton></div>}</>;
+    {state.evidence ? <ClaimPicker key={state.evidence} state={state} dispatch={dispatch} extra={<GameButton className="secondary" onClick={restart}>ارجع للبداية</GameButton>} /> : <div className="g-row-actions"><p className="g-pick-hint">👆 اختار ملاحظة من فوق عشان تكمّل</p><GameButton className="secondary" onClick={() => setPicking(false)}>رجوع للداشبورد</GameButton><GameButton className="secondary" onClick={restart}>ارجع للبداية</GameButton></div>}</>;
 }
 
 function AskView({ state, dispatch }: { state: State; dispatch: (a: Action) => void }) {
@@ -439,7 +434,9 @@ function AskView({ state, dispatch }: { state: State; dispatch: (a: Action) => v
 function ClaimPicker({ state, dispatch, extra }: { state: State; dispatch: (a: Action) => void; extra?: import("react").ReactNode }) {
   const [confirming, setConfirming] = useState(false);
   const claims = claimsFor(state);
-  return <section className="g-claim-zone"><h3>اختار الاستنتاج اللي شايف إن الملاحظة دي بتدعمه</h3><div className="g-claims">{claims.map((id) => <button key={id} className={state.claim === id ? "is-selected" : ""} onClick={() => dispatch({ type: "claim", id })}><b>{CLAIM_LABELS[id]}</b></button>)}</div>
+  const zone = useRef<HTMLElement>(null);
+  useEffect(() => { const id = window.setTimeout(() => zone.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120); return () => window.clearTimeout(id); }, []);
+  return <section ref={zone} className="g-claim-zone"><h3>اختار الاستنتاج اللي شايف إن الملاحظة دي بتدعمه</h3><div className="g-claims">{claims.map((id) => <button key={id} className={state.claim === id ? "is-selected" : ""} onClick={() => dispatch({ type: "claim", id })}><b>{CLAIM_LABELS[id]}</b></button>)}</div>
     <div className="g-row-actions"><GameButton className="primary" disabled={!state.claim || !state.evidence} onClick={() => setConfirming(true)}><Mail /> اكتب التوصية</GameButton>{extra}</div>
     <Dialog.Root open={confirming} onOpenChange={setConfirming}><Dialog.Portal><Dialog.Overlay className="g-preparation-backdrop" /><Dialog.Content className="g-pair-confirmation" aria-describedby={undefined}><Dialog.Title>{CONFIRM_PAIR}</Dialog.Title><div className="g-confirm-actions"><GameButton className="primary" onClick={() => { setConfirming(false); dispatch({ type: "confirm" }); }}>نعم، متأكد - اكتب التوصية</GameButton><GameButton className="secondary" onClick={() => setConfirming(false)}>تعديل الاختيار</GameButton></div></Dialog.Content></Dialog.Portal></Dialog.Root>
   </section>;
@@ -454,29 +451,19 @@ function Email({ state, dispatch, onSend, sayesShown, markSayes }: { state: Stat
   return <><motion.article className="g-mail" initial={{ y: 30, opacity: 0 }} animate={flying ? { y: "-90vh", x: "-25vw", scale: .2, rotate: -18, opacity: 0 } : { y: 0, opacity: 1 }} transition={flying ? { duration: .8, ease: "easeIn" } : { duration: .25 }}><div className="g-mail-bar"><Mail /> رسالة جديدة</div><div className="g-mail-head"><p><b>إلى:</b> مستر سيف — المدير العام</p><p><b>الموضوع:</b> توصية تقييم كورس التدريب والتجديد</p></div><p className="g-mail-hi">مستر سيف،</p><p className="g-mail-body">{emailBody(claim, state.evidence)}</p><p className="g-mail-sign">وتفضلوا بقبول فائق الاحترام،<br />محلل الموارد البشرية</p><div className="g-mail-actions"><button className="g-btn primary big" disabled={flying} onClick={() => { if (state.sayes && !sayesShown) { markSayes(); setPop(true); } else fly(); }}><Send /> {flying ? "التوصية في الطريق" : "إرسال التوصية"}</button><button className="g-btn secondary" disabled={flying} onClick={() => dispatch({ type: "backFromEmail" })}>راجع التحليل</button></div></motion.article><AnimatePresence>{pop && <SayesPopup state={state} dispatch={dispatch} onClose={() => setPop(false)} onSend={fly} />}</AnimatePresence></>;
 }
 
-function Verdict({ state, dispatch, travel, endActions }: { state: State; dispatch: (a: Action) => void; travel: (a: Action) => void; endActions?: ReactNode }) {
-  const result = ending(state);
+function Verdict({ state, dispatch, travel, endActions, onDone }: { state: State; dispatch: (a: Action) => void; travel: (a: Action) => void; endActions?: ReactNode; onDone?: () => void }) {
   const won = state.outcome === "win";
-  const [stage, setStage] = useState<"talk" | "stamp" | "result">("talk");
-  const finishDialogue = () => {
-    setStage("stamp");
-    sfx.stamp();
-    window.setTimeout(() => {
-      setStage("result");
-      if (won) sfx.win();
-      else sfx.lose();
-    }, 1400);
-  };
-  if (stage === "talk") return <Dialogue line={result.lines[0] ?? { who: "seif", text: "" }} index={0} total={1} nextLabel="شوف النتيجة" onNext={finishDialogue} call />;
-  if (stage === "stamp") return <motion.div className="g-stage center" animate={{ x: [0, -7, 7, -5, 5, 0], y: [0, 4, -4, 2, 0] }} transition={{ delay: .2, duration: .4 }}><motion.div className={`g-stamp ${won ? "good" : "bad"}`} initial={{ scale: 3.5, rotate: -25, opacity: 0 }} animate={{ scale: 1, rotate: -10, opacity: 1 }} transition={{ type: "spring", damping: 10, stiffness: 220 }}>{result.stamp}</motion.div></motion.div>;
-  const confetti = won ? Array.from({ length: 34 }, (_, n) => ({ n, x: (n * 37) % 100, d: 2.6 + (n % 5) * .45, delay: (n % 7) * .16, r: (n * 53) % 360, c: n % 3 })) : [];
-  const takeaways = won ? TAKEAWAYS.win : TAKEAWAYS.loss;
-  return <div className="g-stage center scroll">
-    {confetti.map((p) => <motion.i key={p.n} className={`g-confetti c${p.c}`} style={{ left: `${p.x}%` }} initial={{ y: -40, rotate: p.r, opacity: 0 }} animate={{ y: "105vh", rotate: p.r + 540, opacity: [0, 1, 1, 0] }} transition={{ duration: p.d, delay: p.delay, ease: "easeIn" }} aria-hidden />)}
-    <motion.section className={`g-results ${won ? "is-win" : "is-loss"}`} initial={{ opacity: 0, scale: .95 }} animate={{ opacity: 1, scale: 1 }}>
-      <div className="g-res-main"><div className="g-status">{result.stamp}</div><div className="g-trophy-wrap">{won && <span className="g-rays" aria-hidden />}<div className="g-trophy">{won ? "🏆" : state.timedOut ? "⏳" : "📉"}</div></div><h2>«{result.title}»</h2><p className="g-rank-desc">{result.desc}</p></div>
-      <div className="g-takeaways"><h3>الخلاصة التحليلية</h3>{takeaways.map((t, idx) => <motion.article key={t.q} initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: .2 + idx * .15 }}><strong>{t.q}</strong><p>{t.a}</p></motion.article>)}</div>
-      {endActions ? <div className="g-result-actions">{endActions}</div> : <div className="g-result-actions">{!won && <button className="g-btn primary big" onClick={() => dispatch({ type: "retry" })}>حاول تاني</button>}<button className="g-btn secondary big" onClick={() => travel({ type: "restart" })}><RotateCcw /> ابدأ من الأول</button></div>}
-    </motion.section>
-  </div>;
+  const lines: Line[] = won ? WIN.lines : SAYES_LOSS_CALL[state.sayes === "fifty" ? "fifty" : "cheap"].map((text) => ({ who: "seif", text }));
+  const caller = won ? undefined : { name: SAYES_NAME, role: "مكالمة من الشارع", img: SAYES_ART.smug };
+  const [i, setI] = useState(0);
+  const [booth, setBooth] = useState(false);
+  useEffect(() => { if (!booth) return; if (won) sfx.win(); else sfx.lose(); if (!onDone) return; const id = window.setTimeout(onDone, 5000); return () => window.clearTimeout(id); }, [booth, won, onDone]);
+  if (!booth) return <Dialogue line={lines[i] ?? lines[0]!} index={i} total={lines.length} call caller={caller} nextLabel={i + 1 < lines.length ? "التالي" : "إنهاء المكالمة"} onNext={() => i + 1 < lines.length ? setI(i + 1) : setBooth(true)} />;
+  return <div className="g-stage center"><motion.section className="g-booth" initial={{ opacity: 0, scale: .9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 220, damping: 18 }}>
+    <span className="g-booth-icon" aria-hidden>{won ? "🏆" : "🔍"}</span>
+    <h2>{BOOTH_MESSAGE}</h2>
+    {endActions && <div className="g-booth-status">{endActions}</div>}
+    {onDone ? <><button className="g-btn primary big" onClick={onDone}>متابعة <ChevronLeft /></button><i className="g-booth-bar" aria-hidden /></>
+      : <div className="g-result-actions">{!won && <button className="g-btn primary big" onClick={() => dispatch({ type: "retry" })}>حاول تاني</button>}<button className="g-btn secondary big" onClick={() => travel({ type: "restart" })}><RotateCcw /> ابدأ من الأول</button></div>}
+  </motion.section></div>;
 }

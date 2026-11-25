@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Play } from "lucide-react";
+import { Play, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import impLogo from "@/assets/brand/imp-logo.webp";
 import analystMark from "@/assets/brand/the-analyst-mark.png";
-import { PRIZES, placeName, usePublicState, adminStart, type Winner } from "./eventApi";
+import { PRIZES, placeName, usePublicState, adminStart, adminAnnounce, ANNOUNCE_AFTER_MS, type Winner } from "./eventApi";
 import { fanfare, unlockAudio } from "./sounds";
 import "./event.css";
 
@@ -50,17 +50,30 @@ export default function EventArena() {
     } catch { setMessage("تعذر بدء التحدي، جرّب تاني."); }
     finally { setBusy(false); }
   };
+  const [tick, setTick] = useState(Date.now());
+  useEffect(() => { const id = window.setInterval(() => setTick(Date.now()), 1000); return () => window.clearInterval(id); }, []);
+  const skew = state?.now ? Date.parse(state.now) - Date.now() : 0;
+  const leftMs = state?.started_at && !state.revealed ? Math.max(0, Date.parse(state.started_at) + ANNOUNCE_AFTER_MS - (tick + skew)) : 0;
+  const clock = `${String(Math.floor(leftMs / 60000)).padStart(2, "0")}:${String(Math.floor(leftMs / 1000) % 60).padStart(2, "0")}`;
+  const announce = async () => {
+    if (leftMs > 0 && !window.confirm("لسه الـ 5 دقايق ما خلصوش. تعلن النتائج دلوقتي؟")) return;
+    setBusy(true); setMessage("");
+    const { error } = await adminAnnounce();
+    setMessage(error ? "تعذر إعلان النتائج، جرّب تاني." : ""); await reload(); setBusy(false);
+  };
   return <main className="imp-event imp-bg relative flex flex-col overflow-hidden" dir="rtl" onClick={unlockAudio}>
     <header className="flex items-center justify-between px-8 py-5"><img src={impLogo} alt="IMP" className="h-14 w-auto rounded bg-white/90 p-1.5" /><h1 className="imp-gold-text text-2xl font-black sm:text-4xl" dir="ltr">The HR Café Challenge</h1><img src={analystMark} alt="The Analyst" className="h-14 w-auto" /></header>
 
     {isAdmin && <div className="flex flex-col items-center gap-2 px-6 pb-4">
-      <Button className="imp-btn-gold px-8 py-4 text-xl" disabled={busy} onClick={start}><Play className="h-5 w-5" />{busy ? "جاري البدء..." : "ابدأ التحدي"}</Button>
+      <Button className="imp-btn-gold px-8 py-4 text-xl" disabled={busy} onClick={start}><Play className="h-5 w-5" />{busy ? "جاري..." : "ابدأ التحدي"}</Button>
+      {state?.started_at && !state.revealed && <Button className="imp-btn-gold px-8 py-4 text-xl" disabled={busy} onClick={announce}><Trophy className="h-5 w-5" />إعلان النتائج</Button>}
       {message && <p role="status">{message}</p>}
     </div>}
     <section className="flex flex-1 flex-col items-center gap-6 px-6 pb-8 text-center">
       <p className="text-2xl font-bold">👥 <span className="imp-gold-text">{state?.count ?? 0}</span> مشارك — <span className="imp-gold-text">{winners.length}</span> في لوحة الشرف</p>
       {!state?.started_at && <p className="my-auto text-3xl font-bold">مستنيين بداية التحدي!</p>}
-      {state?.started_at && winners.length === 0 && <p className="my-auto text-3xl font-bold">التحدي بدأ… مين هيحسم المركز الأول؟</p>}
+      {state?.started_at && !state.revealed && <div className="my-auto flex flex-col items-center gap-3"><p className="text-3xl font-bold">التحدي بدأ… الترتيب هيتعلن بعد</p><p className="imp-gold-text text-7xl font-black tabular-nums" dir="ltr">{clock}</p><p className="text-xl opacity-80">✅ خلّص {state.finished ?? 0} لاعب</p></div>}
+      {state?.revealed && winners.length === 0 && <p className="my-auto text-3xl font-bold">مفيش حد وصل للحل الصح المرة دي!</p>}
       {winners.length > 0 && <div className="flex w-full max-w-6xl flex-wrap items-stretch justify-center gap-5">{winners.filter(w => w.rank <= 3).map(w => <WinnerCard key={w.rank} w={w} />)}</div>}
       {winners.some(w => w.rank > 3) && <div className="imp-card w-full max-w-5xl p-5"><h2 className="mb-3 text-xl font-bold">🎖️ المراكز من 4 إلى 50 — قسيمة خصم 25%</h2><ol className="grid grid-cols-1 gap-x-6 gap-y-2 text-lg sm:grid-cols-2 lg:grid-cols-4">{winners.filter(w => w.rank > 3).map(w => <li key={w.rank}><span className="imp-gold-text font-black">{w.rank}.</span> {w.name}</li>)}</ol></div>}
     </section>

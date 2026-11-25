@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Ticket } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMyStatus } from "./eventApi";
+import { useMyStatus, voucherDownloaded } from "./eventApi";
 import { VoucherModal } from "./VoucherCard";
 
 /** Persistent gold notice for players who won a voucher; pops the card automatically the first time it appears. */
@@ -18,11 +18,11 @@ export default function VoucherBadge() {
     if (inGame || !voucher || !user || shown.current) return;
     shown.current = true;
     const key = `imp-voucher-seen-${user.id}`;
-    if (!localStorage.getItem(key)) { localStorage.setItem(key, "1"); setCelebrate(true); setOpen(true); }
+    if (!sessionStorage.getItem(key)) { sessionStorage.setItem(key, "1"); setCelebrate(true); setOpen(true); }
   }, [voucher, user, inGame]);
   if (!voucher || inGame) return null;
   return <>
     <button onClick={() => { setCelebrate(false); setOpen(true); }} dir="rtl" className="fixed left-1/2 top-2 z-[90] flex -translate-x-1/2 items-center gap-2 rounded-full border border-[#d9b25f] bg-[#2a0b0d]/95 px-4 py-2 text-sm font-bold text-[#f3dc9b] shadow-lg"><Ticket className="h-4 w-4" /> لديك قسيمة معتمدة من IMP</button>
-    {open && <VoucherModal voucher={voucher} celebrate={celebrate} onClose={() => setOpen(false)} />}
+    {open && <VoucherModal voucher={voucher} celebrate={celebrate} onClose={() => setOpen(false)} onDownloaded={() => { window.setTimeout(() => { void voucherDownloaded().then(() => { setOpen(false); window.dispatchEvent(new Event("event-voucher-downloaded")); }); }, 800); }} />}
   </>;
 }

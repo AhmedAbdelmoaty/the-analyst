@@ -187,6 +187,7 @@ export type Database = {
       event_challenge: {
         Row: {
           id: number
+          results_revealed_at: string | null
           reveal_step: number
           revealed: boolean
           started_at: string | null
@@ -194,6 +195,7 @@ export type Database = {
         }
         Insert: {
           id?: number
+          results_revealed_at?: string | null
           reveal_step?: number
           revealed?: boolean
           started_at?: string | null
@@ -201,6 +203,7 @@ export type Database = {
         }
         Update: {
           id?: number
+          results_revealed_at?: string | null
           reveal_step?: number
           revealed?: boolean
           started_at?: string | null
@@ -212,16 +215,19 @@ export type Database = {
         Row: {
           challenge_started_at: string
           joined_at: string
+          play_started_at: string | null
           user_id: string
         }
         Insert: {
           challenge_started_at: string
           joined_at?: string
+          play_started_at?: string | null
           user_id: string
         }
         Update: {
           challenge_started_at?: string
           joined_at?: string
+          play_started_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -232,27 +238,33 @@ export type Database = {
           claim: string | null
           completed_at: string
           correct: boolean
+          duration_seconds: number | null
           evidence: string | null
           id: string
           user_id: string
+          voucher_downloaded_at: string | null
         }
         Insert: {
           challenge_started_at: string
           claim?: string | null
           completed_at?: string
           correct?: boolean
+          duration_seconds?: number | null
           evidence?: string | null
           id?: string
           user_id: string
+          voucher_downloaded_at?: string | null
         }
         Update: {
           challenge_started_at?: string
           claim?: string | null
           completed_at?: string
           correct?: boolean
+          duration_seconds?: number | null
           evidence?: string | null
           id?: string
           user_id?: string
+          voucher_downloaded_at?: string | null
         }
         Relationships: []
       }
@@ -886,6 +898,7 @@ export type Database = {
         }[]
       }
       backfill_legacy_results: { Args: never; Returns: number }
+      event_admin_announce: { Args: never; Returns: undefined }
       event_admin_export: {
         Args: never
         Returns: {
@@ -902,6 +915,7 @@ export type Database = {
       }
       event_admin_reveal: { Args: { _step: number }; Returns: undefined }
       event_admin_start: { Args: never; Returns: undefined }
+      event_begin: { Args: never; Returns: undefined }
       event_discount: { Args: { _rank: number }; Returns: number }
       event_join: { Args: never; Returns: undefined }
       event_my_status: { Args: never; Returns: Json }
@@ -919,6 +933,7 @@ export type Database = {
         Args: { _claim: string; _evidence: string }
         Returns: boolean
       }
+      event_voucher_downloaded: { Args: never; Returns: undefined }
       game_rating_summary: {
         Args: never
         Returns: {
