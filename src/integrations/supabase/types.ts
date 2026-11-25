@@ -184,6 +184,78 @@ export type Database = {
         }
         Relationships: []
       }
+      event_challenge: {
+        Row: {
+          id: number
+          reveal_step: number
+          revealed: boolean
+          started_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          reveal_step?: number
+          revealed?: boolean
+          started_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          reveal_step?: number
+          revealed?: boolean
+          started_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      event_players: {
+        Row: {
+          challenge_started_at: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          challenge_started_at: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          challenge_started_at?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      event_results: {
+        Row: {
+          challenge_started_at: string
+          claim: string | null
+          completed_at: string
+          correct: boolean
+          evidence: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          challenge_started_at: string
+          claim?: string | null
+          completed_at?: string
+          correct?: boolean
+          evidence?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          challenge_started_at?: string
+          claim?: string | null
+          completed_at?: string
+          correct?: boolean
+          evidence?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       game_feedback: {
         Row: {
           category: string
@@ -554,6 +626,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_choice: string | null
+          company_name: string | null
           created_at: string
           department: string | null
           department_other: string | null
@@ -565,6 +638,8 @@ export type Database = {
           industry: string | null
           industry_other: string | null
           last_name: string | null
+          lead_at: string | null
+          lead_status: string | null
           phone: string | null
           updated_at: string
           user_id: string
@@ -572,6 +647,7 @@ export type Database = {
         }
         Insert: {
           avatar_choice?: string | null
+          company_name?: string | null
           created_at?: string
           department?: string | null
           department_other?: string | null
@@ -583,6 +659,8 @@ export type Database = {
           industry?: string | null
           industry_other?: string | null
           last_name?: string | null
+          lead_at?: string | null
+          lead_status?: string | null
           phone?: string | null
           updated_at?: string
           user_id: string
@@ -590,6 +668,7 @@ export type Database = {
         }
         Update: {
           avatar_choice?: string | null
+          company_name?: string | null
           created_at?: string
           department?: string | null
           department_other?: string | null
@@ -601,6 +680,8 @@ export type Database = {
           industry?: string | null
           industry_other?: string | null
           last_name?: string | null
+          lead_at?: string | null
+          lead_status?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string
@@ -805,6 +886,39 @@ export type Database = {
         }[]
       }
       backfill_legacy_results: { Args: never; Returns: number }
+      event_admin_export: {
+        Args: never
+        Returns: {
+          company_name: string
+          completed_at: string
+          correct: boolean
+          department: string
+          full_name: string
+          industry: string
+          interested: boolean
+          phone: string
+          rank: number
+        }[]
+      }
+      event_admin_reveal: { Args: { _step: number }; Returns: undefined }
+      event_admin_start: { Args: never; Returns: undefined }
+      event_discount: { Args: { _rank: number }; Returns: number }
+      event_join: { Args: never; Returns: undefined }
+      event_my_status: { Args: never; Returns: Json }
+      event_public_state: { Args: never; Returns: Json }
+      event_ranked: {
+        Args: never
+        Returns: {
+          completed_at: string
+          full_name: string
+          rank: number
+          user_id: string
+        }[]
+      }
+      event_submit: {
+        Args: { _claim: string; _evidence: string }
+        Returns: boolean
+      }
       game_rating_summary: {
         Args: never
         Returns: {

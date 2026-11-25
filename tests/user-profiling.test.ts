@@ -9,7 +9,7 @@ const authMigration = readFileSync(new URL("../drizzle/migrations/0000_phone_otp
 
 describe("work profile", () => {
   it("exposes every requested stable department and industry choice", () => {
-    expect(DEPARTMENTS.map(([id]) => id)).toHaveLength(15);
+    expect(DEPARTMENTS.map(([id]) => id)).toHaveLength(16);
     expect(INDUSTRIES.map(([id]) => id)).toHaveLength(14);
     expect(DEPARTMENTS.at(-1)?.[0]).toBe("other");
     expect(INDUSTRIES.at(-1)?.[0]).toBe("other");

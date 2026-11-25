@@ -13,12 +13,12 @@ const CHAKRA_SENDER_ID = "1093955377144594";
 const CHAKRA_TEMPLATE = "analyst_otp_imp";
 
 const OTP_TTL_MS = 5 * 60 * 1000;
-const RESEND_COOLDOWN_S = 60;
+const RESEND_COOLDOWN_S = 30;
 const RESET_TTL_MS = 10 * 60 * 1000;
 const LIMITS = {
   sendPerPhoneHour: 5,
-  sendPerIpHour: 60,
-  verifyPerIpHour: 150,
+  sendPerIpHour: 500,
+  verifyPerIpHour: 1000,
   verifyPerPhoneHour: 15,
 };
 

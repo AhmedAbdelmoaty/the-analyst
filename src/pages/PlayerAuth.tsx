@@ -7,7 +7,13 @@ import {
 } from "@/components/auth/AuthUI";
 import { errText, maskPhone, phoneAuth, PhoneAuthResult, toE164 } from "@/lib/phoneAuth";
 
-import { markSignupCreated, markSignupVerified } from "@/features/discovery/journey";
+import { finishPlanStep, markSignupCreated, selectGame } from "@/features/discovery/journey";
+import { supabase } from "@/integrations/supabase/client";
+import { INDUSTRIES } from "@/features/profile/workProfile";
+import { FAST_TRACK_KEY, EVENT_GAME_ROUTE } from "@/features/event/eventApi";
+
+const EVENT_DEPARTMENTS = [["human_resources", "HR / People"], ["ld_training", "L&D / Training"], ["operations", "Operations"], ["finance", "Finance"], ["marketing", "Marketing"], ["other", "Other"]] as const;
+const selectCls = "h-11 w-full rounded-md border border-input bg-background px-3 text-sm";
 import { trackCompleteRegistration } from "@/lib/metaPixel";
 
 type Mode = "login" | "signup" | "verify" | "forgot" | "forgot_code" | "forgot_new" | "forgot_done";
@@ -31,8 +37,10 @@ const PlayerAuth = () => {
   const { signInWithPhone } = useAuth();
 
   const [mode, setModeState] = useState<Mode>(modeFromPath(location.pathname));
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [company, setCompany] = useState("");
+  const [department, setDepartment] = useState("");
+  const [industry, setIndustry] = useState("");
   const [dial, setDial] = useState("20");
   const [local, setLocal] = useState("");
   const [password, setPassword] = useState("");
@@ -68,7 +76,7 @@ const PlayerAuth = () => {
   };
 
   const applySend = (r: PhoneAuthResult, okNotice: string) => {
-    setCooldown(r.retry_after ?? r.cooldown ?? 60);
+    setCooldown(r.retry_after ?? r.cooldown ?? 30);
     if (r.ok && r.sent === false) { setSendFailed(true); setNotice(null); setError("تعذر إرسال رمز التحقق عبر واتساب. تحقق من الرقم وأعد المحاولة بعد انتهاء المهلة."); }
     else if (r.ok) { setSendFailed(false); setNotice(okNotice); }
   };
@@ -106,10 +114,14 @@ const PlayerAuth = () => {
         setEditingFrom(null); setActivePhone(phone); setMode("verify");
         return applySend(r, "أُرسل رمز التحقق إلى الرقم الجديد عبر واتساب.");
       }
-      if (!firstName.trim() || !lastName.trim()) return setError("أدخل الاسم الأول والأخير.");
+      const parts = fullName.trim().split(/\s+/);
+      if (parts.length < 2) return setError("أدخل الاسم بالكامل (اسمين على الأقل).");
+      if (!company.trim()) return setError("أدخل اسم الشركة.");
+      if (!department) return setError("اختار القسم.");
+      if (!industry) return setError("اختار القطاع.");
       if (password.length < 8) return setError(errText("weak_password"));
       if (password !== confirm) return setError(errText("password_mismatch"));
-      const r = await phoneAuth("signup", { first_name: firstName.trim(), last_name: lastName.trim(), phone, password });
+      const r = await phoneAuth("signup", { first_name: parts[0].slice(0, 50), last_name: parts.slice(1).join(" ").slice(0, 50), phone, password });
       if (!r.ok) return setError(errText(r.error));
       markSignupCreated();
       setActivePhone(phone); setMode("verify");
@@ -125,11 +137,23 @@ const PlayerAuth = () => {
       const extra = r.error === "invalid_code" && r.remaining ? ` المحاولات المتبقية: ${r.remaining}.` : "";
       return setError(errText(r.error) + extra);
     }
-    markSignupVerified();
+    finishPlanStep();
     trackCompleteRegistration();
     setNotice("تم تأكيد الرقم. جارٍ تسجيل الدخول...");
     const { error } = await signInWithPhone(activePhone, password);
-    if (error) { setMode("login", "/login"); setNotice("تم تأكيد الرقم. سجّل الدخول بكلمة المرور."); }
+    if (error) { setMode("login", "/login"); setNotice("تم تأكيد الرقم. سجّل الدخول بكلمة المرور."); return; }
+    // Fast-track: fill the rest of the profile and go straight to the event game.
+    const { data: u } = await supabase.auth.getUser();
+    if (u.user) {
+      const parts = fullName.trim().split(/\s+/);
+      await supabase.from("profiles").update({
+        display_name: parts[0] || null, gender: "male", company_name: company.trim() || null,
+        department: department || null, industry: industry || null,
+      }).eq("user_id", u.user.id);
+    }
+    selectGame("training-evaluation");
+    try { sessionStorage.setItem(FAST_TRACK_KEY, "1"); } catch { /* optional */ }
+    window.location.assign(EVENT_GAME_ROUTE);
   });
 
   const resendSignup = () => run(async () => {
@@ -215,14 +239,17 @@ const PlayerAuth = () => {
   if (mode === "signup") return (
     <AuthShell title={editingFrom ? "تغيير الرقم" : "أنشئ حسابك وابدأ التجربة."}>
       <form onSubmit={onSignup} className="space-y-3" noValidate>
-        {!editingFrom && <div className="grid grid-cols-2 gap-2.5">
-          <Field id="first" label="الاسم الأول"><TextInput id="first" autoComplete="given-name" dir="auto" placeholder="الاسم الأول" maxLength={50} value={firstName} onChange={(e) => setFirstName(e.target.value)} /></Field>
-          <Field id="last" label="الاسم الأخير"><TextInput id="last" autoComplete="family-name" dir="auto" placeholder="الاسم الأخير" maxLength={50} value={lastName} onChange={(e) => setLastName(e.target.value)} /></Field>
-        </div>}
+        {!editingFrom && <Field id="fullname" label="الاسم بالكامل"><TextInput id="fullname" autoComplete="name" dir="auto" placeholder="الاسم بالكامل" maxLength={100} value={fullName} onChange={(e) => setFullName(e.target.value)} /></Field>}
         <Field id="phone" label="رقم واتساب"><PhoneInput id="phone" dial={dial} onDial={setDial} value={local} onChange={setLocal} /></Field>
         {!editingFrom && <>
           <Field id="password" label="كلمة المرور"><PasswordInput id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
           <Field id="confirm" label="تأكيد كلمة المرور"><PasswordInput id="confirm" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} /></Field>
+          <p className="-mt-1 text-xs text-muted-foreground">أي 8 خانات (أرقام أو حروف).</p>
+          <Field id="company" label="اسم الشركة"><TextInput id="company" autoComplete="organization" dir="auto" placeholder="اسم الشركة" maxLength={100} value={company} onChange={(e) => setCompany(e.target.value)} /></Field>
+          <div className="grid grid-cols-2 gap-2.5">
+            <Field id="department" label="القسم"><select id="department" className={selectCls} value={department} onChange={(e) => setDepartment(e.target.value)}><option value="">اختار</option>{EVENT_DEPARTMENTS.map(([id, l]) => <option key={id} value={id}>{l}</option>)}</select></Field>
+            <Field id="industry" label="القطاع"><select id="industry" className={selectCls} value={industry} onChange={(e) => setIndustry(e.target.value)}><option value="">اختار</option>{INDUSTRIES.map(([id, l]) => <option key={id} value={id}>{l}</option>)}</select></Field>
+          </div>
         </>}
         {messages}
         <PrimaryButton type="submit" loading={busy}>{editingFrom ? "إرسال رمز التحقق" : "إنشاء حساب"}</PrimaryButton>

@@ -44,3 +44,4 @@
 
 - When a feature, product decision or deployment state changes, update the relevant doc in the same task. Keep `docs/CURRENT_STATE.md` short and current; history belongs in Git, not new archive files.
 - Generated test output, screenshots and preview captures are git-ignored; never commit them.
+- Event ranking, correctness and vouchers are computed only in `event_*` database functions (server-side), never from browser state — so winners can't be faked or leaked before the reveal.

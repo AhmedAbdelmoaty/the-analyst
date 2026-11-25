@@ -92,6 +92,13 @@
       "when": 1794901865295,
       "tag": "0012_game_feedback_and_ratings",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795604437421,
+      "tag": "0013_hr_cafe_event",
+      "breakpoints": true
     }
   ]
 }

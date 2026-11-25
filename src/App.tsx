@@ -25,6 +25,7 @@ import WorkDetails from "@/pages/WorkDetails";
 import PaymentReturn from "@/pages/PaymentReturn";
 import GameGate from "@/features/entitlement/GameGate";
 import PlatformAudio from "@/features/platform-audio/PlatformAudio";
+import VoucherBadge from "@/features/event/VoucherBadge";
 
 const Setup = lazy(() => import('./pages/Setup'));
 const GameRoute = lazy(() => import('./pages/GameRoute'));
@@ -35,6 +36,10 @@ const DecisionMatrixRoute = lazy(() => import('./pages/DecisionMatrixRoute'));
 const InvestigationFileRoute = lazy(() => import('./pages/InvestigationFileRoute'));
 const TeamPerformanceRoute = lazy(() => import('./pages/TeamPerformanceRoute'));
 const ProfitParadoxRoute = lazy(() => import('./pages/ProfitParadoxRoute'));
+const TrainingEvaluationRoute = lazy(() => import('@/features/event/TrainingEvaluationRoute'));
+const EventArena = lazy(() => import('@/features/event/EventArena'));
+const EventOffer = lazy(() => import('@/features/event/EventOffer'));
+const AdminEventArena = lazy(() => import('@/features/event/AdminEventArena'));
 const AdminStats = lazy(() => import('./pages/AdminStats'));
 const AdminPayments = lazy(() => import('./pages/AdminPayments'));
 const queryClient = new QueryClient();
@@ -58,7 +63,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster /><Sonner />
-      <BrowserRouter><GaPageViews /><CanonicalLink /><UpdateGate /><PlatformAudio /><AuthProvider><VisitTracker /><InstallProvider>
+      <BrowserRouter><GaPageViews /><CanonicalLink /><UpdateGate /><PlatformAudio /><AuthProvider><VisitTracker /><VoucherBadge /><InstallProvider>
         <Suspense fallback={<div className="auth-theme flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">جاري التحميل...</div>}>
           <Routes>
             <Route path="/" element={<Landing />} />
@@ -79,6 +84,10 @@ const App = () => (
             <Route path="/setup" element={<Setup />} />
             <Route path="/profile/work" element={<RequireProfile><WorkDetails /></RequireProfile>} />
             <Route path="/play" element={<RequireProfile><GameRoute /></RequireProfile>} />
+            <Route path="/games/training-evaluation" element={<RequireProfile><TrainingEvaluationRoute /></RequireProfile>} />
+            <Route path="/event/arena" element={<EventArena />} />
+            <Route path="/event/offer" element={<RequireProfile><EventOffer /></RequireProfile>} />
+            <Route path="/admin/event-arena" element={<AdminEventArena />} />
             <Route path="/games/reward-decision" element={<RequireProfile><GameGate game="reward-decision"><RewardDecisionRoute /></GameGate></RequireProfile>} />
             <Route path="/games/behind-the-dots" element={<RequireProfile><GameGate game="behind-the-dots"><BehindTheDotsRoute /></GameGate></RequireProfile>} />
             <Route path="/games/crack-the-code" element={<RequireProfile><GameGate game="crack-the-code"><CrackTheCodeRoute /></GameGate></RequireProfile>} />

@@ -1,0 +1,17 @@
+.imp-event{--imp-red:#A61E25;--imp-red-deep:#5e0e12;--imp-gold:#d9b25f;--imp-gold-soft:#f3dc9b;--imp-ink:#0b0708;color:#fff;font-family:inherit}
+.imp-bg{min-height:100dvh;background:radial-gradient(circle at 50% 0%,rgba(166,30,37,.55),transparent 60%),linear-gradient(180deg,#140809,#050304)}
+.imp-gold-text{background:linear-gradient(90deg,var(--imp-gold),var(--imp-gold-soft),var(--imp-gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.imp-btn-gold{background:linear-gradient(135deg,#f3dc9b,#c9973e);color:#2a0b0d;font-weight:800;border-radius:14px;box-shadow:0 8px 30px rgba(217,178,95,.35);transition:transform .15s}
+.imp-btn-gold:hover{transform:translateY(-2px)}.imp-btn-gold:disabled{opacity:.6}
+.imp-card{background:linear-gradient(160deg,rgba(166,30,37,.35),rgba(20,8,9,.85));border:1px solid rgba(217,178,95,.35);border-radius:20px;backdrop-filter:blur(8px)}
+.imp-pulse{animation:impPulse 1.8s ease-in-out infinite}@keyframes impPulse{50%{transform:scale(1.05);text-shadow:0 0 30px rgba(217,178,95,.8)}}
+.imp-marquee{overflow:hidden;white-space:nowrap}.imp-marquee>div{display:inline-flex;gap:3rem;animation:impMarq 28s linear infinite;padding-inline:1.5rem}
+@keyframes impMarq{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+.imp-glow{box-shadow:0 0 40px rgba(217,178,95,.35),inset 0 0 20px rgba(217,178,95,.12)}
+.imp-voucher{width:min(92vw,400px);aspect-ratio:1.6/1;border-radius:22px;padding:22px;position:relative;overflow:hidden;color:#fff;background:linear-gradient(135deg,#7c1218 0%,#A61E25 45%,#3b0709 100%);border:2px solid var(--imp-gold);box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.imp-voucher:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0 2px,transparent 2px 12px)}
+.imp-voucher .shine{position:absolute;inset:-50%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.25) 50%,transparent 60%);animation:impShine 3.5s ease-in-out infinite}
+@keyframes impShine{from{transform:translateX(-60%)}to{transform:translateX(60%)}}
+.locked-card{position:relative}.locked-card .game-cover-card{filter:grayscale(.85) brightness(.6)}
+.locked-card .lock-badge{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:3}
+.locked-card .lock-badge span{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:rgba(10,6,6,.75);border:2px solid #d9b25f;color:#f3dc9b;box-shadow:0 0 24px rgba(217,178,95,.45)}

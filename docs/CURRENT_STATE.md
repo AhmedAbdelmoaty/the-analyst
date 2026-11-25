@@ -40,3 +40,8 @@ Paymob foundation exists (DB tables/RPCs and server functions reported deployed)
 - Unused shadcn UI packages remain installed (kept to avoid breaking generated UI components).
 - Root `sw.js` / `workbox-*.js` are PWA build outputs written by `vite.config.ts` (`swDest`); kept until the PWA output path is reviewed.
 - Search Console not connected; public `/games` page deferred.
+
+## The HR Café event (2026-11-25)
+- Training Evaluation (`/games/training-evaluation`) is first and the only open game; others show "Coming Soon".
+- Live screen `/event/arena`, admin control `/admin/event-arena` (start/reset, step reveal, Excel leads), offer page `/event/offer`, voucher card for top 50 (code IMP-HRC-2026).
+- phone-auth: 500 code requests/hour per IP, 30s resend; leaked-password check off. Deployed to the live backend.

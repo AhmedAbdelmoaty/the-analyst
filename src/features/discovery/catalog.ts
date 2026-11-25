@@ -1,16 +1,18 @@
+import teCover from "@/features/training-evaluation/assets/art/cover.webp.asset.json";
 import analystCover from "@/features/team-performance/assets/analyst.png.asset.json";
 import currentCover from "@/assets/scenes/mansour-office-welcome-male.webp";
 import rewardCover from "@/features/reward-decision/assets/rd-cover-l.webp.asset.json";
 /** Shared presentation catalog; tiers describe future access, never entitlement. */
 export const GAME_CATALOG = [
-  { id: 'problem-framing', title: 'اسأل صح', route: '/play', cover: currentCover, description: 'المبيعات أقل من المتوقع… بس مقارنة بإيه؟ انزل للميدان واكتشف السؤال اللي يغيّر القضية.', category: 'صياغة المشكلات', tier: 'free' },
-  { id: 'reward-decision', title: 'قرار التكريم', route: '/games/reward-decision', cover: rewardCover.url, description: 'فريقين، وأرقام بتحكي قصتين. افحص الأدلة واكتشف مين يستحق التكريم.', category: 'تحليل البيانات', tier: 'annual' },
-  { id: 'behind-the-dots', title: 'ورا النقط', route: '/games/behind-the-dots', cover: '/assets/behind-dots/market-v5.png', description: 'كل نقطة وراها حكاية. ساعد ليلى تقرأ العلاقات وتختار خطة مبنية على الأدلة.', category: 'الارتباط وفحص الأدلة', tier: 'annual' },
-  { id: 'crack-the-code', title: 'الشفرة الأخيرة', route: '/games/crack-the-code', cover: '/crack-the-code/assets/finance-manager-new.jpg', description: 'تلات خزائن وتقرير مختفي. فك ألغاز الأرقام ووصل للشفرة قبل ما تضيع الحقيقة.', category: 'المنطق والاستنتاج', tier: 'annual' },
-  { id: 'decision-matrix', title: 'مصفوفة القرار', route: '/games/decision-matrix', cover: '/decision-matrix/assets/boardroom-cartoon.jpg', description: 'أول يوم في الشركة… وأول قرار مش سهل. اجمع الأدلة ووازن البدائل مع الفريق.', category: 'المفاضلة واتخاذ القرار', tier: 'annual' },
-  { id: 'investigation-file', title: 'ملف تحت التحقيق', route: '/games/investigation-file', cover: '/investigation-file/assets/investigation/cfo.png', description: 'تقريرين بيقولوا عكس بعض. افحص سجلات الموظفين ووزن التوزيع قبل ما تختم القرار.', category: 'تحليل البيانات', tier: 'annual' },
-  { id: 'team-performance', title: 'أداء الفريق', route: '/games/team-performance', cover: analystCover.url, description: 'فريق 80% وفريق 59%… بس مين فعلاً الأحسن؟ افتح الأرقام قبل ما المكافأة تروح للفريق الغلط.', category: 'تحليل البيانات', tier: 'annual' },
-  { id: 'profit-paradox', title: 'مفارقة الربح', route: '/games/profit-paradox', cover: '/profit-paradox/environments/boardroom.png', description: 'الإيرادات زادت والربح الإجمالي نزل. ابنِ مقارنة توزيع الإيرادات بنفسك وافهم المفارقة قبل التوصية.', category: 'تحليل البيانات', tier: 'annual' },
+  { id: 'training-evaluation', title: 'Training Evaluation', route: '/games/training-evaluation', cover: teCover.url, description: 'كورس تدريب، استبيان، وقرار تجديد بميزانية كبيرة. حلّل الأرقام وابعت توصيتك قبل ما الوقت يخلص.', category: 'تحليل البيانات', tier: 'free', locked: false },
+  { id: 'problem-framing', title: 'اسأل صح', route: '/play', cover: currentCover, description: 'المبيعات أقل من المتوقع… بس مقارنة بإيه؟ انزل للميدان واكتشف السؤال اللي يغيّر القضية.', category: 'صياغة المشكلات', tier: 'free', locked: true },
+  { id: 'reward-decision', title: 'قرار التكريم', route: '/games/reward-decision', cover: rewardCover.url, description: 'فريقين، وأرقام بتحكي قصتين. افحص الأدلة واكتشف مين يستحق التكريم.', category: 'تحليل البيانات', tier: 'annual', locked: true },
+  { id: 'behind-the-dots', title: 'ورا النقط', route: '/games/behind-the-dots', cover: '/assets/behind-dots/market-v5.png', description: 'كل نقطة وراها حكاية. ساعد ليلى تقرأ العلاقات وتختار خطة مبنية على الأدلة.', category: 'الارتباط وفحص الأدلة', tier: 'annual', locked: true },
+  { id: 'crack-the-code', title: 'الشفرة الأخيرة', route: '/games/crack-the-code', cover: '/crack-the-code/assets/finance-manager-new.jpg', description: 'تلات خزائن وتقرير مختفي. فك ألغاز الأرقام ووصل للشفرة قبل ما تضيع الحقيقة.', category: 'المنطق والاستنتاج', tier: 'annual', locked: true },
+  { id: 'decision-matrix', title: 'مصفوفة القرار', route: '/games/decision-matrix', cover: '/decision-matrix/assets/boardroom-cartoon.jpg', description: 'أول يوم في الشركة… وأول قرار مش سهل. اجمع الأدلة ووازن البدائل مع الفريق.', category: 'المفاضلة واتخاذ القرار', tier: 'annual', locked: true },
+  { id: 'investigation-file', title: 'ملف تحت التحقيق', route: '/games/investigation-file', cover: '/investigation-file/assets/investigation/cfo.png', description: 'تقريرين بيقولوا عكس بعض. افحص سجلات الموظفين ووزن التوزيع قبل ما تختم القرار.', category: 'تحليل البيانات', tier: 'annual', locked: true },
+  { id: 'team-performance', title: 'أداء الفريق', route: '/games/team-performance', cover: analystCover.url, description: 'فريق 80% وفريق 59%… بس مين فعلاً الأحسن؟ افتح الأرقام قبل ما المكافأة تروح للفريق الغلط.', category: 'تحليل البيانات', tier: 'annual', locked: true },
+  { id: 'profit-paradox', title: 'مفارقة الربح', route: '/games/profit-paradox', cover: '/profit-paradox/environments/boardroom.png', description: 'الإيرادات زادت والربح الإجمالي نزل. ابنِ مقارنة توزيع الإيرادات بنفسك وافهم المفارقة قبل التوصية.', category: 'تحليل البيانات', tier: 'annual', locked: true },
 ] as const;
 export type CatalogGame = typeof GAME_CATALOG[number];
 export type GameId = CatalogGame['id'];

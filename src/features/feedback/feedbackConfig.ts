@@ -10,6 +10,11 @@ export type FeedbackCategoryId = keyof typeof BASE_CATEGORIES;
 export type FeedbackCategory = { label: string; options: readonly string[]; other: string };
 
 const GAME_FEEDBACK: Record<GameId, { ratingTitle: string; ratingPrompt: string; accent: string; gameplay: readonly string[]; idea: readonly string[] }> = {
+  'training-evaluation': {
+    ratingTitle: 'قيّم تجربة «Training Evaluation»', ratingPrompt: 'هل حسيت إنك بتاخد قرار حقيقي عن ميزانية التدريب؟', accent: '357 70% 38%',
+    gameplay: ['الأسئلة أو الاختيارات محتاجة توضيح', 'الوقت محتاج تعديل', 'المخططات محتاجة عرض أوضح'],
+    idea: ['فكرة قضية تدريب جديدة', 'اقتراح لتطوير المخططات أو الأدلة', 'فكرة تلميح يساعد من غير ما يكشف الحل'],
+  },
   'problem-framing': {
     ratingTitle: 'قيّم تجربة «اسأل صح»', ratingPrompt: 'هل ساعدتك القضية تسأل قبل ما تستعجل الحل؟', accent: '354 72% 46%',
     gameplay: ['الأسئلة أو الاختيارات محتاجة توضيح', 'وقت القضية محتاج تعديل', 'الانتقال بين المشاهد محتاج تحسين'],

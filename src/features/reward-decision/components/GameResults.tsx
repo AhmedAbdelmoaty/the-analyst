@@ -49,7 +49,7 @@ export function GameResults({ score, decision, activeMs, onReplay, onExit, playS
   const confetti = useMemo(() => win ? Array.from({ length: 26 }, (_, i) => ({ i, x: (i * 37) % 100, d: 2.6 + (i % 5) * .45, delay: (i % 7) * .18, r: (i * 53) % 360, c: i % 3 })) : [], [win]);
   return <section className={`rd2-results ${win ? 'is-win' : level1 ? 'is-loss' : rating === 1 ? 'is-partial' : 'is-retry'}`} data-testid="rd-results" data-score={score} dir="rtl">
     {confetti.map(p => <motion.i key={p.i} className={`rd2-confetti c${p.c}`} style={{ left: `${p.x}%` } as CSSProperties} initial={{ y: -40, rotate: p.r, opacity: 0 }} animate={{ y: '105vh', rotate: p.r + 540, opacity: [0, 1, 1, 0] }} transition={{ duration: p.d, delay: p.delay, ease: 'easeIn' }} aria-hidden="true" />)}
-    {decision && <motion.div className="rd2-result-status" initial={{ y: -16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 250, damping: 18 }}>{copy.status}</motion.div>}
+    {decision && <motion.div className="rd2-result-status" initial={{ y: -16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 250, damping: 18 }}>{(copy as { status?: string }).status}</motion.div>}
     <motion.h2 initial={{ scale: .4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 14 }}>{copy.title}</motion.h2>
     <motion.p className="rd2-results-sub" initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .25 }}>{copy.subtitle}</motion.p>
     <div className="rd2-results-stage">

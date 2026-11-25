@@ -1,6 +1,6 @@
 export const DEPARTMENTS = [
   ["sales", "Sales"], ["marketing", "Marketing"], ["finance", "Finance"], ["accounting", "Accounting"],
-  ["human_resources", "Human Resources"], ["operations", "Operations"], ["it_data_bi", "IT / Data / BI"],
+  ["human_resources", "HR / People"], ["ld_training", "L&D / Training"], ["operations", "Operations"], ["it_data_bi", "IT / Data / BI"],
   ["customer_service", "Customer Service"], ["supply_chain_logistics", "Supply Chain & Logistics"], ["procurement", "Procurement"],
   ["business_development", "Business Development"], ["project_management", "Project Management"], ["general_management", "General Management"],
   ["legal", "Legal"], ["other", "Other"],
