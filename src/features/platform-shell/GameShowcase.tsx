@@ -64,7 +64,7 @@ export default function GameShowcase({ onChoose }: { onChoose: (game: CatalogGam
       onPointerUp={event => { drag.current = null; touching.current = false; lastManualAt.current = Date.now(); delete event.currentTarget.dataset.dragging; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}
       onPointerCancel={event => { drag.current = null; touching.current = false; delete event.currentTarget.dataset.dragging; }}
       onClickCapture={event => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); suppressClick.current = false; } }}>
-      {GAME_CATALOG.map(game => <GameCoverCard key={game.id} game={game} teaser onChoose={() => onChoose(game)} />)}
+      {GAME_CATALOG.map(game => <GameCoverCard key={game.id} game={game} teaser onChoose={() => { if (!game.locked) onChoose(game); }} />)}
     </div><button className="platform-icon showcase-nav" disabled={edges.end} aria-label="الألعاب التالية" onClick={() => scroll(1)}><ArrowLeft /></button></div>
   </div>;
 }

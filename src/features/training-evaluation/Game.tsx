@@ -26,7 +26,7 @@ const ending = (s: State): Ending => {
   return LOSS_SUPERFICIAL;
 };
 
-export default function Game({ onSubmit, submittedView }: { onSubmit?: (s: State) => void; submittedView?: ReactNode } = {}) {
+export default function Game({ onSubmit, endActions }: { onSubmit?: (s: State) => void; endActions?: ReactNode } = {}) {
   const [state, raw] = useReducer(reduce, undefined, initialState);
   const [muted, setMute] = useState(false);
   const [fade, setFade] = useState(false);
@@ -85,8 +85,7 @@ export default function Game({ onSubmit, submittedView }: { onSubmit?: (s: State
           {state.phase === "road" && <Road step={roadStep} setStep={setRoadStep} pay={(pay) => dispatch({ type: "paySayes", pay })} next={() => travel({ type: "next" })} />}
           {state.phase === "meeting" && <Dialogue line={MEETING[state.line] ?? MEETING[0] ?? { who: "tarek", text: "" }} index={state.line} total={MEETING.length} onNext={() => state.line + 1 < MEETING.length ? dispatch({ type: "next" }) : travel({ type: "next" })} nextLabel={state.line + 1 < MEETING.length ? "التالي" : "ادخل مكتبك"} />}
           {state.phase === "office" && <Office state={state} dispatch={dispatch} onSend={() => raw({ type: "send" })} sayesShown={sayesShown} markSayes={() => setSayesShown(true)} />}
-          {state.phase === "verdict" && submittedView}
-          {state.phase === "verdict" && !submittedView && <Verdict state={state} dispatch={dispatch} travel={travel} />}
+          {state.phase === "verdict" && <Verdict state={state} dispatch={dispatch} travel={travel} endActions={endActions} />}
         </motion.main>
       </AnimatePresence>
       <AnimatePresence>{fade && <motion.div className="g-dip" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35 }} />}</AnimatePresence>
@@ -441,7 +440,7 @@ function Email({ state, dispatch, onSend, sayesShown, markSayes }: { state: Stat
   return <><motion.article className="g-mail" initial={{ y: 30, opacity: 0 }} animate={flying ? { y: "-90vh", x: "-25vw", scale: .2, rotate: -18, opacity: 0 } : { y: 0, opacity: 1 }} transition={flying ? { duration: .8, ease: "easeIn" } : { duration: .25 }}><div className="g-mail-bar"><Mail /> رسالة جديدة</div><div className="g-mail-head"><p><b>إلى:</b> مستر سيف — المدير العام</p><p><b>الموضوع:</b> توصية تقييم كورس التدريب والتجديد</p></div><p className="g-mail-hi">مستر سيف،</p><p className="g-mail-body">{emailBody(claim, state.evidence)}</p><p className="g-mail-sign">وتفضلوا بقبول فائق الاحترام،<br />محلل الموارد البشرية</p><div className="g-mail-actions"><button className="g-btn primary big" disabled={flying} onClick={() => { if (state.sayes && !sayesShown) { markSayes(); setPop(true); } else fly(); }}><Send /> {flying ? "التوصية في الطريق" : "إرسال التوصية"}</button><button className="g-btn secondary" disabled={flying} onClick={() => dispatch({ type: "backFromEmail" })}>راجع التحليل</button></div></motion.article><AnimatePresence>{pop && <SayesPopup state={state} dispatch={dispatch} onClose={() => setPop(false)} onSend={fly} />}</AnimatePresence></>;
 }
 
-function Verdict({ state, dispatch, travel }: { state: State; dispatch: (a: Action) => void; travel: (a: Action) => void }) {
+function Verdict({ state, dispatch, travel, endActions }: { state: State; dispatch: (a: Action) => void; travel: (a: Action) => void; endActions?: ReactNode }) {
   const result = ending(state);
   const won = state.outcome === "win";
   const [stage, setStage] = useState<"talk" | "stamp" | "result">("talk");
@@ -463,7 +462,7 @@ function Verdict({ state, dispatch, travel }: { state: State; dispatch: (a: Acti
     <motion.section className={`g-results ${won ? "is-win" : "is-loss"}`} initial={{ opacity: 0, scale: .95 }} animate={{ opacity: 1, scale: 1 }}>
       <div className="g-res-main"><div className="g-status">{result.stamp}</div><div className="g-trophy-wrap">{won && <span className="g-rays" aria-hidden />}<div className="g-trophy">{won ? "🏆" : state.timedOut ? "⏳" : "📉"}</div></div><h2>«{result.title}»</h2><p className="g-rank-desc">{result.desc}</p></div>
       <div className="g-takeaways"><h3>الخلاصة التحليلية</h3>{takeaways.map((t, idx) => <motion.article key={t.q} initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: .2 + idx * .15 }}><strong>{t.q}</strong><p>{t.a}</p></motion.article>)}</div>
-      <div className="g-result-actions">{!won && <button className="g-btn primary big" onClick={() => dispatch({ type: "retry" })}>حاول تاني</button>}<button className="g-btn secondary big" onClick={() => travel({ type: "restart" })}><RotateCcw /> ابدأ من الأول</button></div>
+      {endActions ? <div className="g-result-actions">{endActions}</div> : <div className="g-result-actions">{!won && <button className="g-btn primary big" onClick={() => dispatch({ type: "retry" })}>حاول تاني</button>}<button className="g-btn secondary big" onClick={() => travel({ type: "restart" })}><RotateCcw /> ابدأ من الأول</button></div>}
     </motion.section>
   </div>;
 }

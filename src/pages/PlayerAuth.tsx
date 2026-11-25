@@ -10,7 +10,6 @@ import { errText, maskPhone, phoneAuth, PhoneAuthResult, toE164 } from "@/lib/ph
 import { finishPlanStep, markSignupCreated, selectGame } from "@/features/discovery/journey";
 import { supabase } from "@/integrations/supabase/client";
 import { INDUSTRIES } from "@/features/profile/workProfile";
-import { FAST_TRACK_KEY, EVENT_GAME_ROUTE } from "@/features/event/eventApi";
 
 const EVENT_DEPARTMENTS = [["human_resources", "HR / People"], ["ld_training", "L&D / Training"], ["operations", "Operations"], ["finance", "Finance"], ["marketing", "Marketing"], ["other", "Other"]] as const;
 const selectCls = "h-11 w-full rounded-md border border-input bg-background px-3 text-sm";
@@ -120,7 +119,6 @@ const PlayerAuth = () => {
       if (!department) return setError("اختار القسم.");
       if (!industry) return setError("اختار القطاع.");
       if (password.length < 8) return setError(errText("weak_password"));
-      if (password !== confirm) return setError(errText("password_mismatch"));
       const r = await phoneAuth("signup", { first_name: parts[0].slice(0, 50), last_name: parts.slice(1).join(" ").slice(0, 50), phone, password });
       if (!r.ok) return setError(errText(r.error));
       markSignupCreated();
@@ -152,8 +150,7 @@ const PlayerAuth = () => {
       }).eq("user_id", u.user.id);
     }
     selectGame("training-evaluation");
-    try { sessionStorage.setItem(FAST_TRACK_KEY, "1"); } catch { /* optional */ }
-    window.location.assign(EVENT_GAME_ROUTE);
+    window.location.assign("/app");
   });
 
   const resendSignup = () => run(async () => {
@@ -204,7 +201,6 @@ const PlayerAuth = () => {
     e.preventDefault();
     run(async () => {
       if (password.length < 8) return setError(errText("weak_password"));
-      if (password !== confirm) return setError(errText("password_mismatch"));
       const r = await phoneAuth("recovery_reset", { phone: activePhone, reset_token: resetToken, password });
       if (!r.ok) {
         if (r.error === "reset_expired") { setMode("forgot"); }
@@ -238,13 +234,11 @@ const PlayerAuth = () => {
 
   if (mode === "signup") return (
     <AuthShell title={editingFrom ? "تغيير الرقم" : "أنشئ حسابك وابدأ التجربة."}>
-      <form onSubmit={onSignup} className="space-y-3" noValidate>
+      <form onSubmit={onSignup} className="space-y-2" noValidate>
         {!editingFrom && <Field id="fullname" label="الاسم بالكامل"><TextInput id="fullname" autoComplete="name" dir="auto" placeholder="الاسم بالكامل" maxLength={100} value={fullName} onChange={(e) => setFullName(e.target.value)} /></Field>}
         <Field id="phone" label="رقم واتساب"><PhoneInput id="phone" dial={dial} onDial={setDial} value={local} onChange={setLocal} /></Field>
         {!editingFrom && <>
           <Field id="password" label="كلمة المرور"><PasswordInput id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
-          <Field id="confirm" label="تأكيد كلمة المرور"><PasswordInput id="confirm" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} /></Field>
-          <p className="-mt-1 text-xs text-muted-foreground">أي 8 خانات (أرقام أو حروف).</p>
           <Field id="company" label="اسم الشركة"><TextInput id="company" autoComplete="organization" dir="auto" placeholder="اسم الشركة" maxLength={100} value={company} onChange={(e) => setCompany(e.target.value)} /></Field>
           <div className="grid grid-cols-2 gap-2.5">
             <Field id="department" label="القسم"><select id="department" className={selectCls} value={department} onChange={(e) => setDepartment(e.target.value)}><option value="">اختار</option>{EVENT_DEPARTMENTS.map(([id, l]) => <option key={id} value={id}>{l}</option>)}</select></Field>
