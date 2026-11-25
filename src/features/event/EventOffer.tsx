@@ -1,38 +1,73 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import impLogo from "@/assets/brand/imp-logo.webp";
-import analystMark from "@/assets/brand/the-analyst-mark.png";
-import "./event.css";
+import impLogo from "@/assets/offer/imp-logo.png.asset.json";
+import analystLogo from "@/assets/offer/the-analyst-logo.png.asset.json";
+import excel from "@/assets/offer/excel.jpg.asset.json";
+import powerbi from "@/assets/offer/powerbi.jpg.asset.json";
+import sql from "@/assets/offer/sql.jpg.asset.json";
+import automate from "@/assets/offer/power-automate.jpg.asset.json";
+import { Arrow, Brain, Gamepad, PadOutline, Person, Team } from "./OfferArt";
+import "./offer.css";
 
-const POINTS = [
-  "إتقان عملي كامل لأقوى أدوات التحليل وذكاء الأعمال من الصفر حتى بناء الـ Dashboards الاحترافية.",
-  "منهجية التفكير التحليلي وحل المشكلات المعقدة وصناعة القرارات الإدارية السليمة.",
-  "تطبيق عملي وتدريب يحاكي تحديات الشركات الواقعية وقياس أثر التدريب والاستثمار.",
-];
+/** Lead interest stored on the player's profile; read by the admin Excel export. */
+export type LeadInterest = "individual" | "organization";
+
+const Logos = () => <div className="o-logos"><img src={impLogo.url} alt="IMP — Institute of Management Professionals" /><i /><img className="ta" src={analystLogo.url} alt="The Analyst" /></div>;
+const rise = (d: number) => ({ initial: { y: 18, opacity: 0 }, animate: { y: 0, opacity: 1 }, transition: { delay: d, duration: .45 } });
+
 export default function EventOffer() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
-  const interested = async () => {
+  const [err, setErr] = useState("");
+  const choose = async (kind: LeadInterest) => {
     if (!user) return navigate("/login");
-    setBusy(true);
-    const { error } = await supabase.from("profiles").update({ lead_status: "high_intent", lead_at: new Date().toISOString() }).eq("user_id", user.id);
+    setBusy(true); setErr("");
+    const { error } = await supabase.from("profiles").update({ lead_status: kind, lead_at: new Date().toISOString() }).eq("user_id", user.id);
     setBusy(false);
-    if (!error) setDone(true);
+    if (error) setErr("حصلت مشكلة، جرّب تاني."); else setDone(true);
   };
-  return <main className="imp-event imp-bg px-5 py-10" dir="rtl">
-    <div className="mx-auto flex max-w-2xl flex-col items-center gap-7 text-center">
-      <div className="flex items-center gap-4"><img src={impLogo} alt="IMP" className="h-12 w-auto rounded bg-white/90 p-1.5" /><span className="h-8 w-px bg-white/30" /><img src={analystMark} alt="The Analyst" className="h-12 w-auto" /></div>
-      <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-2xl font-black leading-relaxed sm:text-4xl">التحليل مش مجرد أرقام وتولز.. <span className="imp-gold-text">التحليل قرارات تحمي ميزانية شركتك وتصنع فارقاً حقيقياً!</span></motion.h1>
-      <div><h2 className="text-lg font-bold sm:text-xl">دبلومة تحليل البيانات وذكاء الأعمال والتفكير التحليلي من IMP</h2><p className="mt-1 text-sm opacity-75" dir="ltr">(Data Analytics & Business Intelligence + Analytical Thinking)</p></div>
-      <ol className="grid w-full gap-3 text-right">{POINTS.map((p, i) => <motion.li key={p} initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: .2 + i * .15 }} className="imp-card flex items-start gap-3 p-4"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#A61E25] font-black text-[#f3dc9b]">{i + 1}</span><span className="leading-relaxed">{p}</span></motion.li>)}</ol>
-      {done ? <motion.p initial={{ scale: .9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-start gap-2 rounded-2xl border border-emerald-400/50 bg-emerald-600/20 p-4 font-bold text-emerald-200"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />تم تسجيل اهتمامك بنجاح! فريق IMP بانتظارك في الـ Booth لاستلام خطتك التدريبية واستشارتك المجانية.</motion.p>
-        : <button className="imp-btn-gold imp-pulse min-h-14 w-full px-5 text-base sm:text-lg" disabled={busy} onClick={interested}>🎯 مهتم بتطوير مهاراتي / تدريب فريقي - زُرنا في الـ Booth</button>}
-    </div>
+  return <main className="offer" dir="ltr">
+    <AnimatePresence mode="wait">
+      {done ? <motion.section key="done" className="offer-sheet o-done" initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }}>
+        <Logos />
+        <motion.div className="big" initial={{ scale: .6, rotate: -8 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 180, damping: 12 }}><Gamepad check /></motion.div>
+        <motion.h1 {...rise(.2)}>We received <b>your request</b></motion.h1>
+        <motion.div className="soon" {...rise(.35)}>&amp; we will contact you soon</motion.div>
+        <svg className="o-swoosh" viewBox="0 0 300 12" aria-hidden><path d="M5 10Q150-4 295 10" fill="none" stroke="#A61E25" strokeWidth="4" strokeLinecap="round" /></svg>
+      </motion.section>
+      : <motion.section key="offer" className="offer-sheet" exit={{ opacity: 0, y: -20 }}>
+        <Logos />
+        <motion.div className="o-badge" {...rise(.05)}><Gamepad className="o-pad" /><div className="pill"><span>You’ve Played<br />the Game.</span></div></motion.div>
+        <motion.h2 className="o-h1" {...rise(.12)}>Now Discover the Power of <b>Data Analysis.</b></motion.h2>
+        <svg className="o-swoosh" viewBox="0 0 300 12" aria-hidden><path d="M5 10Q150-4 295 10" fill="none" stroke="#A61E25" strokeWidth="4" strokeLinecap="round" /></svg>
+        <motion.div className="o-culture" {...rise(.2)}>Build a Culture of Analysis Across Your Organization.</motion.div>
+        <p className="o-with">With IMP’s <b>Data Analysis &amp; Business Intelligence Diploma,</b><br />which combines:</p>
+        <motion.div className="o-card" {...rise(.28)}>
+          <div className="o-tools"><img src={excel.url} alt="Excel" /><img src={powerbi.url} alt="Power BI" /><img src={sql.url} alt="SQL" /><img src={automate.url} alt="Power Automate" /></div>
+          <span className="o-sep" /><div><div className="o-ct">Data Analysis Tools</div><div className="o-cs">Excel • Power BI • SQL • Power Automate</div></div>
+        </motion.div>
+        <div className="o-plus"><hr /><span>+</span><hr /></div>
+        <motion.div className="o-card" {...rise(.36)}>
+          <Brain className="h-12 w-12 shrink-0 text-[#A61E25]" /><span className="o-sep" style={{ alignSelf: "center", height: 36 }} /><PadOutline className="h-11 w-14 shrink-0 text-[#A61E25]" />
+          <span className="o-sep" /><div className="o-ct">Analytical Thinking &amp; Game-Based Learning</div>
+        </motion.div>
+        <div className="o-line"><hr />Ready to Take the Next Step?<hr /></div>
+        <motion.div className="o-choice" {...rise(.44)}>
+          <Person /><span className="o-sep" /><div className="t"><h3>For Yourself</h3><p>Invest in Your Analytical Skills.</p></div>
+          <button className="o-btn solid" disabled={busy} onClick={() => choose("individual")}>Apply for<br />the Diploma<Arrow /></button>
+        </motion.div>
+        <motion.div className="o-choice" {...rise(.52)}>
+          <Team /><span className="o-sep" /><div className="t"><h3>For Your Organization</h3><p>Build Analytical Skills Across Your Teams.</p></div>
+          <button className="o-btn ghost" disabled={busy} onClick={() => choose("organization")}>Book a<br />Demo Meeting<Arrow /></button>
+        </motion.div>
+        {err && <p className="o-err" dir="rtl">{err}</p>}
+        <div className="o-disc"><hr /><span>Get The Exclusive Event Discount</span><hr /></div>
+      </motion.section>}
+    </AnimatePresence>
   </main>;
 }
