@@ -34,9 +34,9 @@
 ## Architecture rules
 
 - Training Evaluation keeps reducer state, screen-local choices and active timers in one versioned per-user browser snapshot; lifecycle pauses stop audio and timers, so reloads resume without changing server event timing.
-- Training Evaluation restart resets only its owner-local snapshot and remounts the game session; shared settings never reset server event ranking or vouchers.
+- Training Evaluation restart resets only its local snapshot; it never resets server ranking or vouchers.
 - Training Evaluation endings (calls, email screen) reuse its per-user snapshot and audio lifecycle.
-- Training Evaluation narrative uses one guarded audio-led player and phase-scoped actions; scene gates are separate so repeated clicks cannot bypass parking choices.
+- Training Evaluation narrative: one guarded audio-led player; separate scene gates stop repeated clicks skipping parking choices.
 - Training Evaluation context lives in a non-component module so refreshes cannot split provider and consumers.
 
 - Use the shared discovery catalog for public, authenticated and plan game previews and tier mapping; journey storage contains allowlisted navigation only, never payment access. Mark first-time plan onboarding only after successful account creation and verification, before sign-in; returning logins skip it.
