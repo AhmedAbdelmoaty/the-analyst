@@ -175,9 +175,14 @@ Deno.serve(async (req) => {
   try {
     switch (body?.action) {
       case "signup": {
-        const p = z.object({ first_name: nameSchema, last_name: nameSchema, phone: phoneSchema, password: passwordSchema }).safeParse(body);
+        const p = z.object({
+          first_name: nameSchema, last_name: nameSchema, phone: phoneSchema, password: passwordSchema,
+          company_name: z.string().trim().min(1).max(100).optional(),
+          department: z.enum(["ld_training", "human_resources", "other"]).optional(),
+          email: z.string().trim().toLowerCase().email().max(254).optional(),
+        }).safeParse(body);
         if (!p.success) return fail(p.error.issues.some((issue) => issue.path[0] === "password") ? "weak_password" : "invalid_input");
-        const { first_name, last_name, phone, password } = p.data;
+        const { first_name, last_name, phone, password, company_name, department, email } = p.data;
         const existing = await findUser(phone);
         if (existing) return fail(existing.phone_confirmed ? "account_exists" : "account_pending");
         if ((await countEvents("signup", "ip", ip, 3600_000)) >= 50) return fail("rate_limited");
@@ -191,7 +196,10 @@ Deno.serve(async (req) => {
           if (/password/i.test(error?.message ?? "")) return fail(password.length >= 8 ? "pwned_password" : "weak_password");
           return fail("server_error");
         }
-        await admin.from("profiles").update({ first_name, last_name, display_name: first_name, phone })
+        await admin.from("profiles").update({
+          first_name, last_name, display_name: first_name, phone,
+          ...(company_name ? { company_name } : {}), ...(department ? { department } : {}), ...(email ? { email } : {}),
+        })
           .eq("user_id", created.user.id);
         const r = await issueChallenge(created.user.id, phone, "signup", ip);
         return json({ ok: true, sent: r.ok ? r.sent : false, cooldown: r.ok ? r.cooldown : RESEND_COOLDOWN_S, expires_in: OTP_TTL_MS / 1000 });

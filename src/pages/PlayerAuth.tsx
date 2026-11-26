@@ -118,7 +118,7 @@ const PlayerAuth = () => {
       if (!department) return setError("اختار القسم.");
       if (!validRegistrationEmail(email)) return setError("أدخل بريد إلكتروني صحيح.");
       if (password.length < 8) return setError(errText("weak_password"));
-      const r = await phoneAuth("signup", { first_name: parts[0].slice(0, 50), last_name: parts.slice(1).join(" ").slice(0, 50), phone, password });
+      const r = await phoneAuth("signup", { first_name: parts[0].slice(0, 50), last_name: parts.slice(1).join(" ").slice(0, 50), phone, password, company_name: company.trim().slice(0, 100), department, email: email.trim().toLowerCase() });
       if (!r.ok) return setError(errText(r.error));
       markSignupCreated();
       setActivePhone(phone); setMode("verify");
@@ -143,10 +143,13 @@ const PlayerAuth = () => {
     const { data: u } = await supabase.auth.getUser();
     if (u.user) {
       const parts = fullName.trim().split(/\s+/);
-      const { error: profileError } = await supabase.from("profiles").update({
-        display_name: parts[0] || null, gender: "male", company_name: company.trim() || null,
-        department: department || null, email: email.trim().toLowerCase() || null,
-      }).eq("user_id", u.user.id);
+      // Only fill what was typed here; the server already saved signup details, so never blank them.
+      const patch: { gender: string; display_name?: string; company_name?: string; department?: string; email?: string } = { gender: "male" };
+      if (parts[0]) patch.display_name = parts[0];
+      if (company.trim()) patch.company_name = company.trim();
+      if (department) patch.department = department;
+      if (email.trim()) patch.email = email.trim().toLowerCase();
+      const { error: profileError } = await supabase.from("profiles").update(patch).eq("user_id", u.user.id);
       if (profileError) return setError("حسابك اتأكد، لكن بيانات التسجيل ما اتحفظتش. حاول تأكيد البيانات تاني.");
     }
     selectGame("training-evaluation");

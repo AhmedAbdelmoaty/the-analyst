@@ -141,6 +141,13 @@
       "when": 1795702385260,
       "tag": "0019_event_persistent_dashboard",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795703083261,
+      "tag": "0020_event_dashboard_all_registrations",
+      "breakpoints": true
     }
   ]
 }
