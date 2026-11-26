@@ -15,3 +15,17 @@
 
 .event-end-actions{width:100%;text-align:center}.event-end-actions .imp-voucher{width:min(100%,400px)}
 @media(prefers-reduced-motion:reduce){.imp-pulse,.imp-marquee>div,.imp-voucher .shine{animation:none}}
+.imp-light{--imp-red:#A61E25;--imp-gold:#D9B25F;min-height:100dvh;color:#2a0b0d;background:radial-gradient(circle at 50% -10%,rgba(166,30,37,.12),transparent 55%),linear-gradient(180deg,#fff,#fbf6ee)}
+.imp-light .lb-card{background:#fff;border:1px solid rgba(217,178,95,.45);border-radius:20px;box-shadow:0 14px 40px -18px rgba(166,30,37,.35)}
+.imp-light .lb-red{color:#A61E25}.imp-light .lb-gold{color:#b58a2e}
+.imp-light .lb-btn{border-radius:14px;padding:.85rem 1.4rem;font-weight:800;font-size:1.05rem;transition:transform .15s,opacity .15s;display:inline-flex;align-items:center;gap:.5rem;justify-content:center}
+.imp-light .lb-btn:hover{transform:translateY(-2px)}.imp-light .lb-btn:disabled{opacity:.5;transform:none}
+.imp-light .lb-primary{background:#A61E25;color:#fff;box-shadow:0 10px 28px -10px #A61E25}
+.imp-light .lb-goldbtn{background:linear-gradient(135deg,#f3dc9b,#D9B25F);color:#2a0b0d}
+.imp-light .lb-ghost{background:#fff;color:#A61E25;border:1.5px solid #A61E25}
+.lb-podium{border-radius:22px 22px 0 0;color:#fff;background:linear-gradient(180deg,#A61E25,#6d1015);box-shadow:inset 0 2px 0 rgba(255,255,255,.25)}
+.lb-podium.gold{background:linear-gradient(180deg,#e5c46f,#b58a2e)}
+.lb-shimmer{background:linear-gradient(90deg,#A61E25,#D9B25F,#A61E25);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:lbShim 4s linear infinite}
+@keyframes lbShim{to{background-position:200% 0}}
+@media(prefers-reduced-motion:reduce){.lb-shimmer{animation:none}}
+.lb-podium.lb-round{border-radius:999px}

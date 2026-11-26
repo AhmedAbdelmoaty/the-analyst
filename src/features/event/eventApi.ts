@@ -6,9 +6,9 @@ export const IMP_RED = "#A61E25";
 export const FAST_TRACK_KEY = "analyst-event-fasttrack";
 
 export type Winner = { rank: number; name: string; discount: number };
-export type PublicState = { started_at: string | null; revealed_at: string | null; reveal_step: number; revealed: boolean; count: number; finished: number; now: string; winners: Winner[] };
+export type PublicState = { started_at: string | null; revealed_at: string | null; vouchers_released_at?: string | null; reveal_step: number; revealed: boolean; count: number; finished: number; now: string; winners?: Winner[] };
 export type Voucher = { name: string; rank: number; discount: number; code: string };
-export type MyStatus = { submitted: boolean; revealed: boolean; voucher?: Voucher } | null;
+export type MyStatus = { submitted: boolean; revealed: boolean; downloaded?: boolean; voucher?: Voucher } | null;
 
 const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
 
@@ -17,6 +17,8 @@ export const eventSubmit = (claim: string | null, evidence: string | null) => rp
 export const adminStart = () => rpc("event_admin_start");
 export const adminReveal = (step: number) => rpc("event_admin_reveal", { _step: step });
 export const adminAnnounce = () => rpc("event_admin_announce");
+export const adminReleaseVouchers = () => rpc("event_admin_release_vouchers");
+export const eventCallEnded = () => rpc("event_call_ended");
 export const eventBegin = () => rpc("event_begin");
 export const voucherDownloaded = () => rpc("event_voucher_downloaded");
 export const ANNOUNCE_AFTER_MS = 5 * 60 * 1000;

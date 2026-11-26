@@ -1,83 +1,82 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { Play, Trophy } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { Crown, Flag, LayoutDashboard, Play, Ticket, Timer, Users } from "lucide-react";
 import impLogo from "@/assets/brand/imp-logo.webp";
 import analystMark from "@/assets/brand/the-analyst-mark.png";
-import { PRIZES, placeName, usePublicState, adminStart, adminAnnounce, ANNOUNCE_AFTER_MS, type Winner } from "./eventApi";
+import { placeName, usePublicState, adminStart, adminAnnounce, adminReleaseVouchers, type Winner } from "./eventApi";
 import { fanfare, unlockAudio } from "./sounds";
+import AdminGate from "./AdminGate";
 import "./event.css";
 
-const PRIZE_BY_RANK: Record<number, string> = { 1: "دبلومة كاملة 100% مجاناً", 2: "خصم 75%", 3: "خصم 50%" };
+const PRIZE: Record<number, string> = { 1: "دبلومة كاملة مجانًا", 2: "خصم 75%", 3: "خصم 50%" };
+const prizeOf = (w: Winner) => PRIZE[w.rank] ?? (w.discount ? `خصم ${w.discount}%` : "");
 
-function WinnerCard({ w, big = false }: { w: Winner; big?: boolean }) {
-  return <motion.div initial={{ scale: .5, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} transition={{ type: "spring", damping: 11 }} className={`imp-card imp-glow text-center ${big ? "px-10 py-10" : "px-8 py-6"}`}>
-    <div className={big ? "text-7xl" : "text-5xl"}>{w.rank === 1 ? "🥇" : w.rank === 2 ? "🥈" : "🥉"}</div>
-    <p className="mt-2 text-lg opacity-80">{placeName(w.rank)}</p>
-    <p className={`imp-gold-text font-black ${big ? "text-5xl sm:text-7xl" : "text-3xl sm:text-5xl"}`}>{w.name}</p>
-    <p className={`mt-3 font-bold ${big ? "text-2xl" : "text-xl"}`}>{PRIZE_BY_RANK[w.rank]}</p>
-    {w.rank === 1 && <p className="mt-1 text-sm opacity-75" dir="ltr">Data Analytics & Business Intelligence + Analytical Thinking</p>}
+function Podium({ w, h, delay }: { w?: Winner; h: string; delay: number }) {
+  if (!w) return <div className="w-28 sm:w-44" />;
+  return <motion.div className="flex w-28 flex-col items-center sm:w-44" initial={{ opacity: 0, y: 80 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", damping: 13, delay }}>
+    {w.rank === 1 && <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2 }}><Crown className="h-10 w-10 lb-gold" /></motion.div>}
+    <p className="mt-1 text-center text-base font-black leading-tight sm:text-2xl">{w.name}</p>
+    <p className="mb-2 text-xs font-bold lb-red sm:text-sm">{prizeOf(w)}</p>
+    <div className={`lb-podium ${w.rank === 1 ? "gold" : ""} grid w-full place-items-center ${h}`}><span className="text-4xl font-black sm:text-6xl">{w.rank}</span></div>
   </motion.div>;
 }
 
-export default function EventArena() {
+function Arena() {
   const { state, reload } = usePublicState(2000);
-  const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-  const previousCount = useRef<number | null>(null);
-  useEffect(() => {
-    let active = true;
-    setIsAdmin(false);
-    if (user) void supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => { if (active) setIsAdmin(data === true); });
-    return () => { active = false; };
-  }, [user]);
-  const winners = state?.winners ?? [];
-  useEffect(() => {
-    if (previousCount.current !== null && winners.length > previousCount.current) fanfare();
-    previousCount.current = winners.length;
-  }, [winners.length]);
-  const start = async () => {
-    if (state?.started_at && !window.confirm("تبدأ تحدي جديد؟ الترتيب الحالي هيبدأ من الصفر، والنتائج القديمة محفوظة.")) return;
-    setBusy(true); setMessage("");
-    try {
-      const { error } = await adminStart();
-      setMessage(error ? "تعذر بدء التحدي، جرّب تاني." : "بدأ التحدي!");
-      await reload();
-    } catch { setMessage("تعذر بدء التحدي، جرّب تاني."); }
-    finally { setBusy(false); }
-  };
+  const [msg, setMsg] = useState("");
   const [tick, setTick] = useState(Date.now());
+  const winners = state?.winners ?? [];
+  const prev = useRef(0);
+  useEffect(() => { if (winners.length > prev.current) fanfare(); prev.current = winners.length; }, [winners.length]);
   useEffect(() => { const id = window.setInterval(() => setTick(Date.now()), 1000); return () => window.clearInterval(id); }, []);
   const skew = state?.now ? Date.parse(state.now) - Date.now() : 0;
-  const leftMs = state?.started_at && !state.revealed ? Math.max(0, Date.parse(state.started_at) + ANNOUNCE_AFTER_MS - (tick + skew)) : 0;
-  const clock = `${String(Math.floor(leftMs / 60000)).padStart(2, "0")}:${String(Math.floor(leftMs / 1000) % 60).padStart(2, "0")}`;
-  const announce = async () => {
-    if (leftMs > 0 && !window.confirm("لسه الـ 5 دقايق ما خلصوش. تعلن النتائج دلوقتي؟")) return;
-    setBusy(true); setMessage("");
-    const { error } = await adminAnnounce();
-    setMessage(error ? "تعذر إعلان النتائج، جرّب تاني." : ""); await reload(); setBusy(false);
+  const running = !!state?.started_at && !state.revealed;
+  const el = running ? Math.max(0, tick + skew - Date.parse(state!.started_at!)) : 0;
+  const clock = `${String(Math.floor(el / 60000)).padStart(2, "0")}:${String(Math.floor(el / 1000) % 60).padStart(2, "0")}`;
+  const act = async (fn: () => Promise<{ error: unknown }>, confirmText: string, ok: string) => {
+    if (!window.confirm(confirmText)) return;
+    setBusy(true); setMsg("");
+    try { const { error } = await fn(); setMsg(error ? "حصل خطأ، جرّب تاني." : ok); await reload(); }
+    catch { setMsg("حصل خطأ، جرّب تاني."); } finally { setBusy(false); }
   };
-  return <main className="imp-event imp-bg relative flex flex-col overflow-hidden" dir="rtl" onClick={unlockAudio}>
-    <header className="flex items-center justify-between px-8 py-5"><img src={impLogo} alt="IMP" className="h-14 w-auto rounded bg-white/90 p-1.5" /><h1 className="imp-gold-text text-2xl font-black sm:text-4xl" dir="ltr">The HR Café Challenge</h1><img src={analystMark} alt="The Analyst" className="h-14 w-auto" /></header>
-
-    {isAdmin && <div className="flex flex-col items-center gap-2 px-6 pb-4">
-      <Button className="imp-btn-gold px-8 py-4 text-xl" disabled={busy} onClick={start}><Play className="h-5 w-5" />{busy ? "جاري..." : "ابدأ التحدي"}</Button>
-      {state?.started_at && !state.revealed && <Button className="imp-btn-gold px-8 py-4 text-xl" disabled={busy} onClick={announce}><Trophy className="h-5 w-5" />إعلان النتائج</Button>}
-      {message && <p role="status">{message}</p>}
-    </div>}
-    <section className="flex flex-1 flex-col items-center gap-6 px-6 pb-8 text-center">
-      <p className="text-2xl font-bold">👥 <span className="imp-gold-text">{state?.count ?? 0}</span> مشارك — <span className="imp-gold-text">{winners.length}</span> في لوحة الشرف</p>
-      {!state?.started_at && <p className="my-auto text-3xl font-bold">مستنيين بداية التحدي!</p>}
-      {state?.started_at && !state.revealed && <div className="my-auto flex flex-col items-center gap-3"><p className="text-3xl font-bold">التحدي بدأ… الترتيب هيتعلن بعد</p><p className="imp-gold-text text-7xl font-black tabular-nums" dir="ltr">{clock}</p><p className="text-xl opacity-80">✅ خلّص {state.finished ?? 0} لاعب</p></div>}
-      {state?.revealed && winners.length === 0 && <p className="my-auto text-3xl font-bold">مفيش حد وصل للحل الصح المرة دي!</p>}
-      {winners.length > 0 && <div className="flex w-full max-w-6xl flex-wrap items-stretch justify-center gap-5">{winners.filter(w => w.rank <= 3).map(w => <WinnerCard key={w.rank} w={w} />)}</div>}
-      {winners.some(w => w.rank > 3) && <div className="imp-card w-full max-w-5xl p-5"><h2 className="mb-3 text-xl font-bold">🎖️ المراكز من 4 إلى 50 — قسيمة خصم 25%</h2><ol className="grid grid-cols-1 gap-x-6 gap-y-2 text-lg sm:grid-cols-2 lg:grid-cols-4">{winners.filter(w => w.rank > 3).map(w => <li key={w.rank}><span className="imp-gold-text font-black">{w.rank}.</span> {w.name}</li>)}</ol></div>}
+  const [p1, p2, p3] = [1, 2, 3].map(r => winners.find(w => w.rank === r));
+  return <main className="imp-light flex flex-col" dir="rtl" onClick={unlockAudio}>
+    <header className="flex items-center justify-between px-5 py-4 sm:px-10">
+      <img src={impLogo} alt="IMP" className="h-11 w-auto sm:h-14" />
+      <h1 className="lb-shimmer text-center text-2xl font-black sm:text-5xl" dir="ltr">The HR Café Challenge</h1>
+      <img src={analystMark} alt="The Analyst" className="h-11 w-auto sm:h-14" />
+    </header>
+    <div className="flex flex-wrap items-center justify-center gap-3 px-4 pb-4">
+      <button className="lb-btn lb-primary" disabled={busy} onClick={() => act(adminStart, state?.started_at ? "تبدأ تحدي جديد؟ كل النتائج الحالية هتتصفّر." : "تبدأ التحدي دلوقتي؟", "بدأ التحدي!")}><Play className="h-5 w-5" />{state?.started_at ? "ابدأ تحدي جديد / Reset" : "ابدأ التحدي"}</button>
+      {running && <button className="lb-btn lb-goldbtn" disabled={busy} onClick={() => act(adminAnnounce, "تنهي التحدي وتعرض النتائج؟ اللي يخلص بعد كده مش هيدخل الترتيب.", "تم إعلان النتائج")}><Flag className="h-5 w-5" />إنهاء التحدي وإظهار النتائج</button>}
+      {state?.revealed && <button className="lb-btn lb-ghost" disabled={busy || !!state.vouchers_released_at} onClick={() => act(adminReleaseVouchers, "تبعت القسائم للفائزين دلوقتي؟", "تم إرسال القسائم")}><Ticket className="h-5 w-5" />{state.vouchers_released_at ? "القسائم اتبعتت ✓" : "إرسال القسائم للفائزين"}</button>}
+      <Link to="/admin/event-dashboard" className="lb-btn lb-ghost"><LayoutDashboard className="h-5 w-5" />الداشبورد</Link>
+    </div>
+    {msg && <p role="status" className="text-center font-bold lb-red">{msg}</p>}
+    <section className="flex flex-1 flex-col items-center gap-6 px-4 pb-10 pt-4 text-center">
+      <div className="flex flex-wrap justify-center gap-3">
+        <span className="lb-card flex items-center gap-2 px-5 py-2 text-lg font-bold"><Users className="h-5 w-5 lb-red" />{state?.count ?? 0} مشارك</span>
+        <span className="lb-card flex items-center gap-2 px-5 py-2 text-lg font-bold"><Flag className="h-5 w-5 lb-red" />{state?.finished ?? 0} خلّصوا</span>
+      </div>
+      <AnimatePresence mode="wait">
+        {!state?.started_at && <motion.p key="wait" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="my-auto text-3xl font-black">مستنيين بداية التحدي…</motion.p>}
+        {running && <motion.div key="run" initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="my-auto flex flex-col items-center gap-3">
+          <Timer className="h-12 w-12 lb-red" /><p className="text-3xl font-black">التحدي شغّال… النتائج هتظهر في الآخر</p>
+          <p className="text-7xl font-black tabular-nums lb-red sm:text-8xl" dir="ltr">{clock}</p></motion.div>}
+        {state?.revealed && winners.length === 0 && <motion.p key="none" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="my-auto text-3xl font-black">مفيش حد وصل للحل الصح المرة دي!</motion.p>}
+        {state?.revealed && winners.length > 0 && <motion.div key="res" className="flex w-full max-w-5xl flex-col items-center gap-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <div className="flex items-end justify-center gap-3 sm:gap-6"><Podium w={p2} h="h-28 sm:h-40" delay={.6} /><Podium w={p1} h="h-40 sm:h-56" delay={1.1} /><Podium w={p3} h="h-20 sm:h-28" delay={.2} /></div>
+          {winners.length > 3 && <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {winners.filter(w => w.rank > 3).map((w, i) => <motion.div key={w.rank} className="lb-card flex items-center gap-3 px-4 py-3 text-right" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.5 + Math.min(i, 30) * .06 }}>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full lb-podium lb-round text-lg font-black">{w.rank}</span>
+              <span className="flex-1 truncate text-lg font-bold">{w.name}</span><span className="text-sm font-bold lb-gold">{prizeOf(w) || placeName(w.rank)}</span></motion.div>)}
+          </div>}
+        </motion.div>}
+      </AnimatePresence>
     </section>
-
-    <footer className="imp-marquee imp-glow border-t border-[#d9b25f]/40 bg-black/60 py-4 text-xl font-bold"><div>{[...PRIZES, ...PRIZES].map((p, i) => <span key={i}>{p.icon} {p.place}: <span className="imp-gold-text">{p.prize}</span>{p.sub && <small className="mx-2 opacity-70" dir="ltr">({p.sub})</small>}</span>)}</div></footer>
   </main>;
 }
+
+export default function EventArena() { return <AdminGate><Arena /></AdminGate>; }

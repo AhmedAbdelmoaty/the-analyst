@@ -192,6 +192,7 @@ export type Database = {
           revealed: boolean
           started_at: string | null
           updated_at: string
+          vouchers_released_at: string | null
         }
         Insert: {
           id?: number
@@ -200,6 +201,7 @@ export type Database = {
           revealed?: boolean
           started_at?: string | null
           updated_at?: string
+          vouchers_released_at?: string | null
         }
         Update: {
           id?: number
@@ -208,6 +210,7 @@ export type Database = {
           revealed?: boolean
           started_at?: string | null
           updated_at?: string
+          vouchers_released_at?: string | null
         }
         Relationships: []
       }
@@ -234,6 +237,7 @@ export type Database = {
       }
       event_results: {
         Row: {
+          call_ended_at: string | null
           challenge_started_at: string
           claim: string | null
           completed_at: string
@@ -245,6 +249,7 @@ export type Database = {
           voucher_downloaded_at: string | null
         }
         Insert: {
+          call_ended_at?: string | null
           challenge_started_at: string
           claim?: string | null
           completed_at?: string
@@ -256,6 +261,7 @@ export type Database = {
           voucher_downloaded_at?: string | null
         }
         Update: {
+          call_ended_at?: string | null
           challenge_started_at?: string
           claim?: string | null
           completed_at?: string
@@ -903,19 +909,23 @@ export type Database = {
         Args: never
         Returns: {
           company_name: string
-          completed_at: string
           correct: boolean
           department: string
+          duration_seconds: number
+          email: string
+          finished_at: string
           full_name: string
-          industry: string
-          interested: boolean
+          joined_at: string
+          lead_status: string
           phone: string
           rank: number
         }[]
       }
+      event_admin_release_vouchers: { Args: never; Returns: undefined }
       event_admin_reveal: { Args: { _step: number }; Returns: undefined }
       event_admin_start: { Args: never; Returns: undefined }
       event_begin: { Args: never; Returns: undefined }
+      event_call_ended: { Args: never; Returns: undefined }
       event_discount: { Args: { _rank: number }; Returns: number }
       event_join: { Args: never; Returns: undefined }
       event_my_status: { Args: never; Returns: Json }

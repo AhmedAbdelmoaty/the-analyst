@@ -25,7 +25,7 @@ const WHO: Record<Speaker, { name: string; role: string; tone: "dark" | "light" 
 };
 
 const STATION: Record<State["phase"], string> = { intro: "", brief: "مكتب المدير العام", road: "الطريق لمكتب التدريب", meeting: "مكتب التدريب", office: "مكتب التحليل", verdict: "القرار النهائي" };
-type GameProps = { userId: string; completionSaved?: boolean; onSubmit?: (s: State) => void; onStart?: () => void; onDone?: () => void; endActions?: ReactNode };
+type GameProps = { userId: string; completionSaved?: boolean; onSubmit?: (s: State) => void; onStart?: () => void; onDone?: () => void; onCallEnd?: () => void; endActions?: ReactNode };
 export default function Game(props: GameProps) {
   return <RunProvider key={props.userId} userId={props.userId}><GameSession {...props} /></RunProvider>;
 }
@@ -33,7 +33,7 @@ function GameSession(props: GameProps) {
   const { revision } = useRuntime();
   return <ActiveGame key={revision} {...props} />;
 }
-function ActiveGame({ onSubmit, onStart, onDone, endActions, completionSaved = true }: GameProps) {
+function ActiveGame({ onSubmit, onStart, onDone, onCallEnd, endActions, completionSaved = true }: GameProps) {
   const { run, dispatch, paused, pause, resume, finish, exitPrompt, unavailable, otherTab, restart } = useRuntime();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const openSettings = () => { setSettingsOpen(true); pause(); };
@@ -101,7 +101,7 @@ function ActiveGame({ onSubmit, onStart, onDone, endActions, completionSaved = t
           {state.phase === "road" && <Road step={roadStep} setStep={setRoadStep} whistlePlayed={roadWhistlePlayed} onWhistle={markRoadWhistle} pay={(pay) => dispatch({ type: "paySayes", pay })} next={() => travel({ type: "next", phase: "road", line: state.line })} />}
           {state.phase === "meeting" && <Dialogue line={MEETING[state.line] ?? MEETING[0] ?? { who: "tarek", text: "" }} index={state.line} total={MEETING.length} onPrevious={state.line > 0 ? () => dispatch({ type: "previous", phase: "meeting", line: state.line }) : undefined} onNext={() => dispatch({ type: "next", phase: "meeting", line: state.line })} nextLabel="التالي" />}
           {state.phase === "office" && <Office state={state} dispatch={dispatch} onSend={sendRecommendation} sayesShown={sayesShown} markSayes={() => setSayesShown(true)} />}
-          {state.phase === "verdict" && <Verdict state={state} dispatch={dispatch} travel={travel} endActions={endActions} onDone={onDone ? done : undefined} />}
+          {state.phase === "verdict" && <Verdict state={state} dispatch={dispatch} travel={travel} endActions={endActions} onCallEnd={onCallEnd} onDone={onDone ? done : undefined} />}
         </motion.main>
       </AnimatePresence>
       <AnimatePresence>{fade && <motion.div className="g-dip" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35 }} />}</AnimatePresence>
@@ -532,7 +532,7 @@ function Email({ state, dispatch, onSend, sayesShown, markSayes }: { state: Stat
   return <><motion.article className="g-mail" initial={{ y: 30, opacity: 0 }} animate={flying ? { y: "-90vh", x: "-25vw", scale: .2, rotate: -18, opacity: 0 } : { y: 0, opacity: 1 }} transition={flying ? { duration: .8, ease: "easeIn" } : { duration: .25 }}><div className="g-mail-bar"><Mail /> رسالة جديدة</div><div className="g-mail-head"><p><b>إلى:</b> مستر سيف — المدير العام</p><p><b>الموضوع:</b> توصية تقييم كورس التدريب والتجديد</p></div><p className="g-mail-hi">مستر سيف،</p><p className="g-mail-body">{emailBody(claim, state.evidence)}</p><p className="g-mail-sign">وتفضلوا بقبول فائق الاحترام،<br />محلل الموارد البشرية</p><div className="g-mail-actions"><button className="g-btn primary big" disabled={flying} onClick={() => { if (state.sayes && !sayesShown) { markSayes(); setPop(true); } else fly(); }}><Send /> {flying ? "التوصية في الطريق" : "إرسال التوصية"}</button><button className="g-btn secondary" disabled={flying} onClick={() => dispatch({ type: "backFromEmail" })}>راجع التحليل</button></div></motion.article><AnimatePresence>{pop && <SayesPopup state={state} dispatch={dispatch} onClose={() => setPop(false)} onSend={fly} />}</AnimatePresence></>;
 }
 
-function Verdict({ state, dispatch, travel, endActions, onDone }: { state: State; dispatch: (a: Action) => void; travel: (a: Action) => void; endActions?: ReactNode; onDone?: () => void }) {
+function Verdict({ state, dispatch, travel, endActions, onDone, onCallEnd }: { state: State; dispatch: (a: Action) => void; travel: (a: Action) => void; endActions?: ReactNode; onDone?: () => void; onCallEnd?: () => void }) {
   const won = state.outcome === "win";
   const lines: Line[] = won
     ? WIN.lines
@@ -547,6 +547,7 @@ function Verdict({ state, dispatch, travel, endActions, onDone }: { state: State
   const [answered, setAnswered] = useSavedState("verdictAnswered", false);
   useActiveTimer("boothRedirect", 5000, () => onDone?.(), booth && Boolean(onDone));
   useEffect(() => { if (booth) { if (won) sfx.win(); else sfx.lose(); } }, [booth, won]);
+  useEffect(() => { if (booth) onCallEnd?.(); }, [booth, onCallEnd]);
   if (!answered && !booth) return <IncomingCall name={won ? "مستر سيف" : "السايس"} role={won ? "المدير العام" : undefined} image={won ? PORTRAITS.seif : SAYES_ART.portrait} onAnswer={() => setAnswered(true)} />;
   if (!booth) return <Dialogue line={lines[i] ?? lines[0] ?? { who: "seif", text: "" }} index={i} total={lines.length} call caller={caller} onPrevious={i > 0 ? () => setI(i - 1) : undefined} nextLabel={i + 1 < lines.length ? "التالي" : "إنهاء المكالمة"} onNext={() => i + 1 < lines.length ? setI(i + 1) : setBooth(true)} />;
   return <div className="g-stage center"><motion.section className="g-booth" initial={{ opacity: 0, scale: .9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 220, damping: 18 }}>

@@ -88,6 +88,7 @@ const App = () => (
             <Route path="/event/arena" element={<EventArena />} />
             <Route path="/event/offer" element={<RequireProfile><EventOffer /></RequireProfile>} />
             <Route path="/admin/event-arena" element={<AdminEventArena />} />
+            <Route path="/admin/event-dashboard" element={<AdminEventArena />} />
             <Route path="/games/reward-decision" element={<RequireProfile><GameGate game="reward-decision"><RewardDecisionRoute /></GameGate></RequireProfile>} />
             <Route path="/games/behind-the-dots" element={<RequireProfile><GameGate game="behind-the-dots"><BehindTheDotsRoute /></GameGate></RequireProfile>} />
             <Route path="/games/crack-the-code" element={<RequireProfile><GameGate game="crack-the-code"><CrackTheCodeRoute /></GameGate></RequireProfile>} />
