@@ -4,11 +4,13 @@ import { CheckCircle2, ChevronLeft, DoorOpen, Home, Pause, Mail, Phone, RotateCc
 import { CinematicScene } from "./CinematicScene";
 import { PRELOAD_GROUPS, preloadAll, type CineKey } from "./cinematic";
 import { DATA_PREPARATION_SECONDS, claimsFor, initialState, isCorrect, reduce, type Action, type EvidenceId, type State } from "./engine";
-import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, MEETING, METRICS, METRICS_LIST, QUESTIONS, SAYES_LOSS_CALL, BOOTH_MESSAGE, THOUGHTS, TITLE, WIN, VOICE_DURATIONS, type Line, type Metric, type Speaker } from "./content";
+import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, MEETING, METRICS, METRICS_LIST, QUESTIONS, SAYES_LOSS_CALL, SAYES_TIMEOUT_CALL, BOOTH_MESSAGE, THOUGHTS, TITLE, WIN, VOICE_DURATIONS, type Line, type Metric, type Speaker } from "./content";
 import { PORTRAITS, SAYES_ART, SCENES, type SceneKey } from "./assets";
 import { DashChart, InlineReportCard, OfficialReportModal } from "./Chart";
 import { getCurrentVoice, pauseAudio, resumeAudio, playVoice, setMuted, sfx, startBgm, startStreetAmbience, stopStreetAmbience, stopVoice, whoosh } from "./audio";
 import engageLogo from "./assets/engage-logo.jpeg";
+import analystDeskLogo from "./assets/the-analyst-transparent.png";
+import impDeskLogo from "./assets/imp-transparent.png";
 import * as Dialog from "@radix-ui/react-dialog";
 import { GameButton } from "./GameButton";
 import { GameOptions, SettingsButton } from "./GameOptions";
@@ -77,7 +79,7 @@ function ActiveGame({ onSubmit, onStart, onDone, onCallEnd, endActions, completi
     window.addEventListener("popstate", back);
     return () => window.removeEventListener("popstate", back);
   }, [state.phase === "intro", pause]);
-  useEffect(() => { preloadAll(PRELOAD_GROUPS.start); preloadVoices([...BRIEF, ...MEETING, ...WIN.lines].flatMap(l => l.voice ? [l.voice] : []).concat(["sayes-park.wav", "sayes-ask.wav"], SAYES_CHOICES.map(c => c.voice), Object.values(SAYES_LOSS_CALL).flatMap(lines => lines.map(l => l.voice)))); }, []);
+  useEffect(() => { preloadAll(PRELOAD_GROUPS.start); preloadVoices([...BRIEF, ...MEETING, ...WIN.lines].flatMap(l => l.voice ? [l.voice] : []).concat(["sayes-park.wav", "sayes-ask.wav", "sayes-timeout.wav"], SAYES_CHOICES.map(c => c.voice), Object.values(SAYES_LOSS_CALL).flatMap(lines => lines.map(l => l.voice)))); }, []);
   useEffect(() => { if (state.phase === "brief" || state.phase === "road") preloadAll(PRELOAD_GROUPS.road); if (state.phase === "meeting") preloadAll(PRELOAD_GROUPS.meeting); if (state.phase === "office") { preloadAll(PRELOAD_GROUPS.office); preloadAll(PRELOAD_GROUPS.endings); } }, [state.phase]);
   const cine: CineKey | null = state.phase === "intro" ? null
     : state.phase === "brief" ? "briefing"
@@ -93,7 +95,7 @@ function ActiveGame({ onSubmit, onStart, onDone, onCallEnd, endActions, completi
       {cine ? <CinematicScene k={cine} zoom={state.phase === "brief" && state.line > 0} /> : <Scene k={scene} />}
       {cine === "briefing" && <motion.figure className="g-engage-scene-logo" initial={{ opacity: 0, y: -12, scale: .94 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: .45, ease: "easeOut" }}><img src={engageLogo} alt="Engage for Better Performance" /></motion.figure>}
       {state.phase === "intro" && <SettingsButton className="te-offer-settings" onClick={openSettings} />}
-      {state.phase !== "intro" && <Hud state={state} muted={muted} elapsed={elapsed} timerVisible={timerVisible} onMute={() => setMute((v) => !v)} onSettings={openSettings} onThink={() => { if (state.phase === "office" && state.officeEntered) dispatch({ type: "backToThink" }); }} />}
+      {state.phase !== "intro" && <Hud state={state} muted={muted} elapsed={elapsed} timerVisible={timerVisible} onMute={() => setMute((v) => !v)} onSettings={openSettings} />}
       <AnimatePresence mode="wait">
         <motion.main key={`${state.phase}-${state.view}`} className="g-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .25 }}>
           {state.phase === "intro" && <Cover go={() => { resumeAudio(); startBgm(); sfx.tap(); travel({ type: "start" }); onStart?.(); }} />}
@@ -117,12 +119,12 @@ function Scene({ k }: { k: SceneKey }) {
   return <div className={`g-scene scene-${k}`} aria-hidden><motion.picture key={k} initial={{ opacity: 0 }} animate={{ opacity: 1 }}><source media="(max-width:640px)" srcSet={s.p} /><img src={s.l} alt="" /></motion.picture><div className={`g-wash ${k === "cover" ? "cover" : ""}`} /></div>;
 }
 
-const ANALYSIS_MS = 180_000;
+const ANALYSIS_MS = 120_000;
 
-function Hud({ state, muted, elapsed, timerVisible, onMute, onSettings, onThink }: { state: State; muted: boolean; elapsed: number; timerVisible: boolean; onMute: () => void; onSettings: () => void; onThink: () => void }) {
+function Hud({ state, muted, elapsed, timerVisible, onMute, onSettings }: { state: State; muted: boolean; elapsed: number; timerVisible: boolean; onMute: () => void; onSettings: () => void }) {
   const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
   const seconds = String(elapsed % 60).padStart(2, "0");
-  return <header className="g-hud"><div className="g-hud-tools"><SettingsButton onClick={onSettings} /><GameButton aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</GameButton><GameButton className="g-test-nav-btn" aria-label="الرجوع لخيارات التفكير" title="الرجوع لخيارات التفكير" onClick={onThink}><RotateCcw /></GameButton></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerVisible ? <div className={`g-timer is-counting${elapsed <= 30 ? " is-low" : ""}${elapsed <= 10 ? " is-critical" : ""}`} role="timer" aria-label={`الوقت المتبقي ${minutes} دقيقة و${seconds} ثانية`}><small>الوقت المتبقي</small><b>{minutes}:{seconds}</b><i aria-hidden><em /></i></div> : null}</header>;
+  return <header className="g-hud"><div className="g-hud-tools"><SettingsButton onClick={onSettings} /><GameButton aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</GameButton></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerVisible ? <div className={`g-timer is-counting${elapsed <= 30 ? " is-low" : ""}${elapsed <= 10 ? " is-critical" : ""}`} role="timer" aria-label={`الوقت المتبقي ${minutes} دقيقة و${seconds} ثانية`}><small>الوقت المتبقي</small><b>{minutes}:{seconds}</b><i aria-hidden><em /></i></div> : null}</header>;
 }
 
 function Cover({ go }: { go: () => void }) {
@@ -322,10 +324,24 @@ function Dialogue({ line, index, total, onNext, onPrevious, call = false, caller
     index={index} total={total} call={call} onNext={onNext} onPrevious={onPrevious} />;
 }
 
+function DeskLogos({ className = "" }: { className?: string }) {
+  return (
+    <motion.div
+      className={`g-think-desk-logos ${className}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2, duration: 0.3 }}
+    >
+      <img src={analystDeskLogo} alt="The Analyst" className="g-desk-logo logo-analyst" />
+      <img src={impDeskLogo} alt="IMP Institute of Management Professionals" className="g-desk-logo logo-imp" />
+    </motion.div>
+  );
+}
+
 function Office({ state, dispatch, onSend, sayesShown, markSayes }: { state: State; dispatch: (a: Action) => void; onSend: () => void; sayesShown: boolean; markSayes: () => void }) {
   const [report, setReport] = useSavedState<Metric | null>("report", null);
   const entryLock = useRef(false);
-  if (!state.officeEntered) return <div className="g-stage center"><section className="g-arrive"><small>بعد مقابلة طارق</small><h2>مكتب التحليل مستنيك</h2><p>قدامك دقيقتين تختار طريق التحليل وتبعت التوصية.</p><button className="g-btn primary big" onClick={() => { if (entryLock.current) return; entryLock.current = true; sfx.tap(); dispatch({ type: "enterOffice" }); }}>ادخل المكتب</button></section></div>;
+  if (!state.officeEntered) return <div className="g-stage center"><section className="g-arrive"><small>بعد مقابلة طارق</small><h2>مكتب التحليل مستنيك</h2><p>قدامك دقيقتين تختار طريق التحليل وتبعت التوصية.</p><button className="g-btn primary big" onClick={() => { if (entryLock.current) return; entryLock.current = true; sfx.tap(); dispatch({ type: "enterOffice" }); }}>ادخل المكتب</button></section><DeskLogos /></div>;
   return <div className="g-stage g-office-stage"><motion.section key={state.view} className={`g-office-view g-office-${state.view}`} initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .24, ease: "easeOut" }}>
     {state.view === "think" && <Think dispatch={dispatch} />}
     {state.view === "guess" && <Guess dispatch={dispatch} />}
@@ -337,7 +353,27 @@ function Office({ state, dispatch, onSend, sayesShown, markSayes }: { state: Sta
 }
 
 function Think({ dispatch }: { dispatch: (a: Action) => void }) {
-  return <><header className="g-work-head"><small>لحظة التفكير</small><h2>هتبدأ منين؟</h2></header><div className="g-path-grid">{(["guess", "data", "ask"] as const).map((to, i) => <motion.button key={to} className={`g-path-card path-${to}`} onClick={() => { sfx.tap(); dispatch({ type: "think", to }); }} initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * .07, duration: .24 }}><span>{i === 0 ? "⚡" : i === 1 ? "📊" : "❓"}</span><b>{THOUGHTS[to]}</b></motion.button>)}</div></>;
+  return (
+    <>
+      <header className="g-work-head"><small>لحظة التفكير</small><h2>هتبدأ منين؟</h2></header>
+      <div className="g-path-grid">
+        {(["guess", "data", "ask"] as const).map((to, i) => (
+          <motion.button
+            key={to}
+            className={`g-path-card path-${to}`}
+            onClick={() => { sfx.tap(); dispatch({ type: "think", to }); }}
+            initial={{ y: 16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: i * .07, duration: .24 }}
+          >
+            <span>{i === 0 ? "⚡" : i === 1 ? "📊" : "❓"}</span>
+            <b>{THOUGHTS[to]}</b>
+          </motion.button>
+        ))}
+      </div>
+      <DeskLogos />
+    </>
+  );
 }
 
 interface GuessFlowConfig {
@@ -404,23 +440,26 @@ function Guess({ dispatch }: { dispatch: (a: Action) => void }) {
 
   if (activeConfig && step === "search") {
     return (
-      <div className="g-floating-stack" dir="rtl">
-        <button
-          className="g-floating-btn btn-red"
-          onClick={() => {
-            sfx.tap();
-            setStep("chart");
-          }}
-        >
-          ابحث عن دليل
-        </button>
-        <button
-          className="g-floating-btn btn-white"
-          onClick={handleSkipEvidence}
-        >
-          المتابعة للتوصية بدون دليل
-        </button>
-      </div>
+      <>
+        <div className="g-floating-stack" dir="rtl">
+          <button
+            className="g-floating-btn btn-red"
+            onClick={() => {
+              sfx.tap();
+              setStep("chart");
+            }}
+          >
+            ابحث عن دليل
+          </button>
+          <button
+            className="g-floating-btn btn-white"
+            onClick={handleSkipEvidence}
+          >
+            المتابعة للتوصية بدون دليل
+          </button>
+        </div>
+        <DeskLogos />
+      </>
     );
   }
 
@@ -444,6 +483,7 @@ function Guess({ dispatch }: { dispatch: (a: Action) => void }) {
             لا، إرسال التوصية بدونها
           </button>
         </div>
+        <DeskLogos />
       </div>
     );
   }
@@ -463,6 +503,7 @@ function Guess({ dispatch }: { dispatch: (a: Action) => void }) {
       <button className="g-btn secondary g-back-solid" onClick={() => dispatch({ type: "backToThink" })}>
         ارجع وفكر تاني
       </button>
+      <DeskLogos />
     </>
   );
 }
@@ -494,20 +535,21 @@ function DataView({ state, dispatch, openReport }: { state: State; dispatch: (a:
   );
 
   if (!picking) return <><section className="g-dash-board" dir="ltr"><header><b>Training Dashboard</b><span><i className="bar-a" />المجموعة الأولى <i className="bar-b" />المجموعة الثانية</span></header>{sourceNote}<div className="g-dash-grid">{METRICS_LIST.map((m) => <DashChart key={m.id} metric={m} />)}</div></section>
-    <div className="g-row-actions"><GameButton className="primary" onClick={() => { sfx.tap(); setPicking(true); }}>اختار الدليل والاستنتاج</GameButton><GameButton className="secondary" onClick={restart}>ارجع للبداية</GameButton></div></>;
+    <div className="g-row-actions"><GameButton className="primary" onClick={() => { sfx.tap(); setPicking(true); }}>اختار الدليل والاستنتاج</GameButton><GameButton className="secondary" onClick={restart}>ارجع للبداية</GameButton></div><DeskLogos /></>;
   return <><header className="g-work-head compact"><small>الخطوة الجاية</small><h2>استكشف البيانات واختار الملاحظة اللي هتعتمد عليها</h2><p>اضغط على أي مؤشر.. وهتظهرلك الاستنتاجات تحت عشان تختار منها</p></header>
     {sourceNote}
     <div className="g-dash-grid g-pick-grid">{METRICS_LIST.map((m) => <DashChart key={m.id} metric={m} selected={state.evidence === m.id} onSelect={() => dispatch({ type: "evidence", id: m.id })} onZoom={() => openReport(m)} />)}</div>
-    {state.evidence ? <ClaimPicker key={state.evidence} state={state} dispatch={dispatch} extra={<GameButton className="secondary" onClick={restart}>ارجع للبداية</GameButton>} /> : <div className="g-row-actions"><p className="g-pick-hint">👆 اختار ملاحظة من فوق عشان تكمّل</p><GameButton className="secondary" onClick={() => setPicking(false)}>رجوع للداشبورد</GameButton><GameButton className="secondary" onClick={restart}>ارجع للبداية</GameButton></div>}</>;
+    {state.evidence ? <ClaimPicker key={state.evidence} state={state} dispatch={dispatch} extra={<GameButton className="secondary" onClick={restart}>ارجع للبداية</GameButton>} /> : <div className="g-row-actions"><p className="g-pick-hint">👆 اختار ملاحظة من فوق عشان تكمّل</p><GameButton className="secondary" onClick={() => setPicking(false)}>رجوع للداشبورد</GameButton><GameButton className="secondary" onClick={restart}>ارجع للبداية</GameButton></div>}
+    <DeskLogos /></>;
 }
 
 function AskView({ state, dispatch }: { state: State; dispatch: (a: Action) => void }) {
   const asked = QUESTIONS.find((q) => q.id === state.asked[0]);
-  if (!asked) return <><header className="g-work-head"><small>اسأل صح</small><h2>تسأل عن إيه؟</h2></header><div className="g-choice-list">{QUESTIONS.map((q) => <button key={q.id} onClick={() => { sfx.tap(); dispatch({ type: "ask", id: q.id }); }}>{q.text}</button>)}</div><GameButton className="secondary" onClick={() => dispatch({ type: "backToThink" })}>ارجع للبداية</GameButton></>;
-  if (asked.na) return <section className="g-na-card"><span>غير متاح</span><h2>Data Not Available</h2><GameButton className="primary" onClick={() => dispatch({ type: "resetAsk" })}>الرجوع لقائمة الأسئلة</GameButton></section>;
+  if (!asked) return <><header className="g-work-head"><small>اسأل صح</small><h2>تسأل عن إيه؟</h2></header><div className="g-choice-list">{QUESTIONS.map((q) => <button key={q.id} onClick={() => { sfx.tap(); dispatch({ type: "ask", id: q.id }); }}>{q.text}</button>)}</div><GameButton className="secondary" onClick={() => dispatch({ type: "backToThink" })}>ارجع للبداية</GameButton><DeskLogos /></>;
+  if (asked.na) return <><section className="g-na-card"><span>غير متاح</span><h2>Data Not Available</h2><GameButton className="primary" onClick={() => dispatch({ type: "resetAsk" })}>الرجوع لقائمة الأسئلة</GameButton></section><DeskLogos /></>;
   if (!asked.shows) return null;
   const metric = METRICS[asked.shows];
-  return <><header className="g-work-head compact"><small>إجابة السؤال</small><h2>{asked.text}</h2></header><InlineReportCard metric={metric} /><ClaimPicker key={metric.id} state={state} dispatch={dispatch} extra={<GameButton className="secondary" onClick={() => dispatch({ type: "resetAsk" })}>الرجوع لقائمة الأسئلة</GameButton>} /></>;
+  return <><header className="g-work-head compact"><small>إجابة السؤال</small><h2>{asked.text}</h2></header><InlineReportCard metric={metric} /><ClaimPicker key={metric.id} state={state} dispatch={dispatch} extra={<GameButton className="secondary" onClick={() => dispatch({ type: "resetAsk" })}>الرجوع لقائمة الأسئلة</GameButton>} /><DeskLogos /></>;
 }
 
 function ClaimPicker({ state, dispatch, extra }: { state: State; dispatch: (a: Action) => void; extra?: import("react").ReactNode }) {
@@ -531,13 +573,19 @@ function Email({ state, dispatch, onSend, sayesShown, markSayes }: { state: Stat
   const claim = state.claim;
   if (!claim) return null;
   if (sent) return <section className="g-email-success" role="status"><CheckCircle2 /><h2>تم إرسال الإيميل بنجاح ✓</h2><p>التوصية وصلت لمكتب المدير العام.</p></section>;
-  return <><motion.article className="g-mail" initial={{ y: 30, opacity: 0 }} animate={flying ? { y: "-90vh", x: "-25vw", scale: .2, rotate: -18, opacity: 0 } : { y: 0, opacity: 1 }} transition={flying ? { duration: .8, ease: "easeIn" } : { duration: .25 }}><div className="g-mail-bar"><Mail /> رسالة جديدة</div><div className="g-mail-head"><p><b>إلى:</b> مستر سيف — المدير العام</p><p><b>الموضوع:</b> توصية تقييم كورس التدريب والتجديد</p></div><p className="g-mail-hi">مستر سيف،</p><p className="g-mail-body">{emailBody(claim, state.evidence)}</p><p className="g-mail-sign">وتفضلوا بقبول فائق الاحترام،<br />محلل الموارد البشرية</p><div className="g-mail-actions"><button className="g-btn primary big" disabled={flying} onClick={() => { if (state.sayes && !sayesShown) { markSayes(); setPop(true); } else fly(); }}><Send /> {flying ? "التوصية في الطريق" : "إرسال التوصية"}</button><button className="g-btn secondary" disabled={flying} onClick={() => dispatch({ type: "backFromEmail" })}>راجع التحليل</button></div></motion.article><AnimatePresence>{pop && <SayesPopup state={state} dispatch={dispatch} onClose={() => setPop(false)} onSend={fly} />}</AnimatePresence></>;
+  return <><motion.article className="g-mail" initial={{ y: 30, opacity: 0 }} animate={flying ? { y: "-90vh", x: "-25vw", scale: .2, rotate: -18, opacity: 0 } : { y: 0, opacity: 1 }} transition={flying ? { duration: .8, ease: "easeIn" } : { duration: .25 }}><div className="g-mail-bar"><Mail /> رسالة جديدة</div><div className="g-mail-head"><p><b>إلى:</b> مستر سيف — المدير العام</p><p><b>الموضوع:</b> توصية تقييم كورس التدريب والتجديد</p></div><p className="g-mail-hi">مستر سيف،</p><p className="g-mail-body">{emailBody(claim, state.evidence)}</p><p className="g-mail-sign">وتفضلوا بقبول فائق الاحترام،<br />محلل الموارد البشرية</p><div className="g-mail-actions"><button className="g-btn primary big" disabled={flying} onClick={() => { if (state.sayes && !sayesShown) { markSayes(); setPop(true); } else fly(); }}><Send /> {flying ? "التوصية في الطريق" : "إرسال التوصية"}</button><button className="g-btn secondary" disabled={flying} onClick={() => dispatch({ type: "backFromEmail" })}>راجع التحليل</button></div></motion.article><DeskLogos /><AnimatePresence>{pop && <SayesPopup state={state} dispatch={dispatch} onClose={() => setPop(false)} onSend={fly} />}</AnimatePresence></>;
 }
 
 function Verdict({ state, dispatch, travel, endActions, onDone, onCallEnd }: { state: State; dispatch: (a: Action) => void; travel: (a: Action) => void; endActions?: ReactNode; onDone?: () => void; onCallEnd?: () => void }) {
   const won = state.outcome === "win";
   const lines: Line[] = won
     ? WIN.lines
+    : state.timedOut
+    ? SAYES_TIMEOUT_CALL.map((call) => ({
+        who: "seif",
+        text: call.text,
+        voice: call.voice,
+      }))
     : SAYES_LOSS_CALL[state.sayes === "fifty" ? "fifty" : "cheap"].map((call) => ({
         who: "seif",
         text: call.text,

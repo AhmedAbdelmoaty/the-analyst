@@ -38,6 +38,7 @@ export const VOICE_DURATIONS: Record<string, number> = {
   "sayes-popup-fifty-wrong.wav": 10.59,
   "sayes-popup-fifty.wav": 5.42,
   "sayes-popup-paid-correct.wav": 2.75,
+  "sayes-timeout.wav": 1.5,
 };
 
 export const TITLE = "Training Evaluation";
@@ -259,4 +260,8 @@ export const SAYES_LOSS_CALL: Record<"cheap" | "fifty", SayesCallLine[]> = {
     { text: "انت وقعت يا بيه ضحية انحيازاتك المعرفية ولو بدأت بالبيانات فدي غلطة تانية لان البيانات أصلا مش بتتكلم وده خليك تقع لامؤاخذه في ال data immersion", voice: "sayes-fifty-loss-3.wav" },
   ],
 };
+export const SAYES_TIMEOUT_CALL: SayesCallLine[] = [
+  { text: "الديدلاين خلص يا باشا", voice: "sayes-timeout.wav" },
+];
+
 export const BOOTH_MESSAGE = "لو عايز تعرف الحل بشكل مفصل تعالى الـ Booth";
