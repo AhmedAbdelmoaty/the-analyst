@@ -34,6 +34,7 @@
 ## Architecture rules
 
 - Training Evaluation keeps reducer state, screen-local choices and active timers in one versioned per-user browser snapshot; lifecycle pauses stop audio and timers, so reloads resume without changing server event timing.
+- Training Evaluation restart resets only its owner-local snapshot and remounts the game session; shared settings never reset server event ranking or vouchers.
 
 - Use the shared discovery catalog for public, authenticated and plan game previews and tier mapping; journey storage contains allowlisted navigation only, never payment access. Mark first-time plan onboarding only after successful account creation and verification, before sign-in; returning logins skip it.
 - Keep Reward Decision presentation styles and reference-adapted components scoped to its feature; reuse its existing data, save controller and sound provider so other games and platform features remain unchanged.

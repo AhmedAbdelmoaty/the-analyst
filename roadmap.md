@@ -1,4 +1,5 @@
 # Current tasks
+- [x] Compact Training Evaluation settings, confirmed owner-local restart, offer/confirmation options and one-row mobile timer; 10 tests and isolated 360/707/1280px settings/pause/resume/restart/home checks passed. No server reset or publication; real-account offer flow not tested.
 - [x] Training Evaluation: per-user reducer/subscreen/timer persistence, pause/resume/audio stop, browser Back confirmation, single-tab protection and finish-save retention; 10 targeted tests plus isolated mobile full winning flow with reloads passed. No Cloud changes/publication; real-account/device verification remains untested.
 - [x] HR Café: automatic server-ranked leaderboard, admin-only start on arena, immediate owner voucher after finale; 9 isolated tests passed and public/synthetic mobile/desktop arena reviewed; no event reset or publication.
 - [ ] HR Café real-account start → correct finish → voucher check: blocked by unavailable owner preview session; no production test players/results created.

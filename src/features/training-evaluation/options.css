@@ -1,0 +1,14 @@
+.te-settings.g-btn{width:44px;height:44px;min-height:44px;padding:0;display:grid;place-items:center;border-radius:8px;background:hsl(var(--card));color:hsl(var(--foreground));border:1px solid hsl(var(--border));box-shadow:0 4px 12px hsl(var(--background)/.25)}
+.te-settings svg{width:22px;height:22px}
+.te-options-overlay{position:fixed;inset:0;z-index:300;background:hsl(var(--background)/.8);backdrop-filter:blur(8px)}
+.te-options{position:fixed;z-index:301;top:50%;left:50%;transform:translate(-50%,-50%);width:min(calc(100% - 2rem),25rem);max-height:calc(100dvh - 2rem);overflow:auto;padding:1.5rem;background:hsl(var(--card));color:hsl(var(--foreground));border:1px solid hsl(var(--border));border-radius:8px;font-family:'Cairo',sans-serif;text-align:center;box-shadow:0 16px 40px hsl(var(--background)/.35)}
+.te-options-symbol{width:52px;height:52px;margin:0 auto 1rem;display:grid;place-items:center;border:1px solid hsl(var(--primary)/.35);border-radius:8px;background:hsl(var(--primary)/.1);color:hsl(var(--primary))}
+.te-options h2{font-size:1.2rem;font-weight:800;line-height:1.6;margin-bottom:1rem}
+.te-options p{font-size:.9rem;line-height:1.8;margin-bottom:1rem;color:hsl(var(--muted-foreground))}
+.te-options-actions{display:grid;gap:.7rem}
+.te-options-actions .g-btn{width:100%;min-height:48px;padding:.65rem 1rem;display:flex;justify-content:flex-start;gap:.75rem;border-radius:8px;font-weight:700;font-size:.9rem;border:1px solid hsl(var(--border));background:hsl(var(--secondary));color:hsl(var(--secondary-foreground));box-shadow:none;white-space:normal;text-align:right}
+.te-options-actions .g-btn.primary{background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-color:hsl(var(--primary))}
+.te-options-actions .g-btn svg{width:20px;height:20px;flex:none}
+.te-options-actions .g-btn:hover{filter:brightness(1.1)}
+.te-options-actions .g-btn:focus-visible,.te-settings:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:3px}
+.te-offer-settings{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;z-index:30}

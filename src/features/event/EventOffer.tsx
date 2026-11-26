@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Home } from "lucide-react";
+import { GameOptions, SettingsButton } from "../training-evaluation/GameOptions";
+import { clearRun } from "../training-evaluation/persistence";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +26,7 @@ export default function EventOffer() {
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const choose = async (kind: LeadInterest) => {
     if (!user) return navigate("/login");
     setBusy(true); setErr("");
@@ -33,7 +35,8 @@ export default function EventOffer() {
     if (error) setErr("حصلت مشكلة، جرّب تاني."); else setDone(true);
   };
   return <main className="offer" dir="ltr">
-    <Link to="/app" className="o-home" aria-label="الرجوع للألعاب"><Home /></Link>
+    <SettingsButton className="te-offer-settings" onClick={() => setOptionsOpen(true)} />
+    <GameOptions open={optionsOpen} onResume={() => navigate("/games/training-evaluation")} onHome={() => navigate("/app")} onRestart={() => { if (user) clearRun(user.id); navigate("/games/training-evaluation"); }} />
     <AnimatePresence mode="wait">
       {done ? <motion.section key="done" className="offer-sheet o-done" initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }}>
         <Logos />

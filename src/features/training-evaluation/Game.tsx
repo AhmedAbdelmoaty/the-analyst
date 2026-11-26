@@ -11,6 +11,7 @@ import { getCurrentVoice, pauseAudio, resumeAudio, playVoice, setMuted, sfx, sta
 import engageLogo from "./assets/engage-logo.jpeg";
 import * as Dialog from "@radix-ui/react-dialog";
 import { GameButton } from "./GameButton";
+import { GameOptions, SettingsButton } from "./GameOptions";
 import "./game.css";
 import { RunProvider, useActiveTimer, useRuntime, useSavedState } from "./runtime";
 import { useNavigate } from "react-router-dom";
@@ -24,10 +25,16 @@ const WHO: Record<Speaker, { name: string; role: string; tone: "dark" | "light" 
 const STATION: Record<State["phase"], string> = { intro: "", brief: "مكتب المدير العام", road: "الطريق لمكتب التدريب", meeting: "مكتب التدريب", office: "مكتب التحليل", verdict: "القرار النهائي" };
 type GameProps = { userId: string; completionSaved?: boolean; onSubmit?: (s: State) => void; onStart?: () => void; onDone?: () => void; endActions?: ReactNode };
 export default function Game(props: GameProps) {
-  return <RunProvider key={props.userId} userId={props.userId}><ActiveGame {...props} /></RunProvider>;
+  return <RunProvider key={props.userId} userId={props.userId}><GameSession {...props} /></RunProvider>;
+}
+function GameSession(props: GameProps) {
+  const { revision } = useRuntime();
+  return <ActiveGame key={revision} {...props} />;
 }
 function ActiveGame({ onSubmit, onStart, onDone, endActions, completionSaved = true }: GameProps) {
-  const { run, dispatch, paused, pause, resume, finish, exitPrompt, unavailable, otherTab, update } = useRuntime();
+  const { run, dispatch, paused, pause, resume, finish, exitPrompt, unavailable, otherTab, restart } = useRuntime();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const openSettings = () => { setSettingsOpen(true); pause(); };
   const state = run.state;
   const navigate = useNavigate();
   const [muted, setMute] = useSavedState("global:muted", false);
@@ -75,8 +82,8 @@ function ActiveGame({ onSubmit, onStart, onDone, endActions, completionSaved = t
       <div className="g-play-layer" {...(paused ? { inert: "" } : {})} aria-hidden={paused || undefined}>
       {cine ? <CinematicScene k={cine} zoom={state.phase === "brief" && state.line > 0} /> : <Scene k={scene} />}
       {cine === "briefing" && <motion.figure className="g-engage-scene-logo" initial={{ opacity: 0, y: -12, scale: .94 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: .45, ease: "easeOut" }}><img src={engageLogo} alt="Engage for Better Performance" /></motion.figure>}
-      {state.phase === "intro" && <a href="/app" className="g-home-exit" aria-label="الرجوع للألعاب"><Home /></a>}
-      {state.phase !== "intro" && <Hud state={state} muted={muted} elapsed={elapsed} timerVisible={timerVisible} onMute={() => setMute((v) => !v)} onRestart={() => pause(true)} onPause={() => pause()} onThink={() => dispatch({ type: "backToThink" })} />}
+      {state.phase === "intro" && <SettingsButton className="te-offer-settings" onClick={openSettings} />}
+      {state.phase !== "intro" && <Hud state={state} muted={muted} elapsed={elapsed} timerVisible={timerVisible} onMute={() => setMute((v) => !v)} onSettings={openSettings} onThink={() => dispatch({ type: "backToThink" })} />}
       <AnimatePresence mode="wait">
         <motion.main key={`${state.phase}-${state.view}`} className="g-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .25 }}>
           {state.phase === "intro" && <Cover go={() => { resumeAudio(); startBgm(); sfx.tap(); travel({ type: "start" }); onStart?.(); }} />}
@@ -90,7 +97,7 @@ function ActiveGame({ onSubmit, onStart, onDone, endActions, completionSaved = t
       <AnimatePresence>{fade && <motion.div className="g-dip" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35 }} />}</AnimatePresence>
       </div>
       {unavailable && <p className="g-save-warning" role="alert">الحفظ مش متاح في المتصفح ده. ماتقفلش اللعبة قبل ما تخلص.</p>}
-      <Dialog.Root open={paused}><Dialog.Portal><Dialog.Overlay className="g-pause-layer"><Dialog.Content asChild aria-describedby={undefined} onEscapeKeyDown={e => e.preventDefault()} onPointerDownOutside={e => e.preventDefault()}><section><Pause aria-hidden /><Dialog.Title asChild><h2>{otherTab ? "اللعبة مفتوحة في صفحة تانية" : exitPrompt ? "الخروج من اللعبة" : "اللعبة متوقفة مؤقتاً"}</h2></Dialog.Title><div className="g-pause-actions"><GameButton className="primary" onClick={resume}>{otherTab ? "كمّل هنا" : "متابعة اللعب"}</GameButton><GameButton className="secondary" onClick={exit}>العودة إلى الألعاب</GameButton></div></section></Dialog.Content></Dialog.Overlay></Dialog.Portal></Dialog.Root>
+      <GameOptions open={paused} title={otherTab ? "اللعبة مفتوحة في صفحة تانية" : exitPrompt ? "الخروج من اللعبة" : settingsOpen ? "إعدادات اللعبة" : "اللعبة متوقفة مؤقتاً"} onResume={() => { setSettingsOpen(false); resume(); }} onHome={exit} onRestart={restart} onPause={settingsOpen ? () => setSettingsOpen(false) : undefined} />
     </div>
   );
 }
@@ -100,10 +107,10 @@ function Scene({ k }: { k: SceneKey }) {
   return <div className={`g-scene scene-${k}`} aria-hidden><motion.picture key={k} initial={{ opacity: 0 }} animate={{ opacity: 1 }}><source media="(max-width:640px)" srcSet={s.p} /><img src={s.l} alt="" /></motion.picture><div className={`g-wash ${k === "cover" ? "cover" : ""}`} /></div>;
 }
 
-function Hud({ state, muted, elapsed, timerVisible, onMute, onRestart, onPause, onThink }: { state: State; muted: boolean; elapsed: number; timerVisible: boolean; onMute: () => void; onRestart: () => void; onPause: () => void; onThink: () => void }) {
+function Hud({ state, muted, elapsed, timerVisible, onMute, onSettings, onThink }: { state: State; muted: boolean; elapsed: number; timerVisible: boolean; onMute: () => void; onSettings: () => void; onThink: () => void }) {
   const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
   const seconds = String(elapsed % 60).padStart(2, "0");
-  return <header className="g-hud"><div className="g-hud-tools"><GameButton aria-label="الرجوع للألعاب" onClick={onRestart}><Home /></GameButton><GameButton aria-label="إيقاف مؤقت" onClick={onPause}><Pause /></GameButton><button aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</button><button className="g-test-nav-btn" title="الرجوع لخيارات التفكير" onClick={onThink}>🔄 <span>رجوع للتفكير</span></button></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerVisible ? <div className="g-timer is-counting" role="timer" aria-label={`وقت التحليل ${minutes} دقيقة و${seconds} ثانية`}><small>وقت التحليل</small><b>{minutes}:{seconds}</b><i aria-hidden><em /></i></div> : <span />}</header>;
+  return <header className="g-hud"><div className="g-hud-tools"><SettingsButton onClick={onSettings} /><GameButton aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</GameButton><GameButton className="g-test-nav-btn" aria-label="الرجوع لخيارات التفكير" title="الرجوع لخيارات التفكير" onClick={onThink}><RotateCcw /></GameButton></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerVisible ? <div className="g-timer is-counting" role="timer" aria-label={`وقت التحليل ${minutes} دقيقة و${seconds} ثانية`}><small>وقت التحليل</small><b>{minutes}:{seconds}</b><i aria-hidden><em /></i></div> : null}</header>;
 }
 
 function Cover({ go }: { go: () => void }) {

@@ -1,11 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { type Action } from "./engine";
 import { advanceRun, loadRun, newRun, saveRun, type SavedRun } from "./persistence";
-import { audioPosition, pauseAudio, restoreVoicePosition, resumeAudio } from "./audio";
+import { audioPosition, pauseAudio, restoreVoicePosition, resumeAudio, stopVoice, stopBgm } from "./audio";
 
 type Runtime = { run: SavedRun; paused: boolean; exitPrompt: boolean; unavailable: boolean; otherTab: boolean;
   update: (fn: (r: SavedRun) => SavedRun) => void; dispatch: (a: Action) => void;
-  pause: (exit?: boolean) => void; resume: () => void; finish: () => void };
+  pause: (exit?: boolean) => void; resume: () => void; finish: () => void; restart: () => void; revision: number };
 const Context = createContext<Runtime | null>(null);
 export function useRuntime() { const value = useContext(Context); if (!value) throw new Error("Missing training runtime"); return value; }
 export function RunProvider({ userId, children }: { userId: string; children: ReactNode }) {
@@ -16,6 +16,7 @@ export function RunProvider({ userId, children }: { userId: string; children: Re
   const [exitPrompt, setExitPrompt] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const [otherTab, setOtherTab] = useState(false);
+  const [revision, setRevision] = useState(0);
   const owns = useRef(true);
   const completed = useRef(false);
   useState(() => { restoreVoicePosition(run.ui["global:voice"]); return null; });
@@ -53,7 +54,13 @@ export function RunProvider({ userId, children }: { userId: string; children: Re
     return () => { if (owns.current && !completed.current) saveRun(ref.current); pauseAudio(); document.removeEventListener("visibilitychange", background); window.removeEventListener("pagehide", background); window.removeEventListener("blur", background); window.removeEventListener("storage", storage); };
   }, [claim, ownerKey, pause]);
   const finish = useCallback(() => { completed.current = true; try { localStorage.removeItem(`the-analyst:training-evaluation:v1:${userId}`); } catch { /* unavailable */ } pauseAudio(); }, [userId]);
-  return <Context.Provider value={{ run, update, dispatch, paused, exitPrompt, unavailable, otherTab, pause, resume, finish }}>{children}</Context.Provider>;
+  const restart = useCallback(() => {
+    claim(); pauseAudio(); stopVoice(); stopBgm();
+    const fresh = newRun(userId); ref.current = fresh; completed.current = false;
+    pausedRef.current = false; setPaused(false); setExitPrompt(false);
+    setUnavailable(!saveRun(fresh)); setRun(fresh); setRevision(v => v + 1);
+  }, [claim, userId]);
+  return <Context.Provider value={{ run, update, dispatch, paused, exitPrompt, unavailable, otherTab, pause, resume, finish, restart, revision }}>{children}</Context.Provider>;
 }
 
 /** Screen-local state lives in the same synchronous snapshot as the game reducer. */
