@@ -57,9 +57,9 @@ export function useMyStatus(enabled: boolean) {
 }
 
 export const PRIZES = [
-  { icon: "🥇", place: "المركز الأول", prize: "دبلومة كاملة 100% مجاناً", sub: "Data Analytics & Business Intelligence + Analytical Thinking" },
-  { icon: "🥈", place: "المركز الثاني", prize: "قسيمة خصم 75%" },
-  { icon: "🥉", place: "المركز الثالث", prize: "قسيمة خصم 50%" },
-  { icon: "🎖️", place: "المراكز من 4 إلى 50", prize: "قسيمة خصم 25%" },
+  { icon: "🥇", place: "المركز الأول", prize: "خصم 100% (الدبلومة مجانًا)", sub: "Data Analytics & Business Intelligence + Analytical Thinking" },
+  { icon: "🥈", place: "المركز الثاني", prize: "خصم 90%" },
+  { icon: "🥉", place: "المركز الثالث", prize: "خصم 80%" },
+  { icon: "🎖️", place: "الرابع 70% • الخامس 60%", prize: "ومن السادس لأي عدد: خصم 50%" },
 ];
 export const placeName = (r: number) => r === 1 ? "المركز الأول" : r === 2 ? "المركز الثاني" : r === 3 ? "المركز الثالث" : `المركز ${r}`;

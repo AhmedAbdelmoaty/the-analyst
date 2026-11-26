@@ -29,3 +29,11 @@
 @keyframes lbShim{to{background-position:200% 0}}
 @media(prefers-reduced-motion:reduce){.lb-shimmer{animation:none}}
 .lb-podium.lb-round{border-radius:999px}
+
+.ev-board{background:#fff}.ev-board .ev-dark{color:#222}.ev-board .ev-divider{background:#cfcfcf}.ev-board .ev-redline{background:#A61E25}
+.ev-board .ev-title{letter-spacing:-.01em;position:relative}.ev-board .ev-curve{fill:none;stroke:#A61E25;stroke-width:3;stroke-linecap:round}
+.ev-board .ev-spark{display:inline-block;width:1.2em;height:.8em;margin:0 .4em;vertical-align:middle;background:linear-gradient(#A61E25,#A61E25) 0 0/3px 60% no-repeat;position:relative}
+.ev-board .ev-spark-l{transform:rotate(-40deg)}.ev-board .ev-spark-r{transform:rotate(40deg) scaleX(-1)}
+.ev-board .ev-side{border-color:#e6e6e6;box-shadow:0 8px 30px -14px rgba(0,0,0,.25)}
+.ev-board .ev-excel{color:#1d7a43}.ev-board .ev-pbi{color:#e8a915}.ev-board .ev-sql{color:#2b8fd6}.ev-board .ev-pa{color:#2266e3}
+.ev-board .ev-list{max-height:38vh}
