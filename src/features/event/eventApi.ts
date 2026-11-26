@@ -23,6 +23,7 @@ export const eventBegin = () => rpc("event_begin");
 export const voucherDownloaded = () => rpc("event_voucher_downloaded");
 export const ANNOUNCE_AFTER_MS = 5 * 60 * 1000;
 export const adminExport = () => rpc("event_admin_export");
+export const adminHistory = () => rpc("event_admin_history");
 
 /** Live challenge status: refetches on every change to the single challenge row (and every 10s for the player count). */
 export function usePublicState(pollMs = 10000) {

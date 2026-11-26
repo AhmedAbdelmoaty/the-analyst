@@ -148,6 +148,13 @@
       "when": 1795703083261,
       "tag": "0020_event_dashboard_all_registrations",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795707940338,
+      "tag": "0021_event_signup_fix_and_round_history",
+      "breakpoints": true
     }
   ]
 }

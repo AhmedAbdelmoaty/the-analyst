@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Crown, Flag, LayoutDashboard, Play, Ticket, Timer, Users } from "lucide-react";
+import { Crown, Flag, LayoutDashboard, Play, Settings, Ticket, Timer, X } from "lucide-react";
 import impLogo from "@/assets/brand/imp-logo.webp";
 import analystMark from "@/assets/brand/the-analyst-mark.png";
 import { placeName, usePublicState, adminStart, adminAnnounce, adminReleaseVouchers, type Winner } from "./eventApi";
@@ -26,6 +26,7 @@ function Arena() {
   const { state, reload } = usePublicState(2000);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [menu, setMenu] = useState(false);
   const [tick, setTick] = useState(Date.now());
   const winners = state?.winners ?? [];
   const prev = useRef(0);
@@ -37,7 +38,7 @@ function Arena() {
   const clock = `${String(Math.floor(el / 60000)).padStart(2, "0")}:${String(Math.floor(el / 1000) % 60).padStart(2, "0")}`;
   const act = async (fn: () => Promise<{ error: unknown }>, confirmText: string, ok: string) => {
     if (!window.confirm(confirmText)) return;
-    setBusy(true); setMsg("");
+    setBusy(true); setMsg(""); setMenu(false);
     try { const { error } = await fn(); setMsg(error ? "حصل خطأ، جرّب تاني." : ok); await reload(); }
     catch { setMsg("حصل خطأ، جرّب تاني."); } finally { setBusy(false); }
   };
@@ -45,21 +46,18 @@ function Arena() {
   return <main className="imp-light flex flex-col" dir="rtl" onClick={unlockAudio}>
     <header className="flex items-center justify-between px-5 py-4 sm:px-10">
       <img src={impLogo} alt="IMP" className="h-11 w-auto sm:h-14" />
-      <h1 className="lb-shimmer text-center text-2xl font-black sm:text-5xl" dir="ltr">The HR Café Challenge</h1>
       <img src={analystMark} alt="The Analyst" className="h-11 w-auto sm:h-14" />
     </header>
-    <div className="flex flex-wrap items-center justify-center gap-3 px-4 pb-4">
-      <button className="lb-btn lb-primary" disabled={busy} onClick={() => act(adminStart, state?.started_at ? "تبدأ تحدي جديد؟ كل النتائج الحالية هتتصفّر." : "تبدأ التحدي دلوقتي؟", "بدأ التحدي!")}><Play className="h-5 w-5" />{state?.started_at ? "ابدأ تحدي جديد / Reset" : "ابدأ التحدي"}</button>
+    {/* Admin controls stay tucked behind a small gear so the shared screen focuses on the ranking. */}
+    <button aria-label="إعدادات" className="fixed bottom-4 left-4 z-40 grid h-11 w-11 place-items-center rounded-full lb-card opacity-60 transition hover:opacity-100" onClick={(e) => { e.stopPropagation(); setMenu(v => !v); }}>{menu ? <X className="h-5 w-5" /> : <Settings className="h-5 w-5" />}</button>
+    <AnimatePresence>{menu && <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} className="fixed bottom-20 left-4 z-40 flex w-72 flex-col gap-2 rounded-2xl lb-card p-3">
+      <button className="lb-btn lb-primary" disabled={busy} onClick={() => act(adminStart, state?.started_at ? "تبدأ جولة جديدة؟ ترتيب الجولة الحالية هيتحفظ في الداشبورد." : "تبدأ التحدي دلوقتي؟", "بدأ التحدي!")}><Play className="h-5 w-5" />{state?.started_at ? "ابدأ تحدي جديد / Reset" : "ابدأ التحدي"}</button>
       {running && <button className="lb-btn lb-goldbtn" disabled={busy} onClick={() => act(adminAnnounce, "تنهي التحدي وتعرض النتائج؟ اللي يخلص بعد كده مش هيدخل الترتيب.", "تم إعلان النتائج")}><Flag className="h-5 w-5" />إنهاء التحدي وإظهار النتائج</button>}
       {state?.revealed && <button className="lb-btn lb-ghost" disabled={busy || !!state.vouchers_released_at} onClick={() => act(adminReleaseVouchers, "تبعت القسائم للفائزين دلوقتي؟", "تم إرسال القسائم")}><Ticket className="h-5 w-5" />{state.vouchers_released_at ? "القسائم اتبعتت ✓" : "إرسال القسائم للفائزين"}</button>}
       <Link to="/admin/event-dashboard" className="lb-btn lb-ghost"><LayoutDashboard className="h-5 w-5" />الداشبورد</Link>
-    </div>
+    </motion.div>}</AnimatePresence>
     {msg && <p role="status" className="text-center font-bold lb-red">{msg}</p>}
     <section className="flex flex-1 flex-col items-center gap-6 px-4 pb-10 pt-4 text-center">
-      <div className="flex flex-wrap justify-center gap-3">
-        <span className="lb-card flex items-center gap-2 px-5 py-2 text-lg font-bold"><Users className="h-5 w-5 lb-red" />{state?.count ?? 0} مشارك</span>
-        <span className="lb-card flex items-center gap-2 px-5 py-2 text-lg font-bold"><Flag className="h-5 w-5 lb-red" />{state?.finished ?? 0} خلّصوا</span>
-      </div>
       <AnimatePresence mode="wait">
         {!state?.started_at && <motion.p key="wait" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="my-auto text-3xl font-black">مستنيين بداية التحدي…</motion.p>}
         {running && <motion.div key="run" initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="my-auto flex flex-col items-center gap-3">

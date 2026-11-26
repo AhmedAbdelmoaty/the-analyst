@@ -6,8 +6,6 @@ import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInstall } from '@/contexts/InstallContext';
 import type { GameAccessSnapshot } from '@/features/entitlement/useGameAccess';
-import WorkProfileFields from '@/features/profile/WorkProfileFields';
-import { validateWorkProfile, type WorkProfile } from '@/features/profile/workProfile';
 import analystImg from '@/assets/characters/analyst.webp';
 import saraImg from '@/assets/characters/sara.webp';
 import AudioControls from '@/features/platform-audio/AudioControls';
@@ -18,21 +16,17 @@ export function ProfileEditor({ onSaved }: { onSaved: () => void }) {
   const [firstName, setFirstName] = useState(profile?.first_name ?? '');
   const [lastName, setLastName] = useState(profile?.last_name ?? '');
   const [gender, setGender] = useState<'male' | 'female'>(profile?.gender ?? 'male');
-  const [work, setWork] = useState<WorkProfile>({ department: profile?.department ?? null, department_other: profile?.department_other ?? null, industry: profile?.industry ?? null, industry_other: profile?.industry_other ?? null });
-  const [errors, setErrors] = useState<Partial<Record<keyof WorkProfile, string>>>({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   return <form className="player-editor" onSubmit={async event => {
     event.preventDefault(); if (busy) return;
-    const checked = validateWorkProfile(work); setErrors(checked.errors);
-    if (Object.keys(checked.errors).length || !firstName.trim() || !lastName.trim()) return;
+    if (!firstName.trim()) return;
     setBusy(true); setError('');
-    const result = await updateProfile({ first_name: firstName.trim(), last_name: lastName.trim(), gender, avatar_choice: gender === 'female' ? 'sara' : 'analyst', ...checked.value });
+    const result = await updateProfile({ first_name: firstName.trim(), last_name: lastName.trim() || null, gender, avatar_choice: gender === 'female' ? 'sara' : 'analyst' });
     setBusy(false); if (result.error) setError('ماقدرناش نحفظ التعديلات. جرّب تاني.'); else { platformAudio.play('success'); onSaved(); }
   }}>
-    <div className="grid grid-cols-2 gap-3"><label>الاسم الأول<input className="platform-input" required maxLength={50} value={firstName} onChange={e => setFirstName(e.target.value)} /></label><label>الاسم الأخير<input className="platform-input" required maxLength={50} value={lastName} onChange={e => setLastName(e.target.value)} /></label></div>
+    <div className="grid grid-cols-2 gap-3"><label>الاسم الأول<input className="platform-input" required maxLength={50} value={firstName} onChange={e => setFirstName(e.target.value)} /></label><label>الاسم الأخير<input className="platform-input" maxLength={50} value={lastName} onChange={e => setLastName(e.target.value)} /></label></div>
     <fieldset><legend className="mb-2 text-sm font-bold">شخصيتك</legend><div className="flex gap-3">{(['male', 'female'] as const).map(value => <label key={value} className="player-avatar-choice"><input type="radio" name="player-avatar" value={value} checked={gender === value} onChange={() => setGender(value)} /><img src={value === 'female' ? saraImg : analystImg} alt="" />{value === 'female' ? 'محللة' : 'محلل'}</label>)}</div></fieldset>
-    <WorkProfileFields localized value={work} onChange={setWork} errors={errors} />
     {error && <p role="alert" className="text-sm text-red-800">{error}</p>}
     <button className="platform-button primary" disabled={busy}>{busy ? 'جاري الحفظ...' : 'حفظ التعديلات'}<Check /></button>
   </form>;

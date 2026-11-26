@@ -21,13 +21,11 @@ import CanonicalLink from "@/components/analytics/CanonicalLink";
 import PlanChoice from "@/pages/PlanChoice";
 import MySubscription from "@/pages/MySubscription";
 import SubscriptionSummary from "@/pages/SubscriptionSummary";
-import WorkDetails from "@/pages/WorkDetails";
 import PaymentReturn from "@/pages/PaymentReturn";
 import GameGate from "@/features/entitlement/GameGate";
 import PlatformAudio from "@/features/platform-audio/PlatformAudio";
 import VoucherBadge from "@/features/event/VoucherBadge";
 
-const Setup = lazy(() => import('./pages/Setup'));
 const GameRoute = lazy(() => import('./pages/GameRoute'));
 const RewardDecisionRoute = lazy(() => import('./pages/RewardDecisionRoute'));
 const BehindTheDotsRoute = lazy(() => import('./pages/BehindTheDotsRoute'));
@@ -45,11 +43,10 @@ const AdminPayments = lazy(() => import('./pages/AdminPayments'));
 const queryClient = new QueryClient();
 
 const RequireProfile = ({ children }: { children: React.ReactNode }) => {
-  const { user, isProfileComplete, loading, profile } = useAuth();
+  const { user, loading, profile } = useAuth();
   // Only block on the first load for this user; background refreshes keep the game mounted.
   if (loading && !(user && profile)) return <div className="auth-theme flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">جاري التحميل...</div>;
   if (!user) return <Navigate to="/" replace />;
-  if (!isProfileComplete) return <Navigate to="/setup" replace />;
   return <>{children}</>;
 };
 /** Applies a pending installed-app update whenever the player is outside /play. */
@@ -81,8 +78,8 @@ const App = () => (
             <Route path="/checkout/paymob/payment/success" element={<PaymentReturn />} />
             <Route path="/api/acceptance/post_pay" element={<PaymentReturn />} />
             <Route path="/subscription/summary" element={<RequireProfile><SubscriptionSummary /></RequireProfile>} />
-            <Route path="/setup" element={<Setup />} />
-            <Route path="/profile/work" element={<RequireProfile><WorkDetails /></RequireProfile>} />
+            <Route path="/setup" element={<Navigate to="/app" replace />} />
+            <Route path="/profile/work" element={<Navigate to="/app" replace />} />
             <Route path="/play" element={<RequireProfile><GameRoute /></RequireProfile>} />
             <Route path="/games/training-evaluation" element={<RequireProfile><TrainingEvaluationRoute /></RequireProfile>} />
             <Route path="/event/arena" element={<EventArena />} />

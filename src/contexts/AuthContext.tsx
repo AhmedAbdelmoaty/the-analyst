@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
 import { clearJourney } from "@/features/discovery/journey";
 import { clearPlanIntent } from "@/features/subscription/planIntent";
-import { buildProfileUpdatePatch, isIdentityProfileComplete, isWorkProfileSchemaUnavailable } from "@/features/profile/workProfile";
+import { buildProfileUpdatePatch, isWorkProfileSchemaUnavailable } from "@/features/profile/workProfile";
 
 export interface PlayerProfile {
   display_name: string | null; // Equals firstName — used everywhere in-game
@@ -152,7 +152,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
-  const isProfileComplete = !!user && isIdentityProfileComplete(profile);
+  // No character/work-details step exists any more: every signed-in player is complete.
+  const isProfileComplete = !!user;
   const loading = sessionLoading || profileLoading;
 
   return (

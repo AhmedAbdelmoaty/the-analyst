@@ -922,6 +922,20 @@ export type Database = {
           rank: number
         }[]
       }
+      event_admin_history: {
+        Args: never
+        Returns: {
+          challenge_started_at: string
+          company_name: string
+          department: string
+          duration_seconds: number
+          email: string
+          finished_at: string
+          full_name: string
+          phone: string
+          rank: number
+        }[]
+      }
       event_admin_release_vouchers: { Args: never; Returns: undefined }
       event_admin_reveal: { Args: { _step: number }; Returns: undefined }
       event_admin_start: { Args: never; Returns: undefined }

@@ -113,7 +113,7 @@ const PlayerAuth = () => {
         return applySend(r, "أُرسل رمز التحقق إلى الرقم الجديد عبر واتساب.");
       }
       const parts = fullName.trim().split(/\s+/);
-      if (parts.length < 2) return setError("أدخل الاسم بالكامل (اسمين على الأقل).");
+      if (!parts[0]) return setError("أدخل اسمك.");
       if (!company.trim()) return setError("أدخل اسم الشركة.");
       if (!department) return setError("اختار القسم.");
       if (!validRegistrationEmail(email)) return setError("أدخل بريد إلكتروني صحيح.");
@@ -238,7 +238,7 @@ const PlayerAuth = () => {
   if (mode === "signup") return (
     <AuthShell title={editingFrom ? "تغيير الرقم" : "أنشئ حسابك وابدأ التجربة."}>
       <form onSubmit={onSignup} className="space-y-2" noValidate>
-        {!editingFrom && <Field id="fullname" label="الاسم بالكامل"><TextInput id="fullname" autoComplete="name" dir="auto" placeholder="الاسم بالكامل" maxLength={100} value={fullName} onChange={(e) => setFullName(e.target.value)} /></Field>}
+        {!editingFrom && <Field id="fullname" label="الاسم"><TextInput id="fullname" autoComplete="name" dir="auto" placeholder="الاسم" maxLength={100} value={fullName} onChange={(e) => setFullName(e.target.value)} /></Field>}
         <Field id="phone" label="رقم واتساب"><PhoneInput id="phone" dial={dial} onDial={setDial} value={local} onChange={setLocal} /></Field>
         {!editingFrom && <>
           <Field id="email" label="البريد الإلكتروني"><TextInput id="email" type="email" autoComplete="email" dir="ltr" maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} /></Field>

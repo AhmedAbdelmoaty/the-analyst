@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
     switch (body?.action) {
       case "signup": {
         const p = z.object({
-          first_name: nameSchema, last_name: nameSchema, phone: phoneSchema, password: passwordSchema,
+          first_name: nameSchema, last_name: z.string().trim().max(50).optional().default(""), phone: phoneSchema, password: passwordSchema,
           company_name: z.string().trim().min(1).max(100).optional(),
           department: z.enum(["ld_training", "human_resources", "other"]).optional(),
           email: z.string().trim().toLowerCase().email().max(254).optional(),
@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
         if ((await countEvents("signup", "ip", ip, 3600_000)) >= 50) return fail("rate_limited");
         await logEvent("signup", phone, ip);
         const { data: created, error } = await admin.auth.admin.createUser({
-          phone, password, phone_confirm: false, user_metadata: { first_name, last_name },
+          phone, password, phone_confirm: false, user_metadata: { first_name, last_name: last_name || null },
         });
         if (error || !created.user) {
           console.warn("create_user_failed", error?.status);
@@ -197,10 +197,11 @@ Deno.serve(async (req) => {
           return fail("server_error");
         }
         await admin.from("profiles").update({
-          first_name, last_name, display_name: first_name, phone,
+          first_name, last_name: last_name || null, display_name: first_name, phone, gender: "male",
           ...(company_name ? { company_name } : {}), ...(department ? { department } : {}), ...(email ? { email } : {}),
         })
-          .eq("user_id", created.user.id);
+          .eq("user_id", created.user.id)
+          .then(({ error: pe }) => { if (pe) console.error("signup_profile_save_failed", pe.code, pe.message); });
         const r = await issueChallenge(created.user.id, phone, "signup", ip);
         return json({ ok: true, sent: r.ok ? r.sent : false, cooldown: r.ok ? r.cooldown : RESEND_COOLDOWN_S, expires_in: OTP_TTL_MS / 1000 });
       }
