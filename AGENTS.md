@@ -35,7 +35,7 @@
 
 - Training Evaluation keeps reducer state, screen-local choices and active timers in one versioned per-user browser snapshot; lifecycle pauses stop audio and timers, so reloads resume without changing server event timing.
 - Training Evaluation restart resets only its local snapshot; it never resets server ranking or vouchers.
-- Training Evaluation endings (calls, email screen) reuse its per-user snapshot and audio lifecycle.
+- Training Evaluation endings reuse its snapshot and audio lifecycle.
 - Training Evaluation narrative: one guarded audio-led player; separate scene gates stop repeated clicks skipping parking choices.
 - Training Evaluation context lives in a non-component module so refreshes cannot split provider and consumers.
 
