@@ -36,6 +36,8 @@ export const VOICE_DURATIONS: Record<string, number> = {
   "sayes-popup-ten.wav": 11.03,
   "sayes-popup-ten-paid.wav": 6.89,
   "sayes-popup-fifty-wrong.wav": 10.59,
+  "sayes-popup-fifty.wav": 5.42,
+  "sayes-popup-paid-correct.wav": 2.75,
 };
 
 export const TITLE = "Training Evaluation";
@@ -208,11 +210,16 @@ export const SAYES_CHOICES = [
   { pay: "fifty" as const, text: "خد 50 جنيه", pose: "smart" as SayesPose, voice: "sayes-fifty.wav", reply: ["ربنا ينور بصيرتك يا باشا! استنى أقولك حاجة... متتسحلش في الداتا يا باشا، واسأل صح... الإجابة في الداتا الناقصة."] },
 ];
 export const SAYES_POPUP = {
-  fifty: { pose: "whistle" as SayesPose, text: "الله ينور عليك يا باشا كمل زي ما إنت.. طريق السلامة يا أبو شيماء", auto: true },
+  fifty: { pose: "whistle" as SayesPose, text: "الله ينور عليك يا باشا كمل زي ما إنت.. طريق السلامة يا أبو شيماء", voice: "sayes-popup-fifty.wav", auto: true },
   fiftyWrong: {
     pose: "whistle" as SayesPose,
     text: "يا باشا الصفارة دي عشان تفوق! فاكر الـ 50 جنيه؟ قولتلك متتسحلش واسأل صح.. بص على اللي ناقص مش اللي معروض قدامك ومترصص في الجداول!",
     voice: "sayes-popup-fifty-wrong.wav",
+  },
+  paidCorrect: {
+    pose: "smart" as SayesPose,
+    text: "أنت صح ابعت التوصية بسرعة",
+    voice: "sayes-popup-paid-correct.wav",
   },
   later: {
     pose: "money" as SayesPose,

@@ -288,16 +288,24 @@ function Road({ step, setStep, pay, next }: { step: RoadStep; setStep: (s: RoadS
 type PopStage = "intro" | "offer" | "paid";
 
 function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispatch: (a: Action) => void; onClose: () => void; onSend: () => void }) {
+  const { run } = useRuntime();
   const kind = state.sayes ?? "fifty";
   const [stage, setStage] = useSavedState<PopStage>("popStage", "intro");
-  const [kindAtOpen] = useSavedState("popKind", kind);
-  const wrongFifty = kindAtOpen === "fifty" && !isCorrect(state.claim, state.evidence);
+  const [kindAtOpen, setKindAtOpen] = useSavedState("popKind", kind);
+  useEffect(() => {
+    if (!("popKind" in run.ui)) {
+      setKindAtOpen(kind);
+    }
+  }, [kind, run.ui, setKindAtOpen]);
+  const correct = isCorrect(state.claim, state.evidence);
+  const wrongFifty = kindAtOpen === "fifty" && !correct;
   const data: { pose: SayesPose; text: string; auto?: boolean; paid?: string; voice?: string; paidVoice?: string; pay?: string; skip?: string } = wrongFifty ? SAYES_POPUP.fiftyWrong : SAYES_POPUP[kindAtOpen];
+  const autoSendDuration = (data.voice && VOICE_DURATIONS[data.voice]) ? Math.round(VOICE_DURATIONS[data.voice] * 1000 + 600) : 2800;
   useActiveTimer("popIntro", 900, () => setStage("offer"), stage === "intro");
-  useActiveTimer("popSend", 2800, onSend, stage === "offer" && "auto" in data);
+  useActiveTimer("popSend", autoSendDuration, onSend, stage === "offer" && "auto" in data);
   const pose: SayesPose = stage === "intro" ? "whistle" : "auto" in data ? "smart" : stage === "paid" ? "smart" : data.pose;
-  const text = stage === "intro" ? "" : stage === "paid" ? data.paid ?? data.text : data.text;
-  const voice = stage === "offer" ? data.voice : stage === "paid" ? data.paidVoice : undefined;
+  const text = stage === "intro" ? "" : stage === "paid" ? (correct ? SAYES_POPUP.paidCorrect.text : (data.paid ?? data.text)) : data.text;
+  const voice = stage === "offer" ? data.voice : stage === "paid" ? (correct ? SAYES_POPUP.paidCorrect.voice : data.paidVoice) : undefined;
 
   useEffect(() => {
     if (voice) {
