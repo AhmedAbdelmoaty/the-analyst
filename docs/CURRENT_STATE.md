@@ -44,6 +44,7 @@ Paymob foundation exists (DB tables/RPCs and server functions reported deployed)
 - Search Console not connected; public `/games` page deferred.
 
 ## The HR Café event (2026-11-25)
+- Training Evaluation camera layers now separate crossfade, rig movement, dialogue focus and image drift. Car entry pushes in, driving adds restrained shake/pan/speed edges, parking maneuvers then settles, office scenes drift slowly, and endings use a brief punch with outcome-colored edges. Location changes dip to dark; same-location art dissolves. Motion pauses with the existing game lifecycle and respects reduced motion; gameplay, audio and save timing are unchanged. Not published.
 - «تقييم التدريب» (`/games/training-evaluation`) is first and the only open game; its in-game title remains `Training Evaluation`, while others show "Coming Soon".
 - Training Evaluation uses one settings control for pause, resume, games navigation and confirmed local restart; the same options appear on the offer/confirmation page. Mobile analysis time sits on the top HUD row. Restart does not reset server event results or vouchers.
 - Training Evaluation briefing, parking, training meeting and ending calls use audio-led auto-advance with guarded Next/Back; scene-entry actions are separate screens. Parking choices are mandatory and outside the dialogue; repeated clicks cannot cross phases or change a committed payment. Existing owner saves, scoring and server timing are retained.

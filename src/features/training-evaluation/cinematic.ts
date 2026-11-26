@@ -45,6 +45,16 @@ export const CINE = {
 
 export type CineKey = keyof typeof CINE;
 
+// Locations choose the cut style; camera choreography never advances gameplay.
+export const CINE_LOCATION: Record<CineKey, string> = {
+  briefing: "seif", enterCar: "car", driving: "car",
+  parkingProgress: "parking", parkingDone: "parking", paymentRequest: "parking",
+  payLater: "parking", payTen: "parking", payFifty: "parking",
+  tarekWelcome: "training", tarekReport: "training", officeEntry: "analysis",
+  thinking: "analysis", investigation: "analysis", dashboard: "analysis", sending: "analysis",
+  victory: "ending", failure: "ending", timeout: "ending",
+};
+
 const cache = new Map<string, Promise<void>>();
 export function preload(src: string): Promise<void> {
   let p = cache.get(src);
