@@ -29,6 +29,15 @@ export function resumeAudio() {
 }
 
 const AUDIO = "/game-audio/";
+const voices = new Map<string, HTMLAudioElement>();
+export function preloadVoices(files: string[]) {
+  if (typeof Audio === "undefined") return;
+  for (const file of files) {
+    if (voices.has(file)) continue;
+    const sound = new Audio(`${AUDIO}${file}`); sound.preload = "auto";
+    voices.set(file, sound); sound.load();
+  }
+}
 const BGM_NORMAL_VOL = 0.6;
 const BGM_DUCKED_VOL = 0.18;
 
@@ -67,7 +76,9 @@ export function playVoice(file: string, onEnded?: () => void) {
     bgmAudio.volume = BGM_DUCKED_VOL;
   }
 
-  const sound = new Audio(`${AUDIO}${file}`);
+  preloadVoices([file]);
+  const sound = voices.get(file) ?? new Audio(`${AUDIO}${file}`);
+  sound.currentTime = 0;
   currentVoice = sound;
   sound.volume = 0.95;
   sound.muted = muted;
@@ -84,7 +95,7 @@ export function playVoice(file: string, onEnded?: () => void) {
     }
   };
 
-  if (!suspended) void sound.play().catch(() => undefined);
+  if (!suspended) void sound.play().catch(() => sound.dispatchEvent(new Event("playbackblocked")));
   return sound;
 }
 

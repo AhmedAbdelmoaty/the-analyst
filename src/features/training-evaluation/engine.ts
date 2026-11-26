@@ -61,7 +61,8 @@ export function initialState(): State {
 
 export type Action =
   | { type: "start"; rng?: () => number }
-  | { type: "next" }
+  | { type: "next"; phase?: Phase; line?: number }
+  | { type: "previous"; phase: Phase; line: number }
   | { type: "paySayes"; pay: SayesPay }
   | { type: "sayesFifty" }
   | { type: "enterOffice" }
@@ -97,10 +98,13 @@ export function reduce(s: State, a: Action): State {
     case "start":
       return s.phase === "intro" ? { ...initialState(), phase: "brief", order: shuffle(ALL_CLAIMS, a.rng ?? Math.random) } : s;
     case "next":
+      if ((a.phase && a.phase !== s.phase) || (a.line !== undefined && a.line !== s.line)) return s;
       if (s.phase === "brief") return s.line + 1 < BRIEF_LENGTH ? { ...s, line: s.line + 1 } : { ...s, phase: "road", line: 0 };
-      if (s.phase === "road") return { ...s, phase: "meeting", line: 0 };
+      if (s.phase === "road") return s.sayes ? { ...s, phase: "meeting", line: 0 } : s;
       if (s.phase === "meeting") return s.line + 1 < MEETING_LENGTH ? { ...s, line: s.line + 1 } : { ...s, phase: "office", line: 0 };
       return s;
+    case "previous":
+      return s.phase === a.phase && s.line === a.line && s.line > 0 && (s.phase === "brief" || s.phase === "meeting") ? { ...s, line: s.line - 1 } : s;
     case "paySayes":
       return s.phase === "road" && !s.sayes ? { ...s, sayes: a.pay } : s;
     case "sayesFifty":
@@ -139,6 +143,7 @@ export function reduce(s: State, a: Action): State {
       if (s.claim === "trainer" || s.claim === "trainees") return { ...s, view: "guess", claim: null, evidence: null };
       return { ...s, view: s.path === "ask" ? "ask" : "data" };
     case "backToThink":
+      if (!inOffice) return s;
       return {
         ...s,
         phase: "office",

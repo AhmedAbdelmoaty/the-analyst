@@ -1,0 +1,11 @@
+.g-training-eval .g-narrative footer { justify-content: space-between; gap: .75rem; margin-top: 1rem; }
+.g-training-eval .g-narrative footer .g-btn { min-width: 6rem; min-height: 44px; }
+.g-training-eval .g-narrative .g-copy { cursor: default; min-height: 4.5rem; }
+.g-training-eval .g-narrative { width: 100%; }
+.g-training-eval .g-road-conversation { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; width: 100%; gap: .75rem; padding: 5rem 1rem max(1rem, env(safe-area-inset-bottom)); }
+.g-training-eval .g-road-conversation > .g-stage { position: relative; inset: auto; padding: 0; min-height: 0; flex: none; }
+.g-training-eval .g-road-conversation > .g-sayes-choices { max-width: 42rem; margin-inline: auto; }
+@media (max-width: 640px) {
+  .g-training-eval .g-narrative footer .g-btn { min-width: 0; flex: 1; }
+  .g-training-eval .g-road-conversation { padding: 4.4rem .6rem max(.75rem, env(safe-area-inset-bottom)); }
+}

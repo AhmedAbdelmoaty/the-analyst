@@ -13,6 +13,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { GameButton } from "./GameButton";
 import { GameOptions, SettingsButton } from "./GameOptions";
 import { IncomingCall } from "./IncomingCall";
+import { NarrativeLine, SceneGate, preloadVoices } from "./Narrative";
 import "./game.css";
 import { RunProvider, useActiveTimer, useRuntime, useSavedState } from "./runtime";
 import { useNavigate } from "react-router-dom";
@@ -43,10 +44,12 @@ function ActiveGame({ onSubmit, onStart, onDone, endActions, completionSaved = t
   const [roadStep, setRoadStep] = useSavedState<RoadStep>("roadStep", "drive");
   const [sayesShown, setSayesShown] = useSavedState("global:sayesShown", false);
   const [pending, setPending] = useSavedState<Action | null>("pendingTravel", null);
+  const [briefComplete, setBriefComplete] = useSavedState("briefComplete", false);
+  const travelLock = useRef(false);
   const sendRecommendation = useCallback(() => dispatch({ type: "send" }), [dispatch]);
   useEffect(() => { setMuted(muted); }, [muted]);
-  const travel = useCallback((a: Action) => { setFade(true); whoosh(); setPending(a); }, [setPending]);
-  useActiveTimer(`travel:${state.phase}:${state.line}`, 420, () => { setPending(null); dispatch(pending ?? { type: "next" }); setFade(false); }, Boolean(pending));
+  const travel = useCallback((a: Action) => { if (travelLock.current || paused) return; travelLock.current = true; stopVoice(); setFade(true); setPending(a); }, [setPending, paused]);
+  useActiveTimer(`travel:${state.phase}:${state.line}`, 420, () => { setPending(null); dispatch(pending ?? { type: "next" }); setFade(false); travelLock.current = false; }, Boolean(pending));
   const submittedRef = useRef(false);
   useEffect(() => { if (!paused && state.phase === "verdict" && onSubmit && !submittedRef.current) { submittedRef.current = true; onSubmit(state); } }, [state, onSubmit, paused]);
   const timerOn = state.phase === "office" && state.officeEntered;
@@ -68,7 +71,7 @@ function ActiveGame({ onSubmit, onStart, onDone, endActions, completionSaved = t
     window.addEventListener("popstate", back);
     return () => window.removeEventListener("popstate", back);
   }, [state.phase === "intro", pause]);
-  useEffect(() => { preloadAll(PRELOAD_GROUPS.start); }, []);
+  useEffect(() => { preloadAll(PRELOAD_GROUPS.start); preloadVoices([...BRIEF, ...MEETING, ...WIN.lines].flatMap(l => l.voice ? [l.voice] : []).concat(["sayes-park.wav", "sayes-ask.wav"], SAYES_CHOICES.map(c => c.voice), Object.values(SAYES_LOSS_CALL).flatMap(lines => lines.map(l => l.voice)))); }, []);
   useEffect(() => { if (state.phase === "brief" || state.phase === "road") preloadAll(PRELOAD_GROUPS.road); if (state.phase === "meeting") preloadAll(PRELOAD_GROUPS.meeting); if (state.phase === "office") { preloadAll(PRELOAD_GROUPS.office); preloadAll(PRELOAD_GROUPS.endings); } }, [state.phase]);
   const cine: CineKey | null = state.phase === "intro" ? null
     : state.phase === "brief" ? "briefing"
@@ -84,13 +87,13 @@ function ActiveGame({ onSubmit, onStart, onDone, endActions, completionSaved = t
       {cine ? <CinematicScene k={cine} zoom={state.phase === "brief" && state.line > 0} /> : <Scene k={scene} />}
       {cine === "briefing" && <motion.figure className="g-engage-scene-logo" initial={{ opacity: 0, y: -12, scale: .94 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: .45, ease: "easeOut" }}><img src={engageLogo} alt="Engage for Better Performance" /></motion.figure>}
       {state.phase === "intro" && <SettingsButton className="te-offer-settings" onClick={openSettings} />}
-      {state.phase !== "intro" && <Hud state={state} muted={muted} elapsed={elapsed} timerVisible={timerVisible} onMute={() => setMute((v) => !v)} onSettings={openSettings} onThink={() => dispatch({ type: "backToThink" })} />}
+      {state.phase !== "intro" && <Hud state={state} muted={muted} elapsed={elapsed} timerVisible={timerVisible} onMute={() => setMute((v) => !v)} onSettings={openSettings} onThink={() => { if (state.phase === "office" && state.officeEntered) dispatch({ type: "backToThink" }); }} />}
       <AnimatePresence mode="wait">
         <motion.main key={`${state.phase}-${state.view}`} className="g-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .25 }}>
           {state.phase === "intro" && <Cover go={() => { resumeAudio(); startBgm(); sfx.tap(); travel({ type: "start" }); onStart?.(); }} />}
-          {state.phase === "brief" && <Dialogue line={BRIEF[state.line] ?? BRIEF[0] ?? { who: "seif", text: "" }} index={state.line} total={BRIEF.length} onNext={() => state.line + 1 < BRIEF.length ? dispatch({ type: "next" }) : travel({ type: "next" })} nextLabel={state.line + 1 < BRIEF.length ? "التالي" : "روح لمكتب التدريب"} />}
-          {state.phase === "road" && <Road step={roadStep} setStep={setRoadStep} pay={(pay) => dispatch({ type: "paySayes", pay })} next={() => travel({ type: "next" })} />}
-          {state.phase === "meeting" && <Dialogue line={MEETING[state.line] ?? MEETING[0] ?? { who: "tarek", text: "" }} index={state.line} total={MEETING.length} onNext={() => state.line + 1 < MEETING.length ? dispatch({ type: "next" }) : travel({ type: "next" })} nextLabel={state.line + 1 < MEETING.length ? "التالي" : "ادخل مكتبك"} />}
+          {state.phase === "brief" && (briefComplete ? <SceneGate label="روح لمكتب التدريب" onGo={() => travel({ type: "next", phase: "brief", line: state.line })} /> : <Dialogue line={BRIEF[state.line] ?? BRIEF[0] ?? { who: "seif", text: "" }} index={state.line} total={BRIEF.length} onPrevious={state.line > 0 ? () => dispatch({ type: "previous", phase: "brief", line: state.line }) : undefined} onNext={() => state.line + 1 < BRIEF.length ? dispatch({ type: "next", phase: "brief", line: state.line }) : setBriefComplete(true)} nextLabel="التالي" />)}
+          {state.phase === "road" && <Road step={roadStep} setStep={setRoadStep} pay={(pay) => dispatch({ type: "paySayes", pay })} next={() => travel({ type: "next", phase: "road", line: state.line })} />}
+          {state.phase === "meeting" && <Dialogue line={MEETING[state.line] ?? MEETING[0] ?? { who: "tarek", text: "" }} index={state.line} total={MEETING.length} onPrevious={state.line > 0 ? () => dispatch({ type: "previous", phase: "meeting", line: state.line }) : undefined} onNext={() => dispatch({ type: "next", phase: "meeting", line: state.line })} nextLabel="التالي" />}
           {state.phase === "office" && <Office state={state} dispatch={dispatch} onSend={sendRecommendation} sayesShown={sayesShown} markSayes={() => setSayesShown(true)} />}
           {state.phase === "verdict" && <Verdict state={state} dispatch={dispatch} travel={travel} endActions={endActions} onDone={onDone ? done : undefined} />}
         </motion.main>
@@ -168,76 +171,28 @@ function Cover({ go }: { go: () => void }) {
   );
 }
 
-type RoadStep = "drive" | "park" | "ask" | "reply";
+type RoadStep = "drive" | "park" | "ask" | "reply" | "arrive";
 
 function useSyncedTypewriter(text: string, voice?: string) {
   const chars = useMemo(() => Array.from(text), [text]);
   const [shown, setShown] = useSavedState(`text:${text}`, 0);
-  const done = shown >= chars.length;
-  const duration = Math.max(600, (voice && VOICE_DURATIONS[voice] ? VOICE_DURATIONS[voice] * .93 : Math.max(1.2, chars.length * .038) * .95) * 1000);
-  const left = useActiveTimer(`type:${text}`, duration, () => setShown(chars.length), !done);
-  useEffect(() => { const count = Math.min(chars.length, Math.floor((1 - left / duration) * chars.length)); if (count > shown) setShown(count); }, [left, duration, chars.length, shown, setShown]);
-
-  const revealAll = useCallback(() => {
-    setShown(chars.length);
-  }, [chars.length]);
-
-  return { shown, done, revealAll, chars };
-}
-
-function SayesLine({ pose, text, voice, children }: { pose: SayesPose; text: string; voice?: string; children?: ReactNode }) {
-  const { shown, done, revealAll, chars } = useSyncedTypewriter(text, voice);
-
+  const { paused, run } = useRuntime();
+  const fallback = !voice || Boolean(run.ui["global:muted"]);
+  const duration = Math.max(600, (voice ? VOICE_DURATIONS[voice] ?? 2 : Math.max(1.2, chars.length * .038)) * 1000);
+  const left = useActiveTimer(`type:${text}`, duration, () => setShown(chars.length), fallback && shown < chars.length);
   useEffect(() => {
-    if (voice) {
-      playVoice(voice);
-    } else {
-      stopVoice();
-    }
-    return () => {
-      stopVoice();
+    if (paused) return;
+    const tick = () => {
+      const sound = getCurrentVoice();
+      if (voice && !fallback) {
+        if (sound?.src.endsWith(voice) && sound.duration > 0) setShown(Math.min(chars.length, Math.ceil(sound.currentTime / sound.duration * chars.length)));
+        else if (!sound) setShown(chars.length);
+      } else setShown(Math.min(chars.length, Math.ceil((1 - left / duration) * chars.length)));
     };
-  }, [voice, text]);
-
-  return (
-    <motion.section className="g-dialogue dark g-sayes-line" initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-      <span className="g-portrait g-sayes-pose">
-        <AnimatePresence initial={false}>
-          <motion.img key={pose} src={SAYES_ART[pose]} alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .2 }} />
-        </AnimatePresence>
-      </span>
-      <div>
-        <header>
-          <span>{SAYES_NAME}</span>
-          {voice && (
-            <button
-              type="button"
-              className="g-voice-indicator"
-              title="إعادة الاستماع للصوت"
-              onClick={(e) => {
-                e.stopPropagation();
-                playVoice(voice);
-              }}
-            >
-              🔊
-            </button>
-          )}
-        </header>
-        <button
-          type="button"
-          className="g-copy"
-          onClick={revealAll}
-          style={{ cursor: done ? "default" : "pointer" }}
-        >
-          <motion.p key={text} className="g-sayes-text" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
-            {chars.slice(0, shown).join("")}
-            {!done && <i />}
-          </motion.p>
-        </button>
-        <footer className="g-sayes-actions">{children}</footer>
-      </div>
-    </motion.section>
-  );
+    const id = window.setInterval(tick, 100); return () => clearInterval(id);
+  }, [voice, text, paused, fallback, left, duration, chars.length, setShown]);
+  const revealAll = useCallback(() => setShown(chars.length), [chars.length, setShown]);
+  return { shown, done: shown >= chars.length, revealAll, chars };
 }
 
 const POSE_ANIM: Record<SayesPose, { initial: Record<string, number | string>; animate: Record<string, number | string | number[]> }> = {
@@ -251,39 +206,21 @@ const POSE_ANIM: Record<SayesPose, { initial: Record<string, number | string>; a
 function Road({ step, setStep, pay, next }: { step: RoadStep; setStep: (s: RoadStep) => void; pay: (p: "later" | "ten" | "fifty") => void; next: () => void }) {
   const { run } = useRuntime();
   const choice = SAYES_CHOICES.find(c => c.pay === run.state.sayes) ?? null;
-  const [line, setLine] = useSavedState("roadLine", 0);
+  const [choicesReady, setChoicesReady] = useSavedState("parkingChoicesReady", false);
+  const paymentLock = useRef(false);
   if (step === "drive") return <div className="g-stage center g-drive" aria-hidden />;
-  if (step === "park") return <div className="g-stage"><SayesLine pose="whistle" text={SAYES_PARK} voice="sayes-park.wav"><button className="g-btn primary" onClick={() => setStep("ask")}>انزل من العربية <ChevronLeft /></button></SayesLine></div>;
-  if (step === "ask" || !choice) {
-    return (
-      <div className="g-stage">
-        <SayesLine pose="money" text={SAYES_ASK} voice="sayes-ask.wav">
-          <div className="g-sayes-choices">
-            {SAYES_CHOICES.map((c, i) => (
-              <motion.button
-                key={c.pay}
-                className="g-btn secondary"
-                initial={{ y: 14, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.15 + i * 0.08 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  sfx.tap();
-                  pay(c.pay);
-                  setLine(0);
-                  setStep("reply");
-                }}
-              >
-                {c.text}
-              </motion.button>
-            ))}
-          </div>
-        </SayesLine>
-      </div>
-    );
-  }
-  const last = line + 1 >= choice.reply.length;
-  return <div className="g-stage"><SayesLine pose={choice.pose} text={choice.reply[line] ?? ""} voice={choice.voice}>{last ? <button className="g-btn primary" onClick={() => { sfx.door(); next(); }}><DoorOpen /> الدخول لمكتب التدريب</button> : <button className="g-btn primary" onClick={() => setLine(line + 1)}>التالي <ChevronLeft /></button>}</SayesLine></div>;
+  if (step === "arrive" && choice) return <SceneGate label="الدخول لمكتب التدريب" onGo={next} />;
+  if (step === "park") return <NarrativeLine text={SAYES_PARK} voice="sayes-park.wav" name={SAYES_NAME} image={SAYES_ART.whistle} onNext={() => setStep("ask")} />;
+  if (step === "ask" || !choice) return <div className="g-road-conversation">
+    <NarrativeLine text={SAYES_ASK} voice="sayes-ask.wav" name={SAYES_NAME} image={SAYES_ART.money}
+      autoAdvance={!choicesReady || Boolean(choice)} canNext={!choicesReady || Boolean(choice)} transitionSound={Boolean(choice)}
+      onPrevious={() => { setChoicesReady(false); setStep("park"); }} onNext={() => choice ? setStep("reply") : setChoicesReady(true)} />
+    {choicesReady && !choice && <div className="g-sayes-choices" aria-label="اختيار حساب الباركنج">{SAYES_CHOICES.map(c => <GameButton key={c.pay} className="secondary" onClick={() => {
+      if (paymentLock.current) return; paymentLock.current = true; stopVoice(); sfx.tap(); pay(c.pay); setStep("reply");
+    }}>{c.text}</GameButton>)}</div>}
+  </div>;
+  return <NarrativeLine text={choice.reply[0] ?? ""} voice={choice.voice} name={SAYES_NAME} image={SAYES_ART[choice.pose]}
+    onPrevious={() => setStep("ask")} onNext={() => setStep("arrive")} />;
 }
 
 type PopStage = "intro" | "offer" | "paid";
@@ -340,86 +277,16 @@ function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispat
   </motion.div>;
 }
 
-function Dialogue({ line, index, total, onNext, nextLabel, call = false, caller }: { line: Line; index: number; total: number; onNext: () => void; nextLabel: string; call?: boolean; caller?: { name: string; role: string; img: string } }) {
+function Dialogue({ line, index, total, onNext, onPrevious, call = false, caller }: { line: Line; index: number; total: number; onNext: () => void; onPrevious?: () => void; nextLabel: string; call?: boolean; caller?: { name: string; role: string; img: string } }) {
   const who = caller ? { ...caller, tone: "dark" as const } : WHO[line.who];
-  const { shown, done, revealAll, chars } = useSyncedTypewriter(line.text, line.voice);
-
-  useEffect(() => {
-    if (line.voice) {
-      playVoice(line.voice);
-    } else {
-      stopVoice();
-    }
-    return () => {
-      stopVoice();
-    };
-  }, [line.voice, index]);
-
-  return (
-    <div className="g-stage">
-      <motion.section className={`g-dialogue ${who.tone}`} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-        <motion.span
-          key={caller?.name ?? line.who}
-          className={`g-portrait ${call ? "is-call" : ""}`}
-          initial={{ opacity: 0, scale: .9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: .25 }}
-        >
-          <img src={caller?.img ?? PORTRAITS[line.who]} alt="" />
-        </motion.span>
-        <div>
-          {call && (
-            <span className="g-call-chip">
-              <Phone />مكالمة من {who.name}
-              <span className="g-call-waves"><i /><i /><i /></span>
-            </span>
-          )}
-          <header>
-            <span>{who.name}</span>
-            <small>{who.role}</small>
-            {line.voice && (
-              <button
-                type="button"
-                className="g-voice-indicator"
-                title="إعادة الاستماع للصوت"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (line.voice) playVoice(line.voice);
-                }}
-              >
-                🔊
-              </button>
-            )}
-            <em>{index + 1}/{total}</em>
-          </header>
-          <button
-            type="button"
-            className="g-copy"
-            onClick={() => (done ? onNext() : revealAll())}
-            style={{ cursor: "pointer" }}
-          >
-            <p>
-              {chars.slice(0, shown).join("")}
-              {!done && <i />}
-            </p>
-          </button>
-          <footer>
-            <button
-              className="g-btn primary"
-              onClick={() => (done ? onNext() : revealAll())}
-            >
-              {nextLabel}<ChevronLeft />
-            </button>
-          </footer>
-        </div>
-      </motion.section>
-    </div>
-  );
+  return <NarrativeLine text={line.text} voice={line.voice} name={who.name} role={who.role} image={caller?.img ?? PORTRAITS[line.who]} tone={who.tone}
+    index={index} total={total} call={call} onNext={onNext} onPrevious={onPrevious} />;
 }
 
 function Office({ state, dispatch, onSend, sayesShown, markSayes }: { state: State; dispatch: (a: Action) => void; onSend: () => void; sayesShown: boolean; markSayes: () => void }) {
   const [report, setReport] = useSavedState<Metric | null>("report", null);
-  if (!state.officeEntered) return <div className="g-stage center"><section className="g-arrive"><small>بعد مقابلة طارق</small><h2>مكتب التحليل مستنيك</h2><p>قدامك دقيقتين تختار طريق التحليل وتبعت التوصية.</p><button className="g-btn primary big" onClick={() => { sfx.door(); dispatch({ type: "enterOffice" }); }}>ادخل المكتب</button></section></div>;
+  const entryLock = useRef(false);
+  if (!state.officeEntered) return <div className="g-stage center"><section className="g-arrive"><small>بعد مقابلة طارق</small><h2>مكتب التحليل مستنيك</h2><p>قدامك دقيقتين تختار طريق التحليل وتبعت التوصية.</p><button className="g-btn primary big" onClick={() => { if (entryLock.current) return; entryLock.current = true; sfx.tap(); dispatch({ type: "enterOffice" }); }}>ادخل المكتب</button></section></div>;
   return <div className="g-stage g-office-stage"><motion.section key={state.view} className={`g-office-view g-office-${state.view}`} initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .24, ease: "easeOut" }}>
     {state.view === "think" && <Think dispatch={dispatch} />}
     {state.view === "guess" && <Guess dispatch={dispatch} />}
@@ -644,7 +511,7 @@ function Verdict({ state, dispatch, travel, endActions, onDone }: { state: State
   useActiveTimer("boothRedirect", 5000, () => onDone?.(), booth && Boolean(onDone));
   useEffect(() => { if (booth) { if (won) sfx.win(); else sfx.lose(); } }, [booth, won]);
   if (!answered && !booth) return <IncomingCall name={won ? "مستر سيف" : "السايس"} role={won ? "المدير العام" : undefined} image={won ? PORTRAITS.seif : SAYES_ART.portrait} onAnswer={() => setAnswered(true)} />;
-  if (!booth) return <Dialogue line={lines[i] ?? lines[0] ?? { who: "seif", text: "" }} index={i} total={lines.length} call caller={caller} nextLabel={i + 1 < lines.length ? "التالي" : "إنهاء المكالمة"} onNext={() => i + 1 < lines.length ? setI(i + 1) : setBooth(true)} />;
+  if (!booth) return <Dialogue line={lines[i] ?? lines[0] ?? { who: "seif", text: "" }} index={i} total={lines.length} call caller={caller} onPrevious={i > 0 ? () => setI(i - 1) : undefined} nextLabel={i + 1 < lines.length ? "التالي" : "إنهاء المكالمة"} onNext={() => i + 1 < lines.length ? setI(i + 1) : setBooth(true)} />;
   return <div className="g-stage center"><motion.section className="g-booth" initial={{ opacity: 0, scale: .9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 220, damping: 18 }}>
     <span className="g-booth-icon" aria-hidden>{won ? "🏆" : "🔍"}</span>
     <h2>{BOOTH_MESSAGE}</h2>
