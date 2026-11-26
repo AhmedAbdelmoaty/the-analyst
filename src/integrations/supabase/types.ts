@@ -908,6 +908,7 @@ export type Database = {
       event_admin_export: {
         Args: never
         Returns: {
+          challenge_started_at: string
           company_name: string
           correct: boolean
           department: string

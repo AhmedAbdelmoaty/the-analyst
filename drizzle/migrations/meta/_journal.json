@@ -134,6 +134,13 @@
       "when": 1795701415802,
       "tag": "0018_event_admin_controlled_results",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795702385260,
+      "tag": "0019_event_persistent_dashboard",
+      "breakpoints": true
     }
   ]
 }
