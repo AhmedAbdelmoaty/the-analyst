@@ -1,17 +1,19 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, DoorOpen, Home, Mail, Phone, RotateCcw, Send, Volume2, VolumeX } from "lucide-react";
+import { ChevronLeft, DoorOpen, Home, Pause, Mail, Phone, RotateCcw, Send, Volume2, VolumeX } from "lucide-react";
 import { CinematicScene } from "./CinematicScene";
 import { PRELOAD_GROUPS, preloadAll, type CineKey } from "./cinematic";
 import { DATA_PREPARATION_SECONDS, claimsFor, initialState, isCorrect, reduce, type Action, type EvidenceId, type State } from "./engine";
 import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, MEETING, METRICS, METRICS_LIST, QUESTIONS, SAYES_LOSS_CALL, BOOTH_MESSAGE, THOUGHTS, TITLE, WIN, VOICE_DURATIONS, type Line, type Metric, type Speaker } from "./content";
 import { PORTRAITS, SAYES_ART, SCENES, type SceneKey } from "./assets";
 import { DashChart, InlineReportCard, OfficialReportModal } from "./Chart";
-import { getCurrentVoice, playVoice, setMuted, sfx, startBgm, stopVoice, whoosh } from "./audio";
+import { getCurrentVoice, pauseAudio, resumeAudio, playVoice, setMuted, sfx, startBgm, stopVoice, whoosh } from "./audio";
 import engageLogo from "./assets/engage-logo.jpeg";
 import * as Dialog from "@radix-ui/react-dialog";
 import { GameButton } from "./GameButton";
 import "./game.css";
+import { RunProvider, useActiveTimer, useRuntime, useSavedState } from "./runtime";
+import { useNavigate } from "react-router-dom";
 
 const WHO: Record<Speaker, { name: string; role: string; tone: "dark" | "light" }> = {
   tarek: { name: "أ. طارق", role: "مدير التدريب والتطوير", tone: "dark" },
@@ -20,46 +22,44 @@ const WHO: Record<Speaker, { name: string; role: string; tone: "dark" | "light" 
 };
 
 const STATION: Record<State["phase"], string> = { intro: "", brief: "مكتب المدير العام", road: "الطريق لمكتب التدريب", meeting: "مكتب التدريب", office: "مكتب التحليل", verdict: "القرار النهائي" };
-export default function Game({ onSubmit, onStart, onDone, endActions }: { onSubmit?: (s: State) => void; onStart?: () => void; onDone?: () => void; endActions?: ReactNode } = {}) {
-  const [state, raw] = useReducer(reduce, undefined, initialState);
-  const [muted, setMute] = useState(false);
+type GameProps = { userId: string; completionSaved?: boolean; onSubmit?: (s: State) => void; onStart?: () => void; onDone?: () => void; endActions?: ReactNode };
+export default function Game(props: GameProps) {
+  return <RunProvider key={props.userId} userId={props.userId}><ActiveGame {...props} /></RunProvider>;
+}
+function ActiveGame({ onSubmit, onStart, onDone, endActions, completionSaved = true }: GameProps) {
+  const { run, dispatch, paused, pause, resume, finish, exitPrompt, unavailable, otherTab, update } = useRuntime();
+  const state = run.state;
+  const navigate = useNavigate();
+  const [muted, setMute] = useSavedState("global:muted", false);
   const [fade, setFade] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [roadStep, setRoadStep] = useState<RoadStep>("drive");
-  const [sayesShown, setSayesShown] = useState(false);
-  useEffect(() => { if (state.phase === "intro" || state.phase === "brief") { setRoadStep("drive"); setSayesShown(false); } }, [state.phase]);
-  const dispatch = useCallback((a: Action) => raw(a), []);
-  const sendRecommendation = useCallback(() => raw({ type: "send" }), []);
-
+  const [roadStep, setRoadStep] = useSavedState<RoadStep>("roadStep", "drive");
+  const [sayesShown, setSayesShown] = useSavedState("global:sayesShown", false);
+  const [pending, setPending] = useSavedState<Action | null>("pendingTravel", null);
+  const sendRecommendation = useCallback(() => dispatch({ type: "send" }), [dispatch]);
   useEffect(() => { setMuted(muted); }, [muted]);
-  useEffect(() => {
-    const begin = () => startBgm();
-    window.addEventListener("pointerdown", begin, { once: true });
-    return () => window.removeEventListener("pointerdown", begin);
-  }, []);
-
-  const travel = useCallback((a: Action) => {
-    setFade(true);
-    whoosh();
-    window.setTimeout(() => { raw(a); window.setTimeout(() => setFade(false), 120); }, 420);
-  }, []);
-
+  const travel = useCallback((a: Action) => { setFade(true); whoosh(); setPending(a); }, [setPending]);
+  useActiveTimer(`travel:${state.phase}:${state.line}`, 420, () => { setPending(null); dispatch(pending ?? { type: "next" }); setFade(false); }, Boolean(pending));
   const submittedRef = useRef(false);
-  useEffect(() => { if (state.phase === "verdict" && onSubmit && !submittedRef.current) { submittedRef.current = true; onSubmit(state); } }, [state, onSubmit]);
+  useEffect(() => { if (!paused && state.phase === "verdict" && onSubmit && !submittedRef.current) { submittedRef.current = true; onSubmit(state); } }, [state, onSubmit, paused]);
   const timerOn = state.phase === "office" && state.officeEntered;
   const timerVisible = state.officeEntered && (state.phase === "office" || state.phase === "verdict");
+  useActiveTimer("analysis", 1e12, () => {}, timerOn);
+  const elapsed = Math.floor((run.timers.analysis ?? 0) / 1000);
+  const driveLeft = useActiveTimer("drive", 7600, () => setRoadStep("park"), state.phase === "road" && roadStep === "drive");
+  const parkLeft = useActiveTimer("park", 1600, () => {}, state.phase === "road" && roadStep === "park");
+  const travelBeat = roadStep === "drive" ? Number(driveLeft <= 5000) : Number(parkLeft === 0);
+  const exit = useCallback(() => { pause(); navigate("/app"); }, [pause, navigate]);
+  const done = useCallback(() => { if (completionSaved) finish(); else pause(); onDone?.(); }, [finish, onDone, completionSaved, pause]);
+  // Add one same-route guard while playing; browser Back pauses instead of discarding progress.
   useEffect(() => {
-    if (!timerOn) return;
-    const id = window.setInterval(() => setElapsed((v) => v + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [timerOn]);
-  useEffect(() => {
-    if (state.phase === "office" && !state.officeEntered) setElapsed(0);
-  }, [state.phase, state.officeEntered]);
-
-  // Visual-only sub-beats (no gameplay effect): car entry → driving, parking in progress → completed.
-  const [travelBeat, setTravelBeat] = useState(0);
-  useEffect(() => { setTravelBeat(0); if (state.phase !== "road") return; if (roadStep === "drive") { const a = window.setTimeout(() => setTravelBeat(1), 2600); const b = window.setTimeout(() => setRoadStep("park"), 7600); return () => { window.clearTimeout(a); window.clearTimeout(b); }; } if (roadStep === "park") { const id = window.setTimeout(() => setTravelBeat(1), 1600); return () => window.clearTimeout(id); } }, [state.phase, roadStep]);
+    if (state.phase === "intro") return;
+    const marker = "trainingBackGuard";
+    const existing = window.history.state ?? {};
+    if (!existing[marker]) window.history.pushState({ ...existing, [marker]: true }, "", window.location.href);
+    const back = () => { window.history.pushState({ ...(window.history.state ?? {}), [marker]: true }, "", window.location.href); pause(true); };
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, [state.phase === "intro", pause]);
   useEffect(() => { preloadAll(PRELOAD_GROUPS.start); }, []);
   useEffect(() => { if (state.phase === "brief" || state.phase === "road") preloadAll(PRELOAD_GROUPS.road); if (state.phase === "meeting") preloadAll(PRELOAD_GROUPS.meeting); if (state.phase === "office") { preloadAll(PRELOAD_GROUPS.office); preloadAll(PRELOAD_GROUPS.endings); } }, [state.phase]);
   const cine: CineKey | null = state.phase === "intro" ? null
@@ -71,22 +71,26 @@ export default function Game({ onSubmit, onStart, onDone, endActions }: { onSubm
   const scene: SceneKey = "cover";
 
   return (
-    <div className="g600 g-training-eval" dir="rtl">
+    <div className={`g600 g-training-eval ${paused ? "is-paused" : ""}`} dir="rtl">
+      <div className="g-play-layer" {...(paused ? { inert: "" } : {})} aria-hidden={paused || undefined}>
       {cine ? <CinematicScene k={cine} zoom={state.phase === "brief" && state.line > 0} /> : <Scene k={scene} />}
       {cine === "briefing" && <motion.figure className="g-engage-scene-logo" initial={{ opacity: 0, y: -12, scale: .94 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: .45, ease: "easeOut" }}><img src={engageLogo} alt="Engage for Better Performance" /></motion.figure>}
       {state.phase === "intro" && <a href="/app" className="g-home-exit" aria-label="الرجوع للألعاب"><Home /></a>}
-      {state.phase !== "intro" && <Hud state={state} muted={muted} elapsed={elapsed} timerVisible={timerVisible} onMute={() => setMute((v) => !v)} onRestart={() => { window.location.href = "/app"; }} onThink={() => dispatch({ type: "backToThink" })} />}
+      {state.phase !== "intro" && <Hud state={state} muted={muted} elapsed={elapsed} timerVisible={timerVisible} onMute={() => setMute((v) => !v)} onRestart={() => pause(true)} onPause={() => pause()} onThink={() => dispatch({ type: "backToThink" })} />}
       <AnimatePresence mode="wait">
         <motion.main key={`${state.phase}-${state.view}`} className="g-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .25 }}>
-          {state.phase === "intro" && <Cover go={() => { startBgm(); sfx.tap(); travel({ type: "start" }); onStart?.(); }} />}
+          {state.phase === "intro" && <Cover go={() => { resumeAudio(); startBgm(); sfx.tap(); travel({ type: "start" }); onStart?.(); }} />}
           {state.phase === "brief" && <Dialogue line={BRIEF[state.line] ?? BRIEF[0] ?? { who: "seif", text: "" }} index={state.line} total={BRIEF.length} onNext={() => state.line + 1 < BRIEF.length ? dispatch({ type: "next" }) : travel({ type: "next" })} nextLabel={state.line + 1 < BRIEF.length ? "التالي" : "روح لمكتب التدريب"} />}
           {state.phase === "road" && <Road step={roadStep} setStep={setRoadStep} pay={(pay) => dispatch({ type: "paySayes", pay })} next={() => travel({ type: "next" })} />}
           {state.phase === "meeting" && <Dialogue line={MEETING[state.line] ?? MEETING[0] ?? { who: "tarek", text: "" }} index={state.line} total={MEETING.length} onNext={() => state.line + 1 < MEETING.length ? dispatch({ type: "next" }) : travel({ type: "next" })} nextLabel={state.line + 1 < MEETING.length ? "التالي" : "ادخل مكتبك"} />}
           {state.phase === "office" && <Office state={state} dispatch={dispatch} onSend={sendRecommendation} sayesShown={sayesShown} markSayes={() => setSayesShown(true)} />}
-          {state.phase === "verdict" && <Verdict state={state} dispatch={dispatch} travel={travel} endActions={endActions} onDone={onDone} />}
+          {state.phase === "verdict" && <Verdict state={state} dispatch={dispatch} travel={travel} endActions={endActions} onDone={onDone ? done : undefined} />}
         </motion.main>
       </AnimatePresence>
       <AnimatePresence>{fade && <motion.div className="g-dip" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35 }} />}</AnimatePresence>
+      </div>
+      {unavailable && <p className="g-save-warning" role="alert">الحفظ مش متاح في المتصفح ده. ماتقفلش اللعبة قبل ما تخلص.</p>}
+      <Dialog.Root open={paused}><Dialog.Portal><Dialog.Overlay className="g-pause-layer"><Dialog.Content asChild aria-describedby={undefined} onEscapeKeyDown={e => e.preventDefault()} onPointerDownOutside={e => e.preventDefault()}><section><Pause aria-hidden /><Dialog.Title asChild><h2>{otherTab ? "اللعبة مفتوحة في صفحة تانية" : exitPrompt ? "الخروج من اللعبة" : "اللعبة متوقفة مؤقتاً"}</h2></Dialog.Title><div className="g-pause-actions"><GameButton className="primary" onClick={resume}>{otherTab ? "كمّل هنا" : "متابعة اللعب"}</GameButton><GameButton className="secondary" onClick={exit}>العودة إلى الألعاب</GameButton></div></section></Dialog.Content></Dialog.Overlay></Dialog.Portal></Dialog.Root>
     </div>
   );
 }
@@ -96,10 +100,10 @@ function Scene({ k }: { k: SceneKey }) {
   return <div className={`g-scene scene-${k}`} aria-hidden><motion.picture key={k} initial={{ opacity: 0 }} animate={{ opacity: 1 }}><source media="(max-width:640px)" srcSet={s.p} /><img src={s.l} alt="" /></motion.picture><div className={`g-wash ${k === "cover" ? "cover" : ""}`} /></div>;
 }
 
-function Hud({ state, muted, elapsed, timerVisible, onMute, onRestart, onThink }: { state: State; muted: boolean; elapsed: number; timerVisible: boolean; onMute: () => void; onRestart: () => void; onThink: () => void }) {
+function Hud({ state, muted, elapsed, timerVisible, onMute, onRestart, onPause, onThink }: { state: State; muted: boolean; elapsed: number; timerVisible: boolean; onMute: () => void; onRestart: () => void; onPause: () => void; onThink: () => void }) {
   const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
   const seconds = String(elapsed % 60).padStart(2, "0");
-  return <header className="g-hud"><div className="g-hud-tools"><button aria-label="الرجوع للألعاب" onClick={onRestart}><Home /></button><button aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</button><button className="g-test-nav-btn" title="الرجوع لخيارات التفكير" onClick={onThink}>🔄 <span>رجوع للتفكير</span></button></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerVisible ? <div className="g-timer is-counting" role="timer" aria-label={`وقت التحليل ${minutes} دقيقة و${seconds} ثانية`}><small>وقت التحليل</small><b>{minutes}:{seconds}</b><i aria-hidden><em /></i></div> : <span />}</header>;
+  return <header className="g-hud"><div className="g-hud-tools"><GameButton aria-label="الرجوع للألعاب" onClick={onRestart}><Home /></GameButton><GameButton aria-label="إيقاف مؤقت" onClick={onPause}><Pause /></GameButton><button aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</button><button className="g-test-nav-btn" title="الرجوع لخيارات التفكير" onClick={onThink}>🔄 <span>رجوع للتفكير</span></button></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerVisible ? <div className="g-timer is-counting" role="timer" aria-label={`وقت التحليل ${minutes} دقيقة و${seconds} ثانية`}><small>وقت التحليل</small><b>{minutes}:{seconds}</b><i aria-hidden><em /></i></div> : <span />}</header>;
 }
 
 function Cover({ go }: { go: () => void }) {
@@ -160,57 +164,11 @@ type RoadStep = "drive" | "park" | "ask" | "reply";
 
 function useSyncedTypewriter(text: string, voice?: string) {
   const chars = useMemo(() => Array.from(text), [text]);
-  const [shown, setShown] = useState(0);
+  const [shown, setShown] = useSavedState(`text:${text}`, 0);
   const done = shown >= chars.length;
-
-  useEffect(() => {
-    setShown(0);
-  }, [text]);
-
-  useEffect(() => {
-    if (done) return;
-
-    const expectedSec = voice && VOICE_DURATIONS[voice]
-      ? VOICE_DURATIONS[voice]
-      : Math.max(1.2, chars.length * 0.038);
-
-    const pacingFactor = voice ? 0.93 : 0.95;
-    const targetMs = Math.max(600, expectedSec * pacingFactor * 1000);
-    const startTime = performance.now();
-
-    let rafId: number;
-
-    const tick = (now: number) => {
-      let progress = 0;
-      const activeVoice = getCurrentVoice();
-
-      if (
-        voice &&
-        activeVoice &&
-        activeVoice.src.includes(voice) &&
-        !activeVoice.paused &&
-        activeVoice.currentTime > 0
-      ) {
-        const totalDuration = activeVoice.duration && !isNaN(activeVoice.duration) && activeVoice.duration > 0
-          ? activeVoice.duration
-          : expectedSec;
-        progress = Math.min(1, activeVoice.currentTime / (totalDuration * pacingFactor));
-      } else {
-        const elapsed = now - startTime;
-        progress = Math.min(1, elapsed / targetMs);
-      }
-
-      const count = Math.min(chars.length, Math.floor(progress * chars.length));
-      setShown((prev) => Math.max(prev, count));
-
-      if (progress < 1 && count < chars.length) {
-        rafId = requestAnimationFrame(tick);
-      }
-    };
-
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [text, voice, done, chars.length]);
+  const duration = Math.max(600, (voice && VOICE_DURATIONS[voice] ? VOICE_DURATIONS[voice] * .93 : Math.max(1.2, chars.length * .038) * .95) * 1000);
+  const left = useActiveTimer(`type:${text}`, duration, () => setShown(chars.length), !done);
+  useEffect(() => { const count = Math.min(chars.length, Math.floor((1 - left / duration) * chars.length)); if (count > shown) setShown(count); }, [left, duration, chars.length, shown, setShown]);
 
   const revealAll = useCallback(() => {
     setShown(chars.length);
@@ -283,8 +241,9 @@ const POSE_ANIM: Record<SayesPose, { initial: Record<string, number | string>; a
 };
 
 function Road({ step, setStep, pay, next }: { step: RoadStep; setStep: (s: RoadStep) => void; pay: (p: "later" | "ten" | "fifty") => void; next: () => void }) {
-  const [choice, setChoice] = useState<(typeof SAYES_CHOICES)[number] | null>(null);
-  const [line, setLine] = useState(0);
+  const { run } = useRuntime();
+  const choice = SAYES_CHOICES.find(c => c.pay === run.state.sayes) ?? null;
+  const [line, setLine] = useSavedState("roadLine", 0);
   if (step === "drive") return <div className="g-stage center g-drive" aria-hidden />;
   if (step === "park") return <div className="g-stage"><SayesLine pose="whistle" text={SAYES_PARK} voice="sayes-park.wav"><button className="g-btn primary" onClick={() => setStep("ask")}>انزل من العربية <ChevronLeft /></button></SayesLine></div>;
   if (step === "ask" || !choice) {
@@ -303,7 +262,6 @@ function Road({ step, setStep, pay, next }: { step: RoadStep; setStep: (s: RoadS
                 onClick={() => {
                   sfx.tap();
                   pay(c.pay);
-                  setChoice(c);
                   setLine(0);
                   setStep("reply");
                 }}
@@ -324,20 +282,15 @@ type PopStage = "intro" | "offer" | "paid";
 
 function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispatch: (a: Action) => void; onClose: () => void; onSend: () => void }) {
   const kind = state.sayes ?? "fifty";
-  const [stage, setStage] = useState<PopStage>("intro");
-  const [kindAtOpen] = useState(kind);
+  const [stage, setStage] = useSavedState<PopStage>("popStage", "intro");
+  const [kindAtOpen] = useSavedState("popKind", kind);
   const wrongFifty = kindAtOpen === "fifty" && !isCorrect(state.claim, state.evidence);
-  const data = wrongFifty ? SAYES_POPUP.fiftyWrong : SAYES_POPUP[kindAtOpen];
-  useEffect(() => { const id = window.setTimeout(() => setStage("offer"), 900); return () => window.clearTimeout(id); }, []);
-  useEffect(() => { if (stage !== "offer" || !("auto" in data)) return; const id = window.setTimeout(onSend, 2800); return () => window.clearTimeout(id); }, [stage, data, onSend]);
+  const data: { pose: SayesPose; text: string; auto?: boolean; paid?: string; voice?: string; paidVoice?: string; pay?: string; skip?: string } = wrongFifty ? SAYES_POPUP.fiftyWrong : SAYES_POPUP[kindAtOpen];
+  useActiveTimer("popIntro", 900, () => setStage("offer"), stage === "intro");
+  useActiveTimer("popSend", 2800, onSend, stage === "offer" && "auto" in data);
   const pose: SayesPose = stage === "intro" ? "whistle" : "auto" in data ? "smart" : stage === "paid" ? "smart" : data.pose;
-  const text = stage === "intro" ? "" : stage === "paid" && "paid" in data ? data.paid : data.text;
-  const voice =
-    stage === "offer" && "voice" in data
-      ? data.voice
-      : stage === "paid" && "paidVoice" in data
-      ? data.paidVoice
-      : undefined;
+  const text = stage === "intro" ? "" : stage === "paid" ? data.paid ?? data.text : data.text;
+  const voice = stage === "offer" ? data.voice : stage === "paid" ? data.paidVoice : undefined;
 
   useEffect(() => {
     if (voice) {
@@ -423,7 +376,7 @@ function Dialogue({ line, index, total, onNext, nextLabel, call = false, caller 
                 title="إعادة الاستماع للصوت"
                 onClick={(e) => {
                   e.stopPropagation();
-                  playVoice(line.voice!);
+                  if (line.voice) playVoice(line.voice);
                 }}
               >
                 🔊
@@ -457,7 +410,7 @@ function Dialogue({ line, index, total, onNext, nextLabel, call = false, caller 
 }
 
 function Office({ state, dispatch, onSend, sayesShown, markSayes }: { state: State; dispatch: (a: Action) => void; onSend: () => void; sayesShown: boolean; markSayes: () => void }) {
-  const [report, setReport] = useState<Metric | null>(null);
+  const [report, setReport] = useSavedState<Metric | null>("report", null);
   if (!state.officeEntered) return <div className="g-stage center"><section className="g-arrive"><small>بعد مقابلة طارق</small><h2>مكتب التحليل مستنيك</h2><p>قدامك دقيقتين تختار طريق التحليل وتبعت التوصية.</p><button className="g-btn primary big" onClick={() => { sfx.door(); dispatch({ type: "enterOffice" }); }}>ادخل المكتب</button></section></div>;
   return <div className="g-stage g-office-stage"><motion.section key={state.view} className={`g-office-view g-office-${state.view}`} initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .24, ease: "easeOut" }}>
     {state.view === "think" && <Think dispatch={dispatch} />}
@@ -502,9 +455,11 @@ const GUESS_CONFIGS: Record<"trainer" | "trainees", GuessFlowConfig> = {
 };
 
 function Guess({ dispatch }: { dispatch: (a: Action) => void }) {
-  const [activeConfig, setActiveConfig] = useState<GuessFlowConfig | null>(null);
-  const [step, setStep] = useState<"search" | "chart">("search");
-  const [stamped, setStamped] = useState(false);
+  const [activeConfig, setActiveConfig] = useSavedState<GuessFlowConfig | null>("guessConfig", null);
+  const [step, setStep] = useSavedState<"search" | "chart">("guessStep", "search");
+  const [stamped, setStamped] = useSavedState("guessStamped", false);
+
+  useActiveTimer("guessStamp", 700, () => { if (!activeConfig) return; dispatch({ type: "guess", id: activeConfig.claimId, evidence: activeConfig.evidenceId }); }, stamped);
 
   const handleSelect = (id: "trainer" | "trainees" | "data") => {
     if (id === "trainer" || id === "trainees") {
@@ -522,11 +477,7 @@ function Guess({ dispatch }: { dispatch: (a: Action) => void }) {
     if (!activeConfig || stamped) return;
     setStamped(true);
     sfx.stamp();
-    window.setTimeout(() => {
-      const { claimId, evidenceId } = activeConfig;
-      setActiveConfig(null);
-      dispatch({ type: "guess", id: claimId, evidence: evidenceId });
-    }, 700);
+
   };
 
   const handleSkipEvidence = () => {
@@ -603,16 +554,7 @@ function Guess({ dispatch }: { dispatch: (a: Action) => void }) {
 }
 
 function DataPreparation({ dispatch }: { dispatch: (a: Action) => void }) {
-  const [remaining, setRemaining] = useState(DATA_PREPARATION_SECONDS);
-  useEffect(() => {
-    const started = Date.now();
-    const id = window.setInterval(() => {
-      const left = Math.max(0, DATA_PREPARATION_SECONDS - Math.floor((Date.now() - started) / 1000));
-      setRemaining(left);
-      if (left === 0) { window.clearInterval(id); dispatch({ type: "dataReady" }); }
-    }, 100);
-    return () => window.clearInterval(id);
-  }, [dispatch]);
+  const remaining = Math.ceil(useActiveTimer("dataPreparation", DATA_PREPARATION_SECONDS * 1000, () => dispatch({ type: "dataReady" })) / 1000);
   return <Dialog.Root open><Dialog.Portal><Dialog.Overlay className="g-preparation-backdrop" /><Dialog.Content className="g-preparation" onEscapeKeyDown={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()} aria-describedby={undefined}>
     <Dialog.Title>جاري تجهيز وسحب بيانات التدريب...</Dialog.Title>
     <b className="g-loading-count" aria-live="polite">{remaining}</b>
@@ -621,7 +563,7 @@ function DataPreparation({ dispatch }: { dispatch: (a: Action) => void }) {
 }
 
 function DataView({ state, dispatch, openReport }: { state: State; dispatch: (a: Action) => void; openReport: (m: Metric) => void }) {
-  const [picking, setPicking] = useState(Boolean(state.evidence));
+  const [picking, setPicking] = useSavedState("dataPicking", Boolean(state.evidence));
   const restart = () => dispatch({ type: "backToThink" });
 
   const sourceNote = (
@@ -655,7 +597,7 @@ function AskView({ state, dispatch }: { state: State; dispatch: (a: Action) => v
 }
 
 function ClaimPicker({ state, dispatch, extra }: { state: State; dispatch: (a: Action) => void; extra?: import("react").ReactNode }) {
-  const [confirming, setConfirming] = useState(false);
+  const [confirming, setConfirming] = useSavedState("confirming", false);
   const claims = claimsFor(state);
   const zone = useRef<HTMLElement>(null);
   useEffect(() => { const id = window.setTimeout(() => zone.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120); return () => window.clearTimeout(id); }, []);
@@ -666,9 +608,10 @@ function ClaimPicker({ state, dispatch, extra }: { state: State; dispatch: (a: A
 }
 
 function Email({ state, dispatch, onSend, sayesShown, markSayes }: { state: State; dispatch: (a: Action) => void; onSend: () => void; sayesShown: boolean; markSayes: () => void }) {
-  const [pop, setPop] = useState(false);
-  const [flying, setFlying] = useState(false);
-  const fly = useCallback(() => { setPop(false); setFlying(true); whoosh(); window.setTimeout(onSend, 800); }, [onSend]);
+  const [pop, setPop] = useSavedState("emailPop", false);
+  const [flying, setFlying] = useSavedState("emailFlying", false);
+  useActiveTimer("emailSend", 800, onSend, flying);
+  const fly = useCallback(() => { setPop(false); setFlying(true); whoosh(); }, [setPop, setFlying]);
   const claim = state.claim;
   if (!claim) return null;
   return <><motion.article className="g-mail" initial={{ y: 30, opacity: 0 }} animate={flying ? { y: "-90vh", x: "-25vw", scale: .2, rotate: -18, opacity: 0 } : { y: 0, opacity: 1 }} transition={flying ? { duration: .8, ease: "easeIn" } : { duration: .25 }}><div className="g-mail-bar"><Mail /> رسالة جديدة</div><div className="g-mail-head"><p><b>إلى:</b> مستر سيف — المدير العام</p><p><b>الموضوع:</b> توصية تقييم كورس التدريب والتجديد</p></div><p className="g-mail-hi">مستر سيف،</p><p className="g-mail-body">{emailBody(claim, state.evidence)}</p><p className="g-mail-sign">وتفضلوا بقبول فائق الاحترام،<br />محلل الموارد البشرية</p><div className="g-mail-actions"><button className="g-btn primary big" disabled={flying} onClick={() => { if (state.sayes && !sayesShown) { markSayes(); setPop(true); } else fly(); }}><Send /> {flying ? "التوصية في الطريق" : "إرسال التوصية"}</button><button className="g-btn secondary" disabled={flying} onClick={() => dispatch({ type: "backFromEmail" })}>راجع التحليل</button></div></motion.article><AnimatePresence>{pop && <SayesPopup state={state} dispatch={dispatch} onClose={() => setPop(false)} onSend={fly} />}</AnimatePresence></>;
@@ -684,10 +627,11 @@ function Verdict({ state, dispatch, travel, endActions, onDone }: { state: State
         voice: call.voice,
       }));
   const caller = won ? undefined : { name: SAYES_NAME, role: "مكالمة من الشارع", img: SAYES_ART.smug };
-  const [i, setI] = useState(0);
-  const [booth, setBooth] = useState(false);
-  useEffect(() => { if (!booth) return; if (won) sfx.win(); else sfx.lose(); if (!onDone) return; const id = window.setTimeout(onDone, 5000); return () => window.clearTimeout(id); }, [booth, won, onDone]);
-  if (!booth) return <Dialogue line={lines[i] ?? lines[0]!} index={i} total={lines.length} call caller={caller} nextLabel={i + 1 < lines.length ? "التالي" : "إنهاء المكالمة"} onNext={() => i + 1 < lines.length ? setI(i + 1) : setBooth(true)} />;
+  const [i, setI] = useSavedState("verdictLine", 0);
+  const [booth, setBooth] = useSavedState("verdictBooth", false);
+  useActiveTimer("boothRedirect", 5000, () => onDone?.(), booth && Boolean(onDone));
+  useEffect(() => { if (booth) { if (won) sfx.win(); else sfx.lose(); } }, [booth, won]);
+  if (!booth) return <Dialogue line={lines[i] ?? lines[0] ?? { who: "seif", text: "" }} index={i} total={lines.length} call caller={caller} nextLabel={i + 1 < lines.length ? "التالي" : "إنهاء المكالمة"} onNext={() => i + 1 < lines.length ? setI(i + 1) : setBooth(true)} />;
   return <div className="g-stage center"><motion.section className="g-booth" initial={{ opacity: 0, scale: .9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 220, damping: 18 }}>
     <span className="g-booth-icon" aria-hidden>{won ? "🏆" : "🔍"}</span>
     <h2>{BOOTH_MESSAGE}</h2>

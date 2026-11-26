@@ -3,6 +3,15 @@
 .g600{
   position:fixed;inset:0;overflow:hidden;background:hsl(var(--ink));color:hsl(var(--ink));font-family:'Cairo',sans-serif}
 .g600 button{font:inherit;cursor:pointer}
+.g-play-layer{position:absolute;inset:0}
+.g-training-eval.is-paused .g-play-layer *{animation-play-state:paused!important}
+.g-pause-layer{position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:1rem;background:hsl(var(--background)/.78);backdrop-filter:blur(8px);color:hsl(var(--foreground))}
+.g-pause-layer section{width:min(100%,26rem);padding:2rem 1.25rem;text-align:center;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:8px}
+.g-pause-layer section>svg{width:2.5rem;height:2.5rem;margin:0 auto 1rem;color:hsl(var(--primary))}
+.g-pause-layer h2{font-size:1.3rem;font-weight:800;margin-bottom:1.5rem}
+.g-pause-actions{display:grid;gap:.8rem}
+.g-save-warning{position:fixed;z-index:310;bottom:1rem;inset-inline:1rem;text-align:center;padding:.8rem;background:hsl(var(--destructive));color:hsl(var(--destructive-foreground));border-radius:8px}
+@media(max-width:640px){.g-training-eval .g-hud{grid-template-columns:1fr auto;gap:.4rem}.g-training-eval .g-hud-place{grid-column:2;grid-row:1}.g-training-eval .g-hud-tools{flex-wrap:wrap;gap:.3rem}.g-training-eval .g-hud-tools button{width:2.3rem;height:2.3rem;padding:.3rem}.g-training-eval .g-hud-tools .g-test-nav-btn{width:auto;font-size:.65rem;padding:.3rem}.g-training-eval .g-timer{grid-column:2;justify-self:end}}
 .g-scene,.g-scene picture{position:absolute;inset:0}
 .g-scene img{width:100%;height:100%;object-fit:cover;will-change:transform;animation:g-kenburns 18s cubic-bezier(.4,0,.2,1) infinite alternate}
 .g-wash{position:absolute;inset:0;background:linear-gradient(180deg,hsl(var(--ink)/.25) 0%,hsl(var(--ink)/.05) 40%,hsl(var(--ink)/.55) 100%)}

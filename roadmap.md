@@ -1,4 +1,5 @@
 # Current tasks
+- [x] Training Evaluation: per-user reducer/subscreen/timer persistence, pause/resume/audio stop, browser Back confirmation, single-tab protection and finish-save retention; 10 targeted tests plus isolated mobile full winning flow with reloads passed. No Cloud changes/publication; real-account/device verification remains untested.
 - [x] HR Café: automatic server-ranked leaderboard, admin-only start on arena, immediate owner voucher after finale; 9 isolated tests passed and public/synthetic mobile/desktop arena reviewed; no event reset or publication.
 - [ ] HR Café real-account start → correct finish → voucher check: blocked by unavailable owner preview session; no production test players/results created.
 - [x] Premium discovery landing, shared five-game catalog, first-signup plans and selected-game journey; 50 rule/regression tests and safe mock signup/login/all-five-route checks at desktop/mobile (no Cloud changes or publication; real OTP deliberately untested).
