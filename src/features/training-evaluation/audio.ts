@@ -41,6 +41,7 @@ export const setMuted = (m: boolean) => {
   if (currentVoice) {
     currentVoice.muted = m;
   }
+  for (const effect of effects) effect.muted = m;
 };
 
 export function getCurrentVoice(): HTMLAudioElement | null {
@@ -120,6 +121,16 @@ export function stopBgm() {
   if (!bgmAudio) return;
   bgmAudio.pause();
   bgmAudio.currentTime = 0;
+}
+
+export function startRingtone() {
+  if (muted || suspended || typeof Audio === "undefined") return () => {};
+  const sound = new Audio("/sounds/interaction_phone_ringtone.mp3");
+  sound.loop = true;
+  sound.volume = 0.8;
+  effects.add(sound);
+  void sound.play().catch(() => undefined);
+  return () => { sound.pause(); effects.delete(sound); };
 }
 
 export const sfx = {

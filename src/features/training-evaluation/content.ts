@@ -88,7 +88,7 @@ export interface Metric {
 export const METRICS_LIST: Metric[] = [
   { id: "participants", label: "Course Participants", labelAr: "إجمالي المشاركين في الكورس", source: "LMS", a: 50, b: 50, max: 60, note: "عدد المسجلين رسمياً في السيستم لكل مجموعة." },
   { id: "complaintsRate", label: "Complaints Rate", labelAr: "نسبة الشكاوى من المستجيبين", source: "Survey", a: 10, b: 22, unit: "%", max: 30, note: "نسبة من أبدوا ملاحظات سلبية من بين من ملأوا الاستبيان." },
-  { id: "complaints", label: "Complaints Count", labelAr: "عدد الشكاوى المسجلة", source: "Survey", a: 3, b: 10, max: 12, note: "إجمالي الشكاوى الفردية المرصودة في نماذج الاستبيان (35 راضياً مقابل 10 شكاوى في المجموعة الثانية)." },
+  { id: "complaints", label: "Complaints Count", labelAr: "عدد الشكاوى المسجلة", source: "Survey", a: 3, b: 10, max: 12, note: "إجمالي الشكاوى الفردية المرصودة في نماذج الاستبيان." },
   { id: "satisfaction", label: "Satisfaction Rate", labelAr: "نسبة الرضا العامة", source: "Survey", a: 90, b: 78, unit: "%", max: 100, note: "متوسط تقييم جودة التدريب في الاستبيان الورقي." },
   { id: "attendance", label: "Attendance Rate", labelAr: "نسبة الحضور الفعلي", source: "LMS", a: 75, b: 95, unit: "%", max: 100, note: "سجلات الحضور عبر البصمة الإلكترونية للقاعات." },
   { id: "assignments", label: "Assignment Submission", labelAr: "تسليم الواجبات الدورية", source: "LMS", a: 35, b: 35, max: 50, note: "عدد المتدربين المسلمين للواجبات عبر منصة LMS." },
@@ -203,7 +203,7 @@ export const SAYES_NAME = "سايس الشارع";
 export const SAYES_PARK = "اكسر كله وارجع يا باشا، ارجع ارجع، كمان شوية... كمان... تمام كدا يا باشا!";
 export const SAYES_ASK = "حاسبني على الباركنج يا باشا.";
 export const SAYES_CHOICES = [
-  { pay: "later" as const, text: "هحاسبك لما أخلص وأنزل", pose: "smug" as SayesPose, voice: "sayes-later.wav", reply: ["ماشي يا باشا... إنت كدا فهلوي وبتشغّل دماغك يعني!"] },
+  { pay: "later" as const, text: "هحاسبك لما أرجع.", pose: "smug" as SayesPose, voice: "sayes-later.wav", reply: ["ماشي يا باشا... إنت كدا فهلوي وبتشغّل دماغك يعني!"] },
   { pay: "ten" as const, text: "خد 10 جنيه", pose: "disgusted" as SayesPose, voice: "sayes-ten.wav", reply: ["إيه ده يا باشا؟! 10 جنيه؟! أعمل بيها إيه دي؟"] },
   { pay: "fifty" as const, text: "خد 50 جنيه", pose: "smart" as SayesPose, voice: "sayes-fifty.wav", reply: ["ربنا ينور بصيرتك يا باشا! استنى أقولك حاجة... متتسحلش في الداتا يا باشا، واسأل صح... الإجابة في الداتا الناقصة."] },
 ];
