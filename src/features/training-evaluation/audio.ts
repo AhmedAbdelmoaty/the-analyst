@@ -138,7 +138,7 @@ export function startStreetAmbience() {
   if (typeof Audio === "undefined") return;
   streetAudio ??= new Audio(streetTrafficAsset.url);
   streetAudio.loop = true;
-  streetAudio.volume = 0.2;
+  streetAudio.volume = 0.7;
   streetAudio.muted = muted;
   if (!muted && !suspended && streetAudio.paused) void streetAudio.play().catch(() => undefined);
 }
@@ -176,7 +176,7 @@ export function startRingtone() {
 }
 
 export const sfx = {
-  whistle: () => playUrl(parkingWhistleAsset.url, 0.68, false),
+  whistle: () => playUrl(parkingWhistleAsset.url, 1, false),
   tap: () => play("click.mp3", 0.34, false),
   paper: () => play("page-turn.mp3", 0.48),
   door: () => play("door-open.mp3", 0.48),

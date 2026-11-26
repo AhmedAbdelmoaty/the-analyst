@@ -1,7 +1,7 @@
 import { ATTENDANT, CHARACTERS } from "./cinematic";
 import art_boardroom from "./assets/art/boardroom.webp.asset.json";
 import art_ceo_office from "./assets/art/ceo-office.webp.asset.json";
-import art_cover from "./assets/art/cover.webp.asset.json";
+import art_cover from "./assets/art/cover-v2.webp.asset.json";
 import art_hr_desk from "./assets/art/hr-desk.webp.asset.json";
 import drive from "./assets/sayes/drive.png.asset.json";
 import parking from "./assets/sayes/parking.png.asset.json";

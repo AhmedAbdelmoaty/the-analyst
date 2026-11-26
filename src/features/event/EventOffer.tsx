@@ -50,8 +50,6 @@ export default function EventOffer() {
         <Logos />
         <motion.div className="o-badge" {...rise(.05)}><Gamepad className="o-pad" /><div className="pill"><span>You’ve Played<br />the Game.</span></div></motion.div>
         <motion.h2 className="o-h1" {...rise(.12)}>Now Discover the Power of <b>Data Analysis.</b></motion.h2>
-        <Link to="/app" className="o-back">Back to games</Link>
-        <svg className="o-swoosh" viewBox="0 0 300 12" aria-hidden><path d="M5 10Q150-4 295 10" fill="none" stroke="#A61E25" strokeWidth="4" strokeLinecap="round" /></svg>
         <motion.div className="o-culture" {...rise(.2)}>Build a Culture of Analysis Across Your Organization.</motion.div>
         <p className="o-with">With IMP’s <b>Data Analysis &amp; Business Intelligence Diploma,</b><br />which combines:</p>
         <motion.div className="o-card" {...rise(.28)}>

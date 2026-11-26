@@ -60,8 +60,8 @@ function ActiveGame({ onSubmit, onStart, onDone, onCallEnd, endActions, completi
   useEffect(() => { if (!paused && state.phase === "verdict" && onSubmit && !submittedRef.current) { submittedRef.current = true; onSubmit(state); } }, [state, onSubmit, paused]);
   const timerOn = state.phase === "office" && state.officeEntered;
   const timerVisible = state.officeEntered && (state.phase === "office" || state.phase === "verdict");
-  useActiveTimer("analysis", 1e12, () => {}, timerOn);
-  const elapsed = Math.floor((run.timers.analysis ?? 0) / 1000);
+  useActiveTimer("analysis", ANALYSIS_MS, () => dispatch({ type: "timeout" }), timerOn);
+  const elapsed = Math.max(0, Math.ceil((ANALYSIS_MS - (run.timers.analysis ?? 0)) / 1000));
   const driveLeft = useActiveTimer("drive", 7600, () => setRoadStep("park"), state.phase === "road" && roadStep === "drive");
   const parkLeft = useActiveTimer("park", 1600, () => {}, state.phase === "road" && roadStep === "park");
   const travelBeat = roadStep === "drive" ? Number(driveLeft <= 5000) : Number(parkLeft === 0);
@@ -117,10 +117,12 @@ function Scene({ k }: { k: SceneKey }) {
   return <div className={`g-scene scene-${k}`} aria-hidden><motion.picture key={k} initial={{ opacity: 0 }} animate={{ opacity: 1 }}><source media="(max-width:640px)" srcSet={s.p} /><img src={s.l} alt="" /></motion.picture><div className={`g-wash ${k === "cover" ? "cover" : ""}`} /></div>;
 }
 
+const ANALYSIS_MS = 180_000;
+
 function Hud({ state, muted, elapsed, timerVisible, onMute, onSettings, onThink }: { state: State; muted: boolean; elapsed: number; timerVisible: boolean; onMute: () => void; onSettings: () => void; onThink: () => void }) {
   const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
   const seconds = String(elapsed % 60).padStart(2, "0");
-  return <header className="g-hud"><div className="g-hud-tools"><SettingsButton onClick={onSettings} /><GameButton aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</GameButton><GameButton className="g-test-nav-btn" aria-label="الرجوع لخيارات التفكير" title="الرجوع لخيارات التفكير" onClick={onThink}><RotateCcw /></GameButton></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerVisible ? <div className="g-timer is-counting" role="timer" aria-label={`وقت التحليل ${minutes} دقيقة و${seconds} ثانية`}><small>وقت التحليل</small><b>{minutes}:{seconds}</b><i aria-hidden><em /></i></div> : null}</header>;
+  return <header className="g-hud"><div className="g-hud-tools"><SettingsButton onClick={onSettings} /><GameButton aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</GameButton><GameButton className="g-test-nav-btn" aria-label="الرجوع لخيارات التفكير" title="الرجوع لخيارات التفكير" onClick={onThink}><RotateCcw /></GameButton></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerVisible ? <div className={`g-timer is-counting${elapsed <= 30 ? " is-low" : ""}${elapsed <= 10 ? " is-critical" : ""}`} role="timer" aria-label={`الوقت المتبقي ${minutes} دقيقة و${seconds} ثانية`}><small>الوقت المتبقي</small><b>{minutes}:{seconds}</b><i aria-hidden><em /></i></div> : null}</header>;
 }
 
 function Cover({ go }: { go: () => void }) {

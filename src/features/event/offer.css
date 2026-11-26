@@ -1,6 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&display=swap");
 .offer{--red:#A61E25;--red-d:#7f141a;--ink:#1d1d1f;--soft:#f1f1f3;font-family:"Outfit",system-ui,sans-serif;color:var(--ink);min-height:100dvh;background:#e9e9ec;display:flex;justify-content:center}
-.offer-sheet{position:relative;overflow:hidden;width:100%;max-width:560px;min-height:100dvh;background:#fff;padding:22px 16px 26px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.offer-sheet{position:relative;overflow:hidden;width:100%;max-width:560px;min-height:100dvh;background:#fff;padding:14px 14px 20px;display:flex;flex-direction:column;align-items:center;gap:10px}
 @media (min-width:640px){.offer{padding:32px 0}.offer-sheet{min-height:auto;border-radius:28px;box-shadow:0 30px 80px -30px rgba(80,10,15,.35);padding:34px 30px}}
 .offer-sheet::before{content:"";position:absolute;top:-120px;left:-140px;width:320px;height:320px;border-radius:50%;background:#f4f4f6;z-index:0}
 .offer-sheet::after{content:"";position:absolute;bottom:-90px;right:-90px;width:200px;height:200px;border-radius:50%;background:linear-gradient(135deg,#c2262e,var(--red-d));z-index:0}
@@ -8,16 +8,16 @@
 .o-logos{display:flex;align-items:center;justify-content:center;gap:16px}
 .o-logos img{height:44px;width:auto}.o-logos .ta{height:50px}
 .o-logos i{width:2px;height:48px;background:#2a2a2a}
-.o-badge{display:flex;align-items:center;margin-top:6px}
+.o-badge{display:flex;align-items:center;margin-top:0}
 .o-badge .pill{background:linear-gradient(135deg,#c0262e,var(--red-d));color:#fff;font-weight:800;font-style:italic;font-size:clamp(22px,6.4vw,34px);line-height:1.05;padding:10px 22px 10px 46px;border-radius:14px;transform:skewX(-8deg);margin-inline-start:-34px;box-shadow:0 10px 24px -10px rgba(166,30,37,.6)}
 .o-badge .pill span{display:block;transform:skewX(8deg)}
 .o-pad{width:92px;flex-shrink:0;filter:drop-shadow(0 4px 6px rgba(0,0,0,.12))}
 .o-h1{text-align:center;font-weight:800;font-size:clamp(23px,6.6vw,36px);line-height:1.08;letter-spacing:-.02em}
 .o-h1 b{display:block;color:var(--red);font-size:clamp(36px,11vw,58px);font-weight:900}
 .o-swoosh{width:62%;height:12px;margin-top:-10px}
-.o-culture{width:100%;background:var(--soft);border-radius:22px;padding:14px;text-align:center;color:var(--red);font-weight:800;font-size:clamp(19px,5.4vw,28px);line-height:1.15}
+.o-culture{width:100%;background:var(--soft);border-radius:18px;padding:10px 12px;text-align:center;color:var(--red);font-weight:800;font-size:clamp(19px,5.4vw,28px);line-height:1.15}
 .o-with{text-align:center;font-size:clamp(14px,3.9vw,18px);font-weight:500;line-height:1.35}.o-with b{color:var(--red);font-weight:700}
-.o-card{width:100%;background:#fff;border:1px solid #ececef;border-radius:18px;box-shadow:0 6px 18px -8px rgba(0,0,0,.18);padding:14px;display:flex;align-items:center;gap:12px}
+.o-card{width:100%;background:#fff;border:1px solid #ececef;border-radius:16px;box-shadow:0 6px 18px -8px rgba(0,0,0,.18);padding:10px 12px;display:flex;align-items:center;gap:10px}
 .o-sep{width:2px;align-self:stretch;background:var(--red);border-radius:2px;flex-shrink:0}
 .o-tools{display:flex;gap:6px;flex-shrink:0}.o-tools img{width:34px;height:34px;object-fit:contain;mix-blend-mode:multiply}
 .o-ct{color:var(--red);font-weight:800;font-size:clamp(15px,4.3vw,21px);line-height:1.1;text-transform:uppercase}

@@ -1,4 +1,4 @@
-import teCover from "@/features/training-evaluation/assets/art/cover.webp.asset.json";
+import teCover from "@/features/training-evaluation/assets/art/cover-v2.webp.asset.json";
 import analystCover from "@/features/team-performance/assets/analyst.png.asset.json";
 import currentCover from "@/assets/scenes/mansour-office-welcome-male.webp";
 import rewardCover from "@/features/reward-decision/assets/rd-cover-l.webp.asset.json";
