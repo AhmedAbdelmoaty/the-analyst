@@ -37,6 +37,7 @@
 - Training Evaluation restart resets only its owner-local snapshot and remounts the game session; shared settings never reset server event ranking or vouchers.
 - Training Evaluation incoming calls and email confirmation use the existing per-user UI snapshot and audio lifecycle so reload and pause preserve ending progress.
 - Training Evaluation narrative uses one guarded audio-led player and phase-scoped actions; scene gates are separate so repeated clicks cannot bypass parking choices.
+- Keep Training Evaluation context in a non-component module so preview refreshes cannot split provider and consumers.
 
 - Use the shared discovery catalog for public, authenticated and plan game previews and tier mapping; journey storage contains allowlisted navigation only, never payment access. Mark first-time plan onboarding only after successful account creation and verification, before sign-in; returning logins skip it.
 - Keep Reward Decision presentation styles and reference-adapted components scoped to its feature; reuse its existing data, save controller and sound provider so other games and platform features remain unchanged.

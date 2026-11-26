@@ -1,12 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useCallback, useContext, useEffect, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { type Action } from "./engine";
 import { advanceRun, loadRun, newRun, saveRun, type SavedRun } from "./persistence";
 import { audioPosition, pauseAudio, restoreVoicePosition, resumeAudio, stopVoice, stopBgm } from "./audio";
 
-type Runtime = { run: SavedRun; paused: boolean; exitPrompt: boolean; unavailable: boolean; otherTab: boolean;
-  update: (fn: (r: SavedRun) => SavedRun) => void; dispatch: (a: Action) => void;
-  pause: (exit?: boolean) => void; resume: () => void; finish: () => void; restart: () => void; revision: number };
-const Context = createContext<Runtime | null>(null);
+import { RuntimeContext as Context } from "./runtimeContext";
 export function useRuntime() { const value = useContext(Context); if (!value) throw new Error("Missing training runtime"); return value; }
 export function RunProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const [run, setRun] = useState(() => loadRun(userId) ?? newRun(userId));
