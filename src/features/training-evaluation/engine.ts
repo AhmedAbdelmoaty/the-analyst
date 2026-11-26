@@ -98,7 +98,8 @@ export function reduce(s: State, a: Action): State {
       return s.phase === "intro" ? { ...initialState(), phase: "brief", order: shuffle(ALL_CLAIMS, a.rng ?? Math.random) } : s;
     case "next":
       if (s.phase === "brief") return s.line + 1 < BRIEF_LENGTH ? { ...s, line: s.line + 1 } : { ...s, phase: "road", line: 0 };
-      if (s.phase === "road") return { ...s, phase: "meeting", line: 0 };
+      // Parking is a mandatory learning interaction, not a skippable scene.
+      if (s.phase === "road") return s.sayes === "later" || s.sayes === "ten" || s.sayes === "fifty" ? { ...s, phase: "meeting", line: 0 } : s;
       if (s.phase === "meeting") return s.line + 1 < MEETING_LENGTH ? { ...s, line: s.line + 1 } : { ...s, phase: "office", line: 0 };
       return s;
     case "paySayes":

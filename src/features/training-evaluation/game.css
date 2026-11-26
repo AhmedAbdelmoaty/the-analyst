@@ -398,6 +398,7 @@
 .g-sayes-text{font-size:1.05rem;line-height:1.75;margin:.55rem 0;font-weight:700}
 .g-sayes-actions{display:flex;flex-wrap:wrap;gap:.5rem}
 .g-sayes-choices{display:flex;flex-direction:column;gap:.5rem;width:100%}
+.g-sayes-payment-options{max-width:min(100%,34rem);margin:1rem auto 0;padding:0 .75rem}
 .g-sayes-choices .g-btn{width:100%;justify-content:center}
 .g-sayes-choices .g-btn.secondary{background:hsl(var(--paper));color:hsl(var(--ink))}
 
