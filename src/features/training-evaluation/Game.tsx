@@ -7,7 +7,7 @@ import { DATA_PREPARATION_SECONDS, claimsFor, initialState, isCorrect, reduce, t
 import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, MEETING, METRICS, METRICS_LIST, QUESTIONS, SAYES_LOSS_CALL, BOOTH_MESSAGE, THOUGHTS, TITLE, WIN, VOICE_DURATIONS, type Line, type Metric, type Speaker } from "./content";
 import { PORTRAITS, SAYES_ART, SCENES, type SceneKey } from "./assets";
 import { DashChart, InlineReportCard, OfficialReportModal } from "./Chart";
-import { getCurrentVoice, pauseAudio, resumeAudio, playVoice, setMuted, sfx, startBgm, stopVoice, whoosh } from "./audio";
+import { getCurrentVoice, pauseAudio, resumeAudio, playVoice, setMuted, sfx, startBgm, startStreetAmbience, stopStreetAmbience, stopVoice, whoosh } from "./audio";
 import engageLogo from "./assets/engage-logo.jpeg";
 import * as Dialog from "@radix-ui/react-dialog";
 import { GameButton } from "./GameButton";
@@ -42,12 +42,18 @@ function ActiveGame({ onSubmit, onStart, onDone, endActions, completionSaved = t
   const [muted, setMute] = useSavedState("global:muted", false);
   const [fade, setFade] = useState(false);
   const [roadStep, setRoadStep] = useSavedState<RoadStep>("roadStep", "drive");
+  const [roadWhistlePlayed, setRoadWhistlePlayed] = useSavedState("roadWhistlePlayed", false);
+  const markRoadWhistle = useCallback(() => setRoadWhistlePlayed(true), [setRoadWhistlePlayed]);
   const [sayesShown, setSayesShown] = useSavedState("global:sayesShown", false);
   const [pending, setPending] = useSavedState<Action | null>("pendingTravel", null);
   const [briefComplete, setBriefComplete] = useSavedState("briefComplete", false);
   const travelLock = useRef(false);
   const sendRecommendation = useCallback(() => dispatch({ type: "send" }), [dispatch]);
   useEffect(() => { setMuted(muted); }, [muted]);
+  useEffect(() => {
+    if (state.phase === "road") startStreetAmbience(); else stopStreetAmbience();
+    return () => stopStreetAmbience();
+  }, [state.phase]);
   const travel = useCallback((a: Action) => { if (travelLock.current || paused) return; travelLock.current = true; stopVoice(); setFade(true); setPending(a); }, [setPending, paused]);
   useActiveTimer(`travel:${state.phase}:${state.line}`, 420, () => { setPending(null); dispatch(pending ?? { type: "next" }); setFade(false); travelLock.current = false; }, Boolean(pending));
   const submittedRef = useRef(false);
@@ -92,7 +98,7 @@ function ActiveGame({ onSubmit, onStart, onDone, endActions, completionSaved = t
         <motion.main key={`${state.phase}-${state.view}`} className="g-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .25 }}>
           {state.phase === "intro" && <Cover go={() => { resumeAudio(); startBgm(); sfx.tap(); travel({ type: "start" }); onStart?.(); }} />}
           {state.phase === "brief" && (briefComplete ? <SceneGate label="روح لمكتب التدريب" onGo={() => travel({ type: "next", phase: "brief", line: state.line })} /> : <Dialogue line={BRIEF[state.line] ?? BRIEF[0] ?? { who: "seif", text: "" }} index={state.line} total={BRIEF.length} onPrevious={state.line > 0 ? () => dispatch({ type: "previous", phase: "brief", line: state.line }) : undefined} onNext={() => state.line + 1 < BRIEF.length ? dispatch({ type: "next", phase: "brief", line: state.line }) : setBriefComplete(true)} nextLabel="التالي" />)}
-          {state.phase === "road" && <Road step={roadStep} setStep={setRoadStep} pay={(pay) => dispatch({ type: "paySayes", pay })} next={() => travel({ type: "next", phase: "road", line: state.line })} />}
+          {state.phase === "road" && <Road step={roadStep} setStep={setRoadStep} whistlePlayed={roadWhistlePlayed} onWhistle={markRoadWhistle} pay={(pay) => dispatch({ type: "paySayes", pay })} next={() => travel({ type: "next", phase: "road", line: state.line })} />}
           {state.phase === "meeting" && <Dialogue line={MEETING[state.line] ?? MEETING[0] ?? { who: "tarek", text: "" }} index={state.line} total={MEETING.length} onPrevious={state.line > 0 ? () => dispatch({ type: "previous", phase: "meeting", line: state.line }) : undefined} onNext={() => dispatch({ type: "next", phase: "meeting", line: state.line })} nextLabel="التالي" />}
           {state.phase === "office" && <Office state={state} dispatch={dispatch} onSend={sendRecommendation} sayesShown={sayesShown} markSayes={() => setSayesShown(true)} />}
           {state.phase === "verdict" && <Verdict state={state} dispatch={dispatch} travel={travel} endActions={endActions} onDone={onDone ? done : undefined} />}
@@ -203,14 +209,29 @@ const POSE_ANIM: Record<SayesPose, { initial: Record<string, number | string>; a
   smug: { initial: { x: 0, opacity: 0 }, animate: { x: [0, 8, 0], opacity: 1, rotate: [0, -5, 0] } },
 };
 
-function Road({ step, setStep, pay, next }: { step: RoadStep; setStep: (s: RoadStep) => void; pay: (p: "later" | "ten" | "fifty") => void; next: () => void }) {
+function ParkingLine({ played, onWhistle, onNext }: { played: boolean; onWhistle: () => void; onNext: () => void }) {
+  const { paused } = useRuntime();
+  const [voiceReady, setVoiceReady] = useState(played);
+  const started = useRef(false);
+  useEffect(() => {
+    if (paused) return;
+    if (played) { setVoiceReady(true); return; }
+    if (!started.current) { started.current = true; sfx.whistle(); }
+    const id = window.setTimeout(() => { onWhistle(); setVoiceReady(true); }, 550);
+    return () => window.clearTimeout(id);
+  }, [paused, played, onWhistle]);
+  if (!voiceReady) return <div className="g-stage center" role="status" aria-label="صفارة السايس" />;
+  return <NarrativeLine text={SAYES_PARK} voice="sayes-park.wav" name={SAYES_NAME} image={SAYES_ART.whistle} onNext={onNext} />;
+}
+
+function Road({ step, setStep, whistlePlayed, onWhistle, pay, next }: { step: RoadStep; setStep: (s: RoadStep) => void; whistlePlayed: boolean; onWhistle: () => void; pay: (p: "later" | "ten" | "fifty") => void; next: () => void }) {
   const { run } = useRuntime();
   const choice = SAYES_CHOICES.find(c => c.pay === run.state.sayes) ?? null;
   const [choicesReady, setChoicesReady] = useSavedState("parkingChoicesReady", false);
   const paymentLock = useRef(false);
   if (step === "drive") return <div className="g-stage center g-drive" aria-hidden />;
   if (step === "arrive" && choice) return <SceneGate label="الدخول لمكتب التدريب" onGo={next} />;
-  if (step === "park") return <NarrativeLine text={SAYES_PARK} voice="sayes-park.wav" name={SAYES_NAME} image={SAYES_ART.whistle} onNext={() => setStep("ask")} />;
+  if (step === "park") return <ParkingLine played={whistlePlayed} onWhistle={onWhistle} onNext={() => setStep("ask")} />;
   if (step === "ask" || !choice) return <div className="g-road-conversation">
     <NarrativeLine text={SAYES_ASK} voice="sayes-ask.wav" name={SAYES_NAME} image={SAYES_ART.money}
       autoAdvance={!choicesReady || Boolean(choice)} canNext={!choicesReady || Boolean(choice)} transitionSound={Boolean(choice)}
@@ -226,10 +247,18 @@ function Road({ step, setStep, pay, next }: { step: RoadStep; setStep: (s: RoadS
 type PopStage = "intro" | "offer" | "paid";
 
 function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispatch: (a: Action) => void; onClose: () => void; onSend: () => void }) {
-  const { run } = useRuntime();
+  const { run, paused } = useRuntime();
   const kind = state.sayes ?? "fifty";
   const [stage, setStage] = useSavedState<PopStage>("popStage", "intro");
   const [kindAtOpen, setKindAtOpen] = useSavedState("popKind", kind);
+  const [whistlePlayed, setWhistlePlayed] = useSavedState("popupWhistlePlayed", false);
+  const whistleStarted = useRef(false);
+  useEffect(() => {
+    if (paused || whistlePlayed || whistleStarted.current) return;
+    whistleStarted.current = true;
+    sfx.whistle();
+    setWhistlePlayed(true);
+  }, [paused, whistlePlayed, setWhistlePlayed]);
   useEffect(() => {
     if (!("popKind" in run.ui)) {
       setKindAtOpen(kind);

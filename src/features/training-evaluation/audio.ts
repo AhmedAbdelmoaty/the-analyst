@@ -1,5 +1,10 @@
+import parkingWhistleAsset from "./assets/parking-whistle.mp3.asset.json";
+import streetTrafficAsset from "./assets/street-traffic.mp3.asset.json";
+
 let muted = false;
 let bgmAudio: HTMLAudioElement | null = null;
+let streetAudio: HTMLAudioElement | null = null;
+let streetWanted = false;
 let currentVoice: HTMLAudioElement | null = null;
 let duckTimeout: ReturnType<typeof setTimeout> | null = null;
 let suspended = true;
@@ -14,7 +19,7 @@ export function restoreVoicePosition(value: unknown) {
 }
 export function pauseAudio() {
   suspended = true;
-  bgmAudio?.pause(); currentVoice?.pause();
+  bgmAudio?.pause(); streetAudio?.pause(); currentVoice?.pause();
   for (const effect of effects) effect.pause();
   effects.clear();
   if (duckTimeout) clearTimeout(duckTimeout);
@@ -24,6 +29,7 @@ export function resumeAudio() {
   suspended = false;
   if (!muted) {
     startBgm();
+    if (streetWanted) startStreetAmbience();
     if (currentVoice) void currentVoice.play().catch(() => undefined);
   }
 }
@@ -46,6 +52,10 @@ export const setMuted = (m: boolean) => {
   if (bgmAudio) {
     bgmAudio.muted = m;
     if (!m && !suspended && bgmAudio.paused) void bgmAudio.play().catch(() => undefined);
+  }
+  if (streetAudio) {
+    streetAudio.muted = m;
+    if (!m && !suspended && streetWanted && streetAudio.paused) void streetAudio.play().catch(() => undefined);
   }
   if (currentVoice) {
     currentVoice.muted = m;
@@ -108,15 +118,36 @@ function duckBgm(durationMs = 900) {
   }, durationMs);
 }
 
-function play(file: string, volume = 0.5, duck = true) {
+function playUrl(url: string, volume = 0.5, duck = true) {
   if (muted || suspended || typeof Audio === "undefined") return;
   if (duck) duckBgm();
-  const sound = new Audio(`${AUDIO}${file}`);
+  const sound = new Audio(url);
   sound.volume = volume;
+  sound.muted = muted;
   effects.add(sound);
   sound.onended = () => effects.delete(sound);
   sound.onerror = () => effects.delete(sound);
   void sound.play().catch(() => undefined);
+}
+function play(file: string, volume = 0.5, duck = true) {
+  playUrl(`${AUDIO}${file}`, volume, duck);
+}
+
+export function startStreetAmbience() {
+  streetWanted = true;
+  if (typeof Audio === "undefined") return;
+  streetAudio ??= new Audio(streetTrafficAsset.url);
+  streetAudio.loop = true;
+  streetAudio.volume = 0.2;
+  streetAudio.muted = muted;
+  if (!muted && !suspended && streetAudio.paused) void streetAudio.play().catch(() => undefined);
+}
+
+export function stopStreetAmbience() {
+  streetWanted = false;
+  if (!streetAudio) return;
+  streetAudio.pause();
+  streetAudio.currentTime = 0;
 }
 
 export function startBgm() {
@@ -145,6 +176,7 @@ export function startRingtone() {
 }
 
 export const sfx = {
+  whistle: () => playUrl(parkingWhistleAsset.url, 0.68, false),
   tap: () => play("click.mp3", 0.34, false),
   paper: () => play("page-turn.mp3", 0.48),
   door: () => play("door-open.mp3", 0.48),
