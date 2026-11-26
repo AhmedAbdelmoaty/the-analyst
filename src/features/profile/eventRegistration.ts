@@ -1,0 +1,2 @@
+export const EVENT_DEPARTMENTS = [["ld_training", "L&D"], ["human_resources", "HR & People"], ["other", "Others"]] as const;
+export const validRegistrationEmail = (email: string) => email.trim().length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());

@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, DoorOpen, Home, Pause, Mail, Phone, RotateCcw, Send, Volume2, VolumeX } from "lucide-react";
+import { CheckCircle2, ChevronLeft, DoorOpen, Home, Pause, Mail, Phone, RotateCcw, Send, Volume2, VolumeX } from "lucide-react";
 import { CinematicScene } from "./CinematicScene";
 import { PRELOAD_GROUPS, preloadAll, type CineKey } from "./cinematic";
 import { DATA_PREPARATION_SECONDS, claimsFor, initialState, isCorrect, reduce, type Action, type EvidenceId, type State } from "./engine";
@@ -12,6 +12,7 @@ import engageLogo from "./assets/engage-logo.jpeg";
 import * as Dialog from "@radix-ui/react-dialog";
 import { GameButton } from "./GameButton";
 import { GameOptions, SettingsButton } from "./GameOptions";
+import { IncomingCall } from "./IncomingCall";
 import "./game.css";
 import { RunProvider, useActiveTimer, useRuntime, useSavedState } from "./runtime";
 import { useNavigate } from "react-router-dom";
@@ -625,10 +626,13 @@ function ClaimPicker({ state, dispatch, extra }: { state: State; dispatch: (a: A
 function Email({ state, dispatch, onSend, sayesShown, markSayes }: { state: State; dispatch: (a: Action) => void; onSend: () => void; sayesShown: boolean; markSayes: () => void }) {
   const [pop, setPop] = useSavedState("emailPop", false);
   const [flying, setFlying] = useSavedState("emailFlying", false);
-  useActiveTimer("emailSend", 800, onSend, flying);
+  const [sent, setSent] = useSavedState("emailSent", false);
+  useActiveTimer("emailSend", 800, () => { setSent(true); sfx.chime(); }, flying && !sent);
+  useActiveTimer("emailConfirmation", 1800, onSend, sent);
   const fly = useCallback(() => { setPop(false); setFlying(true); whoosh(); }, [setPop, setFlying]);
   const claim = state.claim;
   if (!claim) return null;
+  if (sent) return <section className="g-email-success" role="status"><CheckCircle2 /><h2>تم إرسال الإيميل بنجاح ✓</h2><p>التوصية وصلت لمكتب المدير العام.</p></section>;
   return <><motion.article className="g-mail" initial={{ y: 30, opacity: 0 }} animate={flying ? { y: "-90vh", x: "-25vw", scale: .2, rotate: -18, opacity: 0 } : { y: 0, opacity: 1 }} transition={flying ? { duration: .8, ease: "easeIn" } : { duration: .25 }}><div className="g-mail-bar"><Mail /> رسالة جديدة</div><div className="g-mail-head"><p><b>إلى:</b> مستر سيف — المدير العام</p><p><b>الموضوع:</b> توصية تقييم كورس التدريب والتجديد</p></div><p className="g-mail-hi">مستر سيف،</p><p className="g-mail-body">{emailBody(claim, state.evidence)}</p><p className="g-mail-sign">وتفضلوا بقبول فائق الاحترام،<br />محلل الموارد البشرية</p><div className="g-mail-actions"><button className="g-btn primary big" disabled={flying} onClick={() => { if (state.sayes && !sayesShown) { markSayes(); setPop(true); } else fly(); }}><Send /> {flying ? "التوصية في الطريق" : "إرسال التوصية"}</button><button className="g-btn secondary" disabled={flying} onClick={() => dispatch({ type: "backFromEmail" })}>راجع التحليل</button></div></motion.article><AnimatePresence>{pop && <SayesPopup state={state} dispatch={dispatch} onClose={() => setPop(false)} onSend={fly} />}</AnimatePresence></>;
 }
 
@@ -641,11 +645,13 @@ function Verdict({ state, dispatch, travel, endActions, onDone }: { state: State
         text: call.text,
         voice: call.voice,
       }));
-  const caller = won ? undefined : { name: SAYES_NAME, role: "مكالمة من الشارع", img: SAYES_ART.smug };
+  const caller = won ? undefined : { name: "السايس", role: "", img: SAYES_ART.portrait };
   const [i, setI] = useSavedState("verdictLine", 0);
   const [booth, setBooth] = useSavedState("verdictBooth", false);
+  const [answered, setAnswered] = useSavedState("verdictAnswered", false);
   useActiveTimer("boothRedirect", 5000, () => onDone?.(), booth && Boolean(onDone));
   useEffect(() => { if (booth) { if (won) sfx.win(); else sfx.lose(); } }, [booth, won]);
+  if (!answered && !booth) return <IncomingCall name={won ? "مستر سيف" : "السايس"} role={won ? "المدير العام" : undefined} image={won ? PORTRAITS.seif : SAYES_ART.portrait} onAnswer={() => setAnswered(true)} />;
   if (!booth) return <Dialogue line={lines[i] ?? lines[0] ?? { who: "seif", text: "" }} index={i} total={lines.length} call caller={caller} nextLabel={i + 1 < lines.length ? "التالي" : "إنهاء المكالمة"} onNext={() => i + 1 < lines.length ? setI(i + 1) : setBooth(true)} />;
   return <div className="g-stage center"><motion.section className="g-booth" initial={{ opacity: 0, scale: .9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 220, damping: 18 }}>
     <span className="g-booth-icon" aria-hidden>{won ? "🏆" : "🔍"}</span>

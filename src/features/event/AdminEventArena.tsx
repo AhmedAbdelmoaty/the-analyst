@@ -24,15 +24,18 @@ export default function AdminEventArena() {
   const exportXlsx = async () => {
     const { data, error } = await adminExport();
     if (error) return setMsg(`خطأ: ${error.message}`);
-    const { data: leads } = await supabase.from("profiles").select("phone, lead_status").in("lead_status", ["individual", "organization", "high_intent"]);
+    const phones = ((data as Row[]) ?? []).flatMap(r => r.phone ? [r.phone] : []);
+    const { data: leads, error: profileError } = phones.length ? await supabase.from("profiles").select("phone, email, lead_status").in("phone", phones) : { data: [], error: null };
+    if (profileError) return setMsg("تعذر تحميل بيانات التسجيل للتصدير. حاول تاني.");
     const kind = new Map((leads ?? []).map(l => [l.phone, l.lead_status]));
+    const emails = new Map((leads ?? []).map(l => [l.phone, l.email]));
     const label = (s?: string | null) => s === "individual" ? "مهتم — لنفسه (Apply for the Diploma)" : s === "organization" ? "مهتم — للشركة (Book a Demo Meeting)" : s === "high_intent" ? "نعم" : "لا";
     const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet("Leads", { views: [{ rightToLeft: true }] });
-    ws.columns = [{ header: "الترتيب", width: 10 }, { header: "الاسم", width: 28 }, { header: "رقم الموبايل", width: 18 }, { header: "اسم الشركة", width: 26 }, { header: "القسم", width: 20 }, { header: "القطاع", width: 26 }, { header: "نوع الاهتمام", width: 36 }];
+    ws.columns = [{ header: "الترتيب", width: 10 }, { header: "الاسم", width: 28 }, { header: "رقم الموبايل", width: 18 }, { header: "البريد الإلكتروني", width: 32 }, { header: "اسم الشركة", width: 26 }, { header: "القسم", width: 20 }, { header: "نوع الاهتمام", width: 36 }];
     ws.getRow(1).font = { bold: true };
     for (const r of (data as Row[]) ?? []) {
-      const row = ws.addRow([r.rank ?? "-", r.full_name, r.phone ?? "", r.company_name ?? "", r.department ?? "", r.industry ?? "", label(r.phone ? kind.get(r.phone) : null)]);
-      if (r.interested || (r.phone && kind.has(r.phone))) row.eachCell(c => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFC6EFCE" } }; c.font = { color: { argb: "FF006100" }, bold: true }; });
+      const row = ws.addRow([r.rank ?? "-", r.full_name, r.phone ?? "", r.phone ? emails.get(r.phone) ?? "" : "", r.company_name ?? "", r.department ?? "", label(r.phone ? kind.get(r.phone) : null)]);
+      if (r.interested || (r.phone && ["individual", "organization", "high_intent"].includes(kind.get(r.phone) ?? ""))) row.eachCell(c => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFC6EFCE" } }; c.font = { color: { argb: "FF006100" }, bold: true }; });
     }
     const buf = await wb.xlsx.writeBuffer(); const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })); a.download = `hr-cafe-leads-${new Date().toISOString().slice(0, 10)}.xlsx`; a.click();

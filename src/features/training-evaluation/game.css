@@ -4,6 +4,15 @@
   position:fixed;inset:0;overflow:hidden;background:hsl(var(--ink));color:hsl(var(--ink));font-family:'Cairo',sans-serif}
 .g600 button{font:inherit;cursor:pointer}
 .g-play-layer{position:absolute;inset:0}
+.g-incoming-phone{width:min(100%,20rem);max-height:calc(100dvh - 7rem);overflow:auto;border:2px solid hsl(var(--line));border-radius:2rem;background:hsl(var(--paper));color:hsl(var(--ink));box-shadow:0 20px 50px hsl(var(--ink)/.5);text-align:center}
+.g-phone-speaker{width:3rem;height:.3rem;border-radius:1rem;background:hsl(var(--line));margin:1rem auto}
+.g-phone-screen{padding:1rem 1.5rem 1.6rem}.g-phone-screen>p{font-size:.8rem;color:hsl(var(--muted));margin-bottom:1rem}.g-phone-screen h2{font-size:1.4rem;font-weight:800;margin-top:1rem}
+.g-phone-avatar{position:relative;width:7rem;height:7rem;margin:1.5rem auto}.g-phone-avatar img{position:relative;width:100%;height:100%;object-fit:cover;object-position:top;border-radius:50%;border:4px solid hsl(var(--red))}.g-phone-avatar i{position:absolute;inset:0;border-radius:50%;background:hsl(var(--red)/.2);animation:g-phone-ring 1.5s ease-out infinite}
+.g-phone-ringing{display:flex;align-items:center;justify-content:center;gap:.4rem;margin-top:1rem;color:hsl(var(--red));font-size:.8rem}
+.g-phone-actions{display:flex;justify-content:space-around;padding:1.25rem;background:hsl(var(--ivory));border-top:1px solid hsl(var(--line))}.g-phone-actions .g-btn{width:3.5rem;height:3.5rem;padding:0;border-radius:50%;color:hsl(var(--paper));border:0;box-shadow:none}.g-phone-decline{background:hsl(var(--red))}.g-phone-answer{background:hsl(var(--green));animation:g-phone-answer 1.2s ease-in-out infinite}.g-phone-actions svg{width:1.5rem;height:1.5rem}
+.g-email-success{width:min(100%,26rem);margin:0 auto;background:hsl(var(--paper));color:hsl(var(--ink));border:1px solid hsl(var(--line));border-radius:8px;padding:2rem 1rem;text-align:center;box-shadow:0 20px 50px hsl(var(--ink)/.5)}.g-email-success>svg{width:3rem;height:3rem;margin:0 auto 1rem;color:hsl(var(--green))}.g-email-success h2{font-size:1.2rem;font-weight:800}.g-email-success p{margin-top:.7rem;font-size:.9rem}
+@keyframes g-phone-ring{to{transform:scale(1.5);opacity:0}}@keyframes g-phone-answer{50%{transform:scale(1.08)}}
+@media(prefers-reduced-motion:reduce){.g-phone-avatar i,.g-phone-answer{animation:none}}
 .g-training-eval.is-paused .g-play-layer *{animation-play-state:paused!important}
 .g-pause-layer{position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:1rem;background:hsl(var(--background)/.78);backdrop-filter:blur(8px);color:hsl(var(--foreground))}
 .g-pause-layer section{width:min(100%,26rem);padding:2rem 1.25rem;text-align:center;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:8px}
