@@ -1,5 +1,7 @@
 import { supabase } from "@/lib/supabase";
 
+export const SIGNUP_FALLBACK_WAIT_S = 45;
+
 export interface Country { code: string; dial: string; name: string; flag: string; }
 
 export const COUNTRIES: Country[] = [
@@ -75,6 +77,8 @@ export const ERROR_TEXT: Record<string, string> = {
   used: "استُخدم الرمز أو أُلغي. اطلب رمزًا جديدًا.",
   locked: "انتهت محاولات التحقق. اطلب رمزًا جديدًا.",
   no_challenge: "لا يوجد رمز تحقق نشط. اطلب رمزًا جديدًا.",
+  fallback_wait: "الدخول المباشر هيتاح بعد انتهاء المهلة الظاهرة.",
+  profile_save_failed: "بياناتك ما اتحفظتش، فالحساب ما اتنشأش. حاول تسجل مرة تانية.",
   cooldown: "انتظر حتى انتهاء المهلة قبل إعادة الإرسال.",
   rate_limited: "محاولات كثيرة. حاول لاحقًا.",
   reset_expired: "انتهت مهلة تغيير كلمة المرور. ابدأ من جديد.",

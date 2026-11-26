@@ -5,10 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   AuthShell, ErrorBox, Field, InfoBox, LinkButton, OtpInput, PasswordInput, PhoneInput, PrimaryButton, TextInput,
 } from "@/components/auth/AuthUI";
-import { errText, maskPhone, phoneAuth, PhoneAuthResult, toE164 } from "@/lib/phoneAuth";
+import { errText, maskPhone, phoneAuth, PhoneAuthResult, SIGNUP_FALLBACK_WAIT_S, toE164 } from "@/lib/phoneAuth";
 
 import { finishPlanStep, markSignupCreated, selectGame } from "@/features/discovery/journey";
-import { supabase } from "@/integrations/supabase/client";
 import { EVENT_DEPARTMENTS, validRegistrationEmail } from "@/features/profile/eventRegistration";
 
 const selectCls = "h-11 w-full rounded-md border border-input bg-background px-3 text-sm";
@@ -50,6 +49,7 @@ const PlayerAuth = () => {
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const [cooldown, setCooldown] = useCountdown();
+  const [fallbackWait, setFallbackWait] = useCountdown();
 
   // Phone the current verification belongs to (and old phone when editing number)
   const [activePhone, setActivePhone] = useState("");
@@ -73,6 +73,32 @@ const PlayerAuth = () => {
     try { await fn(); } finally { busyRef.current = false; setBusy(false); }
   };
 
+  const finishSignup = async (targetPhone: string) => {
+    finishPlanStep();
+    trackCompleteRegistration();
+    setNotice("تم تفعيل حسابك وحفظ بياناتك. جارٍ تسجيل الدخول...");
+    const { error } = await signInWithPhone(targetPhone, password);
+    if (error) {
+      setMode("login", "/login");
+      setNotice("تم تفعيل حسابك وحفظ بياناتك. سجّل الدخول بكلمة المرور.");
+      return;
+    }
+    selectGame("training-evaluation");
+    window.location.assign("/app");
+  };
+
+  const enterWithoutOtp = async (targetPhone = activePhone) => {
+    setError(null); setNotice(null); setSendFailed(false);
+    const r = await phoneAuth("signup_fallback", { phone: targetPhone, password });
+    if (!r.ok) {
+      if (r.error === "already_verified") return finishSignup(targetPhone);
+      if (r.retry_after) setFallbackWait(r.retry_after);
+      setSendFailed(true);
+      return setError(errText(r.error));
+    }
+    await finishSignup(targetPhone);
+  };
+
   const applySend = (r: PhoneAuthResult, okNotice: string) => {
     setCooldown(r.retry_after ?? r.cooldown ?? 30);
     if (r.ok && r.sent === false) { setSendFailed(true); setNotice(null); setError("تعذر إرسال رمز التحقق عبر واتساب. تحقق من الرقم وأعد المحاولة بعد انتهاء المهلة."); }
@@ -92,9 +118,11 @@ const PlayerAuth = () => {
         const r = await phoneAuth("send_signup_code", { phone, password });
         setActivePhone(phone);
         setMode("verify");
+        setFallbackWait(SIGNUP_FALLBACK_WAIT_S);
         if (!r.ok && r.error !== "cooldown") return setError(errText(r.error));
         applySend(r, "أُرسل رمز التحقق عبر واتساب.");
         if (r.error === "cooldown") { setCooldown(r.retry_after ?? 60); setNotice("استخدم رمز التحقق السابق أو أعد الإرسال بعد انتهاء المهلة."); }
+        if (r.ok && r.sent === false) await enterWithoutOtp(phone);
         return;
       }
       setError(errText(error));
@@ -110,7 +138,10 @@ const PlayerAuth = () => {
         const r = await phoneAuth("change_phone", { phone: editingFrom, password, new_phone: phone });
         if (!r.ok) return setError(errText(r.error));
         setEditingFrom(null); setActivePhone(phone); setMode("verify");
-        return applySend(r, "أُرسل رمز التحقق إلى الرقم الجديد عبر واتساب.");
+        setFallbackWait(SIGNUP_FALLBACK_WAIT_S);
+        applySend(r, "أُرسل رمز التحقق إلى الرقم الجديد عبر واتساب.");
+        if (r.sent === false) await enterWithoutOtp(phone);
+        return;
       }
       const parts = fullName.trim().split(/\s+/);
       if (!parts[0]) return setError("أدخل اسمك.");
@@ -122,7 +153,9 @@ const PlayerAuth = () => {
       if (!r.ok) return setError(errText(r.error));
       markSignupCreated();
       setActivePhone(phone); setMode("verify");
+      setFallbackWait(SIGNUP_FALLBACK_WAIT_S);
       applySend(r, "أُرسل رمز التحقق عبر واتساب.");
+      if (r.sent === false) await enterWithoutOtp(phone);
     });
   };
 
@@ -134,32 +167,14 @@ const PlayerAuth = () => {
       const extra = r.error === "invalid_code" && r.remaining ? ` المحاولات المتبقية: ${r.remaining}.` : "";
       return setError(errText(r.error) + extra);
     }
-    finishPlanStep();
-    trackCompleteRegistration();
-    setNotice("تم تأكيد الرقم. جارٍ تسجيل الدخول...");
-    const { error } = await signInWithPhone(activePhone, password);
-    if (error) { setMode("login", "/login"); setNotice("تم تأكيد الرقم. سجّل الدخول بكلمة المرور."); return; }
-    // Fast-track: fill the rest of the profile and go straight to the event game.
-    const { data: u } = await supabase.auth.getUser();
-    if (u.user) {
-      const parts = fullName.trim().split(/\s+/);
-      // Only fill what was typed here; the server already saved signup details, so never blank them.
-      const patch: { gender: string; display_name?: string; company_name?: string; department?: string; email?: string } = { gender: "male" };
-      if (parts[0]) patch.display_name = parts[0];
-      if (company.trim()) patch.company_name = company.trim();
-      if (department) patch.department = department;
-      if (email.trim()) patch.email = email.trim().toLowerCase();
-      const { error: profileError } = await supabase.from("profiles").update(patch).eq("user_id", u.user.id);
-      if (profileError) return setError("حسابك اتأكد، لكن بيانات التسجيل ما اتحفظتش. حاول تأكيد البيانات تاني.");
-    }
-    selectGame("training-evaluation");
-    window.location.assign("/app");
+    await finishSignup(activePhone);
   });
 
   const resendSignup = () => run(async () => {
     const r = await phoneAuth("send_signup_code", { phone: activePhone, password });
     if (!r.ok) { if (r.retry_after) setCooldown(r.retry_after); return setError(errText(r.error)); }
     setCode(""); applySend(r, "أُرسل رمز جديد عبر واتساب. انتهت صلاحية الرمز السابق.");
+    if (r.sent === false) await enterWithoutOtp(activePhone);
   });
 
   const editNumber = () => {
@@ -267,6 +282,10 @@ const PlayerAuth = () => {
           <OtpInput value={code} onChange={setCode} disabled={busy} onComplete={(v) => (isSignup ? verifyCode : verifyRecovery)(v)} />
           {error && <ErrorBox>{error}</ErrorBox>}
           <PrimaryButton type="submit" loading={busy} disabled={code.length !== 6}>تأكيد</PrimaryButton>
+          {isSignup && fallbackWait > 0 && !sendFailed && <p className="text-center text-xs text-muted-foreground">لو الرمز مجاش، الدخول المباشر هيتاح بعد {fallbackWait} ثانية.</p>}
+          {isSignup && (fallbackWait <= 0 || sendFailed) && (
+            <PrimaryButton type="button" loading={busy} onClick={() => run(() => enterWithoutOtp())}>لم يصلك الرمز؟ ادخل مباشرة</PrimaryButton>
+          )}
           <div className="flex flex-col items-center">
             <LinkButton onClick={isSignup ? resendSignup : resendRecovery} disabled={cooldown > 0 || busy}>{resendLabel}</LinkButton>
             <LinkButton onClick={isSignup ? editNumber : () => setMode("forgot")} disabled={busy}>تغيير الرقم</LinkButton>

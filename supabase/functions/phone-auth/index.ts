@@ -1,6 +1,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
+import { signupFallbackRetryAfter } from "./signupFallback.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -17,9 +18,12 @@ const RESEND_COOLDOWN_S = 30;
 const RESET_TTL_MS = 10 * 60 * 1000;
 const LIMITS = {
   sendPerPhoneHour: 5,
-  sendPerIpHour: 500,
+  sendPerIpHour: 5000,
   verifyPerIpHour: 1000,
   verifyPerPhoneHour: 15,
+  signupPerIpHour: 5000,
+  fallbackPerIpHour: 1000,
+  fallbackPerPhoneHour: 10,
 };
 
 const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -92,6 +96,7 @@ async function sendWhatsApp(phone: string, code: string): Promise<boolean> {
       `https://api.chakrahq.com/v1/ext/plugin/whatsapp/${CHAKRA_PLUGIN_ID}/phoneNumber/${recipient}/send-template-message`,
       {
         method: "POST",
+        signal: AbortSignal.timeout(8000),
         headers: { Authorization: `Bearer ${CHAKRA_TOKEN}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           whatsappPhoneNumberId: CHAKRA_SENDER_ID,
@@ -149,6 +154,8 @@ async function issueChallenge(userId: string, phone: string, purpose: "signup" |
   if (error) return { ok: false as const, error: "server_error" };
   await logEvent("send", phone, ip);
   const sent = await sendWhatsApp(phone, code);
+  // The fallback uses this server-recorded outcome; the browser cannot claim a provider failure.
+  await logEvent(sent ? "send_succeeded" : "send_failed", phone, ip);
   return { ok: true as const, sent, cooldown: RESEND_COOLDOWN_S, expires_in: OTP_TTL_MS / 1000 };
 }
 
@@ -185,7 +192,7 @@ Deno.serve(async (req) => {
         const { first_name, last_name, phone, password, company_name, department, email } = p.data;
         const existing = await findUser(phone);
         if (existing) return fail(existing.phone_confirmed ? "account_exists" : "account_pending");
-        if ((await countEvents("signup", "ip", ip, 3600_000)) >= 50) return fail("rate_limited");
+        if ((await countEvents("signup", "ip", ip, 3600_000)) >= LIMITS.signupPerIpHour) return fail("rate_limited");
         await logEvent("signup", phone, ip);
         const { data: created, error } = await admin.auth.admin.createUser({
           phone, password, phone_confirm: false, user_metadata: { first_name, last_name: last_name || null },
@@ -196,12 +203,16 @@ Deno.serve(async (req) => {
           if (/password/i.test(error?.message ?? "")) return fail(password.length >= 8 ? "pwned_password" : "weak_password");
           return fail("server_error");
         }
-        await admin.from("profiles").update({
+        const { data: profile, error: profileError } = await admin.from("profiles").update({
           first_name, last_name: last_name || null, display_name: first_name, phone, gender: "male",
           ...(company_name ? { company_name } : {}), ...(department ? { department } : {}), ...(email ? { email } : {}),
-        })
-          .eq("user_id", created.user.id)
-          .then(({ error: pe }) => { if (pe) console.error("signup_profile_save_failed", pe.code, pe.message); });
+        }).eq("user_id", created.user.id).select("user_id").maybeSingle();
+        if (profileError || !profile) {
+          console.error("signup_profile_save_failed", profileError?.code, profileError?.message);
+          // Do not leave a pending account with missing registration data; the player can retry safely.
+          await admin.auth.admin.deleteUser(created.user.id).catch(() => {});
+          return fail("profile_save_failed");
+        }
         const r = await issueChallenge(created.user.id, phone, "signup", ip);
         return json({ ok: true, sent: r.ok ? r.sent : false, cooldown: r.ok ? r.cooldown : RESEND_COOLDOWN_S, expires_in: OTP_TTL_MS / 1000 });
       }
@@ -244,6 +255,39 @@ Deno.serve(async (req) => {
         if (!user || user.id !== r.user_id) return fail("server_error");
         const { error } = await admin.auth.admin.updateUserById(user.id, { phone_confirm: true });
         if (error) return fail("server_error");
+        return json({ ok: true });
+      }
+
+      case "signup_fallback": {
+        const p = z.object({ phone: phoneSchema, password: z.string().min(1) }).safeParse(body);
+        if (!p.success) return fail("invalid_input");
+        if ((await countEvents("fallback", "ip", ip, 3600_000)) >= LIMITS.fallbackPerIpHour) return fail("rate_limited");
+        if ((await countEvents("fallback", "phone", p.data.phone, 3600_000)) >= LIMITS.fallbackPerPhoneHour) return fail("rate_limited");
+        await logEvent("fallback", p.data.phone, ip);
+
+        const user = await findUser(p.data.phone);
+        if (!user) return fail("invalid_credentials");
+        const pw = await checkPassword(p.data.phone, p.data.password);
+        if (pw === "bad") return fail("invalid_credentials");
+        if (pw === "confirmed" || user.phone_confirmed) return fail("already_verified");
+
+        const { data: challenge, error: challengeError } = await admin.from("otp_challenges")
+          .select("created_at").eq("user_id", user.id).eq("phone", p.data.phone).eq("purpose", "signup")
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (challengeError) return fail("server_error");
+        if (!challenge) return fail("no_challenge");
+
+        const { count: failedSends, error: sendLookupError } = await admin.from("otp_rate_events")
+          .select("id", { count: "exact", head: true }).eq("kind", "send_failed").eq("phone", p.data.phone)
+          .gte("created_at", challenge.created_at);
+        if (sendLookupError) return fail("server_error");
+        const retryAfter = signupFallbackRetryAfter(challenge.created_at, Date.now(), (failedSends ?? 0) > 0);
+        if (retryAfter > 0) return fail("fallback_wait", { retry_after: retryAfter });
+
+        const { error: confirmError } = await admin.auth.admin.updateUserById(user.id, { phone_confirm: true });
+        if (confirmError) return fail("server_error");
+        await admin.from("otp_challenges").update({ invalidated_at: new Date().toISOString() })
+          .eq("user_id", user.id).eq("purpose", "signup").is("consumed_at", null).is("invalidated_at", null);
         return json({ ok: true });
       }
 
