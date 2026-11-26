@@ -125,7 +125,7 @@
 .g-mail-head{padding:.6rem 1rem;border-bottom:1px solid hsl(var(--line));font-size:.92rem;display:grid;gap:.2rem}
 .g-mail-head b{color:hsl(var(--muted))}
 .g-mail-hi{padding:.8rem 1rem 0;font-weight:700}
-.g-mail-body{padding:.35rem 1rem;line-height:2;font-size:1.05rem}
+.g-mail-body{padding:.35rem 1rem;line-height:2;font-size:1.05rem;white-space:pre-line}
 .g-mail-sign{padding:0 1rem .8rem;color:hsl(var(--muted));line-height:1.8}
 .g-recs{display:grid;gap:.6rem;padding:.8rem 1rem}
 .g-rec{display:flex;gap:.7rem;align-items:flex-start;text-align:right;min-height:3.4rem;padding:.75rem .9rem;border:1px solid hsl(var(--line));background:hsl(var(--paper));border-radius:.45rem;line-height:1.7;color:hsl(var(--ink));transition:border-color .15s,box-shadow .15s}
@@ -161,11 +161,14 @@
 .g-result-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:.6rem;margin-top:.8rem}
 .g-confetti{position:fixed;top:0;z-index:4;width:.6rem;height:1rem;border-radius:2px;pointer-events:none}
 .g-confetti.c0{background:hsl(var(--red))}.g-confetti.c1{background:hsl(var(--gold))}.g-confetti.c2{background:hsl(var(--green))}
-/* deadline timer */
-.g-timer{justify-self:end;width:5rem;height:2.9rem;display:grid;grid-template-columns:1fr;gap:.2rem;align-content:center;text-align:center;padding:.3rem .6rem;border-radius:.6rem;background:hsl(var(--ink)/.82);color:hsl(var(--paper));font-size:.8rem;box-shadow:0 6px 18px hsl(var(--ink)/.4)}
+/* Count-up analysis timer */
+.g-timer{justify-self:end;width:5.6rem;min-height:3.35rem;display:grid;grid-template-columns:1fr;gap:.1rem;align-content:center;text-align:center;padding:.3rem .6rem;border-radius:.7rem;background:hsl(var(--ink)/.86);color:hsl(var(--paper));font-size:.8rem;box-shadow:0 6px 18px hsl(var(--ink)/.4);border:1px solid hsl(var(--gold)/.45)}
+.g-timer>small{font-size:.58rem;font-weight:800;color:hsl(var(--paper)/.78);line-height:1.2}
 .g-timer b{font-size:1.15rem;font-variant-numeric:tabular-nums;direction:ltr}
 .g-timer i{grid-column:1/-1;height:.4rem;border-radius:9px;background:hsl(var(--paper)/.18);overflow:hidden;display:block}
-.g-timer em{display:block;height:100%;background:hsl(var(--gold));border-radius:9px}
+.g-timer em{display:block;width:45%;height:100%;background:linear-gradient(90deg,transparent,hsl(var(--gold)),transparent);border-radius:9px}
+.g-timer.is-counting em{animation:g-timer-scan 1.8s ease-in-out infinite}
+@keyframes g-timer-scan{from{transform:translateX(-120%)}to{transform:translateX(260%)}}
 .g-timer.amber em{background:hsl(30 95% 55%)}.g-timer.amber{animation:g-pulse 1.6s infinite}
 .g-timer.red em{background:hsl(var(--red))}.g-timer.red{animation:g-pulse .6s infinite;outline:2px solid hsl(var(--red))}.g-timer.red b{color:hsl(var(--red))}
 @keyframes g-pulse{50%{transform:scale(1.04)}}
@@ -207,7 +210,7 @@
   .g-takeaways{gap:.3rem;margin:.2rem 0}
   .g-takeaways article{padding:.4rem .6rem}
   .g-takeaways p{font-size:.84rem;line-height:1.55}
-  .g-timer{width:4.5rem;height:2.6rem}
+  .g-timer{width:4.8rem;min-height:3rem}
   .g-phone-device{bottom:9.5rem;inset-inline-start:.8rem;width:195px;height:380px}
   .g-phone-mini{bottom:9.5rem;inset-inline-start:.8rem}
 
@@ -407,6 +410,8 @@
 
 /* ===== Cinematic scene system ===== */
 .g-cine{position:absolute;inset:0;overflow:hidden;background:hsl(var(--ink))}
+.g-engage-scene-logo{position:absolute;z-index:7;top:6.6rem;left:clamp(1rem,4vw,4rem);width:clamp(8.5rem,15vw,13rem);aspect-ratio:2.35/1;margin:0;overflow:hidden;border:2px solid hsl(var(--paper)/.92);border-radius:.8rem;background:#fff;box-shadow:0 12px 32px hsl(var(--ink)/.45);pointer-events:none}
+.g-engage-scene-logo img{width:100%;height:100%;object-fit:cover;object-position:center 50%;display:block}
 .g-cine-layer{position:absolute;inset:0}
 .g-cine-amb{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(28px) brightness(.55) saturate(1.1);transform:scale(1.05);display:none}
 .g-cine-frame{position:absolute;inset:0;overflow:hidden}
@@ -456,6 +461,7 @@
 .g-path-card,.g-choice-list button,.g-sayes-choices .g-btn{transition:transform .14s,box-shadow .14s,border-color .14s}
 .g-path-card:focus-visible,.g-choice-list button:focus-visible{outline:3px solid #A61E25;outline-offset:3px}
 @media (prefers-reduced-motion:reduce){.g-cine-img,.g-cine-fx,.g-cine-fx i,.g-cine-streaks i,.g-call-chip svg,.g-call-waves i{animation:none!important}}
+@media (max-width:640px){.g-engage-scene-logo{top:6.6rem;left:.7rem;width:7.2rem;border-radius:.55rem}}
 
 /* Readable headings on every scene + end-of-game booth card */
 .g-work-head{width:fit-content;max-width:100%;margin-inline:auto;padding:.6rem 1.2rem;border:1px solid hsl(var(--paper)/.24);border-radius:1rem;background:hsl(var(--charcoal)/.9);color:hsl(var(--paper));box-shadow:0 12px 32px hsl(var(--ink)/.32);backdrop-filter:blur(8px)}

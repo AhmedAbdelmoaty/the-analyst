@@ -42,6 +42,6 @@ Paymob foundation exists (DB tables/RPCs and server functions reported deployed)
 - Search Console not connected; public `/games` page deferred.
 
 ## The HR Café event (2026-11-25)
-- Training Evaluation (`/games/training-evaluation`) is first and the only open game; others show "Coming Soon".
+- «تقييم التدريب» (`/games/training-evaluation`) is first and the only open game; its in-game title remains `Training Evaluation`, while others show "Coming Soon".
 - Live screen `/event/arena`: admin starts, then a 5-minute countdown; ranking is by each player's server-measured play time and stays hidden until the admin presses "إعلان النتائج" (migration 0017 applied). Vouchers pop up only after the announcement and vanish once downloaded. Game ending: Seif call (win) or attendant call (loss/timeout), then a Booth card that redirects to `/event/offer` after 5 s. Install prompt restored. Frontend publication is separate.
 - phone-auth: 500 code requests/hour per IP, 30s resend; leaked-password check off. Deployed to the live backend.

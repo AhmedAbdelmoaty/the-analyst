@@ -1,13 +1,14 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronLeft, DoorOpen, Home, Mail, Phone, RotateCcw, Send, Smartphone, Volume2, VolumeX } from "lucide-react";
+import { ChevronLeft, DoorOpen, Home, Mail, Phone, RotateCcw, Send, Volume2, VolumeX } from "lucide-react";
 import { CinematicScene } from "./CinematicScene";
 import { PRELOAD_GROUPS, preloadAll, type CineKey } from "./cinematic";
-import { DATA_PREPARATION_SECONDS, DEADLINE_SECONDS, claimsFor, initialState, reduce, timeLeft, type Action, type EvidenceId, type State } from "./engine";
-import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, MEETING, METRICS, METRICS_LIST, QUESTIONS, SEIF_MESSAGES, SAYES_LOSS_CALL, BOOTH_MESSAGE, THOUGHTS, TITLE, WIN, type Line, type Metric, type Speaker } from "./content";
+import { DATA_PREPARATION_SECONDS, claimsFor, initialState, isCorrect, reduce, type Action, type EvidenceId, type State } from "./engine";
+import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, MEETING, METRICS, METRICS_LIST, QUESTIONS, SAYES_LOSS_CALL, BOOTH_MESSAGE, THOUGHTS, TITLE, WIN, type Line, type Metric, type Speaker } from "./content";
 import { PORTRAITS, SAYES_ART, SCENES, type SceneKey } from "./assets";
 import { DashChart, InlineReportCard, OfficialReportModal } from "./Chart";
-import { playVoice, setMuted, sfx, startBgm, stopVoice, tick, whoosh } from "./audio";
+import { playVoice, setMuted, sfx, startBgm, stopVoice, whoosh } from "./audio";
+import engageLogo from "./assets/engage-logo.jpeg";
 import * as Dialog from "@radix-ui/react-dialog";
 import { GameButton } from "./GameButton";
 import "./game.css";
@@ -19,20 +20,16 @@ const WHO: Record<Speaker, { name: string; role: string; tone: "dark" | "light" 
 };
 
 const STATION: Record<State["phase"], string> = { intro: "", brief: "مكتب المدير العام", road: "الطريق لمكتب التدريب", meeting: "مكتب التدريب", office: "مكتب التحليل", verdict: "القرار النهائي" };
-const TEST_MODE = true;
-
-
 export default function Game({ onSubmit, onStart, onDone, endActions }: { onSubmit?: (s: State) => void; onStart?: () => void; onDone?: () => void; endActions?: ReactNode } = {}) {
   const [state, raw] = useReducer(reduce, undefined, initialState);
   const [muted, setMute] = useState(false);
   const [fade, setFade] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [phoneOpen, setPhoneOpen] = useState(true);
-  const timeoutSent = useRef(false);
   const [roadStep, setRoadStep] = useState<RoadStep>("drive");
   const [sayesShown, setSayesShown] = useState(false);
   useEffect(() => { if (state.phase === "intro" || state.phase === "brief") { setRoadStep("drive"); setSayesShown(false); } }, [state.phase]);
   const dispatch = useCallback((a: Action) => raw(a), []);
+  const sendRecommendation = useCallback(() => raw({ type: "send" }), []);
 
   useEffect(() => { setMuted(muted); }, [muted]);
   useEffect(() => {
@@ -50,22 +47,16 @@ export default function Game({ onSubmit, onStart, onDone, endActions }: { onSubm
   const submittedRef = useRef(false);
   useEffect(() => { if (state.phase === "verdict" && onSubmit && !submittedRef.current) { submittedRef.current = true; onSubmit(state); } }, [state, onSubmit]);
   const timerOn = state.phase === "office" && state.officeEntered;
-  const remaining = TEST_MODE ? DEADLINE_SECONDS : timeLeft(elapsed, state.penalty);
+  const timerVisible = state.officeEntered && (state.phase === "office" || state.phase === "verdict");
   useEffect(() => {
-    if (!timerOn || TEST_MODE) return;
+    if (!timerOn) return;
     const id = window.setInterval(() => setElapsed((v) => v + 1), 1000);
     return () => window.clearInterval(id);
   }, [timerOn]);
   useEffect(() => {
-    if (!timerOn || TEST_MODE) { timeoutSent.current = false; return; }
-    if (remaining < 20 && remaining > 0) tick(remaining < 10);
-    if (remaining === 0 && !timeoutSent.current) { timeoutSent.current = true; travel({ type: "timeout" }); }
-  }, [remaining, timerOn, travel]);
-  useEffect(() => {
     if (state.phase === "office" && !state.officeEntered) setElapsed(0);
   }, [state.phase, state.officeEntered]);
 
-  const messageCount = remaining <= 20 ? 2 : remaining <= 45 ? 1 : 0;
   // Visual-only sub-beats (no gameplay effect): car entry → driving, parking in progress → completed.
   const [travelBeat, setTravelBeat] = useState(0);
   useEffect(() => { setTravelBeat(0); if (state.phase !== "road") return; if (roadStep === "drive") { const a = window.setTimeout(() => setTravelBeat(1), 2600); const b = window.setTimeout(() => setRoadStep("park"), 7600); return () => { window.clearTimeout(a); window.clearTimeout(b); }; } if (roadStep === "park") { const id = window.setTimeout(() => setTravelBeat(1), 1600); return () => window.clearTimeout(id); } }, [state.phase, roadStep]);
@@ -82,17 +73,16 @@ export default function Game({ onSubmit, onStart, onDone, endActions }: { onSubm
   return (
     <div className="g600 g-training-eval" dir="rtl">
       {cine ? <CinematicScene k={cine} zoom={state.phase === "brief" && state.line > 0} /> : <Scene k={scene} />}
+      {cine === "briefing" && <motion.figure className="g-engage-scene-logo" initial={{ opacity: 0, y: -12, scale: .94 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: .45, ease: "easeOut" }}><img src={engageLogo} alt="Engage for Better Performance" /></motion.figure>}
       {state.phase === "intro" && <a href="/app" className="g-home-exit" aria-label="الرجوع للألعاب"><Home /></a>}
-      {state.phase !== "intro" && <Hud state={state} muted={muted} remaining={remaining} timerOn={timerOn} onMute={() => setMute((v) => !v)} onRestart={() => { window.location.href = "/app"; }} onThink={() => dispatch({ type: "backToThink" })} />}
-      {timerOn && messageCount > 0 && <PhoneNotifier count={messageCount} open={phoneOpen} onToggle={() => setPhoneOpen((v) => !v)} />}
-      {timerOn && remaining < 15 && <div className="g-urgency-vignette" aria-hidden />}
+      {state.phase !== "intro" && <Hud state={state} muted={muted} elapsed={elapsed} timerVisible={timerVisible} onMute={() => setMute((v) => !v)} onRestart={() => { window.location.href = "/app"; }} onThink={() => dispatch({ type: "backToThink" })} />}
       <AnimatePresence mode="wait">
         <motion.main key={`${state.phase}-${state.view}`} className="g-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .25 }}>
           {state.phase === "intro" && <Cover go={() => { startBgm(); sfx.tap(); travel({ type: "start" }); onStart?.(); }} />}
           {state.phase === "brief" && <Dialogue line={BRIEF[state.line] ?? BRIEF[0] ?? { who: "seif", text: "" }} index={state.line} total={BRIEF.length} onNext={() => state.line + 1 < BRIEF.length ? dispatch({ type: "next" }) : travel({ type: "next" })} nextLabel={state.line + 1 < BRIEF.length ? "التالي" : "روح لمكتب التدريب"} />}
           {state.phase === "road" && <Road step={roadStep} setStep={setRoadStep} pay={(pay) => dispatch({ type: "paySayes", pay })} next={() => travel({ type: "next" })} />}
           {state.phase === "meeting" && <Dialogue line={MEETING[state.line] ?? MEETING[0] ?? { who: "tarek", text: "" }} index={state.line} total={MEETING.length} onNext={() => state.line + 1 < MEETING.length ? dispatch({ type: "next" }) : travel({ type: "next" })} nextLabel={state.line + 1 < MEETING.length ? "التالي" : "ادخل مكتبك"} />}
-          {state.phase === "office" && <Office state={state} dispatch={dispatch} onSend={() => raw({ type: "send" })} sayesShown={sayesShown} markSayes={() => setSayesShown(true)} />}
+          {state.phase === "office" && <Office state={state} dispatch={dispatch} onSend={sendRecommendation} sayesShown={sayesShown} markSayes={() => setSayesShown(true)} />}
           {state.phase === "verdict" && <Verdict state={state} dispatch={dispatch} travel={travel} endActions={endActions} onDone={onDone} />}
         </motion.main>
       </AnimatePresence>
@@ -106,9 +96,10 @@ function Scene({ k }: { k: SceneKey }) {
   return <div className={`g-scene scene-${k}`} aria-hidden><motion.picture key={k} initial={{ opacity: 0 }} animate={{ opacity: 1 }}><source media="(max-width:640px)" srcSet={s.p} /><img src={s.l} alt="" /></motion.picture><div className={`g-wash ${k === "cover" ? "cover" : ""}`} /></div>;
 }
 
-function Hud({ state, muted, remaining, timerOn, onMute, onRestart, onThink }: { state: State; muted: boolean; remaining: number; timerOn: boolean; onMute: () => void; onRestart: () => void; onThink: () => void }) {
-  const urgency = remaining < 20 ? "red" : remaining < 45 ? "amber" : "calm";
-  return <header className="g-hud"><div className="g-hud-tools"><button aria-label="الرجوع للألعاب" onClick={onRestart}><Home /></button><button aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</button><button className="g-test-nav-btn" title="الرجوع لخيارات التفكير" onClick={onThink}>🔄 <span>رجوع للتفكير</span></button></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerOn ? <div className={`g-timer ${urgency}`} role="timer"><b>{`${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`}</b><i><em style={{ width: `${(remaining / DEADLINE_SECONDS) * 100}%` }} /></i></div> : <span />}</header>;
+function Hud({ state, muted, elapsed, timerVisible, onMute, onRestart, onThink }: { state: State; muted: boolean; elapsed: number; timerVisible: boolean; onMute: () => void; onRestart: () => void; onThink: () => void }) {
+  const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
+  const seconds = String(elapsed % 60).padStart(2, "0");
+  return <header className="g-hud"><div className="g-hud-tools"><button aria-label="الرجوع للألعاب" onClick={onRestart}><Home /></button><button aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={onMute}>{muted ? <VolumeX /> : <Volume2 />}</button><button className="g-test-nav-btn" title="الرجوع لخيارات التفكير" onClick={onThink}>🔄 <span>رجوع للتفكير</span></button></div><div className="g-hud-place"><small>{TITLE}</small><b>{STATION[state.phase]}</b></div>{timerVisible ? <div className="g-timer is-counting" role="timer" aria-label={`وقت التحليل ${minutes} دقيقة و${seconds} ثانية`}><small>وقت التحليل</small><b>{minutes}:{seconds}</b><i aria-hidden><em /></i></div> : <span />}</header>;
 }
 
 function Cover({ go }: { go: () => void }) {
@@ -223,7 +214,8 @@ function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispat
   const kind = state.sayes ?? "fifty";
   const [stage, setStage] = useState<PopStage>("intro");
   const [kindAtOpen] = useState(kind);
-  const data = SAYES_POPUP[kindAtOpen];
+  const wrongFifty = kindAtOpen === "fifty" && !isCorrect(state.claim, state.evidence);
+  const data = wrongFifty ? SAYES_POPUP.fiftyWrong : SAYES_POPUP[kindAtOpen];
   useEffect(() => { const id = window.setTimeout(() => setStage("offer"), 900); return () => window.clearTimeout(id); }, []);
   useEffect(() => { if (stage !== "offer" || !("auto" in data)) return; const id = window.setTimeout(onSend, 2800); return () => window.clearTimeout(id); }, [stage, data, onSend]);
   useEffect(() => { if (stage !== "skipped") return; const id = window.setTimeout(onSend, 2600); return () => window.clearTimeout(id); }, [stage, onSend]);
@@ -236,7 +228,10 @@ function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispat
       <div className="g-sayes-bubble-col">
         {text && <motion.div key={text} className={`g-sayes-bubble ${stage === "paid" || (kindAtOpen === "fifty" && stage === "offer") ? "glow" : ""}`} initial={{ scale: .6, opacity: 0, originX: 1, originY: 1 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 420, damping: 20 }}><b>{SAYES_NAME}</b><p>{text}</p></motion.div>}
         {stage === "offer" && !("auto" in data) && <motion.div className="g-sayes-choices" initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .25 }}>
-          {"pay" in data && <>
+          {wrongFifty ? <>
+            <button className="g-btn primary" onClick={review}>فهمتك يا أسطى.. رايح أراجع</button>
+            <button className="g-btn secondary" onClick={() => { onClose(); onSend(); }}>أرسل التوصية</button>
+          </> : "pay" in data && <>
             <button className="g-btn primary" onClick={() => { dispatch({ type: "sayesFifty" }); setStage("paid"); }}>{data.pay}</button>
             <button className="g-btn secondary" onClick={() => setStage("skipped")}>{data.skip}</button></>}
         </motion.div>}
@@ -264,11 +259,6 @@ function Dialogue({ line, index, total, onNext, nextLabel, call = false, caller 
     };
   }, [line.voice, index]);
   return <div className="g-stage"><motion.section className={`g-dialogue ${who.tone}`} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><motion.span key={caller?.name ?? line.who} className={`g-portrait ${call ? "is-call" : ""}`} initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .25 }}><img src={caller?.img ?? PORTRAITS[line.who]} alt="" /></motion.span><div>{call && <span className="g-call-chip"><Phone />مكالمة من {who.name}<span className="g-call-waves"><i /><i /><i /></span></span>}<header><span>{who.name}</span><small>{who.role}</small>{line.voice && <button type="button" className="g-voice-indicator" title="إعادة الاستماع للصوت" onClick={(e) => { e.stopPropagation(); playVoice(line.voice!); }}>🔊</button>}<em>{index + 1}/{total}</em></header><button className="g-copy" onClick={() => done ? onNext() : setShown(chars.length)}><p>{chars.slice(0, shown).join("")}{!done && <i />}</p></button><footer>{done && <button className="g-btn primary" onClick={onNext}>{nextLabel}<ChevronLeft /></button>}</footer></div></motion.section></div>;
-}
-
-function PhoneNotifier({ count, open, onToggle }: { count: number; open: boolean; onToggle: () => void }) {
-  if (!open) return <button className="g-phone-mini" onClick={onToggle} aria-label="فتح رسائل مستر سيف"><Smartphone /><b>{count}</b></button>;
-  return <motion.div className="g-phone-device g-phone-buzz" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><i className="g-phone-btn g-phone-btn-power" /><i className="g-phone-btn g-phone-btn-vol" /><section className="g-phone-screen"><div className="g-phone-island"><span className="g-phone-camera" /><span className="g-phone-speaker" /></div><div className="g-phone-status-bar"><span>12:44</span><span className="g-phone-status-icons">5G 📶 🔋85%</span></div><button className="g-phone-head g-phone-header" onClick={onToggle}><img src={PORTRAITS.seif} alt="مستر سيف" /><span className="g-phone-meta"><b>مستر سيف (المدير العام)</b><small>متصل الآن 🟢</small></span><ChevronDown /></button><div className="g-phone-body">{SEIF_MESSAGES.slice(0, count).map((message) => <motion.article className="g-msg-bubble" key={message} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>{message}<span className="g-msg-footer">الآن <i className="g-msg-ticks">✓✓</i></span></motion.article>)}</div><div className="g-phone-home-bar"><i className="g-home-pill" /></div></section></motion.div>;
 }
 
 function Office({ state, dispatch, onSend, sayesShown, markSayes }: { state: State; dispatch: (a: Action) => void; onSend: () => void; sayesShown: boolean; markSayes: () => void }) {

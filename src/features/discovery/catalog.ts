@@ -4,7 +4,7 @@ import currentCover from "@/assets/scenes/mansour-office-welcome-male.webp";
 import rewardCover from "@/features/reward-decision/assets/rd-cover-l.webp.asset.json";
 /** Shared presentation catalog; tiers describe future access, never entitlement. */
 export const GAME_CATALOG = [
-  { id: 'training-evaluation', title: 'Training Evaluation', route: '/games/training-evaluation', cover: teCover.url, description: 'كورس تدريب، استبيان، وقرار تجديد بميزانية كبيرة. حلّل الأرقام وابعت توصيتك قبل ما الوقت يخلص.', category: 'تحليل البيانات', tier: 'free', locked: false },
+  { id: 'training-evaluation', title: 'تقييم التدريب', route: '/games/training-evaluation', cover: teCover.url, description: 'كورس تدريب، استبيان، وقرار تجديد بميزانية كبيرة. حلّل الأرقام وابعت توصيتك المبنية على الدليل.', category: 'تحليل البيانات', tier: 'free', locked: false },
   { id: 'problem-framing', title: 'اسأل صح', route: '/play', cover: currentCover, description: 'المبيعات أقل من المتوقع… بس مقارنة بإيه؟ انزل للميدان واكتشف السؤال اللي يغيّر القضية.', category: 'صياغة المشكلات', tier: 'free', locked: true },
   { id: 'reward-decision', title: 'قرار التكريم', route: '/games/reward-decision', cover: rewardCover.url, description: 'فريقين، وأرقام بتحكي قصتين. افحص الأدلة واكتشف مين يستحق التكريم.', category: 'تحليل البيانات', tier: 'annual', locked: true },
   { id: 'behind-the-dots', title: 'ورا النقط', route: '/games/behind-the-dots', cover: '/assets/behind-dots/market-v5.png', description: 'كل نقطة وراها حكاية. ساعد ليلى تقرأ العلاقات وتختار خطة مبنية على الأدلة.', category: 'الارتباط وفحص الأدلة', tier: 'annual', locked: true },
