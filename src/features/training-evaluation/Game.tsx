@@ -7,7 +7,7 @@ import { DATA_PREPARATION_SECONDS, DEADLINE_SECONDS, claimsFor, initialState, re
 import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, MEETING, METRICS, METRICS_LIST, QUESTIONS, SEIF_MESSAGES, SAYES_LOSS_CALL, BOOTH_MESSAGE, THOUGHTS, TITLE, WIN, type Line, type Metric, type Speaker } from "./content";
 import { PORTRAITS, SAYES_ART, SCENES, type SceneKey } from "./assets";
 import { DashChart, InlineReportCard, OfficialReportModal } from "./Chart";
-import { setMuted, sfx, startBgm, tick, whoosh } from "./audio";
+import { playVoice, setMuted, sfx, startBgm, stopVoice, tick, whoosh } from "./audio";
 import * as Dialog from "@radix-ui/react-dialog";
 import { GameButton } from "./GameButton";
 import "./game.css";
@@ -184,7 +184,35 @@ function Road({ step, setStep, pay, next }: { step: RoadStep; setStep: (s: RoadS
   const [line, setLine] = useState(0);
   if (step === "drive") return <div className="g-stage center g-drive" aria-hidden />;
   if (step === "park") return <div className="g-stage"><SayesLine pose="whistle" text={SAYES_PARK}><button className="g-btn primary" onClick={() => setStep("ask")}>انزل من العربية <ChevronLeft /></button></SayesLine></div>;
-  if (step === "ask" || !choice) return <div className="g-stage"><SayesLine pose="money" text={SAYES_ASK}><div className="g-sayes-choices">{SAYES_CHOICES.map((c, i) => <motion.button key={c.pay} className="g-btn secondary" initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .15 + i * .08 }} whileTap={{ scale: .95 }} onClick={() => { pay(c.pay); setChoice(c); setLine(0); setStep("reply"); }}>{c.text}</motion.button>)}</div></SayesLine></div>;
+  if (step === "ask" || !choice) {
+    return (
+      <div className="g-stage">
+        <SayesLine pose="money" text={SAYES_ASK}>
+          <div className="g-sayes-choices">
+            {SAYES_CHOICES.map((c, i) => (
+              <motion.button
+                key={c.pay}
+                className="g-btn secondary"
+                initial={{ y: 14, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.15 + i * 0.08 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  sfx.tap();
+                  pay(c.pay);
+                  setChoice(c);
+                  setLine(0);
+                  setStep("reply");
+                }}
+              >
+                {c.text}
+              </motion.button>
+            ))}
+          </div>
+        </SayesLine>
+      </div>
+    );
+  }
   const last = line + 1 >= choice.reply.length;
   return <div className="g-stage"><SayesLine pose={choice.pose} text={choice.reply[line] ?? ""}>{last ? <button className="g-btn primary" onClick={() => { sfx.door(); next(); }}><DoorOpen /> الدخول لمكتب التدريب</button> : <button className="g-btn primary" onClick={() => setLine(line + 1)}>التالي <ChevronLeft /></button>}</SayesLine></div>;
 }
@@ -225,7 +253,17 @@ function Dialogue({ line, index, total, onNext, nextLabel, call = false, caller 
   const done = shown >= chars.length;
   useEffect(() => { setShown(0); }, [line.text]);
   useEffect(() => { if (done) return; const id = window.setTimeout(() => setShown((n) => Math.min(chars.length, n + 3)), 22); return () => window.clearTimeout(id); }, [shown, done, chars.length]);
-  return <div className="g-stage"><motion.section className={`g-dialogue ${who.tone}`} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><motion.span key={caller?.name ?? line.who} className={`g-portrait ${call ? "is-call" : ""}`} initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .25 }}><img src={caller?.img ?? PORTRAITS[line.who]} alt="" /></motion.span><div>{call && <span className="g-call-chip"><Phone />مكالمة من {who.name}<span className="g-call-waves"><i /><i /><i /></span></span>}<header><span>{who.name}</span><small>{who.role}</small><em>{index + 1}/{total}</em></header><button className="g-copy" onClick={() => done ? onNext() : setShown(chars.length)}><p>{chars.slice(0, shown).join("")}{!done && <i />}</p></button><footer>{done && <button className="g-btn primary" onClick={onNext}>{nextLabel}<ChevronLeft /></button>}</footer></div></motion.section></div>;
+  useEffect(() => {
+    if (line.voice) {
+      playVoice(line.voice);
+    } else {
+      stopVoice();
+    }
+    return () => {
+      stopVoice();
+    };
+  }, [line.voice, index]);
+  return <div className="g-stage"><motion.section className={`g-dialogue ${who.tone}`} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><motion.span key={caller?.name ?? line.who} className={`g-portrait ${call ? "is-call" : ""}`} initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .25 }}><img src={caller?.img ?? PORTRAITS[line.who]} alt="" /></motion.span><div>{call && <span className="g-call-chip"><Phone />مكالمة من {who.name}<span className="g-call-waves"><i /><i /><i /></span></span>}<header><span>{who.name}</span><small>{who.role}</small>{line.voice && <button type="button" className="g-voice-indicator" title="إعادة الاستماع للصوت" onClick={(e) => { e.stopPropagation(); playVoice(line.voice!); }}>🔊</button>}<em>{index + 1}/{total}</em></header><button className="g-copy" onClick={() => done ? onNext() : setShown(chars.length)}><p>{chars.slice(0, shown).join("")}{!done && <i />}</p></button><footer>{done && <button className="g-btn primary" onClick={onNext}>{nextLabel}<ChevronLeft /></button>}</footer></div></motion.section></div>;
 }
 
 function PhoneNotifier({ count, open, onToggle }: { count: number; open: boolean; onToggle: () => void }) {

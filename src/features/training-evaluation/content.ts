@@ -2,7 +2,7 @@ import { supports, type ClaimId, type EvidenceId, type QuestionId } from "./engi
 
 export type Speaker = "seif" | "tarek" | "player";
 export type Mood = "confident" | "thinking" | "surprised" | "happy" | "facepalm";
-export interface Line { who: Speaker; text: string; mood?: Mood; thought?: boolean }
+export interface Line { who: Speaker; text: string; mood?: Mood; thought?: boolean; voice?: string }
 
 export const TITLE = "Training Evaluation";
 export const SUBTITLE_AR = "كورس تدريبي واحد.. مجموعتان.. وقرار مصيري مستني رأيك.";
@@ -11,10 +11,12 @@ export const BRIEF: Line[] = [{
   who: "seif",
   mood: "thinking",
   text: "دلوقتي الشركة عندنا متعاقدة مع شركة تدريب وقدمولنا كورس لمجموعتين من الموظفين من نفس الإدارة",
+  voice: "seif-brief-1.wav",
 }, {
   who: "seif",
   mood: "thinking",
   text: "تقييم المجموعة الأولى طلع 90% وبعدها لما المجموعة التانية أخدوا الكورس التقييم طلع 78%، ودلوقتي مش عارفين نجدد لنفس الشركة ولا نغيرها.. روح لطارق مدير التدريب افهم منه الصورة كاملة وقولي شايف الصح إيه.",
+  voice: "seif-brief-2.wav",
 }];
 
 export const MEETING: Line[] = [
@@ -163,8 +165,8 @@ export const SAYES_PARK = "اكسر كله وارجع يا باشا، ارجع �
 export const SAYES_ASK = "حاسبني على الباركنج يا باشا.";
 export const SAYES_CHOICES = [
   { pay: "later" as const, text: "هحاسبك لما أخلص وأنزل", pose: "smug" as SayesPose, reply: ["ماشي يا باشا... إنت كدا فهلوي وبتشغّل دماغك يعني!"] },
-  { pay: "ten" as const, text: "خد 10 جنيه", pose: "disgusted" as SayesPose, reply: ["إيه دا يا باشا؟! أعمل بيها إيه دي؟"] },
-  { pay: "fifty" as const, text: "خد 50 جنيه", pose: "smart" as SayesPose, reply: ["ربنا ينور بصيرتك يا باشا! استنى أقولك حاجة...", "متتسحلش في الداتا يا باشا، واسأل صح...", "الإجابة في الداتا الناقصة."] },
+  { pay: "ten" as const, text: "خد 10 جنيه", pose: "disgusted" as SayesPose, reply: ["إيه ده يا باشا؟! 10 جنيه؟! أعمل بيها إيه دي؟"] },
+  { pay: "fifty" as const, text: "خد 50 جنيه", pose: "smart" as SayesPose, reply: ["ربنا ينور بصيرتك يا باشا! استنى أقولك حاجة... متتسحلش في الداتا يا باشا، واسأل صح... الإجابة في الداتا الناقصة."] },
 ];
 export const SAYES_POPUP = {
   fifty: { pose: "whistle" as SayesPose, text: "الله ينور عليك يا باشا كمل زي ما إنت.. طريق السلامة يا أبو شيماء", auto: true },

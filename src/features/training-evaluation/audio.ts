@@ -1,5 +1,6 @@
 let muted = false;
 let bgmAudio: HTMLAudioElement | null = null;
+let currentVoice: HTMLAudioElement | null = null;
 let duckTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const AUDIO = "/game-audio/";
@@ -8,10 +9,52 @@ const BGM_DUCKED_VOL = 0.18;
 
 export const setMuted = (m: boolean) => {
   muted = m;
-  if (!bgmAudio) return;
-  bgmAudio.muted = m;
-  if (!m && bgmAudio.paused) void bgmAudio.play().catch(() => undefined);
+  if (bgmAudio) {
+    bgmAudio.muted = m;
+    if (!m && bgmAudio.paused) void bgmAudio.play().catch(() => undefined);
+  }
+  if (currentVoice) {
+    currentVoice.muted = m;
+  }
 };
+
+export function stopVoice() {
+  if (currentVoice) {
+    currentVoice.pause();
+    currentVoice.currentTime = 0;
+    currentVoice = null;
+  }
+  if (bgmAudio && !muted) {
+    bgmAudio.volume = BGM_NORMAL_VOL;
+  }
+}
+
+export function playVoice(file: string, onEnded?: () => void) {
+  stopVoice();
+  if (muted || typeof Audio === "undefined") return null;
+
+  if (bgmAudio && !muted) {
+    bgmAudio.volume = BGM_DUCKED_VOL;
+  }
+
+  const sound = new Audio(`${AUDIO}${file}`);
+  currentVoice = sound;
+  sound.volume = 0.95;
+  sound.muted = muted;
+
+  sound.onended = () => {
+    if (currentVoice === sound) {
+      currentVoice = null;
+      if (bgmAudio && !muted) {
+        bgmAudio.volume = BGM_NORMAL_VOL;
+      }
+      onEnded?.();
+    }
+  };
+
+  void sound.play().catch(() => undefined);
+  return sound;
+}
 
 function duckBgm(durationMs = 900) {
   if (!bgmAudio || muted) return;

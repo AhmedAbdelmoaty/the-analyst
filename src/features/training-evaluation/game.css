@@ -387,6 +387,7 @@
 .g-sayes-choices{display:flex;flex-direction:column;gap:.5rem;width:100%}
 .g-sayes-choices .g-btn{width:100%;justify-content:center}
 .g-sayes-choices .g-btn.secondary{background:hsl(var(--paper));color:hsl(var(--ink))}
+
 .g-scene.scene-drive img{animation:g-road-shake .5s ease-in-out infinite alternate}
 @keyframes g-road-shake{from{transform:scale(1.04) translate(0,0)}to{transform:scale(1.04) translate(1px,2px)}}
 @keyframes g-bump{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
@@ -448,6 +449,9 @@
 @keyframes g-ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg)}40%{transform:rotate(12deg)}}
 @keyframes g-wave{50%{transform:scaleY(.35)}}
 .g-portrait.is-call{border-radius:50%;box-shadow:0 0 0 3px #A61E2555,0 0 0 7px #A61E2522}
+.g-voice-indicator{display:inline-flex;align-items:center;justify-content:center;margin-inline-start:.45rem;font-size:.9rem;background:none;border:none;cursor:pointer;padding:0;filter:drop-shadow(0 0 4px hsl(var(--gold)/.7));animation:g-voice-pulse 1.3s ease-in-out infinite alternate}
+.g-voice-indicator:hover{transform:scale(1.25);filter:drop-shadow(0 0 8px hsl(var(--gold)))}
+@keyframes g-voice-pulse{from{opacity:.55;transform:scale(.92)}to{opacity:1;transform:scale(1.1)}}
 .g-sayes-pose{position:relative}.g-sayes-pose img{position:absolute;inset:0}
 .g-path-card,.g-choice-list button,.g-sayes-choices .g-btn{transition:transform .14s,box-shadow .14s,border-color .14s}
 .g-path-card:focus-visible,.g-choice-list button:focus-visible{outline:3px solid #A61E25;outline-offset:3px}
