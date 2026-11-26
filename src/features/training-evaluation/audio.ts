@@ -18,6 +18,10 @@ export const setMuted = (m: boolean) => {
   }
 };
 
+export function getCurrentVoice(): HTMLAudioElement | null {
+  return currentVoice;
+}
+
 export function stopVoice() {
   if (currentVoice) {
     currentVoice.pause();

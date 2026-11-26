@@ -4,10 +4,10 @@ import { ChevronLeft, DoorOpen, Home, Mail, Phone, RotateCcw, Send, Volume2, Vol
 import { CinematicScene } from "./CinematicScene";
 import { PRELOAD_GROUPS, preloadAll, type CineKey } from "./cinematic";
 import { DATA_PREPARATION_SECONDS, claimsFor, initialState, isCorrect, reduce, type Action, type EvidenceId, type State } from "./engine";
-import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, MEETING, METRICS, METRICS_LIST, QUESTIONS, SAYES_LOSS_CALL, BOOTH_MESSAGE, THOUGHTS, TITLE, WIN, type Line, type Metric, type Speaker } from "./content";
+import { SAYES_ASK, SAYES_CHOICES, SAYES_NAME, SAYES_PARK, SAYES_POPUP, type SayesPose, BRIEF, CLAIM_LABELS, CONFIRM_PAIR, emailBody, GUESSES, MEETING, METRICS, METRICS_LIST, QUESTIONS, SAYES_LOSS_CALL, BOOTH_MESSAGE, THOUGHTS, TITLE, WIN, VOICE_DURATIONS, type Line, type Metric, type Speaker } from "./content";
 import { PORTRAITS, SAYES_ART, SCENES, type SceneKey } from "./assets";
 import { DashChart, InlineReportCard, OfficialReportModal } from "./Chart";
-import { playVoice, setMuted, sfx, startBgm, stopVoice, whoosh } from "./audio";
+import { getCurrentVoice, playVoice, setMuted, sfx, startBgm, stopVoice, whoosh } from "./audio";
 import engageLogo from "./assets/engage-logo.jpeg";
 import * as Dialog from "@radix-ui/react-dialog";
 import { GameButton } from "./GameButton";
@@ -158,8 +158,120 @@ function Cover({ go }: { go: () => void }) {
 
 type RoadStep = "drive" | "park" | "ask" | "reply";
 
-function SayesLine({ pose, text, children }: { pose: SayesPose; text: string; children?: ReactNode }) {
-  return <motion.section className="g-dialogue dark g-sayes-line" initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><span className="g-portrait g-sayes-pose"><AnimatePresence initial={false}><motion.img key={pose} src={SAYES_ART[pose]} alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .2 }} /></AnimatePresence></span><div><header><span>{SAYES_NAME}</span></header><motion.p key={text} className="g-sayes-text" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>{text}</motion.p><footer className="g-sayes-actions">{children}</footer></div></motion.section>;
+function useSyncedTypewriter(text: string, voice?: string) {
+  const chars = useMemo(() => Array.from(text), [text]);
+  const [shown, setShown] = useState(0);
+  const done = shown >= chars.length;
+
+  useEffect(() => {
+    setShown(0);
+  }, [text]);
+
+  useEffect(() => {
+    if (done) return;
+
+    const expectedSec = voice && VOICE_DURATIONS[voice]
+      ? VOICE_DURATIONS[voice]
+      : Math.max(1.2, chars.length * 0.038);
+
+    const pacingFactor = voice ? 0.93 : 0.95;
+    const targetMs = Math.max(600, expectedSec * pacingFactor * 1000);
+    const startTime = performance.now();
+
+    let rafId: number;
+
+    const tick = (now: number) => {
+      let progress = 0;
+      const activeVoice = getCurrentVoice();
+
+      if (
+        voice &&
+        activeVoice &&
+        activeVoice.src.includes(voice) &&
+        !activeVoice.paused &&
+        activeVoice.currentTime > 0
+      ) {
+        const totalDuration = activeVoice.duration && !isNaN(activeVoice.duration) && activeVoice.duration > 0
+          ? activeVoice.duration
+          : expectedSec;
+        progress = Math.min(1, activeVoice.currentTime / (totalDuration * pacingFactor));
+      } else {
+        const elapsed = now - startTime;
+        progress = Math.min(1, elapsed / targetMs);
+      }
+
+      const count = Math.min(chars.length, Math.floor(progress * chars.length));
+      setShown((prev) => Math.max(prev, count));
+
+      if (progress < 1 && count < chars.length) {
+        rafId = requestAnimationFrame(tick);
+      }
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [text, voice, done, chars.length]);
+
+  const revealAll = useCallback(() => {
+    setShown(chars.length);
+  }, [chars.length]);
+
+  return { shown, done, revealAll, chars };
+}
+
+function SayesLine({ pose, text, voice, children }: { pose: SayesPose; text: string; voice?: string; children?: ReactNode }) {
+  const { shown, done, revealAll, chars } = useSyncedTypewriter(text, voice);
+
+  useEffect(() => {
+    if (voice) {
+      playVoice(voice);
+    } else {
+      stopVoice();
+    }
+    return () => {
+      stopVoice();
+    };
+  }, [voice, text]);
+
+  return (
+    <motion.section className="g-dialogue dark g-sayes-line" initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+      <span className="g-portrait g-sayes-pose">
+        <AnimatePresence initial={false}>
+          <motion.img key={pose} src={SAYES_ART[pose]} alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .2 }} />
+        </AnimatePresence>
+      </span>
+      <div>
+        <header>
+          <span>{SAYES_NAME}</span>
+          {voice && (
+            <button
+              type="button"
+              className="g-voice-indicator"
+              title="إعادة الاستماع للصوت"
+              onClick={(e) => {
+                e.stopPropagation();
+                playVoice(voice);
+              }}
+            >
+              🔊
+            </button>
+          )}
+        </header>
+        <button
+          type="button"
+          className="g-copy"
+          onClick={revealAll}
+          style={{ cursor: done ? "default" : "pointer" }}
+        >
+          <motion.p key={text} className="g-sayes-text" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+            {chars.slice(0, shown).join("")}
+            {!done && <i />}
+          </motion.p>
+        </button>
+        <footer className="g-sayes-actions">{children}</footer>
+      </div>
+    </motion.section>
+  );
 }
 
 const POSE_ANIM: Record<SayesPose, { initial: Record<string, number | string>; animate: Record<string, number | string | number[]> }> = {
@@ -174,11 +286,11 @@ function Road({ step, setStep, pay, next }: { step: RoadStep; setStep: (s: RoadS
   const [choice, setChoice] = useState<(typeof SAYES_CHOICES)[number] | null>(null);
   const [line, setLine] = useState(0);
   if (step === "drive") return <div className="g-stage center g-drive" aria-hidden />;
-  if (step === "park") return <div className="g-stage"><SayesLine pose="whistle" text={SAYES_PARK}><button className="g-btn primary" onClick={() => setStep("ask")}>انزل من العربية <ChevronLeft /></button></SayesLine></div>;
+  if (step === "park") return <div className="g-stage"><SayesLine pose="whistle" text={SAYES_PARK} voice="sayes-park.wav"><button className="g-btn primary" onClick={() => setStep("ask")}>انزل من العربية <ChevronLeft /></button></SayesLine></div>;
   if (step === "ask" || !choice) {
     return (
       <div className="g-stage">
-        <SayesLine pose="money" text={SAYES_ASK}>
+        <SayesLine pose="money" text={SAYES_ASK} voice="sayes-ask.wav">
           <div className="g-sayes-choices">
             {SAYES_CHOICES.map((c, i) => (
               <motion.button
@@ -205,10 +317,10 @@ function Road({ step, setStep, pay, next }: { step: RoadStep; setStep: (s: RoadS
     );
   }
   const last = line + 1 >= choice.reply.length;
-  return <div className="g-stage"><SayesLine pose={choice.pose} text={choice.reply[line] ?? ""}>{last ? <button className="g-btn primary" onClick={() => { sfx.door(); next(); }}><DoorOpen /> الدخول لمكتب التدريب</button> : <button className="g-btn primary" onClick={() => setLine(line + 1)}>التالي <ChevronLeft /></button>}</SayesLine></div>;
+  return <div className="g-stage"><SayesLine pose={choice.pose} text={choice.reply[line] ?? ""} voice={choice.voice}>{last ? <button className="g-btn primary" onClick={() => { sfx.door(); next(); }}><DoorOpen /> الدخول لمكتب التدريب</button> : <button className="g-btn primary" onClick={() => setLine(line + 1)}>التالي <ChevronLeft /></button>}</SayesLine></div>;
 }
 
-type PopStage = "intro" | "offer" | "paid" | "skipped";
+type PopStage = "intro" | "offer" | "paid";
 
 function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispatch: (a: Action) => void; onClose: () => void; onSend: () => void }) {
   const kind = state.sayes ?? "fifty";
@@ -218,24 +330,50 @@ function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispat
   const data = wrongFifty ? SAYES_POPUP.fiftyWrong : SAYES_POPUP[kindAtOpen];
   useEffect(() => { const id = window.setTimeout(() => setStage("offer"), 900); return () => window.clearTimeout(id); }, []);
   useEffect(() => { if (stage !== "offer" || !("auto" in data)) return; const id = window.setTimeout(onSend, 2800); return () => window.clearTimeout(id); }, [stage, data, onSend]);
-  useEffect(() => { if (stage !== "skipped") return; const id = window.setTimeout(onSend, 2600); return () => window.clearTimeout(id); }, [stage, onSend]);
-  const pose: SayesPose = stage === "intro" ? "whistle" : "auto" in data ? "smart" : stage === "paid" ? "smart" : stage === "skipped" ? "smug" : data.pose;
-  const text = stage === "intro" ? "" : stage === "paid" && "paid" in data ? data.paid : stage === "skipped" && "skipped" in data ? data.skipped : data.text;
-  const review = () => { onClose(); dispatch({ type: "backFromEmail" }); };
+  const pose: SayesPose = stage === "intro" ? "whistle" : "auto" in data ? "smart" : stage === "paid" ? "smart" : data.pose;
+  const text = stage === "intro" ? "" : stage === "paid" && "paid" in data ? data.paid : data.text;
+  const voice =
+    stage === "offer" && "voice" in data
+      ? data.voice
+      : stage === "paid" && "paidVoice" in data
+      ? data.paidVoice
+      : undefined;
+
+  useEffect(() => {
+    if (voice) {
+      playVoice(voice);
+    } else {
+      stopVoice();
+    }
+    return () => {
+      stopVoice();
+    };
+  }, [voice, stage]);
+
+  const { shown, done, revealAll, chars } = useSyncedTypewriter(text, voice);
+  const review = () => { stopVoice(); onClose(); dispatch({ type: "backFromEmail" }); };
+  const proceed = () => { stopVoice(); onClose(); onSend(); };
+
   return <motion.div className="g-sayes-pop-wrap" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-    <motion.div className="g-sayes-pop" role="dialog" aria-label={SAYES_NAME} initial={{ y: "110%" }} animate={stage === "skipped" ? { y: [0, 0, "120%"], opacity: [1, 1, 0] } : { y: 0 }} transition={stage === "skipped" ? { duration: 2.6, times: [0, .75, 1] } : { type: "spring", stiffness: 380, damping: 22 }}>
+    <motion.div className="g-sayes-pop" role="dialog" aria-label={SAYES_NAME} initial={{ y: "110%" }} animate={{ y: 0 }} transition={{ type: "spring", stiffness: 380, damping: 22 }}>
       <motion.div key={pose} className={`g-sayes-avatar pose-${pose}`} initial={POSE_ANIM[pose].initial} animate={POSE_ANIM[pose].animate} transition={{ duration: pose === "whistle" ? .5 : .6 }}><img src={SAYES_ART[pose]} alt="" /></motion.div>
       <div className="g-sayes-bubble-col">
-        {text && <motion.div key={text} className={`g-sayes-bubble ${stage === "paid" || (kindAtOpen === "fifty" && stage === "offer") ? "glow" : ""}`} initial={{ scale: .6, opacity: 0, originX: 1, originY: 1 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 420, damping: 20 }}><b>{SAYES_NAME}</b><p>{text}</p></motion.div>}
+        {text && <motion.div key={text} className={`g-sayes-bubble ${stage === "paid" || (kindAtOpen === "fifty" && stage === "offer") ? "glow" : ""}`} initial={{ scale: .6, opacity: 0, originX: 1, originY: 1 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 420, damping: 20 }} onClick={revealAll} style={{ cursor: done ? "default" : "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <b>{SAYES_NAME}</b>
+            {voice && <button type="button" className="g-voice-indicator" title="إعادة الاستماع للصوت" onClick={(e) => { e.stopPropagation(); playVoice(voice); }}>🔊</button>}
+          </div>
+          <p>{chars.slice(0, shown).join("")}{!done && <i />}</p>
+        </motion.div>}
         {stage === "offer" && !("auto" in data) && <motion.div className="g-sayes-choices" initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .25 }}>
           {wrongFifty ? <>
             <button className="g-btn primary" onClick={review}>فهمتك يا أسطى.. رايح أراجع</button>
-            <button className="g-btn secondary" onClick={() => { onClose(); onSend(); }}>أرسل التوصية</button>
+            <button className="g-btn secondary" onClick={proceed}>أرسل التوصية</button>
           </> : "pay" in data && <>
-            <button className="g-btn primary" onClick={() => { dispatch({ type: "sayesFifty" }); setStage("paid"); }}>{data.pay}</button>
-            <button className="g-btn secondary" onClick={() => setStage("skipped")}>{data.skip}</button></>}
+            <button className="g-btn primary" onClick={() => { stopVoice(); dispatch({ type: "sayesFifty" }); setStage("paid"); }}>{data.pay}</button>
+            <button className="g-btn secondary" onClick={proceed}>{data.skip}</button></>}
         </motion.div>}
-        {stage === "paid" && <motion.div className="g-sayes-choices" initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .4 }}><button className="g-btn primary" onClick={review}>رايح أراجع</button><button className="g-btn secondary" onClick={() => { onClose(); onSend(); }}>إرسال التوصية</button></motion.div>}
+        {stage === "paid" && <motion.div className="g-sayes-choices" initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .4 }}><button className="g-btn primary" onClick={review}>رايح أراجع</button><button className="g-btn secondary" onClick={proceed}>إرسال التوصية</button></motion.div>}
       </div>
     </motion.div>
   </motion.div>;
@@ -243,11 +381,8 @@ function SayesPopup({ state, dispatch, onClose, onSend }: { state: State; dispat
 
 function Dialogue({ line, index, total, onNext, nextLabel, call = false, caller }: { line: Line; index: number; total: number; onNext: () => void; nextLabel: string; call?: boolean; caller?: { name: string; role: string; img: string } }) {
   const who = caller ? { ...caller, tone: "dark" as const } : WHO[line.who];
-  const chars = useMemo(() => Array.from(line.text), [line.text]);
-  const [shown, setShown] = useState(0);
-  const done = shown >= chars.length;
-  useEffect(() => { setShown(0); }, [line.text]);
-  useEffect(() => { if (done) return; const id = window.setTimeout(() => setShown((n) => Math.min(chars.length, n + 3)), 22); return () => window.clearTimeout(id); }, [shown, done, chars.length]);
+  const { shown, done, revealAll, chars } = useSyncedTypewriter(line.text, line.voice);
+
   useEffect(() => {
     if (line.voice) {
       playVoice(line.voice);
@@ -258,7 +393,67 @@ function Dialogue({ line, index, total, onNext, nextLabel, call = false, caller 
       stopVoice();
     };
   }, [line.voice, index]);
-  return <div className="g-stage"><motion.section className={`g-dialogue ${who.tone}`} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}><motion.span key={caller?.name ?? line.who} className={`g-portrait ${call ? "is-call" : ""}`} initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .25 }}><img src={caller?.img ?? PORTRAITS[line.who]} alt="" /></motion.span><div>{call && <span className="g-call-chip"><Phone />مكالمة من {who.name}<span className="g-call-waves"><i /><i /><i /></span></span>}<header><span>{who.name}</span><small>{who.role}</small>{line.voice && <button type="button" className="g-voice-indicator" title="إعادة الاستماع للصوت" onClick={(e) => { e.stopPropagation(); playVoice(line.voice!); }}>🔊</button>}<em>{index + 1}/{total}</em></header><button className="g-copy" onClick={() => done ? onNext() : setShown(chars.length)}><p>{chars.slice(0, shown).join("")}{!done && <i />}</p></button><footer>{done && <button className="g-btn primary" onClick={onNext}>{nextLabel}<ChevronLeft /></button>}</footer></div></motion.section></div>;
+
+  return (
+    <div className="g-stage">
+      <motion.section className={`g-dialogue ${who.tone}`} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+        <motion.span
+          key={caller?.name ?? line.who}
+          className={`g-portrait ${call ? "is-call" : ""}`}
+          initial={{ opacity: 0, scale: .9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: .25 }}
+        >
+          <img src={caller?.img ?? PORTRAITS[line.who]} alt="" />
+        </motion.span>
+        <div>
+          {call && (
+            <span className="g-call-chip">
+              <Phone />مكالمة من {who.name}
+              <span className="g-call-waves"><i /><i /><i /></span>
+            </span>
+          )}
+          <header>
+            <span>{who.name}</span>
+            <small>{who.role}</small>
+            {line.voice && (
+              <button
+                type="button"
+                className="g-voice-indicator"
+                title="إعادة الاستماع للصوت"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  playVoice(line.voice!);
+                }}
+              >
+                🔊
+              </button>
+            )}
+            <em>{index + 1}/{total}</em>
+          </header>
+          <button
+            type="button"
+            className="g-copy"
+            onClick={() => (done ? onNext() : revealAll())}
+            style={{ cursor: "pointer" }}
+          >
+            <p>
+              {chars.slice(0, shown).join("")}
+              {!done && <i />}
+            </p>
+          </button>
+          <footer>
+            <button
+              className="g-btn primary"
+              onClick={() => (done ? onNext() : revealAll())}
+            >
+              {nextLabel}<ChevronLeft />
+            </button>
+          </footer>
+        </div>
+      </motion.section>
+    </div>
+  );
 }
 
 function Office({ state, dispatch, onSend, sayesShown, markSayes }: { state: State; dispatch: (a: Action) => void; onSend: () => void; sayesShown: boolean; markSayes: () => void }) {
@@ -481,7 +676,13 @@ function Email({ state, dispatch, onSend, sayesShown, markSayes }: { state: Stat
 
 function Verdict({ state, dispatch, travel, endActions, onDone }: { state: State; dispatch: (a: Action) => void; travel: (a: Action) => void; endActions?: ReactNode; onDone?: () => void }) {
   const won = state.outcome === "win";
-  const lines: Line[] = won ? WIN.lines : SAYES_LOSS_CALL[state.sayes === "fifty" ? "fifty" : "cheap"].map((text) => ({ who: "seif", text }));
+  const lines: Line[] = won
+    ? WIN.lines
+    : SAYES_LOSS_CALL[state.sayes === "fifty" ? "fifty" : "cheap"].map((call) => ({
+        who: "seif",
+        text: call.text,
+        voice: call.voice,
+      }));
   const caller = won ? undefined : { name: SAYES_NAME, role: "مكالمة من الشارع", img: SAYES_ART.smug };
   const [i, setI] = useState(0);
   const [booth, setBooth] = useState(false);
