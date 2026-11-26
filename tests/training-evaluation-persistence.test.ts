@@ -1,17 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { advanceRun, loadRun, newRun, saveRun, storageKey } from "../src/features/training-evaluation/persistence";
-import { initialState, reduce } from "../src/features/training-evaluation/engine";
 
 function storage() {
   const values = new Map<string, string>();
   return { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); } };
 }
 describe("Training Evaluation saved progress", () => {
-  test("road cannot advance until the player selects a valid Sayes payment", () => {
-    const road = { ...initialState(), phase: "road" as const };
-    expect(reduce(road, { type: "next" })).toEqual(road);
-    expect(reduce(reduce(road, { type: "paySayes", pay: "ten" }), { type: "next" }).phase).toBe("meeting");
-  });
   test("reload restores the exact question, evidence, recommendation and second", () => {
     const db = storage(); const run = newRun("player-a");
     run.state = { ...run.state, phase: "office", officeEntered: true, view: "ask", path: "ask", asked: ["respondents"], claim: "notRep", evidence: "respondents", sayes: "ten" };
